@@ -24,7 +24,7 @@ To configure your user-specific paths and settings for local and HPC job submiss
 
 #### Dependencies
 
-The `dtk status` command imports the `psutil` [package](https://pypi.python.org/pypi/psutil) for process ID lookup of local simulations. HPC simulations will be able to retrieve status without this package.
+The `dtk status` command imports the [`psutil`](https://pypi.python.org/pypi/psutil) package for process ID lookup of local simulations. HPC simulations will be able to retrieve status without this package.
 
 Statistical analysis and plotting of output depend on `numpy`, `matplotlib`, and `pandas`.
-32- and 64-bit Windows binaries may be downloaded at http://www.lfd.uci.edu/~gohlke/pythonlibs.
+32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
