@@ -7,4 +7,10 @@ setup(name='dtk',
       author='Edward Wenger',
       author_email='ewenger@intven.com',
       packages=['dtk'],
+      install_requires=[
+          'numpy',
+          'matplotlib',
+          'pandas'
+      ],
+      scripts=['dtk'],
       zip_safe=False)
