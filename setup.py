@@ -8,6 +8,7 @@ setup(name='dtk',
       author_email='ewenger@intven.com',
       packages=['dtk'],
       install_requires=[
+          'psutil',
           'numpy',
           'matplotlib',
           'pandas'
