@@ -1,8 +1,8 @@
-`dtk` is a Python package for simplifying the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
+`dtk` is a package for simplifying and strengthening the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
 
 Modules contained in this package are intended to:
-- Empower the user to configure diverse simulations and arbitrarily complex campaigns by piecing together from a standardized library of configuration fragments and utility functions; 
-- Facilitate transparent switching between local and HPC commissioning, job-status queries, and output analysis;
+- Empower the user to configure diverse simulations and arbitrarily complex campaigns built up from a standardized library of configuration fragments and utility functions; 
+- Facilitate transparent switching between local and remote HPC commissioning, job-status queries, and output analysis;
 - Enable the configuration of arbitrary collections of simulations (e.g. parameteric sweeps) through an extensible library of builder classes; 
 - Collect a library of post-processing analysis functionality, e.g. filtering, mapping, averaging, plotting.
 
