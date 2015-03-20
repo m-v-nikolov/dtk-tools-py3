@@ -1,4 +1,4 @@
-`dtk` is a package for simplifying and strengthening the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
+The `dtk` package is intended to strengthen and simplify the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
 
 Modules contained in this package are intended to:
 - Empower the user to configure diverse simulations and arbitrarily complex campaigns built up from a standardized library of configuration fragments and utility functions; 
