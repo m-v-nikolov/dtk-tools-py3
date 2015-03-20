@@ -16,7 +16,7 @@ Or to do active development on the package:
 
 `python setup.py develop`
 
-On Windows, one may additionally modify the environmental variable `PATHEXT`, appending `'.PY'` to allow `dtk.py` to be run with a command like `dtk status`.
+On Windows, one may need to add the `Scripts` subdirectory of your local Python installation to the `%PATH%` [environment variable](https://www.java.com/en/download/help/path.xml) to have access to the `dtk` commandline utility.
 
 #### Setup
 

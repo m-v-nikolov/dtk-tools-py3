@@ -13,5 +13,7 @@ setup(name='dtk',
           'matplotlib',
           'pandas'
       ],
-      scripts=['dtk'],
+      entry_points = {
+        'console_scripts': ['dtk = dtk.commands:main']
+      },
       zip_safe=False)

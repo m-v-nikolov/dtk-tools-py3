@@ -136,7 +136,7 @@ def reload_experiment(args=None):
 
     return SimulationManagerFactory.from_file(filepath)
 
-if __name__ == '__main__':
+def main():
 
     parser = argparse.ArgumentParser(prog='dtk')
     subparsers = parser.add_subparsers()
@@ -179,3 +179,6 @@ if __name__ == '__main__':
     # run specified function passing in function-specific arguments
     args = parser.parse_args()
     args.func(args)
+
+if __name__ == '__main__':
+    main()
