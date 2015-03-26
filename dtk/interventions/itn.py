@@ -10,7 +10,7 @@ itn_bednet = { "class": "SimpleBednet",
 }
 
 # Bednet distribution event parameters
-def add_ITN(config_builder, start, age_ranges, waning={}, cost=None, nodeIDs=[]):
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[]):
 
     if waning:
         itn_bednet.update({ "Durability_Time_Profile":       waning['profile'], 
@@ -20,33 +20,33 @@ def add_ITN(config_builder, start, age_ranges, waning={}, cost=None, nodeIDs=[])
     if cost:
         itn_bednet['Cost_To_Consumer'] = cost
 
-    for age_range in age_ranges:
+    for coverage_by_age in coverage_by_ages:
 
         ITN_event = { "class" : "CampaignEvent",
                       "Start_Day": start,
                       "Event_Coordinator_Config": {
                           "class": "StandardInterventionDistributionEventCoordinator",
-                          "Demographic_Coverage": age_range["coverage"],
+                          "Demographic_Coverage": coverage_by_age["coverage"],
                           "Intervention_Config": itn_bednet
                       }
                     }
 
-        if all([k in age_range.keys() for k in ['min','max']]):
+        if all([k in coverage_by_age.keys() for k in ['min','max']]):
             ITN_event["Event_Coordinator_Config"].update({
                    "Target_Demographic": "ExplicitAgeRanges",
-                   "Target_Age_Min": age_range["min"],
-                   "Target_Age_Max": age_range["max"]})
+                   "Target_Age_Min": coverage_by_age["min"],
+                   "Target_Age_Max": coverage_by_age["max"]})
 
         if not nodeIDs:
             ITN_event["Nodeset_Config"] = { "class": "NodeSetAll" }
         else:
             ITN_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
 
-        if 'birth' in age_range.keys() and age_range['birth']:
+        if 'birth' in coverage_by_age.keys() and coverage_by_age['birth']:
             birth_triggered_intervention = {
                 "class": "BirthTriggeredIV",
                 "Duration": -1, # forever.  could expire and redistribute every year with different coverage values
-                "Demographic_Coverage": age_range["coverage"],
+                "Demographic_Coverage": coverage_by_age["coverage"],
                 "Actual_IndividualIntervention_Config": itn_bednet
             }
             ITN_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention

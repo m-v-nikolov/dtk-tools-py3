@@ -118,17 +118,26 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
     params.update(vector_species_params)
     return params
 
+def set_species_param(cb,species,parameter,value):
+    cb.config['parameters']['Vector_Species_Params'][species][parameter]=value
+
 # Set vector species and habitat parameters of config argument and return
 # Example:
 # habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }
+# habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
 
-def set_larval_habitat(config, habitats):
+def set_larval_habitat(cb, habitats):
 
-    config["parameters"]["Vector_Species_Names"] = list(habitats.keys())
+    cb.set_param('Vector_Species',habitats.keys())
 
     for (species,habitat) in habitats.items():
-        config["parameters"]["Vector_Species_Params"][species]["Required_Habitat_Factor"] = habitat
-        if len(habitat) != len(config["parameters"]["Vector_Species_Params"][species]["Habitat_Type"] ):
-            raise Exception("Required_Habitat_Factor argument does not match size of Habitat_Type list")
-
-    return config
+        s=cb.config["parameters"]["Vector_Species_Params"][species]
+        if isinstance(habitat, dict):
+            s["Habitat_Type"] = habitat.keys()
+            s["Required_Habitat_Factor"] = habitat.values()
+        elif isinstance(habitat, list):
+            s["Required_Habitat_Factor"] = habitat
+            if len(habitat) != len(s["Habitat_Type"] ):
+                raise Exception("Required_Habitat_Factor argument does not match size of Habitat_Type list")
+        else:
+            raise Exception("Don't recognize formatting of %s, which must be a dict or list",habitat)

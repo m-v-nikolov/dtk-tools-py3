@@ -37,26 +37,13 @@ def status(args):
     sm = reload_experiment(args)
 
     # monitor the status of the simulation
-    finished = False
-    while not finished:
+    while True:
         states, msgs = sm.SimulationStatus()
-
-        # A bit more verbose if there are status messages
-        long_states = copy.deepcopy(states)
-        for jobid,state in states.items():
-            if 'Running' in state:
-                steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
-                if len(steps_complete) == 2:
-                    long_states[jobid] += " (" + str(100*steps_complete[0]/steps_complete[1]) + "% complete)"
-
-        print('Job states:')
-        print( json.dumps(long_states, sort_keys=True, indent=4) )
-        print( dict(Counter(states.values())) )
-        finished = all(v in ['Finished', 'Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
-        if args.repeat and not finished:
-            time.sleep(20)
+        sm.printStatus(states,msgs)
+        if not args.repeat or sm.statusFinished(states):
+            break
         else:
-            finished = True
+            time.sleep(20)
 
 def resubmit(args):
     sm = reload_experiment(args)

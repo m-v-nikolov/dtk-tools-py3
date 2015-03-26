@@ -1,4 +1,15 @@
-# Climate and demographics files
+import os
+
+# Set climate and demographics files by geography
+def set_geography(cb, geography):
+    params=geographies.get(geography)
+    if not params:
+        raise Exception('%s geography not yet implemented' % geography)
+    g=params.pop('Geography')
+    for k,v in params.items():
+        if 'Filename' in k:
+            params[k]=os.path.join(g,v)
+    cb.update_params(params)
 
 geographies = {
 
@@ -21,7 +32,7 @@ geographies = {
                        "Enable_Demographics_Other": 0 # no 'AbovePoverty' etc. in these files
                      },
 
-    "Sinazongwe" :   { "Geography": "Zambia",
+    "Sinazongwe" :   { "Geography": "Zambia/Sinamalima_single_node",
                        "Air_Temperature_Filename":   "Zambia_Sinamalima_2_5arcmin_air_temperature_daily.bin",
                        "Demographics_Filename":      "Zambia_Sinamalima_single_node_demographics.compiled.json", 
                        "Land_Temperature_Filename":  "Zambia_Sinamalima_2_5arcmin_land_temperature_daily.bin",
@@ -30,6 +41,7 @@ geographies = {
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                      },
 
+'''
     "Gwembe2Node" :   { "Geography": "Zambia",
                        #"Node_Grid_Size": 0.0417,     ## 2.5arcmin/60
                        "Air_Temperature_Filename":   "Zambia_2_5arcmin_air_temperature_daily.bin",
@@ -53,8 +65,10 @@ geographies = {
                        "Enable_Local_Migration": 1, 
                        "Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_health_facilities_12node_local_migration.bin"
                      },
+'''
 
     "GwembeSinazongwePopCluster" : {
+                       "Geography": "Zambia/Gwembe_Sinazongwe_pop_cluster",
                        #"Node_Grid_Size": 0.00833,    ## 30arcsec/3600
                        "Air_Temperature_Filename":   "Zambia_Gwembe_Sinazongwe_30arcsec_air_temperature_daily.bin",
                        "Demographics_Filename":      "Zambia_Gwembe_Sinazongwe_pop_cluster_demographics.compiled.json", 
@@ -159,8 +173,3 @@ geographies = {
                           "Climate_Model" : "CLIMATE_CONSTANT" # no mosquitoes in challenge trial setting
                       }
 }
-
-def set_geography(config, geography):
-    mod_params = geographies[geography]
-    config["parameters"].update(mod_params)
-    return config

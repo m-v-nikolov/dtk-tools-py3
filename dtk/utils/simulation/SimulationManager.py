@@ -88,9 +88,7 @@ class LocalSimulationManager():
         self.bin_path = self.StageExecutable(bin_root)
         self.emodules_map = self.StageEmodules(dll_root)
 
-        # N.B.  presuming one input_path (i.e. Geography) for all simulations
-        input_root = self.getProperty('input_root')
-        input_path = os.path.join(input_root, self.config_builder.get_param('Geography','.'))
+        input_path = self.getProperty('input_root')
 
         eradication_options = { '--config':'config.json', '--input-path':input_path }
         if show_progress: 
@@ -221,6 +219,24 @@ class LocalSimulationManager():
             states[m.job_id] = m.state
             msgs[m.job_id] = m.msg
         return states, msgs
+
+    @staticmethod
+    def printStatus(states,msgs):
+        # A bit more verbose if there are status messages
+        long_states = copy.deepcopy(states)
+        for jobid,state in states.items():
+            if 'Running' in state:
+                steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
+                if len(steps_complete) == 2:
+                    long_states[jobid] += " (" + str(100*steps_complete[0]/steps_complete[1]) + "% complete)"
+
+        print('Job states:')
+        print( json.dumps(long_states, sort_keys=True, indent=4) )
+        print( dict(Counter(states.values())) )
+
+    @staticmethod
+    def statusFinished(states):
+        return all(v in ['Finished', 'Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
 
     def getSimulationMonitor(self, sim_id, job_id):
         sim_dir = os.path.join(self.exp_data['sim_root'], 
