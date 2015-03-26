@@ -109,8 +109,8 @@ class CompsSimulationCommissioner(SimulationCommissioner):
                      .setNodeGroupName(setup.get('HPC','node_group')) \
                      .setMaximumNumberOfRetries(int(setup.get('HPC', 'num_retries'))) \
                      .setPriority(Priority.valueOf(setup.get('HPC','priority'))) \
-                     .setMinCores(config_builder.get_param('Num_Cores')) \
-                     .setMaxCores(config_builder.get_param('Num_Cores')) \
+                     .setMinCores(config_builder.get_param('Num_Cores',1)) \
+                     .setMaxCores(config_builder.get_param('Num_Cores',1)) \
                      .build();
 
         # print('exp_name - ' + str(exp_name))
