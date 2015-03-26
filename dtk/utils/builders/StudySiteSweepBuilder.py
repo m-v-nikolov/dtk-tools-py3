@@ -14,7 +14,6 @@ class StudySiteSweepBuilder:
         self.nsims = len(simlist)
         self.sims = iter(simlist)
         self.isim = 0
-        self.geography = input_files.get('geography','')
         self.immune_mod = input_files.get('immune_mod',())
         self.recompile = input_files.get('recompile',False)
         self.immune_init = input_files.get('immune_init',False)
@@ -40,17 +39,11 @@ class StudySiteSweepBuilder:
 
     def build_sweep_site(self, site, habitat, rand, config_builder):
 
-        configure_site(config_builder.config, site)
-
-        if self.geography:
-            geography = self.geography
-        else:
-            geography = config_builder.get_param('Geography')
+        configure_site(config_builder, site)
 
         self.next_params = {'Config_Name': site + '_x_' + str(habitat),
                             'x_Temporary_Larval_Habitat': habitat,
-                            'Run_Number': rand,
-                            'Geography': geography}
+                            'Run_Number': rand}
 
         if self.input_root:
             if self.immune_mod:
@@ -58,21 +51,18 @@ class StudySiteSweepBuilder:
                 if self.recompile:
                     demographics.set_immune_mod( os.path.join(
                                                     self.input_root, 
-                                                    geography, 
                                                     config_builder.get_param('Demographics_Filename').replace("compiled.","",1)),
                                                 *self.immune_mod )
 
             if self.static:
                 demographics.set_static_demographics(self.input_root, 
                                                      config_builder.config, 
-                                                     geography, 
                                                      recompile=self.recompile)
 
             if self.immune_init:
                 # Do this part last, so other modifications to demographics file
                 # do not overwite the addition of the immune-initialization file
                 demographics.add_immune_init(self.input_root, 
-                                             geography, 
                                              config_builder.config, 
                                              site, 
                                              habitat)

@@ -47,7 +47,7 @@ def set_demog_distributions(filename, distributions):
     CompileDemographics(filename, forceoverwrite=True)
 
 # Static demographics
-def set_static_demographics(input_path, config, geography, recompile=True):
+def set_static_demographics(input_path, config, recompile=True):
 
     if not recompile:
         config["parameters"]["Birth_Rate_Dependence"] = "FIXED_BIRTH_RATE"
@@ -56,7 +56,7 @@ def set_static_demographics(input_path, config, geography, recompile=True):
 
     # get demographics file
     demog_filename = config["parameters"]["Demographics_Filename"].replace("compiled.","",1)
-    demogjson_file = open( os.path.join(input_path, geography, demog_filename), "r" )
+    demogjson_file = open( os.path.join(input_path, demog_filename), "r" )
     demog = json.loads( demogjson_file.read() )
     demogjson_file.close()
 
@@ -95,7 +95,7 @@ def set_static_demographics(input_path, config, geography, recompile=True):
             node["NodeAttributes"]["BirthRate"] = birthrate
 
     # write
-    output_file_path = os.path.join( input_path, geography, demog_filename.replace(".json",".static.json",1))
+    output_file_path = os.path.join( input_path, demog_filename.replace(".json",".static.json",1))
     output_file = open( output_file_path, "w" )
     output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
     output_file.close()
@@ -108,7 +108,7 @@ def set_static_demographics(input_path, config, geography, recompile=True):
 
 
 # Realistic growing population demographics
-def set_realistic_demographics(input_path, config, geography, recompile=True):
+def set_realistic_demographics(input_path, config, recompile=True):
 
     if not recompile:
         config["parameters"]["Birth_Rate_Dependence"] = "POPULATION_DEP_RATE"
@@ -117,7 +117,7 @@ def set_realistic_demographics(input_path, config, geography, recompile=True):
 
     # get demographics file
     demog_filename = config["parameters"]["Demographics_Filename"].replace("compiled.","",1)
-    demogjson_file = open( os.path.join(input_path, geography, demog_filename), "r" )
+    demogjson_file = open( os.path.join(input_path, demog_filename), "r" )
     demog = json.loads( demogjson_file.read() )
     demogjson_file.close()
 
@@ -152,7 +152,7 @@ def set_realistic_demographics(input_path, config, geography, recompile=True):
             node["NodeAttributes"]["BirthRate"] = birthrate
 
     # write
-    output_file_path = os.path.join( input_path, geography, demog_filename.replace(".json",".pop_growth.json",1))
+    output_file_path = os.path.join( input_path, demog_filename.replace(".json",".pop_growth.json",1))
     output_file = open( output_file_path, "w" )
     output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
     output_file.close()
@@ -163,7 +163,7 @@ def set_realistic_demographics(input_path, config, geography, recompile=True):
 
     return config
 
-def add_immune_overlays(input_path, geography, config, tags):
+def add_immune_overlays(input_path, config, tags):
 
     demog_filename = config["parameters"]["Demographics_Filename"]
     demog_prefix = demog_filename.split('.')[0]
@@ -178,8 +178,8 @@ def add_immune_overlays(input_path, geography, config, tags):
             raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
         immune_init_file_name = demog_prefix.replace("demographics","immune_init_" + tag, 1) + '.compiled.json'
         #print(immune_init_file_name)
-        if not os.path.exists(os.path.join(input_path, geography, immune_init_file_name)):
-            raise Exception('Immune initialization file ' + immune_init_file_name + ' does not exist at ' + os.path.join(input_path, geography))
+        if not os.path.exists(os.path.join(input_path, immune_init_file_name)):
+            raise Exception('Immune initialization file ' + immune_init_file_name + ' does not exist at ' + input_path)
         demogfiles.append(immune_init_file_name)
 
     full_demog_string = ';'.join(demogfiles)
@@ -191,6 +191,6 @@ def add_immune_overlays(input_path, geography, config, tags):
     return config
 
 # Immune initialization based on habitat scaling
-def add_immune_init(input_path, geography, config, site, x_temp_habitat):
+def add_immune_init(input_path, config, site, x_temp_habitat):
     tags = [ str(site) + "_x_" + str(x_temp_habitat) ]
-    add_immune_overlays(input_path, geography, config, tags)
+    add_immune_overlays(input_path, config, tags)
