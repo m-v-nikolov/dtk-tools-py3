@@ -2,14 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-class BaseTimeseriesAnalyzer():
+def default_plot_fn(df,ax):
+    grouped = df.groupby(level=['group'], axis=1)
+    m=grouped.mean()
+    m.plot(ax=ax,legend=True)
+
+class TimeseriesAnalyzer():
 
     def __init__(self,
                  filename = 'InsetChart.json',
                  filter_function = lambda md: True, # no filtering based on metadata
                  select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
                  group_function  = lambda k,v: k, # group by unique simid-key from parser
-                 plot_function   = lambda df,ax: df['mean'].plot(ax=ax,legend=False),
+                 plot_function   = default_plot_fn,
                  channels = [ 'Statistical Population', 
                               'Rainfall', 'Adult Vectors', 
                               'Daily EIR', 'Infected', 

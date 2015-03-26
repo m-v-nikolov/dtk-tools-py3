@@ -1,4 +1,0 @@
-from SimpleInsetChartAnalyzer import SimpleInsetChartAnalyzer
-from SimpleVectorAnalyzer import SimpleVectorAnalyzer
-from SimpleSpatialAnalyzer import SimpleSpatialAnalyzer
-#from SpatialSnapshotAnalyzer import SpatialSnapshotAnalyzer
