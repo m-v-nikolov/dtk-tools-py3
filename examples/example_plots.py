@@ -1,42 +1,14 @@
-## Execute directly: 'python example_plots.py'
-## or via the dtk.py script: 'dtk analyze example_plots.py'
+from dtk.utils.analyzers.filter import example_filter
+from dtk.utils.analyzers.select import example_selection
+from dtk.utils.analyzers.group  import no_grouping, group_by_name, group_all
+from dtk.utils.analyzers.plot   import no_plots, plot_with_tsplot, plot_CI_bands
 
-from dtk.utils.analyzers.SimpleInsetChartAnalyzer import SimpleInsetChartAnalyzer
-from dtk.utils.analyzers.SimpleVectorAnalyzer import SimpleVectorAnalyzer
+from dtk.utils.analyzers.timeseries import TimeseriesAnalyzer
 
-channels = ['Statistical Population', 'Rainfall', 'Air Temperature', 
-            'Adult Vectors', 'Daily EIR', 'Infected']
-
-# TODO: make channel analyzers robust enough to throw warning on missing channels
-# if sim_manager.exp_data['sim_type'] == 'MALARIA_SIM':
-#     channels.extend(['Parasite Prevalence', 'New Clinical Cases', 'New Severe Cases'])
-
-inset_chart_analyzer = SimpleInsetChartAnalyzer(channels=channels, group_by='all')
-vector_analyzer = SimpleVectorAnalyzer(group_by='all')
-
-analyzers = [ inset_chart_analyzer, # InsetChart.json analyzer
-              vector_analyzer       # VectorSpeciesReport.json analyzer
+analyzers = [ TimeseriesAnalyzer(
+                filter_function=example_filter,
+                select_function=example_selection,
+                group_function=group_all,
+                plot_function=plot_CI_bands
+                )
             ]
-
-# The following is only for when running directly from the command-line
-if __name__ == "__main__":
-
-    import os
-    import glob
-    import matplotlib.pyplot as plt
-    from dtk.utils.simulation.SimulationManager import SimulationManagerFactory
-
-    print('Getting most recent experiment in current directory...')
-    expfiles = glob.glob('simulations/*.json')
-    if expfiles:
-        filepath = max(expfiles, key=os.path.getctime)
-    else:
-        raise Exception('Unable to find experiment meta-data file in local directory.')
-
-    sm = SimulationManagerFactory.from_file(filepath)
-
-    # run the analyses
-    for analyzer in analyzers:
-        sm.AddAnalyzer(analyzer)
-    sm.AnalyzeSimulations()
-    plt.show()

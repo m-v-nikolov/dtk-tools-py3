@@ -1,2 +1,6 @@
 def example_filter(sim_metadata):
-    return sim_metadata['Run_Number'] > 0
+    rn=sim_metadata.get('Run_Number',None)
+    if rn is None:
+        print("'Run_Number' key not found in sim_metadata; simulation passing filter.")
+        return True
+    return (rn > 0)
