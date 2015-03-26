@@ -64,8 +64,8 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
                 results['Passed'].append(group)
                 if self.onlyPlotFailed: continue
             except Exception:
+                results['Failed'].append(group)
                 pass
-            results['Failed'].append(group)
             fig=plt.figure(group,figsize=(10,8))
             ax=None
             for (i,channel) in enumerate(self.channels):
