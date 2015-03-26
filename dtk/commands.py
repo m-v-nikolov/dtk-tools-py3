@@ -100,7 +100,12 @@ def analyze(args):
     else:
         print(args.analyzers)
         for analyzer in args.analyzers:
-            analyzer_module = import_module('dtk.utils.analyzers.' + analyzer)
+            a=analyzer.split('.')
+            if len(a) > 1:
+                analyzer_module = import_module('.'.join(['dtk.utils.analyzers'] + a[:-1]))
+                analyzer=a[-1]
+            else:
+                analyzer_module = import_module('dtk.utils.analyzers.' + analyzer)
             analyzer_obj = getattr(analyzer_module, analyzer)()
             sm.AddAnalyzer(analyzer_obj)
 
