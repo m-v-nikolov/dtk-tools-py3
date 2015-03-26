@@ -34,7 +34,10 @@ class TimeseriesAnalyzer():
 
     def apply(self, parser):
         data_by_channel=parser.raw_data[self.filenames[0]]["Channels"]
-        self.channels = [c for c in self.channels if c in data_by_channel]
+        if not self.channels:
+            self.channels=data_by_channel.keys()
+        else:
+            self.channels = [c for c in self.channels if c in data_by_channel]
         channel_series = [self.select_function(data_by_channel[channel]["Data"]) for channel in self.channels]
         channel_data = pd.concat(channel_series, axis=1, keys=self.channels)
         channel_data.group = self.group_function(parser.sim_id,parser.sim_data)

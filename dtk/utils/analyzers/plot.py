@@ -19,7 +19,8 @@ def plot_with_tsplot(df,ax):
     shape=[-1,n_groups,values.shape[1]/n_groups]
     reshaped=np.reshape(values,shape)
     cube=np.transpose(reshaped,(2,0,1)) # samples,timepoints,groups
-    sns.tsplot(cube,condition=pd.Series(groups,name='site'),err_style='ci_band',ci=np.linspace(95, 10, 4),time=df.index)
+    sns.tsplot(cube,condition=pd.Series(groups,name='site'),
+               err_style='ci_band',ci=np.linspace(95, 10, 4),time=df.index)
 
 def plot_CI_bands(df,ax):
     grouped = df.groupby(level=['group'], axis=1)
@@ -31,5 +32,5 @@ def plot_CI_bands(df,ax):
         lower_ci,upper_ci=m-n_std*s,m+n_std*s
         for i,g in enumerate(m.keys()):
             color=palette[i%len(palette)]
-            plt.fill_between(df.index,lower_ci[g],upper_ci[g],alpha=0.1,color=color)
-            #plt.fill_between(df.index,lower_ci[g],upper_ci[g],alpha=0.1,color=palette[i%len(palette)])
+            plt.fill_between(df.index,lower_ci[g],upper_ci[g],
+                             alpha=0.1,color=color)
