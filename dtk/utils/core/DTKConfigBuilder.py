@@ -4,7 +4,7 @@ import json
 import dtk.generic.params as generic_params
 import dtk.vector.params as vector_params
 import dtk.malaria.params as malaria_params
-from dtk.interventions.empty_campaign_cff import empty_campaign
+from dtk.interventions.empty_campaign import empty_campaign
 from dtk.utils.reports import CustomReportsBuilder
 
 # A class for building and modifying config/campaign files

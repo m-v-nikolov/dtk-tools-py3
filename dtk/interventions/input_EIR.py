@@ -26,5 +26,3 @@ def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start
         }
 
     cb.add_event(input_EIR_event)
-
-    return cb

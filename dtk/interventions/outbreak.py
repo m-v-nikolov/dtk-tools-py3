@@ -1,5 +1,5 @@
 # Recurring introduction of new infections
-def recurring_outbreak(campaign, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, target='Everyone', start_day=0, strain=(0,0)):
+def recurring_outbreak(cb, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, target='Everyone', start_day=0, strain=(0,0)):
 
     outbreak_event = { "class" : "CampaignEvent",
                                  "Start_Day": start_day,
@@ -21,6 +21,5 @@ def recurring_outbreak(campaign, outbreak_fraction=0.01, repetitions=-1, tsteps_
                                      "class": "NodeSetAll"
                                      }
                                  }
-    campaign["Events"].append(outbreak_event)
 
-    return campaign
+    cb.add_event(outbreak_event)
