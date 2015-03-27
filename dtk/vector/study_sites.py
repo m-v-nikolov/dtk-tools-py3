@@ -4,9 +4,10 @@ from species import set_larval_habitat, set_species_param
 # Configuration of study-site geographies
 def configure_site(cb, site):
     cb.set_param("Config_Name",site)
-    try:
-        globals()['configure_' + site.lower()](cb)
-    except:
+    cfg_fn=globals().get('configure_' + site.lower(),None)
+    if cfg_fn:
+        cfg_fn(cb)
+    else:
         raise Exception('%s study site not yet implemented.' % site)
 
 #Namawala, Tanzania: EIR = 400

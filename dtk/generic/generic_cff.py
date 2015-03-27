@@ -1,7 +1,6 @@
 from climate_cff import *
 from demographic_cff import *
 from migration_cff import *
-from mixing_pools_cff import *
 from generic_disease_cff import *
 
 generic_params = {
@@ -35,4 +34,3 @@ generic_params.update(climate_params)
 generic_params.update(demographic_params)
 generic_params.update(generic_disease_params)
 generic_params.update(no_migration_params)
-generic_params.update(mixing_pool_params)

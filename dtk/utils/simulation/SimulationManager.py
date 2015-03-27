@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 from CommandlineGenerator import CommandlineGenerator # for command line strings: executable, options, and params
 from ..core.DTKSetupParser import DTKSetupParser      # to parse user-specific setup
-from ..builders.DefaultBuilder import DefaultBuilder  # default builder runs single simulation
+from ..builders.sweep import DefaultSweepBuilder  # default builder runs single simulation
 
 from Commisioner import SimulationCommissioner, HpcSimulationCommissioner, CompsSimulationCommissioner
 from Monitor import SimulationMonitor, HpcSimulationMonitor, CompsSimulationMonitor
@@ -75,7 +75,7 @@ class LocalSimulationManager():
         self.emodules  = []
         self.analyzers = []
 
-    def RunSimulations(self, config_builder, exp_name='test', exp_builder=DefaultBuilder(), show_progress=False):
+    def RunSimulations(self, config_builder, exp_name='test', exp_builder=DefaultSweepBuilder(), show_progress=False):
 
         self.exp_name = exp_name
         self.config_builder = config_builder
@@ -112,13 +112,15 @@ class LocalSimulationManager():
 
         # Cache original config_builder for exp_builder to alter
         cached_cb = copy.deepcopy(self.config_builder)
-        while not self.exp_builder.finished:
+
+        for mod_fn_list in self.exp_builder.mod_generator:
 
             # reset to base config/campaign
             self.config_builder = copy.deepcopy(cached_cb)
 
             # modify next simulation according to experiment builder
-            self.exp_builder.next_sim(self.config_builder)
+            for mod_fn in mod_fn_list:
+                mod_fn(self.config_builder)
 
             commissioned = self.commissionSimulation(sim_path,sims)
             if not commissioned: 
@@ -189,7 +191,7 @@ class LocalSimulationManager():
         sim = SimulationCommissioner(sim_dir, self.eradication_command)
 
         # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][sim.sim_id] = self.exp_builder.next_params
+        self.exp_data['sims'][sim.sim_id] = self.exp_builder.metadata
 
         # submit simulation
         sim.start()
@@ -387,7 +389,7 @@ class HpcSimulationManager(LocalSimulationManager):
                                         num_cores)
 
         # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][sim.sim_id] = self.exp_builder.next_params
+        self.exp_data['sims'][sim.sim_id] = self.exp_builder.metadata
 
         # submit simulation
         sim.start()
@@ -431,7 +433,7 @@ class CompsSimulationManager(LocalSimulationManager):
     def createSimulation(self, sim_path):
         configstr, campaignstr, custom_reports_str = self.config_builder.dump_files_to_string()
         emodulesstr = json.dumps(self.emodules_map, sort_keys=True, indent=4)
-        tags = self.exp_builder.next_params
+        tags = self.exp_builder.metadata
         self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), configstr, campaignstr, emodulesstr, custom_reports_str, tags)
 
     def commissionSimulation(self, sim_path, sims):
@@ -448,7 +450,7 @@ class CompsSimulationManager(LocalSimulationManager):
         self.createSimulation(sim_path)
         self.sims_created = self.sims_created + 1
 
-        if self.sims_created % self.comps_sims_to_batch == 0 or self.exp_builder.finished:
+        if self.sims_created % self.comps_sims_to_batch == 0 or self.exp_builder.mod_generator.gi_frame is None:
             logger.debug('starting thread ' + str(len(sims)))
             self.commissioner.start()
         return True

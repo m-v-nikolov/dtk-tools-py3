@@ -2,7 +2,7 @@
 ## or via the dtk.py script: 'dtk run example_sweep.py'
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.builders.RunNumberSweepBuilder import RunNumberSweepBuilder
+from dtk.utils.builders.sweep import RunNumberSweepBuilder
 from dtk.vector.study_sites import configure_site
 
 sim_type  = 'MALARIA_SIM' 

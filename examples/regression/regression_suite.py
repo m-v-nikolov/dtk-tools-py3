@@ -1,6 +1,6 @@
 import os
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.builders.regression import RegressionSuiteBuilder
+from dtk.utils.builders.RegressionSuiteBuilder import RegressionSuiteBuilder
 from dtk.interventions.empty_campaign_cff import empty_campaign
 
 test_names=['27_Vector_Sandbox',
