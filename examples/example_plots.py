@@ -8,7 +8,7 @@ from dtk.utils.analyzers.timeseries import TimeseriesAnalyzer
 analyzers = [ TimeseriesAnalyzer(
                 filter_function=example_filter,
                 select_function=example_selection(),
-                group_function=group_all,
+                group_function=group_by_name('_site_'),
                 plot_function=plot_CI_bands
                 )
             ]

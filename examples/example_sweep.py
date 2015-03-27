@@ -2,21 +2,16 @@
 ## or via the dtk.py script: 'dtk run example_sweep.py'
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.builders.sweep import RunNumberSweepBuilder
+from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.vector.study_sites import configure_site
 
-sim_type  = 'MALARIA_SIM' 
 exp_name  = 'ExampleSweep'
-site      = 'Namawala'
-habitat   = 0.1
-builder   = RunNumberSweepBuilder(3)
+builder   = GenericSweepBuilder.from_dict({'Run_Number': range(3),
+                                           'x_Temporary_Larval_Habitat': [0.05],
+                                           '_site_'    : ['Namawala','Matsari']})
 
-cb = DTKConfigBuilder.from_defaults(sim_type)
-configure_site(cb, site)
+cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 cb.update_params({
-                'Enable_Demographics_Other' : 0,
-                'Config_Name': site + '_x_' + str(habitat),
-                'x_Temporary_Larval_Habitat': habitat,
                 'Num_Cores': 1,
                 'Base_Population_Scale_Factor' : 0.1,
                 'Simulation_Duration' : 365*5

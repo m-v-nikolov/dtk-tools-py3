@@ -5,10 +5,11 @@ def set_geography(cb, geography):
     params=geographies.get(geography)
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
-    g=params.pop('Geography')
-    for k,v in params.items():
-        if 'Filename' in k:
-            params[k]=os.path.join(g,v)
+    g=params.pop('Geography',None)
+    if g:
+        for k,v in params.items():
+            if 'Filename' in k:
+                params[k]=os.path.join(g,v)
     cb.update_params(params)
 
 geographies = {
@@ -19,7 +20,8 @@ geographies = {
                        "Land_Temperature_Filename":  "Garki_single_temperature.bin",
                        "Rainfall_Filename":          "Garki_single_rainfall.bin", 
                        "Relative_Humidity_Filename": "Garki_single_humidity.bin",
-                       "Enable_Climate_Stochasticity": 1 # every two weeks in raw data series
+                       "Enable_Climate_Stochasticity": 1, # every two weeks in raw data series
+                       "Enable_Demographics_Other": 0 # no 'AbovePoverty' etc. in these files
                      },
 
     "Namawala" :     { "Geography": "Namawala",
@@ -40,32 +42,6 @@ geographies = {
                        "Relative_Humidity_Filename": "Zambia_Sinamalima_2_5arcmin_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                      },
-
-'''
-    "Gwembe2Node" :   { "Geography": "Zambia",
-                       #"Node_Grid_Size": 0.0417,     ## 2.5arcmin/60
-                       "Air_Temperature_Filename":   "Zambia_2_5arcmin_air_temperature_daily.bin",
-                       "Demographics_Filename":      "Zambia_Gwembe_2node_demographics.compiled.json", 
-                       "Land_Temperature_Filename":  "Zambia_2_5arcmin_land_temperature_daily.bin",
-                       "Rainfall_Filename":          "Zambia_2_5arcmin_rainfall_daily.bin", 
-                       "Relative_Humidity_Filename": "Zambia_2_5arcmin_relative_humidity_daily.bin",
-                       "Enable_Climate_Stochasticity": 0, # daily in raw data series
-                       "Enable_Local_Migration": 1, 
-                       "Local_Migration_Filename":   "Zambia_Gwembe_2node_local_migration.bin"
-                     },
-
-    "GwembeSinazongweHealthFacility" :   { "Geography": "Zambia",
-                       #"Node_Grid_Size": 0.0417,     ## 2.5arcmin/60
-                       "Air_Temperature_Filename":   "Zambia_2_5arcmin_air_temperature_daily.bin",
-                       "Demographics_Filename":      "Zambia_Gwembe_Sinazongwe_health_facilities_12node_demographics.compiled.json", 
-                       "Land_Temperature_Filename":  "Zambia_2_5arcmin_land_temperature_daily.bin",
-                       "Rainfall_Filename":          "Zambia_2_5arcmin_rainfall_daily.bin", 
-                       "Relative_Humidity_Filename": "Zambia_2_5arcmin_relative_humidity_daily.bin",
-                       "Enable_Climate_Stochasticity": 0, # daily in raw data series
-                       "Enable_Local_Migration": 1, 
-                       "Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_health_facilities_12node_local_migration.bin"
-                     },
-'''
 
     "GwembeSinazongwePopCluster" : {
                        "Geography": "Zambia/Gwembe_Sinazongwe_pop_cluster",

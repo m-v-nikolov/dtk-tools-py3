@@ -1,3 +1,4 @@
+import itertools
 from dtk.vector.study_sites import configure_site
 
 class Builder(object):
@@ -9,13 +10,13 @@ class Builder(object):
     '''
     metadata={}
 
-    def __init__(self, mod_generator):
-        self.mod_generator=mod_generator
-
     class ModList(list):
         def __init__(self, *args):
             Builder.metadata={}
             list.__init__(self, args)
+
+    def __init__(self, mod_generator):
+        self.mod_generator=mod_generator
 
     @classmethod
     def param_fn(cls,k,v):
@@ -31,14 +32,29 @@ class Builder(object):
             return configure_site(cb,s)
         return fn
 
+    @classmethod
+    def set(cls,pv_pairs):
+        m=cls.ModList()
+        for (p,v) in pv_pairs:
+            if p=='_site_':
+                m.append(cls.site_fn(v))
+            elif p and p[0]=='_':
+                raise NotImplementedError('Future general function, e.g. add_event')
+            else:
+                m.append(cls.param_fn(p,v))
+        return m
+
 class DefaultSweepBuilder(Builder):
     def __init__(self):
-        self.mod_generator = (self.ModList(lambda cb:None) for _ in range(1))
+        self.mod_generator = (self.set([]) for _ in range(1))
 
 class RunNumberSweepBuilder(Builder):
     def __init__(self,nsims):
-        self.mod_generator = (self.ModList(self.param_fn('Run_Number',i)) \
-                              for i in range(nsims))
+        self.mod_generator = (self.set([('Run_Number',i)]) for i in range(nsims))
 
 class GenericSweepBuilder(Builder):
-    pass
+    @classmethod
+    def from_dict(cls, d):
+        params=d.keys()
+        combos=itertools.product(*d.values())
+        return cls((cls.set(zip(params,combo)) for combo in combos))
