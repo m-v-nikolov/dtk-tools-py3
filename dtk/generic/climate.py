@@ -1,4 +1,4 @@
-climate_params = {
+params = {
 
     "Climate_Model": "CLIMATE_BY_DATA", 
     "Climate_Update_Resolution": "CLIMATE_UPDATE_DAY", 

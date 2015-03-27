@@ -1,5 +1,48 @@
-import os, json, subprocess, sys
+import os
+import json
+import subprocess
+import sys
 from dtk.tools.demographics.compiledemog import CompileDemographics
+
+params = {
+    "Demographics_Filename": "", 
+
+    "Population_Scale_Type": "FIXED_SCALING", 
+    "Base_Population_Scale_Factor": 1, 
+
+    "Enable_Aging": 1, 
+    "Age_Initialization_Distribution_Type": "DISTRIBUTION_SIMPLE", 
+
+    "Enable_Demographics_Birth": 1, 
+    "Enable_Demographics_Gender": 1, 
+    "Enable_Demographics_Initial": 1, 
+    "Enable_Demographics_Other": 1, 
+    "Enable_Demographics_Reporting": 1, 
+
+    "Enable_Immunity_Initialization_Distribution": 0, 
+
+    "Enable_Vital_Dynamics": 1, 
+    "Enable_Nondisease_Mortality": 1, 
+    "Enable_Birth": 1, 
+    "Birth_Rate_Dependence": "POPULATION_DEP_RATE", 
+    "x_Birth": 1, 
+
+    "Enable_Disease_Mortality": 0, 
+    "Base_Mortality": 0, 
+    "Mortality_Time_Course": "DAILY_MORTALITY",
+    "x_Other_Mortality": 1, 
+
+    "Individual_Sampling_Type": "TRACK_ALL", 
+    "Base_Individual_Sample_Rate": 1,  ## all parameters below are unused without sampling
+    "Max_Node_Population_Samples": 40, 
+    "Sample_Rate_0_18mo": 1, 
+    "Sample_Rate_10_14": 1, 
+    "Sample_Rate_15_19": 1, 
+    "Sample_Rate_18mo_4yr": 1, 
+    "Sample_Rate_20_Plus": 1, 
+    "Sample_Rate_5_9": 1, 
+    "Sample_Rate_Birth": 2
+}
 
 def set_risk_mod(filename, distribution, par1, par2):
     set_demog_distributions(filename, [("Risk", distribution, par1, par2)])
@@ -9,9 +52,8 @@ def set_immune_mod(filename, distribution, par1, par2):
 
 def set_demog_distributions(filename, distributions):
 
-    demogjson_file = open( filename, "r" )
-    demog = json.loads( demogjson_file.read() )
-    demogjson_file.close()
+    with open( filename, "r" ) as demogjson_file:
+        demog = json.loads( demogjson_file.read() )
 
     distribution_types = { 
         "CONSTANT_DISTRIBUTION" : 0,
@@ -39,9 +81,8 @@ def set_demog_distributions(filename, distributions):
                 node["IndividualAttributes"][dist_type + "Distribution2"] = par2
 
     # write
-    output_file = open( filename, "w" )
-    output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
-    output_file.close()
+    with open( filename, "w" ) as output_file:
+        output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
     # compile
     CompileDemographics(filename, forceoverwrite=True)
@@ -56,9 +97,8 @@ def set_static_demographics(input_path, config, recompile=True):
 
     # get demographics file
     demog_filename = config["parameters"]["Demographics_Filename"].replace("compiled.","",1)
-    demogjson_file = open( os.path.join(input_path, demog_filename), "r" )
-    demog = json.loads( demogjson_file.read() )
-    demogjson_file.close()
+    with open( os.path.join(input_path, demog_filename), "r" ) as demogjson_file:
+        demog = json.loads( demogjson_file.read() )
 
     # set birth rate (by population) and death rate
     config["parameters"]["Birth_Rate_Dependence"] = "FIXED_BIRTH_RATE"
@@ -96,9 +136,8 @@ def set_static_demographics(input_path, config, recompile=True):
 
     # write
     output_file_path = os.path.join( input_path, demog_filename.replace(".json",".static.json",1))
-    output_file = open( output_file_path, "w" )
-    output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
-    output_file.close()
+    with open( output_file_path, "w" ) as output_file:
+        output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
     # compile
     CompileDemographics(output_file_path, forceoverwrite=True)
@@ -117,9 +156,8 @@ def set_realistic_demographics(input_path, config, recompile=True):
 
     # get demographics file
     demog_filename = config["parameters"]["Demographics_Filename"].replace("compiled.","",1)
-    demogjson_file = open( os.path.join(input_path, demog_filename), "r" )
-    demog = json.loads( demogjson_file.read() )
-    demogjson_file.close()
+    with open( os.path.join(input_path, demog_filename), "r" ) as demogjson_file:
+        demog = json.loads( demogjson_file.read() )
 
     # set birth rate (by population) and death rate
     config["parameters"]["Birth_Rate_Dependence"] = "POPULATION_DEP_RATE"
@@ -153,9 +191,8 @@ def set_realistic_demographics(input_path, config, recompile=True):
 
     # write
     output_file_path = os.path.join( input_path, demog_filename.replace(".json",".pop_growth.json",1))
-    output_file = open( output_file_path, "w" )
-    output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
-    output_file.close()
+    with open( output_file_path, "w" ) as output_file:
+        output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
     # compile
     CompileDemographics(output_file_path, forceoverwrite=True)

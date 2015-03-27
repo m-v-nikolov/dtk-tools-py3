@@ -1,9 +1,9 @@
-from climate_cff import *
-from demographic_cff import *
-from migration_cff import *
-from generic_disease_cff import *
+import climate
+import demographics
+import migration
+import disease
 
-generic_params = {
+params = {
     "Config_Name": "", ###
     "Campaign_Filename": "campaign.json", 
     "Enable_Interventions": 1, 
@@ -13,13 +13,13 @@ generic_params = {
     "Enable_Heterogeneous_Intranode_Transmission": 0,
 
     "Geography": "", ###
-    "Node_Grid_Size": 0.042,             ###
+    "Node_Grid_Size": 0.042, ###
 
     "Random_Type": "USE_PSEUDO_DES", 
     "Run_Number": 5, 
     "Simulation_Duration": 1825, 
     "Simulation_Timestep": 1, 
-    "Simulation_Type": "",    ###
+    "Simulation_Type": "", ###
     "Start_Time": 0,
     
     "Num_Cores": 1, 
@@ -30,7 +30,7 @@ generic_params = {
     "Load_Balance_Scheme": "STATIC"
 }
 
-generic_params.update(climate_params)
-generic_params.update(demographic_params)
-generic_params.update(generic_disease_params)
-generic_params.update(no_migration_params)
+params.update(climate.params)
+params.update(demographics.params)
+params.update(disease.params)
+params.update(migration.no_migration_params)

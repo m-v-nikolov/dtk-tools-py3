@@ -1,6 +1,6 @@
 import copy
 
-vector_species_param_block = {
+param_block = {
 
     "Habitat_Type": [ "TEMPORARY_RAINFALL", "CONSTANT" ], ##
     "Required_Habitat_Factor": [ 8e8, 8e7 ], ##
@@ -27,10 +27,10 @@ vector_species_param_block = {
 }
 
 # An. arabiensis
-arabiensis_param_block = copy.deepcopy(vector_species_param_block)
+arabiensis_param_block = copy.deepcopy(param_block)
 
 # An. funestus
-funestus_param_block = copy.deepcopy(vector_species_param_block)
+funestus_param_block = copy.deepcopy(param_block)
 mod_funestus_params = {
     "Indoor_Feeding_Fraction": 0.95,
     "Habitat_Type": [ "WATER_VEGETATION" ],
@@ -39,11 +39,11 @@ mod_funestus_params = {
 funestus_param_block.update(mod_funestus_params)
 
 # An. gambiae
-gambiae_param_block = copy.deepcopy(vector_species_param_block)
+gambiae_param_block = copy.deepcopy(param_block)
 gambiae_param_block["Indoor_Feeding_Fraction"] = 0.95
 
 # An. farauti
-farauti_param_block = copy.deepcopy(vector_species_param_block)
+farauti_param_block = copy.deepcopy(param_block)
 mod_farauti_params = {
     "Habitat_Type": [ "BRACKISH_SWAMP" ], 
     "Required_Habitat_Factor": [ 10000000000 ], 
@@ -61,7 +61,7 @@ farauti_param_block.update(mod_farauti_params)
 # An. maculatus
 # http://www.bioone.org/doi/full/10.3376/038.034.0108
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-maculatus/
-maculatus_param_block = copy.deepcopy(vector_species_param_block)
+maculatus_param_block = copy.deepcopy(param_block)
 mod_maculatus_params = {
     "Habitat_Type": [ "WATER_VEGETATION" ], 
     "Required_Habitat_Factor": [ 1e7 ], 
@@ -78,7 +78,7 @@ maculatus_param_block.update(mod_maculatus_params)
 # An. minimus
 # http://www.bioone.org/doi/abs/10.1603/033.046.0511
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-minimus/
-minimus_param_block = copy.deepcopy(vector_species_param_block)
+minimus_param_block = copy.deepcopy(param_block)
 mod_minimus_params = {
     "Habitat_Type": [ "WATER_VEGETATION" ], 
     "Required_Habitat_Factor": [ 1e7 ], 
@@ -103,7 +103,6 @@ vector_params_by_species = {
 }
 
 def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
-
     pp = {}
     for s in ss:
         pp[s] = vector_params_by_species[s]
@@ -114,9 +113,7 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
         "Vector_Species_Names": ss,
         "Vector_Species_Params": pp
     }
-
     params.update(vector_species_params)
-    return params
 
 def set_species_param(cb,species,parameter,value):
     cb.config['parameters']['Vector_Species_Params'][species][parameter]=value

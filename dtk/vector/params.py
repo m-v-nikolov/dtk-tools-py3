@@ -1,13 +1,13 @@
 import copy
 
-from vector_species_cff import set_params_by_species
-from larval_habitat_cff import *
+from species import set_params_by_species
+import larval_habitat
 
 # --------------------------------------------------------------
 # Cohort model parameters
 # --------------------------------------------------------------
 
-vector_disease_params = {
+disease_params = {
     "Incubation_Period_Distribution": "FIXED_DURATION",
     "Base_Incubation_Period": 25, ##
 
@@ -20,7 +20,7 @@ vector_disease_params = {
     "Infection_Updates_Per_Timestep": 1 ###
 }
 
-vector_cohort_params = {
+cohort_params = {
     "Vector_Sampling_Type": "VECTOR_COMPARTMENTS_NUMBER", 
     "Mosquito_Weight": 1, 
 
@@ -45,25 +45,24 @@ vector_cohort_params = {
     "x_Temporary_Larval_Habitat": 1
 }
 
-vector_params = copy.deepcopy(vector_cohort_params)
-vector_params.update(vector_disease_params)
-vector_params.update(larval_habitat_params)
-
-vector_params = set_params_by_species( vector_params, [ "arabiensis", "funestus", "gambiae" ] )
+params = copy.deepcopy(cohort_params)
+params.update(disease_params)
+params.update(larval_habitat.params)
+set_params_by_species(params, ["arabiensis", "funestus", "gambiae"])
 
 # --------------------------------------------------------------
 # Individual-mosquito model (rather than cohort-based model)
 # --------------------------------------------------------------
 
-vector_individual_params = copy.deepcopy(vector_cohort_params)
-vector_individual_params["Vector_Sampling_Type"] = "TRACK_ALL_VECTORS"
+individual_params = copy.deepcopy(cohort_params)
+individual_params["Vector_Sampling_Type"] = "TRACK_ALL_VECTORS"
 
 # --------------------------------------------------------------
 # Using VECTOR_SIM as a vivax model
 # --------------------------------------------------------------
 
-vector_vivax_semitropical_params = copy.deepcopy(vector_disease_params)
-vector_vivax_semitropical_params.update({
+vivax_semitropical_params = copy.deepcopy(disease_params)
+vivax_semitropical_params.update({
     "Incubation_Period_Distribution": "FIXED_DURATION",
     "Base_Incubation_Period": 18, # shorter time until gametocyte emergence
 
@@ -75,7 +74,7 @@ vector_vivax_semitropical_params.update({
     "Max_Individual_Infections": 1, 
     })
 
-vector_vivax_chesson_params = copy.deepcopy(vector_vivax_semitropical_params)
-vector_vivax_chesson_params.update({
+vivax_chesson_params = copy.deepcopy(vivax_semitropical_params)
+vivax_chesson_params.update({
     "Base_Infectious_Period": 40, # French Guiana 
     })

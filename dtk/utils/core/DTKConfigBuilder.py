@@ -1,9 +1,9 @@
 import os
 import json
 
-from dtk.generic.generic_cff import generic_params
-from dtk.vector.vector_cff   import vector_params, vector_vivax_semitropical_params, vector_vivax_chesson_params
-from dtk.malaria.malaria_cff import malaria_params
+import dtk.generic.params as generic_params
+import dtk.vector.params as vector_params
+import dtk.malaria.params as malaria_params
 from dtk.interventions.empty_campaign_cff import empty_campaign
 from dtk.utils.reports import CustomReportsBuilder
 
@@ -24,24 +24,24 @@ class DTKConfigBuilder:
             raise Exception("Instantiating DTKConfigBuilder from defaults requires a sim_type argument, e.g. 'MALARIA_SIM'.")
 
         # Get generic base config
-        config = { "parameters" : generic_params }
+        config = { "parameters" : generic_params.params }
 
         # Add vector/malaria simulation-specific parameters
         if sim_type == "MALARIA_SIM":
-            config["parameters"].update(vector_params)
-            config["parameters"].update(malaria_params)
+            config["parameters"].update(vector_params.params)
+            config["parameters"].update(malaria_params.params)
 
         elif sim_type == "VECTOR_SIM":
-            config["parameters"].update(vector_params)
+            config["parameters"].update(vector_params.params)
 
         elif sim_type == "VECTOR_SIM_VIVAX_SEMITROPICAL":
-            config["parameters"].update(vector_params)
-            config["parameters"].update(vector_vivax_semitropical_params)
+            config["parameters"].update(vector_params.params)
+            config["parameters"].update(vector_params.vivax_semitropical_params)
             sim_type = "VECTOR_SIM"
 
         elif sim_type == "VECTOR_SIM_VIVAX_CHESSON":
             config["parameters"].update(vector_params)
-            config["parameters"].update(vector_vivax_chesson_params)
+            config["parameters"].update(vector_params.vivax_chesson_params)
             sim_type = "VECTOR_SIM"
 
         else:

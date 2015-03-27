@@ -1,4 +1,4 @@
-generic_disease_params = {
+params = {
 
     "Animal_Reservoir_Type": "NO_ZOONOSIS", 
 
