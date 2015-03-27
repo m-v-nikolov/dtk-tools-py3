@@ -29,3 +29,5 @@ The `dtk status` command imports the [`psutil`](https://pypi.python.org/pypi/psu
 Statistical analysis and plotting of output depend on [`numpy`](https://pypi.python.org/pypi/numpy), [`matplotlib`](https://pypi.python.org/pypi/matplotlib), and [`pandas`](https://pypi.python.org/pypi/pandas).
 
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
+
+Interoperability with the JAVA layer of COMPS requires installation of the Java Runtime Environment and setup of the `COMPS` package, which in turn has dependencies on `cython` and `pyjnius`.  Those instructions are currently outside the scope of the installation instructions for this package.
