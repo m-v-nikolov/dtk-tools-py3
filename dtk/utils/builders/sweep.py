@@ -2,10 +2,10 @@ from dtk.vector.study_sites import configure_site
 
 class Builder(object):
     '''
-    Builder classes have a generator that yields:
-    ModList(fn1(cb),fn2(cb),...) 
-    Each function (fn) modifies the base ConfigBuilder (cb)
-    and builds up metadata that is reset on ModListObj init
+    Classes derived from Builder have generators that
+    yield ModList(fn1(cb),fn2(cb),...) 
+    where each function (fn) modifies the base ConfigBuilder (cb)
+    and builds up metadata that is reset on ModList init
     '''
     metadata={}
 

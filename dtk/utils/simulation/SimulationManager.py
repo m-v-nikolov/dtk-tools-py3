@@ -126,6 +126,9 @@ class LocalSimulationManager():
             if not commissioned: 
                 break
 
+        if not self.commissioner.isAlive():
+            self.commissioner.start() # e.g. last accumulated COMPS batch
+
         # join threads before proceeding
         for s in sims:
             s.join()
@@ -450,7 +453,7 @@ class CompsSimulationManager(LocalSimulationManager):
         self.createSimulation(sim_path)
         self.sims_created = self.sims_created + 1
 
-        if self.sims_created % self.comps_sims_to_batch == 0 or self.exp_builder.mod_generator.gi_frame is None:
+        if self.sims_created % self.comps_sims_to_batch == 0:
             logger.debug('starting thread ' + str(len(sims)))
             self.commissioner.start()
         return True
