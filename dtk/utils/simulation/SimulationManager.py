@@ -191,14 +191,14 @@ class LocalSimulationManager():
                 else:
                     break
 
-        sim = SimulationCommissioner(sim_dir, self.eradication_command)
+        self.commissioner = SimulationCommissioner(sim_dir, self.eradication_command)
 
         # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][sim.sim_id] = self.exp_builder.metadata
+        self.exp_data['sims'][self.commissioner.sim_id] = self.exp_builder.metadata
 
         # submit simulation
-        sim.start()
-        sims.append(sim)
+        self.commissioner.start()
+        sims.append(self.commissioner)
         return True
 
     def collectSimMetaData(self,sims):
@@ -385,18 +385,18 @@ class HpcSimulationManager(LocalSimulationManager):
         logger.debug('Commissioning HPC simulation(s)...')
         config_name = self.config_builder.get_param('Config_Name')[:79]
         num_cores = self.config_builder.get_param('Num_Cores')
-        sim = HpcSimulationCommissioner(sim_dir, 
+        self.commissioner = HpcSimulationCommissioner(sim_dir, 
                                         self.eradication_command, 
                                         self.setup, 
                                         config_name, 
                                         num_cores)
 
         # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][sim.sim_id] = self.exp_builder.metadata
+        self.exp_data['sims'][self.commissioner.sim_id] = self.exp_builder.metadata
 
         # submit simulation
-        sim.start()
-        sims.append(sim)
+        self.commissioner.start()
+        sims.append(self.commissioner)
         return True
 
     def getSimulationMonitor(self, sim_id, job_id):

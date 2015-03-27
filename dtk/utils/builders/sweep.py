@@ -9,20 +9,25 @@ class Builder(object):
     '''
     metadata={}
 
+    def __init__(self, mod_generator):
+        self.mod_generator=mod_generator
+
     class ModList(list):
         def __init__(self, *args):
             Builder.metadata={}
             list.__init__(self, args)
 
-    def param_fn(self,k,v):
+    @classmethod
+    def param_fn(cls,k,v):
         def fn(cb):
-            Builder.metadata.update({k:v})
+            cls.metadata.update({k:v})
             return cb.set_param(k,v)
         return fn
 
-    def site_fn(self,s):
+    @classmethod
+    def site_fn(cls,s):
         def fn(cb):
-            Builder.metadata.update({'_site_':s})
+            cls.metadata.update({'_site_':s})
             return configure_site(cb,s)
         return fn
 
@@ -34,3 +39,6 @@ class RunNumberSweepBuilder(Builder):
     def __init__(self,nsims):
         self.mod_generator = (self.ModList(self.param_fn('Run_Number',i)) \
                               for i in range(nsims))
+
+class GenericSweepBuilder(Builder):
+    pass
