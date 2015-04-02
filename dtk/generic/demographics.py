@@ -84,11 +84,8 @@ def set_demog_distributions(filename, distributions):
     with open( filename, "w" ) as output_file:
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
-    # compile
-    CompileDemographics(filename, forceoverwrite=True)
-
 # Static demographics
-def set_static_demographics(input_path, config, recompile=True):
+def set_static_demographics(input_path, config, recompile=False):
 
     if not recompile:
         config["parameters"]["Birth_Rate_Dependence"] = "FIXED_BIRTH_RATE"
@@ -145,9 +142,8 @@ def set_static_demographics(input_path, config, recompile=True):
 
     return config
 
-
 # Realistic growing population demographics
-def set_realistic_demographics(input_path, config, recompile=True):
+def set_realistic_demographics(input_path, config, recompile=False):
 
     if not recompile:
         config["parameters"]["Birth_Rate_Dependence"] = "POPULATION_DEP_RATE"
@@ -200,34 +196,25 @@ def set_realistic_demographics(input_path, config, recompile=True):
 
     return config
 
-def add_immune_overlays(input_path, config, tags):
+def add_immune_overlays(cb, tags):
 
-    demog_filename = config["parameters"]["Demographics_Filename"]
-    demog_prefix = demog_filename.split('.')[0]
-    #print(demog_filename)
+    demog_filename = cb.get_param("Demographics_Filename")
     if len(demog_filename.split(';')) > 1:
         raise Exception('add_immune_init function is expecting only a single demographics file.  Not a semi-colon-delimited list.')
+    split_demog = demog_filename.split('.')
+    prefix,suffix = split_demog[0],split_demog[1:]
 
     demogfiles = [demog_filename]
     for tag in tags:
-        #print(tag)
         if 'demographics' not in demog_prefix:
             raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
-        immune_init_file_name = demog_prefix.replace("demographics","immune_init_" + tag, 1) + '.compiled.json'
-        #print(immune_init_file_name)
-        if not os.path.exists(os.path.join(input_path, immune_init_file_name)):
-            raise Exception('Immune initialization file ' + immune_init_file_name + ' does not exist at ' + input_path)
+        immune_init_file_name = prefix.replace("demographics","immune_init_" + tag, 1) + suffix
         demogfiles.append(immune_init_file_name)
 
-    full_demog_string = ';'.join(demogfiles)
-    #print(full_demog_string)
-    mod_params = { "Enable_Immunity_Initialization_Distribution":1,
-                   "Demographics_Filename": full_demog_string
-                  }
-    config["parameters"].update(mod_params)
-    return config
+    cb.update_params({ "Enable_Immunity_Initialization_Distribution":1,
+                       "Demographics_Filename": ';'.join(demogfiles) })
 
 # Immune initialization based on habitat scaling
-def add_immune_init(input_path, config, site, x_temp_habitat):
+def add_immune_init(cb, site, x_temp_habitat):
     tags = [ str(site) + "_x_" + str(x_temp_habitat) ]
-    add_immune_overlays(input_path, config, tags)
+    add_immune_overlays(cb, tags)

@@ -91,6 +91,7 @@ geographies = {
                        "Relative_Humidity_Filename": "Mozambique_Zambezia_2_5arcmin_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
     "West_Kenya" :    { "Geography": "Kenya_Nyanza",
                         "Node_Grid_Size": 0.009,  ##
                         "Air_Temperature_Filename":   "Kenya_Nyanza_30arcsec_air_temperature_daily.bin",
@@ -102,6 +103,7 @@ geographies = {
                         "Relative_Humidity_Filename": "Kenya_Nyanza_30arcsec_relative_humidity_daily.bin",
                         "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
     "Solomon_Islands" :   { "Geography": "Solomon_Islands/Honiara",
                             "Node_Grid_Size": 0.009,  ##
                             "Air_Temperature_Filename":   "Honiara_temperature_daily10y.bin",
@@ -111,6 +113,7 @@ geographies = {
                             "Relative_Humidity_Filename": "Honiara_humidity_daily10y.bin",
                             "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
     "Solomon_Islands_2Node" :   { "Geography": "Solomon_Islands/Honiara _Haleta",
                             "Node_Grid_Size": 0.009,  ##
                             "Air_Temperature_Filename":   "Honiara_Haleta_temperature_daily10y.bin",
@@ -122,6 +125,7 @@ geographies = {
                             "Relative_Humidity_Filename": "Honiara_Haleta_humidity_daily10y.bin",
                             "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
     "Nabang" :    { "Geography": "UCIrvine/Nabang",
                         "Node_Grid_Size": 0.009,  ##
                         "Air_Temperature_Filename":   "China_Nabang_2_5arcmin_air_temperature_daily.bin",
@@ -133,6 +137,7 @@ geographies = {
                         "Relative_Humidity_Filename": "China_Nabang_2_5arcmin_relative_humidity_daily.bin",
                         "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
      "Tha_Song_Yang" :    { "Geography": "Tha_Song_Yang",
                         "Node_Grid_Size": 0.009,  ##
                         "Air_Temperature_Filename":   "Thailand_Tha_Song_Yang_2_5arcmin_air_temperature_daily.bin",
@@ -144,8 +149,18 @@ geographies = {
                         "Relative_Humidity_Filename": "Thailand_Tha_Song_Yang_2_5arcmin_relative_humidity_daily.bin",
                         "Enable_Climate_Stochasticity": 0 # daily in raw data series
                       },
+
     "Malariatherapy" : {  "Geography": "Calibration",
-                          "Demographics_Filename": "Malariatherapy_demographics.compiled.json", 
+                          "Demographics_Filename": "Malariatherapy_demographics.compiled.json",
+                          "Base_Population_Scale_Factor" : 2,
+                          "Enable_Vital_Dynamics" : 0,
                           "Climate_Model" : "CLIMATE_CONSTANT" # no mosquitoes in challenge trial setting
-                      }
+                      },
+
+    "Birth_Cohort" : { "Geography": "Calibration",
+                       "Demographics_Filename": "birth_cohort_demographics.compiled.json", 
+                       'Base_Population_Scale_Factor' : 10,
+                       'Enable_Vital_Dynamics' : 0, # No births/deaths.  Just following a birth cohort.
+                       "Climate_Model" : "CLIMATE_CONSTANT" # no mosquitoes
+                     }
 }
