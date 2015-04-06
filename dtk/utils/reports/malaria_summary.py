@@ -1,6 +1,4 @@
 from dtk.utils.reports.MalariaReport import MalariaReport
-from dtk.utils.reports.CustomReportsBucket import CustomReportsBucket
-from dtk.utils.reports.CustomReportsBuilder import CustomReportsBuilder
 
 def add_summary_report(cb, start=0, interval=365, nreports=10000, 
                        description = 'AnnualAverage', 
@@ -19,8 +17,4 @@ def add_summary_report(cb, start=0, interval=365, nreports=10000,
 
     # TODO: we may also want to be explicit about what DLL needs to be loaded here
 
-    bucket=CustomReportsBucket("MalariaSummaryReport")
-    bucket.add_custom_report(summary_report)
-    report_builder=CustomReportsBuilder()
-    report_builder.add_report_bucket(bucket)
-    cb.custom_reports=report_builder.custom_reports_config_DTK()
+    return summary_report
