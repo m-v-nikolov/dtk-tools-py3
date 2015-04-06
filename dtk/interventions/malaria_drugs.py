@@ -1,45 +1,43 @@
+# Distribute drug campaigns
+def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repetitions=3, interval=60):
+
+    dosing_type = drug_cfg[drug_code]["dosing"]
+    drug_array = drug_cfg[drug_code]["drugs"]
+
+    config_builder.set_param("PKPD_Model", "CONCENTRATION_VERSUS_TIME")
+
+    drug_configs = []
+    for drug in drug_array:
+        config_builder.config["parameters"]["Malaria_Drug_Params"][drug] = drug_params[drug]
+        drug_intervention = {
+            "class": "AntimalarialDrug",
+            "Drug_Type": drug,
+            "Dosing_Type": dosing_type,
+            "Cost_To_Consumer": 1.5
+        }
+        drug_configs.append(drug_intervention)
+
+    for start_day in start_days:
+        drug_event = {
+            "class": "CampaignEvent",
+            "Start_Day": start_day,
+            "Event_Coordinator_Config": {
+                "class": "MultiInterventionEventCoordinator",
+                "Target_Demographic": "Everyone",
+                "Demographic_Coverage": coverage,
+                "Intervention_Configs": drug_configs,
+                "Number_Repetitions": repetitions,
+                "Timesteps_Between_Repetitions": interval
+                }, 
+            "Nodeset_Config": {
+                "class": "NodeSetAll"
+                }
+            }
+
+        config_builder.add_event(drug_event)
+
 # Definitions of drug blocks
 drug_params = {
-  "Artemether_Lumefantrine": {
-     # Drug PkPd
-    "Drug_Cmax": 1000, 
-    "Drug_Decay_T1": 0.5, 
-    "Drug_Decay_T2": 3, 
-    "Drug_Vd": 5, 
-    "Drug_PKPD_C50": 100, 
-
-    # Treatment regimen
-    "Drug_Fulltreatment_Doses": 6, 
-    "Drug_Dose_Interval": 0.5, 
-
-    # These are daily parasite killing rates for:
-    "Drug_Gametocyte02_Killrate": 2.3,   # ... gametocyte - early stages
-    "Drug_Gametocyte34_Killrate": 0.0,   # ...            - late stages
-    "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
-    "Drug_Hepatocyte_Killrate":   0.0,   # ... hepatocytes
-    "Max_Drug_IRBC_Kill":         8.0    # ... asexual parasites
-  },
-
-
-  "DHA_Piperaquine": {
-     # Drug PkPd
-    "Drug_Cmax": 1000, 
-    "Drug_Decay_T1": 0.5, 
-    "Drug_Decay_T2": 10, 
-    "Drug_Vd": 10, 
-    "Drug_PKPD_C50": 100, 
-
-    # Treatment regimen
-    "Drug_Fulltreatment_Doses": 3, 
-    "Drug_Dose_Interval": 1, 
-
-    # These are daily parasite killing rates for:
-    "Drug_Gametocyte02_Killrate": 2.3,   # ... gametocyte - early stages
-    "Drug_Gametocyte34_Killrate": 0.0,   # ...            - late stages
-    "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
-    "Drug_Hepatocyte_Killrate":   0.0,   # ... hepatocytes
-    "Max_Drug_IRBC_Kill":         9.0    # ... asexual parasites
-  },
 
   # Parameterized according to simple model and 50 kg person
   "Artemether": {
@@ -123,7 +121,11 @@ drug_params = {
 
     # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
     "Bodyweight_Exponent": 1,
-    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 6, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 11, "Fraction_Of_Adult_Dose": 0.67}]
+    # current sigma-tau dosing
+    #"Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 6, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 11, "Fraction_Of_Adult_Dose": 0.67}]
+    # dosing recommended by Tarning CPT 2012
+    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 0.83, "Fraction_Of_Adult_Dose": 0.375},{"Upper_Age_In_Years": 2.83, "Fraction_Of_Adult_Dose": 0.5},{"Upper_Age_In_Years": 5.25, "Fraction_Of_Adult_Dose": 0.625},
+                                     {"Upper_Age_In_Years": 7.33, "Fraction_Of_Adult_Dose": 0.75}, {"Upper_Age_In_Years": 9.42, "Fraction_Of_Adult_Dose": 0.875}]
   },
 
   "Piperaquine": {
@@ -150,7 +152,11 @@ drug_params = {
 
     # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
     "Bodyweight_Exponent": 0,
-    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 6, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 11, "Fraction_Of_Adult_Dose": 0.67}]
+    # current sigma-tau dosing
+    #"Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 6, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 11, "Fraction_Of_Adult_Dose": 0.67}]
+    # dosing recommended by Tarning CPT 2012
+    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 0.83, "Fraction_Of_Adult_Dose": 0.375},{"Upper_Age_In_Years": 2.83, "Fraction_Of_Adult_Dose": 0.5},{"Upper_Age_In_Years": 5.25, "Fraction_Of_Adult_Dose": 0.625},
+                                     {"Upper_Age_In_Years": 7.33, "Fraction_Of_Adult_Dose": 0.75}, {"Upper_Age_In_Years": 9.42, "Fraction_Of_Adult_Dose": 0.875}]
   },
   
   "Primaquine" : {
@@ -201,6 +207,7 @@ drug_params = {
   }
 }
 
+
 # Different configurations of regimens and drugs
 drug_cfg = {
     "MSAT_ALP": {
@@ -247,6 +254,10 @@ drug_cfg = {
         "dosing" : "FullTreatmentCourse",
         "drugs" : ["DHA", "Piperaquine"]
     },
+    "MDA_PPQ": {
+        "dosing" : "FullTreatmentCourse",
+        "drugs" : ["Piperaquine"]
+    },
     "MDA_DPP": {
         "dosing" : "FullTreatmentCourse",
         "drugs" : ["DHA", "Piperaquine", "Primaquine"]
@@ -260,54 +271,3 @@ drug_cfg = {
         "drugs" : ["Vehicle"]
     }
 }
-
-# Distribute drug campaigns
-def add_drugs(config_builder, drug_code, coverage=1.0, repetitions=3, interval=60, start_days=[]):
-
-    dosing_type = drug_cfg[drug_code]["dosing"]
-    drug_array = drug_cfg[drug_code]["drugs"]
-
-    config_builder.set_param("PKPD_Model", "CONCENTRATION_VERSUS_TIME")
-
-    drug_configs = []
-    for drug in drug_array:
-        config_builder.config["parameters"]["Malaria_Drug_Params"][drug] = drug_params[drug]
-        drug_intervention = {
-            "class": "AntimalarialDrug",
-            "Drug_Type": drug,
-            "Dosing_Type": dosing_type,
-            "Cost_To_Consumer": 1.5
-        }
-        drug_configs.append(drug_intervention)
-
-    # default to two years of burn-in
-    if not start_days:
-        # accommodate different dry-seasons for targeted drug campaigns
-        if "Garki" in config_builder.get_param("Air_Temperature_Filename"):
-            # Garki is in Northern hemisphere and climate file starts from Nov 1st
-            # Northern Nigeria dry-season is Nov-Apr
-            start_dryseason = 0
-        else:
-            # Southern Hemisphere (Tanzania, Zambia, Mozambique)
-            # Zambian dry-season is Jun-Sept
-            start_dryseason = 160
-        start_days = [365*year + start_dryseason for year in range(2,4)]
-
-    for start_day in start_days:
-        drug_event = {
-            "class": "CampaignEvent",
-            "Start_Day": start_day,
-            "Event_Coordinator_Config": {
-                "class": "MultiInterventionEventCoordinator",
-                "Target_Demographic": "Everyone",
-                "Demographic_Coverage": coverage,
-                "Intervention_Configs": drug_configs,
-                "Number_Repetitions": repetitions,
-                "Timesteps_Between_Repetitions": interval
-                }, 
-            "Nodeset_Config": {
-                "class": "NodeSetAll"
-                }
-            }
-
-        config_builder.add_event(drug_event)

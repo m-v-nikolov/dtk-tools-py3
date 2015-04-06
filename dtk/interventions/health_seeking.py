@@ -3,7 +3,7 @@ def add_health_seeking(config_builder,
                        # Note: potential for overlapping drug treatments in the same individual
                        targets = [ { 'trigger': 'NewClinicalCase', 'coverage': 0.8, 'agemin':15, 'agemax':70, 'seek': 0.4, 'rate': 0.3 },
                                    { 'trigger': 'NewSevereCase',   'coverage': 0.8, 'seek': 0.6, 'rate': 0.5 } ],
-                       drug    = 'Artemether_Lumefantrine',
+                       drug    = ['Artemether', 'Lumefantrine'],
                        dosing  = 'FullTreatmentNewDetectionTech'):
 
 

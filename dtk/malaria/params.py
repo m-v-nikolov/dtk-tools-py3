@@ -4,7 +4,7 @@ import infection
 import immunity
 import symptoms
 from ..vector.species import set_params_by_species
-from ..interventions.malaria_drug_cff import malaria_drug_params
+from ..interventions.malaria_drugs import drug_params
 
 # --------------------------------------------------------------
 # Malaria disease + drug parameters
@@ -20,8 +20,8 @@ disease_params.update(immunity.params)
 disease_params.update(symptoms.params)
 
 params = copy.deepcopy(disease_params)
-params["PKPD_Model"] = "FIXED_DURATION_CONSTANT_EFFECT"
-params["Malaria_Drug_Params"] = malaria_drug_params
+params["PKPD_Model"] = "CONCENTRATION_VERSUS_TIME"
+params["Malaria_Drug_Params"] = drug_params
 
 set_params_by_species(params, ["arabiensis", "funestus", "gambiae"], "MALARIA_SIM")
 
