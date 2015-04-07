@@ -33,11 +33,35 @@ class Builder(object):
         return fn
 
     @classmethod
+    def drug_param_changes_fn(cls,drugname,p,v):
+        def fn(cb):
+            cls.metadata.update({drugname+'_'+p:v})
+            return cb.config['parameters']['Malaria_Drug_Params'][drugname].update({p:v})
+        return fn
+
+    @classmethod
+    def vector_species_param_changes_fn(cls,vector,p,v):
+        def fn(cb):
+            cls.metadata.update({vector+'_'+p:v})
+            return cb.config['parameters']['Vector_Species_Params'][vector].update({p:v})
+        return fn
+
+    @classmethod
     def set(cls,pv_pairs):
         m=cls.ModList()
+        if '_site_' in dict(pv_pairs) : # do site first so that configure_sites won't overwrite other sweep parameters
+            m.append(cls.site_fn(dict(pv_pairs)['_site_']))
         for (p,v) in pv_pairs:
             if p=='_site_':
-                m.append(cls.site_fn(v))
+                continue
+            elif p.split('_')[0] == 'Drug' : # to sweep over a drug parameter, use 'Drug_DRUGNAME_PARAMNAME' as parameter name in script file
+                drugname = p.split('_')[1]
+                drugp = '_'.join(p.split('_')[2:])
+                m.append(cls.drug_param_changes_fn(drugname,drugp,v)) 
+            elif p.split('_')[0] == 'Vector' : # to sweep over a vector species parameter, use 'Vector_VECTORNAME_PARAMNAME' as parameter name in script file
+                vector = p.split('_')[1]
+                vecp = '_'.join(p.split('_')[2:])
+                m.append(cls.vector_species_param_changes_fn(vector,vecp,v))
             elif p and p[0]=='_':
                 raise NotImplementedError('Future general function, e.g. add_event')
             else:
