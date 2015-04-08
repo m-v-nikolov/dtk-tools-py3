@@ -135,4 +135,6 @@ def add_reports(cb, dll_root, reports={}) :
         report_builder.add_report_bucket(bucket)
 
     cb.custom_reports=report_builder.custom_reports_config_DTK()
+    if len(report_types['MalariaPatientJSONReport']) > 0 :
+        cb.custom_reports["Use_Explicit_Dlls"] = 0
     return dlls

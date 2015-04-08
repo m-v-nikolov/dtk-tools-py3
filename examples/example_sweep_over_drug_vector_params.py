@@ -16,8 +16,8 @@ exp_name  = 'ExampleSweep'
 builder   = GenericSweepBuilder.from_dict({'Run_Number': range(1),
                                            'x_Temporary_Larval_Habitat': [0.05],
                                            '_site_'    : ['Namawala'],
-                                           'Drug_Artemether_Adherence' : [0.5, 0.7],
-                                           'Vector_gambiae_Required_Habitat_Factor' : [[100, 50], [200,100]]})
+                                           'AntiMalDrug_Artemether_Adherence' : [0.5, 0.7],
+                                           'VectorSpec_gambiae_Required_Habitat_Factor' : [[100, 50], [200,100]]})
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 cb.update_params({ 

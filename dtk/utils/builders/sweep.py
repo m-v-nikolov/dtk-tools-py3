@@ -1,5 +1,6 @@
 import itertools
 from dtk.vector.study_sites import configure_site
+from dtk.tools.calibration.calibtool.geography_calibration import set_geography as set_geography_calibration
 
 class Builder(object):
     '''
@@ -33,6 +34,13 @@ class Builder(object):
         return fn
 
     @classmethod
+    def calib_site_fn(cls,s):
+        def fn(cb):
+            cls.metadata.update({'_site_':s})
+            return set_geography_calibration(cb, s)
+        return fn
+
+    @classmethod
     def drug_param_changes_fn(cls,drugname,p,v):
         def fn(cb):
             cls.metadata.update({drugname+'_'+p:v})
@@ -51,14 +59,16 @@ class Builder(object):
         m=cls.ModList()
         if '_site_' in dict(pv_pairs) : # do site first so that configure_sites won't overwrite other sweep parameters
             m.append(cls.site_fn(dict(pv_pairs)['_site_']))
+        if '_calibsite_' in dict(pv_pairs) : # do site first so that configure_sites won't overwrite other sweep parameters
+            m.append(cls.calib_site_fn(dict(pv_pairs)['_calibsite_']))
         for (p,v) in pv_pairs:
-            if p=='_site_':
+            if p=='_site_' or p=='_calibsite_':
                 continue
-            elif p.split('_')[0] == 'Drug' : # to sweep over a drug parameter, use 'Drug_DRUGNAME_PARAMNAME' as parameter name in script file
+            elif p.split('_')[0] == 'AntiMalDrug' : # to sweep over a drug parameter, use 'Drug_DRUGNAME_PARAMNAME' as parameter name in script file
                 drugname = p.split('_')[1]
                 drugp = '_'.join(p.split('_')[2:])
                 m.append(cls.drug_param_changes_fn(drugname,drugp,v)) 
-            elif p.split('_')[0] == 'Vector' : # to sweep over a vector species parameter, use 'Vector_VECTORNAME_PARAMNAME' as parameter name in script file
+            elif p.split('_')[0] == 'VectorSpec' : # to sweep over a vector species parameter, use 'Vector_VECTORNAME_PARAMNAME' as parameter name in script file
                 vector = p.split('_')[1]
                 vecp = '_'.join(p.split('_')[2:])
                 m.append(cls.vector_species_param_changes_fn(vector,vecp,v))
@@ -82,3 +92,7 @@ class GenericSweepBuilder(Builder):
         params=d.keys()
         combos=itertools.product(*d.values())
         return cls((cls.set(zip(params,combo)) for combo in combos))
+
+    @classmethod
+    def from_list(cls, p, v) :
+        return cls((cls.set(zip(p,combo)) for combo in v))
