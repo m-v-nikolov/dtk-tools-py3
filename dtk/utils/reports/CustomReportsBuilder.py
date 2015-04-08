@@ -25,7 +25,6 @@ class CustomReportsBuilder(object):
     def add_report_bucket(self, report_bucket):
         bucket_type = report_bucket.get_type()
         self.report_buckets[bucket_type] = report_bucket
- 
 
     ''' given a dictionary of custom report types (i.e. custom_report_types) with keys types and values number of reports 
         to be generated per report type, build a set of buckets each containing num custom reports of each type, 
@@ -69,6 +68,7 @@ class CustomReportsBuilder(object):
     def custom_reports_config_DTK(self):
         reportsJSON = {}
         reportsJSON["Custom_Reports"] = {}
+        reportsJSON["Custom_Reports"]["Use_Explicit_Dlls"] = 1
         for report_bucket in self.report_buckets.itervalues():
             bucket_type = report_bucket.get_type()
             bucket_enabled = report_bucket.get_enabled()
