@@ -9,7 +9,14 @@ def set_geography(cb, geography):
     if g:
         for k,v in params.items():
             if 'Filename' in k:
-                params[k]=os.path.join(g,v)
+                if k == 'Demographics_Filename':
+                    demogfiles =  cb.get_param('Demographics_Filename').split(';')
+                    demogfiles_str = ""
+                    for demogfile in demogfiles:
+                        demogfiles_str = demogfiles_str +  os.path.join(g,demogfile) + ';'
+                    params[k] = demogfiles_str
+                else:
+                    params[k] = os.path.join(g,v)
     cb.update_params(params)
 
 geographies = {

@@ -114,7 +114,7 @@ class LocalSimulationManager():
         cached_cb = copy.deepcopy(self.config_builder)
 
         for mod_fn_list in self.exp_builder.mod_generator:
-
+     
             # reset to base config/campaign
             self.config_builder = copy.deepcopy(cached_cb)
 
@@ -135,7 +135,7 @@ class LocalSimulationManager():
 
         # collect information on submitted simulations
         self.collectSimMetaData(sims)
-
+        
         # dump experiment data to output
         os.chdir(cache_cwd)
         if not os.path.exists('simulations'):

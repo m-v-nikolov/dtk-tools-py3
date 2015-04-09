@@ -7,7 +7,7 @@ from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.vector.study_sites import configure_site
 from dtk.utils.reports.report_manager import add_reports
-from dtk.interventions.malaria_drug_cff import add_drug_campaign
+from dtk.interventions.malaria_drugs import add_drug_campaign
 
 setup = DTKSetupParser()
 dll_root = setup.get('BINARIES', 'dll_path')

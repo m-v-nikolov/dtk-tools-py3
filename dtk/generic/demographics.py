@@ -3,6 +3,8 @@ import json
 import subprocess
 import sys
 from dtk.tools.demographics.compiledemog import CompileDemographics
+from dtk.generic.geography import geographies
+
 
 params = {
     "Demographics_Filename": "", 
@@ -199,6 +201,7 @@ def set_realistic_demographics(input_path, config, recompile=False):
 def add_immune_overlays(cb, tags):
 
     demog_filename = cb.get_param("Demographics_Filename")
+
     if len(demog_filename.split(';')) > 1:
         raise Exception('add_immune_init function is expecting only a single demographics file.  Not a semi-colon-delimited list.')
     split_demog = demog_filename.split('.')
@@ -206,15 +209,20 @@ def add_immune_overlays(cb, tags):
 
     demogfiles = [demog_filename]
     for tag in tags:
-        if 'demographics' not in demog_prefix:
+        if 'demographics' not in prefix:
             raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
-        immune_init_file_name = prefix.replace("demographics","immune_init_" + tag, 1) + suffix
+        immune_init_file_name = prefix.replace("demographics","immune_init_" + tag, 1) + "."+suffix[0]
         demogfiles.append(immune_init_file_name)
 
     cb.update_params({ "Enable_Immunity_Initialization_Distribution":1,
                        "Demographics_Filename": ';'.join(demogfiles) })
+    
+    
+    
 
 # Immune initialization based on habitat scaling
-def add_immune_init(cb, site, x_temp_habitat):
-    tags = [ str(site) + "_x_" + str(x_temp_habitat) ]
+def add_immune_init(cb, site, x_temp_habitats):
+    tags = []
+    for x_temp_habitat in x_temp_habitats:
+        tags.append( "x_" + str(x_temp_habitat) )
     add_immune_overlays(cb, tags)
