@@ -1,5 +1,6 @@
 __all__ = [ 'analyzers',
             'builders',
             'core',
-            'report',
+            'reports',
+            'parsers',
             'simulation' ]
