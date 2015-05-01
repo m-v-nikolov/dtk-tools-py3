@@ -22,3 +22,6 @@ class Node:
         if self.name:
             d.update({'Name':self.name})
         return d
+
+    def toTuple(self):
+        return self.lat,self.lon,self.pop
