@@ -18,10 +18,14 @@ def osrm_query(service,params,parse_fns=[]):
         search_query = 'http://' + server + '/' + service + '?' + params
         print(search_query)
         sf = urllib2.urlopen(search_query)
-        #print(sf.read())
-        response = json.loads(sf.read())
+        r=sf.read()
+        #print(r)
+        response = json.loads(r)
         for parse_fn in parse_fns:
-            parse_fn(response)
+            if 'status' not in response or response['status']:
+                print('Bad status')
+            else:
+                parse_fn(response)
     except urllib2.URLError, err:
         print(err.reason)
     finally:
@@ -65,15 +69,18 @@ def distance_table(r,save_array=False):
         np.save('cache/distance_table.npy',array_in_seconds)
     return array_in_seconds
 
-def plot_route(r):
-    points = PolylineCodec().decode(r['route_geometry'])
+def decode_geometry(geometry):
+    points = PolylineCodec().decode(geometry)
     lats,lons = zip(*points)
     def fix(values):
         # OSRM API uses 6 digits precision, rather than Google/OpenLayers default of 5
         # so the codec spits out lat,lon=19.9,-73.2 as (199,-732)
         return [v / 10. for v in values]
-    plt.figure('RouteTrace')
-    plt.plot(fix(lons),fix(lats),'-',color='gray')
+    return fix(lons),fix(lats)
+
+def plot_route(r):
+    lons,lats=decode_geometry(r['route_geometry'])
+    plt.plot(lons,lats,'-',color='gray',alpha=0.2)
     plt.gca().set(aspect='equal')
     plt.tight_layout()
 
@@ -84,7 +91,6 @@ def plot_table(r,latlonpops,label_edges):
     G=nx.Graph()
     for i,j in combinations(range(table.shape[0]), 2):
         G.add_edge(i,j,weight=table[i][j])
-    plt.figure('DistanceMap')
     nx.draw_networkx_edges(G,positions,alpha=0.1,width=0.2,
                            edge_color=[d['weight'] for u,v,d in G.edges(data=True)],edge_cmap=cm.gray)
     if label_edges:
@@ -102,12 +108,14 @@ def get_raster_nodes(node_file,N=5):
 def test_viaroute():
     # A few nodes in NW Haiti
     nodes = [(19.9047,-73.1953), (19.7993,-73.2576)]
+    plt.figure('RouteTrace')
     find_route(nodes,[route_time,plot_route])
 
 def test_table(node_file='cache/raster_nodes_Haiti.json',N=5,label_edges=False):
     node_json = get_raster_nodes(node_file,N)
     nodes = [(n['Latitude'],n['Longitude']) for n in node_json]
     latlonpops = [(n['Latitude'],n['Longitude'],n['InitialPopulation']) for n in node_json]
+    plt.figure('DistanceMap')
     route_table(nodes,[partial(plot_table,latlonpops=latlonpops,label_edges=label_edges)])
 
 def dump_distance_table(node_file='cache/raster_nodes_Haiti.json',N=5):
@@ -115,8 +123,8 @@ def dump_distance_table(node_file='cache/raster_nodes_Haiti.json',N=5):
     nodes = [(n['Latitude'],n['Longitude']) for n in node_json]
     route_table(nodes,[partial(distance_table,save_array=True)])
 
-#test_viaroute()
-#dump_distance_table(N=200) # URI size limit reached if N much greater than 300
-test_table(N=30,label_edges=False)
-plt.show()
-
+if __name__ == '__main__':
+    #test_viaroute()
+    #dump_distance_table(N=200) # URI size limit reached if N much greater than 300
+    test_table(N=30,label_edges=False)
+    plt.show()
