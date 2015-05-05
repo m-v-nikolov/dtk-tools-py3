@@ -9,6 +9,8 @@ import collections
 import psycopg2
 import json
 
+demographics_countries=[]
+
 #geography='Seattle'
 #bbox=(-122.35,47.59,-122.32,47.62)
 
@@ -21,15 +23,19 @@ import json
 #geography='Senegal'
 #bbox=(-17.496, 12.077, -10.712, 16.852)
 
-geography='Ebola'
-demographics_countries=['Sierra_Leone','Guinee','Liberia']
-bbox=(-15.392,3.941,-6.614,12.823)
+#geography='Ebola'
+#demographics_countries=['Guinee','Sierra_Leone','Liberia']
+#bbox=(-15.392,3.941,-6.614,12.823)
+
+geography='Haiti'
+bbox=(-74.4846,17.9787,-71.6226,20.0972)
 
 roads_file='cache/all_roads_%s.osm' % geography
 if not os.path.exists(roads_file):
     from urllib import urlopen
-    fp = urlopen("http://www.overpass-api.de/api/xapi?*[highway=motorway|trunk|primary|secondary|tertiary][bbox=%f,%f,%f,%f]" % bbox)
-    #fp = urlopen("http://www.overpass-api.de/api/xapi?*[highway=motorway|trunk|primary|secondary|tertiary|unclassified][bbox=%f,%f,%f,%f]" % bbox)
+    #fp = urlopen("http://jxapi.openstreetmap.org/xapi/api/0.6/*[highway=motorway|trunk|primary|secondary|tertiary][bbox=%f,%f,%f,%f]" % bbox)
+    #fp = urlopen("http://www.overpass-api.de/api/xapi?*[highway=motorway|trunk|primary|secondary|tertiary][bbox=%f,%f,%f,%f]" % bbox)
+    fp = urlopen("http://www.overpass-api.de/api/xapi?*[highway=motorway|trunk|primary|secondary|tertiary|unclassified][bbox=%f,%f,%f,%f]" % bbox)
     with open(roads_file,'w') as f:
         f.write(fp.read())
 
@@ -58,7 +64,7 @@ for ii,(n1,n2,way) in enumerate(G.edges_iter(data=True)):
         else:
             G.edge_colors.append('lightgrey')
 
-sources=['Afripop','OpenStreetMap']
+sources=['WorldPop','OpenStreetMap']
 if geography=='Senegal': sources.append('D4D')
 fig=plt.figure('%s_%s' % (geography,'_'.join(sources)),figsize=(9,8))
 ax = fig.add_subplot(111, aspect='equal')
@@ -70,9 +76,9 @@ plt.title('%s (%s)' % (geography,' + '.join(sources)))
 min_pop=1000
 if not demographics_countries:
     demographics_countries=[geography]
-cmaps=['Greens','Blues','Reds']
+cmaps=['Blues','Greens','Reds']
 for i,country in enumerate(demographics_countries):
-    with open('cache/GIS_nodes_%s.json' % country,'r') as fjson:
+    with open('cache/raster_nodes_%s.json' % country,'r') as fjson:
         gis_nodes=json.loads(fjson.read())
     lats,lons,pops=[],[],[]
     for n in gis_nodes:
