@@ -1,21 +1,12 @@
-import psycopg2
 import matplotlib.pyplot as plt
 
 from node import Node, nodes_for_DTK
 from plotting import plot_nodes
-
-class reg(object):
-    def __init__(self, cursor, row):
-        for (attr, val) in zip((d[0] for d in cursor.description), row) :
-            setattr(self, attr, val)
+from db import *
 
 def query_DB_for_shape_data(parent_alias,relative_admin_level):
 
-    try:
-        cnxn = psycopg2.connect(host='ivlabsdssql01.na.corp.intven.com', port=5432, dbname='idm_db')
-    except pycopg2.Error:
-        raise Exception("Failed connection to %s." % server_name)
-
+    cnxn = idm_DB_connection()
     cursor = cnxn.cursor()
     data = (parent_alias,relative_admin_level)
     SQL  =  """SELECT a.hid_id as hid, a.hname, a.dt_name, a.shape_id as node_id, 

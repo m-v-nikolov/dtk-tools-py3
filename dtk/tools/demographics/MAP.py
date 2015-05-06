@@ -1,21 +1,11 @@
 import json
 
-import psycopg2
-
 from routes import get_raster_nodes
 from node import get_node_id
-
-class reg(object):
-    def __init__(self, cursor, row):
-        for (attr, val) in zip((d[0] for d in cursor.description), row) :
-            setattr(self, attr, val)
+from db import *
 
 def query_PfPR_by_node(node_ids):
-    try:
-        cnxn = psycopg2.connect(host='ivlabsdssql01.na.corp.intven.com', port=5432, dbname='idm_db')
-    except pycopg2.Error:
-        raise Exception("Failed connection to %s." % server_name)
-
+    cnxn = idm_DB_connection()
     cursor = cnxn.cursor()
     data = (node_ids,)
 
@@ -31,8 +21,9 @@ def query_PfPR_by_node(node_ids):
     cnxn.close()
     return rows
 
-nodes=get_raster_nodes('cache/raster_nodes_Haiti.json',N=-1)
-nodeids=[get_node_id(node['Latitude'],node['Longitude'],res_in_degrees=2.5/60) for node in nodes]
-PfPR_by_node=query_PfPR_by_node(nodeids)
-with open('cache/MAP_Haiti.json','w') as fp:
-    json.dump(PfPR_by_node,fp,indent=4,sort_keys=True)
+if __name__ == '__main__':
+    nodes=get_raster_nodes('cache/raster_nodes_Haiti.json',N=-1)
+    nodeids=[get_node_id(node['Latitude'],node['Longitude'],res_in_degrees=2.5/60) for node in nodes]
+    PfPR_by_node=query_PfPR_by_node(nodeids)
+    with open('cache/MAP_Haiti.json','w') as fp:
+        json.dump(PfPR_by_node,fp,indent=4,sort_keys=True)
