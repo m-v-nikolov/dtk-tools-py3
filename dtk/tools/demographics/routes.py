@@ -9,9 +9,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
+# Using the OSRM test server
 # https://github.com/Project-OSRM/osrm-backend/wiki/Server-api
 # https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy
 server = 'router.project-osrm.org'
+
+# If we want to stand up your own server:
+# https://github.com/Project-OSRM/osrm-backend/wiki/Running-OSRM
 
 def osrm_query(service,params,parse_fns=[]):
     try:
@@ -102,8 +106,8 @@ def plot_table(r,latlonpops,label_edges):
 def get_raster_nodes(node_file,N=5):
     # The first few nodes clustered from WorldPop raster for Haiti
     with open(node_file) as f:
-        node_json = json.loads(f.read())[:N]
-    return node_json
+        node_json = json.loads(f.read())
+    return node_json[:N]
 
 def test_viaroute():
     # A few nodes in NW Haiti
@@ -111,12 +115,13 @@ def test_viaroute():
     plt.figure('RouteTrace')
     find_route(nodes,[route_time,plot_route])
 
-def test_table(node_file='cache/raster_nodes_Haiti.json',N=5,label_edges=False):
+def test_table(node_file='cache/raster_nodes_Haiti.json',N=5):
     node_json = get_raster_nodes(node_file,N)
-    nodes = [(n['Latitude'],n['Longitude']) for n in node_json]
-    latlonpops = [(n['Latitude'],n['Longitude'],n['InitialPopulation']) for n in node_json]
+    min_pop=1e4
+    latlonpops = [(n['Latitude'],n['Longitude'],n['InitialPopulation']) for n in node_json if n['InitialPopulation']>min_pop]
+    nodes = [(lat,lon) for (lat,lon,pop) in latlonpops]
     plt.figure('DistanceMap')
-    route_table(nodes,[partial(plot_table,latlonpops=latlonpops,label_edges=label_edges)])
+    route_table(nodes,[partial(plot_table,latlonpops=latlonpops,label_edges=False)])
 
 def dump_distance_table(node_file='cache/raster_nodes_Haiti.json',N=5):
     node_json = get_raster_nodes(node_file,N)
@@ -126,5 +131,5 @@ def dump_distance_table(node_file='cache/raster_nodes_Haiti.json',N=5):
 if __name__ == '__main__':
     #test_viaroute()
     #dump_distance_table(N=200) # URI size limit reached if N much greater than 300
-    test_table(N=30,label_edges=False)
+    test_table(N=-1)
     plt.show()

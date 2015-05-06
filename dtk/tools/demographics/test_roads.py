@@ -73,7 +73,7 @@ nx.draw(G, G.position, with_labels=False, ax=ax,
         edge_color=G.edge_colors)
 plt.title('%s (%s)' % (geography,' + '.join(sources)))
 
-min_pop=1000
+min_pop=10 # was 1e3
 if not demographics_countries:
     demographics_countries=[geography]
 cmaps=['Blues','Greens','Reds']

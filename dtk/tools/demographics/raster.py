@@ -165,10 +165,12 @@ def compare(A,sums,centroids,title='Raster_Plot',cmap='YlGnBu'):
     plt.scatter(xx,yy,s=sizes, c='gray', vmin=1, vmax=7, alpha=0.5)
     plt.tight_layout()
 
-def make_nodes(sums,centroids,transform_fn):
+def make_nodes(sums,centroids,transform_fn,min_pop=100):
     yy,xx = zip(*centroids)
     nodes=[]
     for x,y,pop in zip(xx,yy,sums):
+        if not pop > min_pop:
+            continue
         lon,lat,alt=transform_fn(x,y)
         n=Node(lat,lon,pop)
         nodes.append(n)
@@ -213,7 +215,7 @@ if __name__ == '__main__':
     #patches,N=detect_contiguous_blocks(A, mask, validation=validation)
     sums,centroids=centroids(A,patches,N,validation=validation)
     compare(A,sums,centroids,title)
-    nodes=make_nodes(sums,centroids,transform_fn)
+    nodes=make_nodes(sums,centroids,transform_fn,min_pop=100)
     plot_nodes(nodes,countries=[title])
     write_nodes(nodes,title)
     save_all_figs()

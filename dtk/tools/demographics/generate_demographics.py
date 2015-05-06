@@ -1,6 +1,7 @@
 import psycopg2
 import matplotlib.pyplot as plt
-from node import Node
+
+from node import Node, nodes_for_DTK
 from plotting import plot_nodes
 
 class reg(object):
@@ -22,7 +23,7 @@ def query_DB_for_shape_data(parent_alias,relative_admin_level):
                        c.iso, c.iso3, c.fips,
                        d.area_len, d.geogcenterlat as centerlat, d.geogcenterlon as centerlon, 
                        e.calc_pop_total as totalpop
-                FROM sd.get_hierarchy_children_at_level_with_shape_id_alt(%s, null, null, %s) a
+                FROM sd.get_hierarchy_children_at_level_with_shape_id_alt(%s, 'EMEDNames','EMEDShapes', %s) a
                 INNER JOIN sd.hierarchy_name_table b
                     ON a.hid_id = b.id
                 INNER JOIN sd.country_information c
@@ -39,6 +40,7 @@ def query_DB_for_shape_data(parent_alias,relative_admin_level):
     for row in cursor:
         r=reg(cursor,row)
         n=Node(r.centerlat, r.centerlon, r.totalpop, name=r.hname, area=r.area_len)
+        print(n.toDict())
         nodes.append(n)
     cnxn.close()
 
@@ -46,11 +48,14 @@ def query_DB_for_shape_data(parent_alias,relative_admin_level):
 
 if __name__ == '__main__':
 
-    parent_alias='Nigeria' # only works for no ambiguity, e.g. Kano State or LGA
-    relative_admin_level=2 # this is relative to the parent_alias admin level
+    parent_alias='Pakistan' # only works for no ambiguity, e.g. Kano State or LGA
+    relative_admin_level=3 # this is relative to the parent_alias admin level
 
     nodes = query_DB_for_shape_data(parent_alias,relative_admin_level)
     print('There are %d shapes %d admin level(s) below %s' % (len(nodes),relative_admin_level,parent_alias))
+
+    Node.res_in_degrees=2.5/60
+    nodes_for_DTK('cache/%s_admin%d_demographics.json'%(parent_alias,relative_admin_level),nodes)
 
     plt.figure(parent_alias,facecolor='w',figsize=(7,6))
     plot_nodes(nodes, title=parent_alias)
