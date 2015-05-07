@@ -1,16 +1,9 @@
-from CustomReport import CustomReport
+from CustomReport import BaseReport, BaseEventReportIntervalOutput
 
-class MalariaReport(CustomReport):
-    ''' A class representing a Malaria custom report configuration.
-        Could be used for immunity, summary, survey reports, etc.
-        This class inherits from class CustomReport.
-    '''
+class MalariaReport(BaseEventReportIntervalOutput):
 
     dlls = {'MalariaSummaryReport': 'libmalariasummary_report_plugin.dll',
-            'MalariaImmunityReport': 'libmalariaimmunity_report_plugin.dll',
-            'MalariaSurveyJSONAnalyzer': 'libmalariasurveyJSON_analyzer_plugin.dll',
-            'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll'
-            }
+            'MalariaImmunityReport': 'libmalariaimmunity_report_plugin.dll'}
 
     def __init__(self,
                  event_trigger_list,
@@ -23,17 +16,12 @@ class MalariaReport(CustomReport):
                  reporting_interval = 73,
                  type = ""):
 
-        CustomReport.__init__(self, event_trigger_list, start_day, duration_days, 
-                                     report_description, nodeset_config, type)
-        
+        BaseEventReportIntervalOutput.__init__(self, event_trigger_list, start_day, duration_days, 
+                                     report_description, nodeset_config, max_number_reports,reporting_interval,type)
         self.age_bins = age_bins
-        self.max_number_reports = max_number_reports
-        self.reporting_interval = reporting_interval
 
     def to_dict(self):
         d = super(MalariaReport, self).to_dict()
-        d["Max_Number_Reports"] = self.max_number_reports
-        d["Reporting_Interval"] = self.reporting_interval
         d["Age_Bins"] = self.age_bins
         return d
 
@@ -66,20 +54,17 @@ def add_immunity_report(cb, start=0, interval=365, nreports=10000,
     immunity_report.type="MalariaImmunityReport"
     cb.add_reports(immunity_report)
 
-def add_survey_report(cb, 
-                      survey_days, 
-                      reporting_interval=21, 
-                      trigger=["EveryUpdate"], 
-                      nreports=1, 
-                      include_births=False, 
-                      coverage=1):
+def add_survey_report(cb, survey_days, reporting_interval=21, 
+                      trigger=["EveryUpdate"], nreports=1):
 
-    survey_reports = [MalariaReport(event_trigger_list=trigger,
-                                    start_day = survey_day,
-                                    #coverage = coverage,
-                                    #include_births =  include_births,
-                                    max_number_reports = nreports,
-                                    reporting_interval = reporting_interval,
-                                    report_description = 'Day_' + str(survey_day),
-                                    type = "MalariaSurveyJSONAnalyzer" ) for survey_day in survey_days]
+    survey_reports = [BaseEventReportIntervalOutput(
+                          event_trigger_list=trigger,
+                          start_day = survey_day,
+                          max_number_reports = nreports,
+                          reporting_interval = reporting_interval,
+                          report_description = 'Day_' + str(survey_day),
+                          type = "MalariaSurveyJSONAnalyzer" ) for survey_day in survey_days]
     cb.add_reports(*survey_reports)
+
+def add_patient_report(cb):
+    cb.add_reports(BaseReport(type="MalariaPatientJSONReport"))

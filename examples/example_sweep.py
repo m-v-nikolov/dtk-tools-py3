@@ -19,8 +19,7 @@ cb.update_params({
 
 run_sim_args =  { 'config_builder' : cb,
                   'exp_name'       : exp_name,
-                  'exp_builder'    : builder,
-                  'show_progress'  : True }
+                  'exp_builder'    : builder }
 
 if __name__ == "__main__":
 

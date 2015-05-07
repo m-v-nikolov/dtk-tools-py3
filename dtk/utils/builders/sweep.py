@@ -38,7 +38,7 @@ class Builder(object):
     @classmethod
     def calib_site_fn(cls,s):
         def fn(cb):
-            cls.metadata.update({'_site_':s})
+            cls.metadata.update({'_calibsite_':s})
             set_calibration_site(cb, s)
         return fn
 

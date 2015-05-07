@@ -27,8 +27,6 @@ def run(args):
     location = 'HPC' if (args and args.hpc) else 'HPC-OLD' if (args and args.hpc_old) else 'LOCAL'
     setup = DTKSetupParser()
     sm = SimulationManagerFactory.from_exe(setup.get('BINARIES','exe_path'),location)
-    if hasattr(mod,'dlls'):
-        sm.AddEmodules(mod.dlls)
     sm.RunSimulations(**mod.run_sim_args)
 
 def status(args):

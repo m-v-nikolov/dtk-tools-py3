@@ -86,6 +86,7 @@ class LocalSimulationManager():
         dll_root = self.getProperty('dll_root')
 
         self.bin_path = self.StageExecutable(bin_root)
+        self.emodules.extend(list(config_builder.dlls))
         self.emodules_map = self.StageEmodules(dll_root)
 
         input_path = self.getProperty('input_root')
@@ -343,7 +344,7 @@ class LocalSimulationManager():
         for emodule in self.emodules:
             logger.debug(emodule)
             (head, emodule_name) = os.path.split(emodule)
-            (head, emodule_type) = os.path.split(head)  
+            (head, emodule_type) = os.path.split(head)
             emodule_hash = getMd5FromFile(emodule)
             emodule_dir = os.path.join(dll_root, emodule_type, emodule_hash)
             emodule_path = os.path.join(emodule_dir, emodule_name)
@@ -363,9 +364,6 @@ class LocalSimulationManager():
 
     def AddAnalyzer(self, analyzer):
         self.analyzers.append(analyzer)
-
-    def AddEmodules(self, emodule_list):
-        self.emodules.extend(emodule_list)
 
     def getProperty(self,property):
         return self.setup.get(self.location,property)
