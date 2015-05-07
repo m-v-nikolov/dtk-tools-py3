@@ -36,6 +36,9 @@ def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repet
 
         config_builder.add_event(drug_event)
 
+def set_drug_param(cb,drugname,parameter,value):
+    cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]=value
+
 # Definitions of drug blocks
 drug_params = {
 

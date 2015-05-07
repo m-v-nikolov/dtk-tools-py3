@@ -1,6 +1,8 @@
 import itertools
 from dtk.vector.study_sites import configure_site
-from dtk.tools.calibration.calibtool.geography_calibration import set_geography as set_geography_calibration
+from dtk.vector.calibration_sites import set_calibration_site
+from dtk.vector.species import set_species_param
+from dtk.interventions.malaria_drugs import set_drug_param
 
 class Builder(object):
     '''
@@ -23,35 +25,42 @@ class Builder(object):
     def param_fn(cls,k,v):
         def fn(cb):
             cls.metadata.update({k:v})
-            return cb.set_param(k,v)
+            cb.set_param(k,v)
         return fn
 
     @classmethod
     def site_fn(cls,s):
         def fn(cb):
             cls.metadata.update({'_site_':s})
-            return configure_site(cb,s)
+            configure_site(cb,s)
         return fn
 
     @classmethod
     def calib_site_fn(cls,s):
         def fn(cb):
             cls.metadata.update({'_site_':s})
-            return set_geography_calibration(cb, s)
+            set_calibration_site(cb, s)
         return fn
 
     @classmethod
     def drug_param_changes_fn(cls,drugname,p,v):
         def fn(cb):
-            cls.metadata.update({drugname+'_'+p:v})
-            return cb.config['parameters']['Malaria_Drug_Params'][drugname].update({p:v})
+            cls.metadata.update({drugname+'.'+p:v})
+            set_drug_param(cb,drugname,p,v)
         return fn
 
     @classmethod
     def vector_species_param_changes_fn(cls,vector,p,v):
         def fn(cb):
-            cls.metadata.update({vector+'_'+p:v})
-            return cb.config['parameters']['Vector_Species_Params'][vector].update({p:v})
+            cls.metadata.update({vector+'.'+p:v})
+            set_species_param(cb,vector,p,v)
+        return fn
+
+    @classmethod
+    def custom(cls,custom_fn,*args,**kwargs):
+        def fn(cb): 
+            cls.metadata.update({custom_fn.__name__:'_'.join(*args)+'_'.join(**kwargs)}) # TODO: fix unique descriptor of fn_args_kwargs
+            custom_fn(cb,*args,**kwargs)
         return fn
 
     @classmethod

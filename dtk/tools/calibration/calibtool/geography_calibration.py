@@ -5,15 +5,14 @@ from dtk.interventions.input_EIR import add_InputEIR
 from dtk.utils.reports.report_manager import add_reports
 
 def set_geography(cb, geography, geography_info, dll_root='') :
-    set_geography_config(cb.config, geography, geography_info)
+    set_geography_config(cb, geography, geography_info)
     set_geography_campaigns(cb, geography, geography_info)
     set_geography_reporters(cb, geography, geography_info, dll_root)
     return cb
 
-def set_geography_config(config, geography, geography_info):
+def set_geography_config(cb, geography, geography_info):
     mod_params = geography_info[geography]["config"]
-    config["parameters"].update(mod_params)
-    return config
+    cb.update_params(mod_params)
 
 def set_geography_campaigns(cb, geography, geography_info):
     campaigns = geography_info[geography]["campaign"]

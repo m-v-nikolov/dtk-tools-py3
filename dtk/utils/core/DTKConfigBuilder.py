@@ -5,18 +5,16 @@ import dtk.generic.params as generic_params
 import dtk.vector.params as vector_params
 import dtk.malaria.params as malaria_params
 from dtk.interventions.empty_campaign import empty_campaign
-from dtk.utils.reports import CustomReportsBuilder
+from dtk.utils.reports.CustomReport import format as format_reports
 
 # A class for building and modifying config/campaign files
 class DTKConfigBuilder:
 
-    config = {}
-    campaign = {}
-    custom_reports = {}
-
     def __init__(self, config, campaign):
         self.config = config
         self.campaign = campaign
+        self.custom_reports = []
+        self.dlls = set()
 
     @classmethod
     def from_defaults(cls, sim_type=None):
@@ -54,19 +52,6 @@ class DTKConfigBuilder:
 
         return cls(config, campaign)
 
-    ''' given a set of types, generate the given number of reports per type;
-        the reports are stored as a JSON file next to the config and campaign files;
-        the reports are generated with default values;     '''
-    @classmethod
-    def from_default_custom_reports(cls, custom_report_types):
-        crb = CustomReportsBuilder()
-
-        # instantiate custom reports objects
-        crb.generate_default_custom_reports(custom_report_types)
-
-        # generate config data structure suitable for DTK JSON dump
-        cls.custom_reports = crb.custom_reports_config_DTK()
-
     @classmethod
     def from_files(cls, config_name, campaign_name=None):
 
@@ -98,6 +83,11 @@ class DTKConfigBuilder:
     def clear_events(self):
         self.campaign["Events"][:] = []
 
+    def add_reports(self,*reports):
+        for r in reports:
+            self.custom_reports.append(r)
+            self.dlls.add(r.get_dll_path())
+
     def dump_files(self, output_directory):
 
         # create output directory if it doesn't yet exist
@@ -110,7 +100,7 @@ class DTKConfigBuilder:
             if self.custom_reports:
                 # dump custom_reports to file and add path to config.json
                 with open( os.path.join( output_directory, "custom_reports.json"), "w" ) as custom_reports_file:
-                    custom_reports_file.write( json.dumps( self.custom_reports, sort_keys=True, indent=4 ) )
+                    custom_reports_file.write( json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 ) )
                 self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
             config_file.write( json.dumps( self.config, sort_keys=True, indent=4 ) )
 
@@ -125,7 +115,7 @@ class DTKConfigBuilder:
         if self.custom_reports:
             # dump custom_reports to string and add path to config.json
             self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
-            custom_reports_str = json.dumps( self.custom_reports, sort_keys=True, indent=4 )
+            custom_reports_str = json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 )
         else:
             custom_reports_str=None
         configstr = json.dumps( self.config, sort_keys=True, indent=4 )
