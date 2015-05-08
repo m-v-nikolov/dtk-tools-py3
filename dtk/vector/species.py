@@ -118,6 +118,13 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
 def set_species_param(cb,species,parameter,value):
     cb.config['parameters']['Vector_Species_Params'][species][parameter]=value
 
+def get_species_param(cb,species,parameter):
+    try:
+        return cb.config['parameters']['Vector_Species_Params'][species][parameter]
+    except:
+        print('Unable to get parameter %s for species %s' % (parameter,species))
+        return None
+
 # Set vector species and habitat parameters of config argument and return
 # Example:
 # habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }

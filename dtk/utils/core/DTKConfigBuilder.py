@@ -47,19 +47,14 @@ class DTKConfigBuilder:
 
         config["parameters"]["Simulation_Type"] = sim_type
 
-        # Load an empty campaign file
-        campaign = empty_campaign
-
-        return cls(config, campaign)
+        return cls(config, empty_campaign)
 
     @classmethod
     def from_files(cls, config_name, campaign_name=None):
 
-        # load config.json
         with open( config_name, "r" ) as configjson_file:
             config = json.loads( configjson_file.read() )
 
-        # load campaign.json if specified
         if campaign_name:
             with open( campaign_name, "r" ) as campaignjson_file:
                 campaign = json.loads( campaignjson_file.read() )
@@ -90,37 +85,30 @@ class DTKConfigBuilder:
 
     def dump_files(self, output_directory):
 
-        # create output directory if it doesn't yet exist
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        # dump config to file
         with open( os.path.join( output_directory, "config.json"), "w" ) as config_file:
             self.config["parameters"]["Campaign_Filename"] = "campaign.json"
             if self.custom_reports:
-                # dump custom_reports to file and add path to config.json
                 with open( os.path.join( output_directory, "custom_reports.json"), "w" ) as custom_reports_file:
                     custom_reports_file.write( json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 ) )
                 self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
             config_file.write( json.dumps( self.config, sort_keys=True, indent=4 ) )
 
-        # dump campaign to file
         with open( os.path.join( output_directory, "campaign.json"), "w" ) as campaign_file:
             campaign_file.write( json.dumps( self.campaign, sort_keys=True, indent=4 ) )
 
     def dump_files_to_string(self):
 
-        # dump config to string
         self.config["parameters"]["Campaign_Filename"] = "campaign.json"
         if self.custom_reports:
-            # dump custom_reports to string and add path to config.json
             self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
             custom_reports_str = json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 )
         else:
             custom_reports_str=None
         configstr = json.dumps( self.config, sort_keys=True, indent=4 )
 
-        # dump campaign to string
         campaignstr = json.dumps( self.campaign, sort_keys=True, indent=4 )
 
         return configstr, campaignstr, custom_reports_str

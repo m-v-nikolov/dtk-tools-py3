@@ -2,6 +2,8 @@ import unittest
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import *
+from dtk.vector.species import get_species_param,set_species_param
+from dtk.interventions.malaria_drugs import get_drug_param,set_drug_param
 
 class TestBuilders(unittest.TestCase):
 
@@ -14,39 +16,32 @@ class TestBuilders(unittest.TestCase):
 
     def test_param_fn(self):
         k,v=('Simulation_Duration',100)
-        fn=Builder.param_fn(k,v)
+        fn=param_fn(k,v)
         fn(self.cb)
         self.assertEqual(self.cb.get_param(k),v)
         self.assertEqual(Builder.metadata,{k:v})
 
     def test_site_fn(self):
         s='Namawala'
-        fn=Builder.site_fn(s)
+        fn=site_fn(s)
         fn(self.cb)
         self.assertTrue('Namawala' in self.cb.get_param('Demographics_Filename'))
         self.assertEqual(Builder.metadata,{'_site_':'Namawala'})
 
     def test_calibsite_fn(self):
         s='Namawala'
-        fn=Builder.calib_site_fn(s)
+        fn=site_fn(s,calib=True)
         fn(self.cb)
         self.assertEqual(self.cb.campaign['Events'][0]['Event_Coordinator_Config']['Intervention_Config']['class'],'InputEIR')
         self.assertEqual(self.cb.custom_reports[0].type,'MalariaSummaryReport')
         self.assertEqual(Builder.metadata,{'_site_':'Namawala'})
 
-    def test_vector_param_fn(self):
-        s,k,v=('gambiae','Anthropophily',0.8)
-        fn=Builder.vector_species_param_changes_fn(s,k,v)
+    def test_custom_fn(self):
+        fn=custom_fn('gambiae.Required_Habitat_Factor',
+                     set_species_param,'gambiae','Required_Habitat_Factor',
+                     value=[100,50])
         fn(self.cb)
-        self.assertEqual(self.cb.config['parameters']['Vector_Species_Params'][s][k],v)
-        self.assertEqual(Builder.metadata,{'gambiae.Anthropophily':v})
-
-    def test_drug_param_fn(self):
-        d,k,v=('Artemether','Drug_Cmax',1000)
-        fn=Builder.drug_param_changes_fn(d,k,v)
-        fn(self.cb)
-        self.assertEqual(self.cb.config['parameters']['Malaria_Drug_Params'][d][k],v)
-        self.assertEqual(Builder.metadata,{'Artemether.Drug_Cmax':v})
+        self.assertListEqual(get_species_param(self.cb,'gambiae','Required_Habitat_Factor'),[100,50])
 
     def test_default(self):
         b=DefaultSweepBuilder()
@@ -74,10 +69,26 @@ class TestBuilders(unittest.TestCase):
         md=[(0.05,'Namawala'),(0.05,'Matsari'),(0.1,'Namawala'),(0.1,'Matsari')]
         ngenerated=0
         for i,ml in enumerate(b.mod_generator):
-            for m in ml:
+            for m in ml: 
                 m(self.cb)
             self.assertEqual(b.metadata,dict(zip(('x_Temporary_Larval_Habitat','_site_'),md[i])))
             self.assertEqual(self.cb.get_param('x_Temporary_Larval_Habitat'),md[i][0])
+            ngenerated+=1
+        self.assertEqual(ngenerated,4)
+
+    def test_vector_drug_param_sweep(self):
+        b = GenericSweepBuilder.from_dict({
+              '_gambiae.Required_Habitat_Factor_': [(set_species_param,'gambiae','Required_Habitat_Factor',dict(value=v)) for v in ((100,50),(200,100))],
+              '_Artemether.Max_Drug_IRBC_Kill': [(set_drug_param,'Artemether','Max_Drug_IRBC_Kill',dict(value=v)) for v in (4.0,2.0)]
+              })
+        md=[(4,(100,50)),(4,(200,100)),(2,(100,50)),(2,(200,100))]
+        ngenerated=0
+        for i,ml in enumerate(b.mod_generator):
+            for m in ml: 
+                m(self.cb)
+            self.assertListEqual([v['value'] for v in b.metadata.values()],list(md[i]))
+            self.assertEqual(get_species_param(self.cb,'gambiae','Required_Habitat_Factor'),md[i][1])
+            self.assertEqual(get_drug_param(self.cb,'Artemether','Max_Drug_IRBC_Kill'),md[i][0])
             ngenerated+=1
         self.assertEqual(ngenerated,4)
 

@@ -39,6 +39,13 @@ def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repet
 def set_drug_param(cb,drugname,parameter,value):
     cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]=value
 
+def get_drug_param(cb,drugname,parameter):
+    try:
+        return cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]
+    except:
+        print('Unable to get parameter %s for drug %s' % (parameter,drugname))
+        return None
+
 # Definitions of drug blocks
 drug_params = {
 

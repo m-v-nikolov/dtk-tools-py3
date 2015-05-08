@@ -2,13 +2,17 @@ from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.utils.reports.MalariaReport import add_patient_report
 from dtk.interventions.malaria_drugs import add_drug_campaign
+from dtk.vector.species import set_species_param
+from dtk.interventions.malaria_drugs import set_drug_param
 
 exp_name  = 'DrugCampaignVectorParamSweep'
-builder   = GenericSweepBuilder.from_dict({'Run_Number': range(1),
-                                           'x_Temporary_Larval_Habitat': [0.05],
-                                           '_site_'    : ['Namawala'],
-                                           'AntiMalDrug_Artemether_Adherence' : [0.5, 0.7],
-                                           'VectorSpec_gambiae_Required_Habitat_Factor' : [[100, 50], [200,100]]})
+builder = GenericSweepBuilder.from_dict({
+              'Run_Number': range(1),
+              'x_Temporary_Larval_Habitat': (0.05,),
+              '_site_': ('Namawala',),
+              '_gambiae.Required_Habitat_Factor_': [(set_species_param,'gambiae','Required_Habitat_Factor',dict(value=v)) for v in ((100,50),(200,100))],
+              '_Artemether.Max_Drug_IRBC_Kill_': [(set_drug_param,'Artemether','Max_Drug_IRBC_Kill',dict(value=v)) for v in (4.0,2.0)]
+              })
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 cb.update_params({'Num_Cores': 1,
