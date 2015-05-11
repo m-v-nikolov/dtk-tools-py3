@@ -10,8 +10,14 @@ builder = GenericSweepBuilder.from_dict({
               'Run_Number': range(1),
               'x_Temporary_Larval_Habitat': (0.05,),
               '_site_': ('Namawala',),
-              '_gambiae.Required_Habitat_Factor_': [(set_species_param,'gambiae','Required_Habitat_Factor',dict(value=v)) for v in ((100,50),(200,100))],
-              '_Artemether.Max_Drug_IRBC_Kill_': [(set_drug_param,'Artemether','Max_Drug_IRBC_Kill',dict(value=v)) for v in (4.0,2.0)]
+              '_gambiae.Required_Habitat_Factor_': [
+                  (set_species_param,
+                   'gambiae','Required_Habitat_Factor',
+                   dict(value=v)) for v in ((100,50),(200,100))],
+              '_Artemether.Max_Drug_IRBC_Kill_': [
+                  (set_drug_param,
+                   'Artemether','Max_Drug_IRBC_Kill',
+                   dict(value=v)) for v in (4.0,2.0)]
               })
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
