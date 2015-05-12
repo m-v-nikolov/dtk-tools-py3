@@ -432,10 +432,10 @@ class CompsSimulationManager(LocalSimulationManager):
         self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
 
     def createSimulation(self, sim_path):
-        configstr, campaignstr, custom_reports_str = self.config_builder.dump_files_to_string()
-        emodulesstr = json.dumps(self.emodules_map, sort_keys=True, indent=4)
+        files = self.config_builder.dump_files_to_string()
+        files.update({'emodules':json.dumps(self.emodules_map, sort_keys=True, indent=4)})
         tags = self.exp_builder.metadata
-        self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), configstr, campaignstr, emodulesstr, custom_reports_str, tags)
+        self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), files, tags)
 
     def commissionSimulation(self, sim_path, sims):
         if self.sims_created % self.comps_sims_to_batch == 0:

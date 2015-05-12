@@ -13,6 +13,7 @@ class DTKConfigBuilder:
     def __init__(self, config, campaign):
         self.config = config
         self.campaign = campaign
+        self.demog_overlays = {}
         self.custom_reports = []
         self.dlls = set()
 
@@ -101,14 +102,15 @@ class DTKConfigBuilder:
 
     def dump_files_to_string(self):
 
+        files={}
+
+        files['campaign'] = json.dumps( self.campaign, sort_keys=True, indent=4 )
+
         self.config["parameters"]["Campaign_Filename"] = "campaign.json"
+        files['config'] = json.dumps( self.config, sort_keys=True, indent=4 )
+
         if self.custom_reports:
             self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
-            custom_reports_str = json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 )
-        else:
-            custom_reports_str=None
-        configstr = json.dumps( self.config, sort_keys=True, indent=4 )
+            files['custom_reports'] = json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 )
 
-        campaignstr = json.dumps( self.campaign, sort_keys=True, indent=4 )
-
-        return configstr, campaignstr, custom_reports_str
+        return files

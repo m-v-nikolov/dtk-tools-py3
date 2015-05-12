@@ -136,10 +136,9 @@ class CompsSimulationCommissioner(SimulationCommissioner):
         # print(sim_md)
         return sim_md
 
-    def createSimulation(self, name, configstr, campaignstr, emodulesstr, custom_reports_str, tags):
-        sim = { 'name': name, 'config': configstr, 'campaign': campaignstr, 'emodules': emodulesstr, 'tags': tags }
-        if custom_reports_str:
-            sim.update({'custom_reports':custom_reports_str})
+    def createSimulation(self, name, files, tags):
+        sim = { 'name': name, 'tags': tags }
+        sim.update(files)
         self.sims.append(sim)
 
     def run(self):
