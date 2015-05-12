@@ -71,6 +71,7 @@ d = {'a':1, 'b':2, 'c':3}
 df = d2p(d)
 p2c(df)
 print "data frame to csv; default csv file location ./dataframe.csv"
+os.remove('dataframe.csv')
 
 p2c(df, "my_data.csv")
 print "data frame to csv; save to a file my_data.csv"
