@@ -5,7 +5,9 @@ import dtk.generic.params as generic_params
 import dtk.vector.params as vector_params
 import dtk.malaria.params as malaria_params
 from dtk.interventions.empty_campaign import empty_campaign
+from dtk.generic.demographics import append_overlay
 from dtk.utils.reports.CustomReport import format as format_reports
+from dtk.utils.parsers.JSON import json2dict, dict2json
 
 # A class for building and modifying config/campaign files
 class DTKConfigBuilder:
@@ -52,16 +54,8 @@ class DTKConfigBuilder:
 
     @classmethod
     def from_files(cls, config_name, campaign_name=None):
-
-        with open( config_name, "r" ) as configjson_file:
-            config = json.loads( configjson_file.read() )
-
-        if campaign_name:
-            with open( campaign_name, "r" ) as campaignjson_file:
-                campaign = json.loads( campaignjson_file.read() )
-        else:
-            campaign = empty_campaign
-
+        config = json2dict(config_name)
+        campaign = json2dict(campaign_name) if campaign_name else empty_campaign
         return cls(config, campaign)
 
     def update_params(self, params):
@@ -84,33 +78,37 @@ class DTKConfigBuilder:
             self.custom_reports.append(r)
             self.dlls.add(r.get_dll_path())
 
-    def dump_files(self, output_directory):
+    def add_demog_overlay(self,name,content):
+        if name in self.demog_overlays:
+            raise Exception('Already have demographics overlay named %s'%name)
+        self.demog_overlays[name]=content
 
+    def dump_files(self, output_directory):
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
-
-        with open( os.path.join( output_directory, "config.json"), "w" ) as config_file:
-            self.config["parameters"]["Campaign_Filename"] = "campaign.json"
-            if self.custom_reports:
-                with open( os.path.join( output_directory, "custom_reports.json"), "w" ) as custom_reports_file:
-                    custom_reports_file.write( json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 ) )
-                self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
-            config_file.write( json.dumps( self.config, sort_keys=True, indent=4 ) )
-
-        with open( os.path.join( output_directory, "campaign.json"), "w" ) as campaign_file:
-            campaign_file.write( json.dumps( self.campaign, sort_keys=True, indent=4 ) )
+        def write_file(name,content):
+            dict2json(os.path.join(output_directory,'%s.json'%name), content)
+        self.file_writer(write_file)
 
     def dump_files_to_string(self):
-
         files={}
+        def update_strings(name,content):
+            files[name] = content
+        self.file_writer(update_strings)
+        return files
 
-        files['campaign'] = json.dumps( self.campaign, sort_keys=True, indent=4 )
+    def file_writer(self,write_fn):
+        dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        self.config["parameters"]["Campaign_Filename"] = "campaign.json"
-        files['config'] = json.dumps( self.config, sort_keys=True, indent=4 )
+        self.set_param('Campaign_Filename','campaign.json')
+        write_fn('campaign', dump(self.campaign))
 
         if self.custom_reports:
-            self.config["parameters"]["Custom_Reports_Filename"] = "custom_reports.json"
-            files['custom_reports'] = json.dumps( format_reports(self.custom_reports), sort_keys=True, indent=4 )
+            self.set_param('Custom_Reports_Filename','custom_reports.json')
+            write_fn('custom_reports', dump(format_reports(self.custom_reports)))
 
-        return files
+        for name,content in self.demog_overlays.items():
+            append_overlay(self,'%s.json'%name)
+            write_fn(name, dump(content))
+
+        write_fn('config',dump(self.config))

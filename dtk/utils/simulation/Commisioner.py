@@ -146,21 +146,22 @@ class CompsSimulationCommissioner(SimulationCommissioner):
 
         try:
             for sim in self.sims:
-                s = Simulation(sim['name'])
+                s = Simulation(sim.pop('name'))
                 s.setExperimentId(self.exp_id)
-                s.AddFile(SimulationFile('config.json', 'input', 'The configuration file'), sim['config'])
-                s.AddFile(SimulationFile('campaign.json', 'input', 'The campaign file'), sim['campaign'])
-                s.AddFile(SimulationFile('emodules_map.json', 'input', 'Map of emodules used'), sim['emodules'])
-                if 'custom_reports' in sim.keys():
-                    s.AddFile(SimulationFile('custom_reports.json', 'input', 'The custom reports configuration file'), sim['custom_reports'])
-                
+
                 m = autoclass('java.util.HashMap')()
-                for key in sim['tags']:
-                    m.put(str(key), str(sim['tags'][key]))
+                for k,v in sim.pop('tags').items():
+                    m.put(str(k), str(v))
                 s.SetTags(m)
 
+                s.AddFile(SimulationFile('config.json', 'input', 'The configuration file'), sim.pop('config'))
+                s.AddFile(SimulationFile('campaign.json', 'input', 'The campaign file'), sim.pop('campaign'))
+                s.AddFile(SimulationFile('emodules_map.json', 'input', 'Map of emodules used'), sim.pop('emodules'))
+                for name,content in sim.items():
+                    s.AddFile(SimulationFile('%s.json'%name, 'input', 'The %s configuration file'%name), content)
+
                 # s.Save()    # not here... we'll batch save later...
-            
+
             self.sims = []
             
             Simulation.SaveAll()
