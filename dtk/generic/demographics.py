@@ -2,7 +2,7 @@ import os
 import json
 
 params = {
-    "Demographics_Filename": "",
+    "Demographics_Filenames": [],
 
     "Population_Scale_Type": "FIXED_SCALING",
     "Base_Population_Scale_Factor": 1,
@@ -19,7 +19,7 @@ params = {
     "Enable_Immunity_Initialization_Distribution": 0,
 
     "Enable_Vital_Dynamics": 1,
-    "Enable_Nondisease_Mortality": 1,
+    "Death_Rate_Dependence": "NONDISEASE_MORTALITY_BY_AGE_AND_GENDER",
     "Enable_Birth": 1,
     "Birth_Rate_Dependence": "POPULATION_DEP_RATE",
     "x_Birth": 1,
@@ -87,9 +87,12 @@ def set_demog_distributions(filename, distributions):
 
 def set_static_demographics(cb,use_existing=False):
 
-    demog_filename=cb.get_param('Demographics_Filename')
-    static_demog_filename=demog_filename.replace("demographics","demographics.static",1)
-    cb.set_param("Demographics_Filename",static_demog_filename)
+    demog_filenames=cb.get_param('Demographics_Filenames')
+    if len(demog_filenames)!=1:
+        raise Exception('Expecting only one demographics filename.')
+    demog_filename=demog_filenames[0]
+    static_demog_filename=demog_filename.replace(".json",".static.json",1)
+    cb.set_param("Demographics_Filenames",[static_demog_filename])
     cb.set_param("Birth_Rate_Dependence","FIXED_BIRTH_RATE")
 
     if use_existing:
@@ -122,7 +125,7 @@ def set_static_demographics(cb,use_existing=False):
     def set_attributes(d):
         d['IndividualAttributes'].update(
             {"MortalityDistribution": mod_mortality,
-             "AgeDistributionFlag": distribution_types["EXPONENTIAL_DISTRIBUTION"]
+             "AgeDistributionFlag": distribution_types["EXPONENTIAL_DISTRIBUTION"],
              "AgeDistribution1": exponential_age_param})
         d['NodeAttributes'].update({"BirthRate": birthrate})
 
@@ -134,9 +137,12 @@ def set_static_demographics(cb,use_existing=False):
 
 def set_growing_demographics(cb,use_existing=False):
 
-    demog_filename=cb.get_param('Demographics_Filename')
-    static_demog_filename=demog_filename.replace("demographics","demographics.pop_growth",1)
-    cb.set_param("Demographics_Filename",static_demog_filename)
+    demog_filenames=cb.get_param('Demographics_Filenames')
+    if len(demog_filenames)!=1:
+        raise Exception('Expecting only one demographics filename.')
+    demog_filename=demog_filenames[0]
+    growing_demog_filename=demog_filename.replace(".json",".growing.json",1)
+    cb.set_param("Demographics_Filenames",[growing_demog_filename])
     cb.set_param("Birth_Rate_Dependence","POPULATION_DEP_RATE")
 
     if use_existing:
@@ -170,6 +176,6 @@ def set_growing_demographics(cb,use_existing=False):
 
     apply_to_defaults_or_nodes(demog,set_attributes)
 
-    output_file_path = demog_filename.replace(".json",".static.json",1)
+    output_file_path = demog_filename.replace(".json",".growing.json",1)
     with open( output_file_path, "w" ) as output_file:
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )

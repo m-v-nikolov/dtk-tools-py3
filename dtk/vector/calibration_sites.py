@@ -1,5 +1,5 @@
 from dtk.generic.geography import set_geography
-from dtk.generic.demographics import add_immune_overlays
+from dtk.malaria.immunity import add_immune_overlays
 from dtk.vector.input_EIR_by_site import configure_site_EIR
 from dtk.interventions.health_seeking import add_health_seeking
 from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report

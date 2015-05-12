@@ -25,7 +25,7 @@ class TestBuilders(unittest.TestCase):
         s='Namawala'
         fn=site_fn(s)
         fn(self.cb)
-        self.assertTrue('Namawala' in self.cb.get_param('Demographics_Filename'))
+        self.assertTrue('Namawala' in self.cb.get_param('Demographics_Filenames')[0])
         self.assertEqual(Builder.metadata,{'_site_':'Namawala'})
 
     def test_calibsite_fn(self):

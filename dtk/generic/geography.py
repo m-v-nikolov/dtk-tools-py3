@@ -8,7 +8,9 @@ def set_geography(cb, geography):
     g=params.pop('Geography',None)
     if g:
         for k,v in params.items():
-            if 'Filename' in k:
+            if k=='Demographics_Filename':
+                params['Demographics_Filenames']=[os.path.join(g,v) for v in params.pop(k).split(';')]
+            elif 'Filename' in k:
                 params[k] = os.path.join(g,v)
     cb.update_params(params)
 

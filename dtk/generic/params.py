@@ -10,7 +10,10 @@ params = {
     "Enable_Spatial_Output": 0,
     "Enable_Property_Output": 0,
     "Enable_Timestep_Channel_In_Report": 0,
+    "Enable_Default_Reporting": 1,
     "Enable_Heterogeneous_Intranode_Transmission": 0,
+
+    "Listed_Events": [],
 
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###
