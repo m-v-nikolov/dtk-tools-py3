@@ -1,0 +1,21 @@
+# Python
+*.py[cod]
+
+# Visual Studio
+*.pyproj
+*.sln
+*.suo
+
+# Simulation meta-data
+*simulations/
+
+# Analysis outputs
+*cache/
+*figs/
+
+# Old stuff
+deprecate/
+
+# Setup
+*egg-info
+*build/
