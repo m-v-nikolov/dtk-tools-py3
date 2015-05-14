@@ -5,6 +5,7 @@ import unittest
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.generic.demographics import *
+from dtk.vector.larval_habitat import *
 
 class TestDemographics(unittest.TestCase):
 
@@ -85,6 +86,20 @@ class TestDemographics(unittest.TestCase):
             self.assertDictEqual(n['IndividualAttributes']['MortalityDistribution'],mod_mortality)
             self.assertEqual(n['NodeAttributes']['BirthRate'],0.0001)
         os.remove(outfile)
+
+    def test_habitat_overlay(self):
+        set_habitat_multipliers(self.cb, 'single_test_guess_2.5arcmin',
+                                [ NodesMultipliers(nodes=[340461476],multipliers={'ALL_HABITATS':10.0}) ])
+        overlay=self.cb.demog_overlays['single_test_guess_2.5arcmin']
+        self.assertEqual(overlay['Metadata']['IdReference'],'Gridded world grump2.5arcmin')
+
+        with open('input/test_overlay.json') as f:
+            j=json.loads(f.read())
+        self.assertListEqual(j['Nodes'],overlay['Nodes'])
+
+        set_habitat_multipliers(self.cb, 'single_test_guess_30arcsec',
+                                [ NodesMultipliers(nodes=[1632117296],multipliers={'ALL_HABITATS':1.0}) ])
+        self.assertEqual(self.cb.demog_overlays['single_test_guess_30arcsec']['Metadata']['IdReference'],'Gridded world grump30arcsec')
 
 if __name__ == '__main__':
     unittest.main()

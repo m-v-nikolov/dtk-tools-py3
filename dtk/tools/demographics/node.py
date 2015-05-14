@@ -1,9 +1,20 @@
 import json
 import math
 
-def get_node_id(lat, lon, res_in_degrees = 2.5/60):
-    xpix = int(math.floor((lon + 180.0) / res_in_degrees))
-    ypix = int(math.floor((lat + 90.0) / res_in_degrees))
+def get_xpix_ypix(nodeid):
+    ypix = (nodeid-1) & 2**16-1
+    xpix = (nodeid-1) >> 16
+    return (xpix,ypix)
+
+def lat_lon_from_nodeid(nodeid, res_in_deg):
+    xpix,ypix = get_xpix_ypix(nodeid)
+    lat = (0.5+ypix)*res_in_deg - 90.0
+    lon = (0.5+xpix)*res_in_deg - 180.0
+    return (lat,lon)
+
+def nodeid_from_lat_lon(lat, lon, res_in_deg = 2.5/60):
+    xpix = int(math.floor((lon + 180.0) / res_in_deg))
+    ypix = int(math.floor((lat + 90.0) / res_in_deg))
     nodeid = (xpix << 16) + ypix + 1
     return nodeid
 

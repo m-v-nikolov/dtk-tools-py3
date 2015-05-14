@@ -1,7 +1,7 @@
 import json
 
 from routes import get_raster_nodes
-from node import get_node_id
+from node import nodeid_from_lat_lon
 from db import *
 
 def query_PfPR_by_node(node_ids):
@@ -23,7 +23,7 @@ def query_PfPR_by_node(node_ids):
 
 if __name__ == '__main__':
     nodes=get_raster_nodes('cache/raster_nodes_Haiti.json',N=-1)
-    nodeids=[get_node_id(node['Latitude'],node['Longitude'],res_in_degrees=2.5/60) for node in nodes]
+    nodeids=[nodeid_from_lat_lon(node['Latitude'],node['Longitude'],res_in_deg=2.5/60) for node in nodes]
     PfPR_by_node=query_PfPR_by_node(nodeids)
     with open('cache/MAP_Haiti.json','w') as fp:
         json.dump(PfPR_by_node,fp,indent=4,sort_keys=True)
