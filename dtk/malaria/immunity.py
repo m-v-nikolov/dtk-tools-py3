@@ -1,3 +1,6 @@
+from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from dtk.utils.parsers.JSON import json2dict
+
 params = {
     "Antibody_CSP_Decay_Days": 90,
     "Antibody_CSP_Killing_Inverse_Width": 1.5,
@@ -23,29 +26,29 @@ params = {
     "Erythropoiesis_Anemia_Effect": 3.5
     }
 
-def add_immune_overlays(cb, tags):
+def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_root')):
 
     demogfiles = cb.get_param("Demographics_Filenames")
 
-    if len(demogfiles) > 1:
+    if len(demogfiles) != 1:
         raise Exception('add_immune_init function is expecting only a single demographics file.')
 
     demog_filename=demogfiles[0]
-    split_demog = demog_filename.split('.')
-    prefix,suffix = split_demog[0],split_demog[1:]
+    prefix = demog_filename.split('.')[0]
+
+    if 'demographics' not in prefix:
+        raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
 
     for tag in tags:
-        if 'demographics' not in prefix:
-            raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
-        immune_init_file_name = prefix.replace("demographics","immune_init_" + tag, 1) + "."+suffix[0]
-        demogfiles.append(immune_init_file_name)
+        immune_init_name = prefix.replace("demographics","immune_init_" + tag, 1)
+        if directory:
+            cb.add_demog_overlay(immune_init_name,json2dict(os.path.join(directory,'%s.json'%immune_init_name)))
+        else:
+            cb.append_overlay('%s.json'%immune_init_name)
 
-    cb.update_params({ "Enable_Immunity_Initialization_Distribution":1,
-                       "Demographics_Filenames": demogfiles })
+    cb.set_param("Enable_Immunity_Initialization_Distribution",1)
 
 # Immune initialization based on habitat scaling
-def add_immune_init(cb, site, x_temp_habitats):
-    tags = []
-    for x_temp_habitat in x_temp_habitats:
-        tags.append( "x_" + str(x_temp_habitat) )
-    add_immune_overlays(cb, tags)
+def add_immune_init(cb, site, x_temp_habitats, directory=None):
+    tags = ["x_"+str(x) for x in x_temp_habitats]
+    add_immune_overlays(cb, tags, directory)

@@ -29,7 +29,8 @@ def main():
     child_ITN_distribution(cb,coverage=0.9)
     #population_ITN_distribution(cb,coverage=0.9)
 
-    run_sim_args =  {'config_builder': cb, 'exp_name': '1_vector_demo'}
+    run_sim_args =  {'config_builder': cb,
+                     'exp_name': '1_vector_demo'}
 
     # RUN the simulation
     sm = SimulationManagerFactory.from_exe(DTKSetupParser().get('BINARIES','exe_path'),'LOCAL')

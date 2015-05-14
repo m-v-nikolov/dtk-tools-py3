@@ -120,4 +120,4 @@ def json2dict(json_file, as_is = True, func = None):
 
 def dict2json(filename,dict_content):
     with open(filename,'w') as f:
-        f.write(content)
+        f.write(dict_content)

@@ -51,9 +51,6 @@ distribution_types = {
     "BIMODAL_DISTRIBUTION" : 6
     }
 
-def append_overlay(cb):
-    cb.config['parameters']['Demographics_Filenames'].append(demog_file)
-
 def set_risk_mod(filename, distribution, par1, par2):
     set_demog_distributions(filename, [("Risk", distribution, par1, par2)])
 

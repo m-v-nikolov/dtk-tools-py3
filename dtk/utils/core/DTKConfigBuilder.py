@@ -5,7 +5,6 @@ import dtk.generic.params as generic_params
 import dtk.vector.params as vector_params
 import dtk.malaria.params as malaria_params
 from dtk.interventions.empty_campaign import empty_campaign
-from dtk.generic.demographics import append_overlay
 from dtk.utils.reports.CustomReport import format as format_reports
 from dtk.utils.parsers.JSON import json2dict, dict2json
 
@@ -78,16 +77,19 @@ class DTKConfigBuilder:
             self.custom_reports.append(r)
             self.dlls.add(r.get_dll_path())
 
+    def append_overlay(self,demog_file):
+        self.config['parameters']['Demographics_Filenames'].append(demog_file)
+
     def add_demog_overlay(self,name,content):
         if name in self.demog_overlays:
             raise Exception('Already have demographics overlay named %s'%name)
         self.demog_overlays[name]=content
 
-    def dump_files(self, output_directory):
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
+    def dump_files(self, working_directory):
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
         def write_file(name,content):
-            dict2json(os.path.join(output_directory,'%s.json'%name), content)
+            dict2json(os.path.join(working_directory,'%s.json'%name), content)
         self.file_writer(write_file)
 
     def dump_files_to_string(self):
@@ -108,7 +110,7 @@ class DTKConfigBuilder:
             write_fn('custom_reports', dump(format_reports(self.custom_reports)))
 
         for name,content in self.demog_overlays.items():
-            append_overlay(self,'%s.json'%name)
+            self.append_overlay('%s.json'%name)
             write_fn(name, dump(content))
 
         write_fn('config',dump(self.config))
