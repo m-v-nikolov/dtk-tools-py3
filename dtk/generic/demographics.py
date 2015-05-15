@@ -91,7 +91,7 @@ def set_static_demographics(cb,use_existing=False):
     if len(demog_filenames)!=1:
         raise Exception('Expecting only one demographics filename.')
     demog_filename=demog_filenames[0]
-    static_demog_filename=demog_filename.replace(".json",".static.json",1)
+    static_demog_filename=demog_filename.replace("compiled.","").replace(".json",".static.json",1)
     cb.set_param("Demographics_Filenames",[static_demog_filename])
     cb.set_param("Birth_Rate_Dependence","FIXED_BIRTH_RATE")
 
@@ -141,7 +141,7 @@ def set_growing_demographics(cb,use_existing=False):
     if len(demog_filenames)!=1:
         raise Exception('Expecting only one demographics filename.')
     demog_filename=demog_filenames[0]
-    growing_demog_filename=demog_filename.replace(".json",".growing.json",1)
+    growing_demog_filename=demog_filename.replace("compiled.","").replace(".json",".growing.json",1)
     cb.set_param("Demographics_Filenames",[growing_demog_filename])
     cb.set_param("Birth_Rate_Dependence","POPULATION_DEP_RATE")
 
