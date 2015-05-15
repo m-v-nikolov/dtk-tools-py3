@@ -22,6 +22,10 @@ On Windows, one may need to add the `Scripts` subdirectory of your local Python 
 
 To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `dtk_setup.cfg`.
 
+One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
+
+Example configurations for simulation sweeps and analysis processing may be found in the `examples` directory.
+
 #### Dependencies
 
 The `dtk status` command imports the [`psutil`](https://pypi.python.org/pypi/psutil) package for process ID lookup of local simulations. HPC simulations will be able to retrieve status without this package.
@@ -31,12 +35,4 @@ Statistical analysis and plotting of output depend on [`numpy`](https://pypi.pyt
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
 Interoperability with the JAVA layer of COMPS requires installation of the Java Runtime Environment and setup of the `COMPS` package, which in turn has dependencies on `cython` and `pyjnius`.  Those instructions are currently outside the scope of the installation instructions for this package.
-
-#### Test
-
-There are a number of unit tests in the `test` directory.  If one has installed the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package, one can navigate to the `test` directory and call `nosetests` to run all tests.
-
-#### Examples
-
-There are a number of example simulation sweep and analysis processing configurations in the `examples` directory.
 
