@@ -31,3 +31,12 @@ Statistical analysis and plotting of output depend on [`numpy`](https://pypi.pyt
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
 Interoperability with the JAVA layer of COMPS requires installation of the Java Runtime Environment and setup of the `COMPS` package, which in turn has dependencies on `cython` and `pyjnius`.  Those instructions are currently outside the scope of the installation instructions for this package.
+
+#### Test
+
+There are a number of unit tests in the `test` directory.  If one has installed the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package, one can navigate to the `test` directory and call `nosetests` to run all tests.
+
+#### Examples
+
+There are a number of example simulation sweep and analysis processing configurations in the `examples` directory.
+
