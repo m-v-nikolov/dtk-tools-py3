@@ -6,7 +6,7 @@ from dtk.utils.analyzers.timeseries import TimeseriesAnalyzer
 from dtk.utils.analyzers.regression import RegressionTestAnalyzer
 
 analyzers = [ TimeseriesAnalyzer(
-                group_function=group_by_name,
+                group_function=group_by_name('Config_Name'),
                 plot_function=plot_CI_bands
                 ),
               RegressionTestAnalyzer(

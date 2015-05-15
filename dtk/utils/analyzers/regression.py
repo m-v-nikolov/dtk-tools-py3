@@ -17,7 +17,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
                  saveOutput=False):
 
         TimeseriesAnalyzer.__init__(self,filter_function=filter_function, 
-                                    group_function=group_by_name,
+                                    group_function=group_by_name('Config_Name'),
                                     plot_function=lambda df,ax: df.plot(ax=ax,legend=True),
                                     channels=channels, 
                                     saveOutput=saveOutput)
@@ -33,14 +33,10 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
                                     parser.sim_data['Config_Name'],
                                     'output',self.filenames[0])
 
-        # TODO: bump this repeated fragment into a few utilities
-        #       e.g. read, pandas table construction, and CSV dump
-        #       for each of InsetChart (and other?) JSON and Spatial binary
         with open(reference_path) as f:
             data_by_channel=json.loads(f.read())['Channels']
         channel_series = [self.select_function(data_by_channel[channel]["Data"]) for channel in self.channels]
         ref_channel_data = pd.concat(channel_series, axis=1, keys=self.channels)
-        ###
 
         channel_data=pd.concat(dict(test = test_channel_data, reference = ref_channel_data),axis=1)
         channel_data=channel_data.reorder_levels([1,0],axis=1).sortlevel(axis=1)

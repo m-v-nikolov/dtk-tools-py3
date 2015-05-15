@@ -11,7 +11,7 @@ from dtk.utils.parsers.JSON import json2dict, dict2json
 # A class for building and modifying config/campaign files
 class DTKConfigBuilder:
 
-    def __init__(self, config, campaign):
+    def __init__(self, config={'parameters':{}}, campaign=empty_campaign):
         self.config = config
         self.campaign = campaign
         self.demog_overlays = {}
@@ -56,6 +56,9 @@ class DTKConfigBuilder:
         config = json2dict(config_name)
         campaign = json2dict(campaign_name) if campaign_name else empty_campaign
         return cls(config, campaign)
+
+    def copy_from(self,other):
+        self.__dict__ = other.__dict__.copy()
 
     def update_params(self, params):
         self.config["parameters"].update(params)

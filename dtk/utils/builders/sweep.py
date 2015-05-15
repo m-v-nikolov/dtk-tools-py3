@@ -66,7 +66,7 @@ def set_mods(pv_pairs):
             m.append(param_fn(p,v))
     return m
 
-class DefaultSweepBuilder(Builder):
+class SingleSimulationBuilder(Builder):
     def __init__(self):
         self.mod_generator = (Builder.ModList() for _ in range(1))
 
@@ -83,4 +83,4 @@ class GenericSweepBuilder(Builder):
 
     @classmethod
     def from_list(cls, p, v) :
-        return cls((set(zip(p,combo)) for combo in v))
+        return cls((set_mods(zip(p,combo)) for combo in v))

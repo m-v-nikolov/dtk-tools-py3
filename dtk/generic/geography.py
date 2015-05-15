@@ -1,17 +1,22 @@
 import os
 
+def convert_filepaths(params):
+    g=params.pop('Geography',None)
+    if not g: return
+    for k,v in params.items():
+        if k=='Demographics_Filename':
+            params['Demographics_Filenames']=[os.path.join(g,fn) for fn in params.pop(k).split(';')]
+        elif k=='Demographics_Filenames':
+            params[k]=[os.path.join(g,fb) for fn in v]
+        elif 'Filename' in k:
+            params[k] = os.path.join(g,v)
+
 # Set climate and demographics files by geography
 def set_geography(cb, geography):
     params=geographies.get(geography)
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
-    g=params.pop('Geography',None)
-    if g:
-        for k,v in params.items():
-            if k=='Demographics_Filename':
-                params['Demographics_Filenames']=[os.path.join(g,v) for v in params.pop(k).split(';')]
-            elif 'Filename' in k:
-                params[k] = os.path.join(g,v)
+    convert_filepaths(params)
     cb.update_params(params)
 
 geographies = {

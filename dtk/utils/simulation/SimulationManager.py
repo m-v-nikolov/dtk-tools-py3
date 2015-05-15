@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 from CommandlineGenerator import CommandlineGenerator # for command line strings: executable, options, and params
 from ..core.DTKSetupParser import DTKSetupParser      # to parse user-specific setup
-from ..builders.sweep import DefaultSweepBuilder  # default builder runs single simulation
+from ..builders.sweep import SingleSimulationBuilder
 
 from Commisioner import SimulationCommissioner, HpcSimulationCommissioner, CompsSimulationCommissioner
 from Monitor import SimulationMonitor, HpcSimulationMonitor, CompsSimulationMonitor
@@ -75,7 +75,7 @@ class LocalSimulationManager():
         self.emodules  = []
         self.analyzers = []
 
-    def RunSimulations(self, config_builder, exp_name='test', exp_builder=DefaultSweepBuilder(), show_progress=False):
+    def RunSimulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), show_progress=False):
 
         self.exp_name = exp_name
         self.config_builder = config_builder

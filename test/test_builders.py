@@ -44,7 +44,7 @@ class TestBuilders(unittest.TestCase):
         self.assertListEqual(get_species_param(self.cb,'gambiae','Required_Habitat_Factor'),[100,50])
 
     def test_default(self):
-        b=DefaultSweepBuilder()
+        b=SingleSimulationBuilder()
         ngenerated=0
         for ml in b.mod_generator:
             self.assertEqual(ml,[])
