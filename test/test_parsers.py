@@ -13,15 +13,15 @@ from dtk.utils.parsers.np2json import np2json as n2j
 ''' json2dict examples'''
 
 # filter all items matching a condition
-test = j2d("parsers/tags.json", False, (lambda data: (data, False) if "B" in data else (None, False)))
+test = j2d("input/parsers/tags.json", False, (lambda data: (data, False) if "B" in data else (None, False)))
 pp.pprint(test, depth=3)
 
 # stop parsing when an item is found
-test = j2d("parsers/tags.json", False, (lambda data: (data, True) if "B" in data else (None, False)))
+test = j2d("input/parsers/tags.json", False, (lambda data: (data, True) if "B" in data else (None, False)))
 pp.pprint(test, depth=3)
 
 # load an entire json file
-test = j2d("parsers/config.json")
+test = j2d("input/parsers/config.json")
 pp.pprint(test, depth=3)
 
 ''' np2pd examples'''
@@ -85,16 +85,16 @@ print "multilevel dict based data frame to csv: file is not saved to csv; (can't
 ''' bin2np examples'''
 
 # read a binary file
-test = b2n('parsers/scales.npy')
+test = b2n('input/parsers/scales.npy')
 print test
 
 # read only even numbers separated by ", " comma-space  from a text file
-test = b2n('parsers/numbers.txt', func = lambda x: (True, True) if x%2 == 0 else (False, True), sep=', ')
+test = b2n('input/parsers/numbers.txt', func = lambda x: (True, True) if x%2 == 0 else (False, True), sep=', ')
 print "even numbers"
 print test
 
 # stop parsing after reading the first even number
-test = b2n('parsers/numbers.txt', func = lambda x: (True, False) if x%2 == 0 else (False, True), sep=", ")
+test = b2n('input/parsers/numbers.txt', func = lambda x: (True, False) if x%2 == 0 else (False, True), sep=", ")
 print "first even number"
 print test
 
