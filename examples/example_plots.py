@@ -6,7 +6,7 @@ from dtk.utils.analyzers.plot   import no_plots, plot_with_tsplot, plot_CI_bands
 from dtk.utils.analyzers.timeseries import TimeseriesAnalyzer
 
 analyzers = [ TimeseriesAnalyzer(
-                filter_function=example_filter,
+                #filter_function=example_filter,
                 select_function=example_selection(),
                 group_function=group_by_name('_site_'),
                 plot_function=plot_CI_bands

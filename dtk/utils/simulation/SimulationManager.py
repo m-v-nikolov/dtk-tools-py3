@@ -310,6 +310,10 @@ class LocalSimulationManager():
         for p in parsers.values():
             p.join()
 
+        if not parsers:
+            logger.warn('No simulations passed analysis filters.')
+            return
+
         for a in self.analyzers:
             a.combine(parsers)
             a.finalize()
