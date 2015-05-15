@@ -24,7 +24,7 @@ To configure your user-specific paths and settings for local and HPC job submiss
 
 One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
 
-Example configurations for simulation sweeps and analysis processing may be found in the `examples` directory.
+Simulation job management is handled through the various `dtk` command-line options, e.g. `dtk run example_sweep` or `dtk analyze example_plots`.  For a full list of options, execute `dtk --help`.  Many example configurations for simulation sweeps and analysis processing may be found in the `examples` directory.
 
 #### Dependencies
 
