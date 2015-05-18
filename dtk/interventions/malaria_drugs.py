@@ -1,14 +1,12 @@
-# Distribute drug campaigns
-def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repetitions=3, interval=60):
-
+def drug_configs_from_code(cb,drug_code):
     dosing_type = drug_cfg[drug_code]["dosing"]
     drug_array = drug_cfg[drug_code]["drugs"]
 
-    config_builder.set_param("PKPD_Model", "CONCENTRATION_VERSUS_TIME")
+    cb.set_param("PKPD_Model", "CONCENTRATION_VERSUS_TIME")
 
     drug_configs = []
     for drug in drug_array:
-        config_builder.config["parameters"]["Malaria_Drug_Params"][drug] = drug_params[drug]
+        cb.config["parameters"]["Malaria_Drug_Params"][drug] = drug_params[drug]
         drug_intervention = {
             "class": "AntimalarialDrug",
             "Drug_Type": drug,
@@ -16,6 +14,12 @@ def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repet
             "Cost_To_Consumer": 1.5
         }
         drug_configs.append(drug_intervention)
+    return drug_configs
+
+# Distribute drug campaigns
+def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, interval=60):
+
+    drug_configs = drug_configs_from_code(cb,drug_code)
 
     for start_day in start_days:
         drug_event = {
@@ -34,7 +38,7 @@ def add_drug_campaign(config_builder, drug_code, start_days, coverage=1.0, repet
                 }
             }
 
-        config_builder.add_event(drug_event)
+        cb.add_event(drug_event)
 
 def set_drug_param(cb,drugname,parameter,value):
     cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]=value

@@ -7,9 +7,8 @@ from dtk.utils.reports.MalariaReport import add_summary_report,add_immunity_repo
 exp_name  = 'burnin'
 builder = GenericSweepBuilder.from_dict({
               'Run_Number': range(1),
-              'x_Temporary_Larval_Habitat': (0.1,0.2,0.5),
-              '_site_': ('Sinazongwe',),
-              '_static_demographics_': [(set_static_demographics,True,{})]              
+              'x_Temporary_Larval_Habitat': (0.1,0.2,0.3,0.4,0.5),
+              '_site_': ('Sinazongwe.static',)
               })
 
 nyears=50 # for sim duration AND reporting interval
@@ -19,10 +18,6 @@ cb.update_params({ 'Num_Cores': 1,
                    'Simulation_Duration' : nyears*365,
                    'New_Diagnostic_Sensitivity': 0.025 # 40/uL
                 })
-
-# match demographics file for constant population size
-# with exponential age distribution
-cb.set_param('Birth_Rate_Dependence', 'FIXED_BIRTH_RATE')
 
 # recurring outbreak to avoid fadeout
 recurring_outbreak(cb, outbreak_fraction=0.001, tsteps_btwn=180)

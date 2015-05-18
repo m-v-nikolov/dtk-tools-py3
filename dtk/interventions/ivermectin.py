@@ -1,20 +1,19 @@
 # Ivermectin parameters
-ivermectin = { "class": "Ivermectin",
-               "Killing_Rate": 0.95, 
-               "Durability_Time_Profile": "BOXDURABILITY", 
-               "Primary_Decay_Time_Constant":   0.9,  # box
-               "Cost_To_Consumer": 15.0
-}
+ivermectin_cfg = { "class": "Ivermectin",
+                   "Killing_Config": { "class": "WaningEffectBox",
+                                       "Box_Duration": 1,
+                                       "Initial_Effect": 0.95 },
+                   "Cost_To_Consumer": 15.0 }
 
 # IVM distribution event parameters
 def add_ivermectin(config_builder, drug_code, coverage, start_days):
 
     if drug_code == 'DAY':
-        ivermectin['Primary_Decay_Time_Constant'] = 1
+        ivermectin_cfg['Killing_Config']['Box_Duration'] = 1
     elif drug_code == 'WEEK':
-        ivermectin['Primary_Decay_Time_Constant'] = 7
+        ivermectin_cfg['Killing_Config']['Box_Duration'] = 7
     elif drug_code == 'MONTH':        
-        ivermectin['Primary_Decay_Time_Constant'] = 30
+        ivermectin_cfg['Killing_Config']['Box_Duration'] = 30
     else:
         raise Exception("Don't recognize drug_code" % drug_code)
 
@@ -24,7 +23,7 @@ def add_ivermectin(config_builder, drug_code, coverage, start_days):
                       "Event_Coordinator_Config": {
                           "class": "StandardInterventionDistributionEventCoordinator",
                           "Demographic_Coverage": coverage,
-                          "Intervention_Config": ivermectin
+                          "Intervention_Config": ivermectin_cfg
                       }
                     }
 

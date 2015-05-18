@@ -6,6 +6,7 @@ import unittest
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.generic.demographics import *
 from dtk.vector.larval_habitat import *
+from dtk.vector.study_sites import configure_site
 
 class TestDemographics(unittest.TestCase):
 
@@ -86,6 +87,14 @@ class TestDemographics(unittest.TestCase):
             self.assertDictEqual(n['IndividualAttributes']['MortalityDistribution'],mod_mortality)
             self.assertEqual(n['NodeAttributes']['BirthRate'],0.0001)
         os.remove(outfile)
+
+    def test_study_static_site(self):
+        configure_site(self.cb,'Sinazongwe.static')
+        self.assertEqual(os.path.basename(self.cb.get_param('Demographics_Filenames')[0]),'Zambia_Sinamalima_single_node_demographics.static.json')
+
+    def test_study_site(self):
+        configure_site(self.cb,'Sinazongwe')
+        self.assertEqual(os.path.basename(self.cb.get_param('Demographics_Filenames')[0]),'Zambia_Sinamalima_single_node_demographics.compiled.json')
 
     def test_habitat_overlay(self):
         set_habitat_multipliers(self.cb, 'single_test_guess_2.5arcmin',

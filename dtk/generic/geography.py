@@ -1,4 +1,5 @@
 import os
+from dtk.generic.demographics import set_static_demographics
 
 def convert_filepaths(params):
     g=params.pop('Geography',None)
@@ -12,12 +13,14 @@ def convert_filepaths(params):
             params[k] = os.path.join(g,v)
 
 # Set climate and demographics files by geography
-def set_geography(cb, geography):
+def set_geography(cb, geography, static=False):
     params=geographies.get(geography)
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
     convert_filepaths(params)
     cb.update_params(params)
+    if static:
+        set_static_demographics(cb,use_existing=True)
 
 geographies = {
 
