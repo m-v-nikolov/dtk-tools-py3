@@ -12,6 +12,13 @@ def convert_filepaths(params):
         elif 'Filename' in k:
             params[k] = os.path.join(g,v)
 
+def get_geography_parameter(geography,param):
+    params=geographies.get(geography)
+    if not params:
+        raise Exception('%s geography not yet implemented' % geography)
+    convert_filepaths(params)
+    return params.get(param)
+
 # Set climate and demographics files by geography
 def set_geography(cb, geography, static=False):
     params=geographies.get(geography)

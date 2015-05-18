@@ -2,8 +2,8 @@ import json
 import os
 import scipy # for calculating means
 
-input_path = "C:/Users/jgerardin/Data_Files/Burkina/Burkina"
-#input_path = "D:/Eradication/Data_Files/Calibration"
+from dtk.utils.core.DTKSetupParser import DTKSetupParser
+input_path = DTKSetupParser().get('LOCAL','input_root')
 
 br_channel_titles = ["MSP", "Non-Specific", "PfEMP1"]
 output_channel_titles = ["MSP", "nonspec", "PfEMP1"]
