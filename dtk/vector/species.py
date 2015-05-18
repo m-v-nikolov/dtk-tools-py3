@@ -132,7 +132,7 @@ def get_species_param(cb,species,parameter):
 
 def set_larval_habitat(cb, habitats):
 
-    cb.set_param('Vector_Species',habitats.keys())
+    cb.set_param('Vector_Species_Names',habitats.keys())
 
     for (species,habitat) in habitats.items():
         s=cb.config["parameters"]["Vector_Species_Params"][species]
