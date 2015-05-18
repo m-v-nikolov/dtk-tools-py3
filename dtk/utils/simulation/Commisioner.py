@@ -98,7 +98,8 @@ class CompsSimulationCommissioner(SimulationCommissioner):
 
     @staticmethod
     def createExperiment(setup, config_builder, exp_name, bin_path, input_args):
-        from COMPSJavaInterop import Client, Configuration, Priority, Experiment
+        from COMPS import Client
+        from COMPS.Data import Configuration, HPCJob__Priority, Experiment
 
         Client.Login(setup.get('HPC','server_endpoint'))
 
@@ -108,7 +109,7 @@ class CompsSimulationCommissioner(SimulationCommissioner):
                      .setExecutablePath(bin_path) \
                      .setNodeGroupName(setup.get('HPC','node_group')) \
                      .setMaximumNumberOfRetries(int(setup.get('HPC', 'num_retries'))) \
-                     .setPriority(Priority.valueOf(setup.get('HPC','priority'))) \
+                     .setPriority(HPCJob__Priority.valueOf(setup.get('HPC','priority'))) \
                      .setMinCores(config_builder.get_param('Num_Cores',1)) \
                      .setMaxCores(config_builder.get_param('Num_Cores',1)) \
                      .build();
@@ -121,14 +122,14 @@ class CompsSimulationCommissioner(SimulationCommissioner):
 
     @staticmethod
     def commissionExperiment(exp_id):
-        from COMPSJavaInterop import Experiment
+        from COMPS.Data import Experiment
 
         e = Experiment.GetById(exp_id)
         e.Commission()
 
     @staticmethod
     def getSimMetadataForExp(exp_id):
-        from COMPSJavaInterop import Experiment, QueryCriteria
+        from COMPS.Data import Experiment, QueryCriteria
 
         e = Experiment.GetById(exp_id)
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('Tags')).toArray()
@@ -142,14 +143,15 @@ class CompsSimulationCommissioner(SimulationCommissioner):
         self.sims.append(sim)
 
     def run(self):
-        from COMPSJavaInterop import Simulation, SimulationFile, autoclass
+        from COMPS.Data import Simulation, SimulationFile
+        from java.util import HashMap
 
         try:
             for sim in self.sims:
                 s = Simulation(sim.pop('name'))
                 s.setExperimentId(self.exp_id)
 
-                m = autoclass('java.util.HashMap')()
+                m = HashMap()
                 for k,v in sim.pop('tags').items():
                     m.put(str(k), str(v))
                 s.SetTags(m)

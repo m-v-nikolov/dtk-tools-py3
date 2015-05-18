@@ -202,7 +202,8 @@ def createSimDirectoryMap(settings):
     import sys
     sys.path.append(settings['dtk_path'])
 
-    from COMPSJavaInterop import Experiment, QueryCriteria, Client
+    from COMPS import Client
+    from COMPS.Data import Experiment, QueryCriteria
     Client.Login(settings['hpc_server_endpoint'])
 
     e = Experiment.GetById(exp_id)

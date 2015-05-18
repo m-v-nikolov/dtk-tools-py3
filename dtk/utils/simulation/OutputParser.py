@@ -80,7 +80,7 @@ class CompsDTKOutputParser(DTKOutputParser):
 
     @staticmethod
     def createSimDirectoryMap(exp_id):
-        from COMPSJavaInterop import Experiment, QueryCriteria
+        from COMPS.Data import Experiment, QueryCriteria
 
         e = Experiment.GetById(exp_id)
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()

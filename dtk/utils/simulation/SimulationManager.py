@@ -476,7 +476,8 @@ class CompsSimulationManager(LocalSimulationManager):
         return CompsSimulationMonitor(job_id, self.getProperty('server_endpoint'))
 
     def cancelAllSimulations(self,states):
-        from COMPSJavaInterop import Client, Experiment, QueryCriteria
+        from COMPS import Client
+        from COMPS.Data import Experiment, QueryCriteria
 
         Client.Login(self.setup.get('HPC','server_endpoint'))
 
@@ -484,7 +485,8 @@ class CompsSimulationManager(LocalSimulationManager):
         e.Cancel()
 
     def killJob(self, job_id):
-        from COMPSJavaInterop import Client, Simulation, QueryCriteria
+        from COMPS import Client
+        from COMPS.Data import Simulation, QueryCriteria
 
         if not self.comps_logged_in:
             Client.Login(self.getProperty('server_endpoint'))

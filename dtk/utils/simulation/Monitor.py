@@ -73,7 +73,8 @@ class CompsSimulationMonitor(SimulationMonitor):
         self.server_endpoint = server_endpoint
 
     def run(self):
-        from COMPSJavaInterop import Client, Simulation, QueryCriteria
+        from COMPS import Client
+        from COMPS.Data import Simulation, QueryCriteria
         
         Client.Login(self.server_endpoint)
 
