@@ -133,7 +133,18 @@ class CompsSimulationCommissioner(SimulationCommissioner):
 
         e = Experiment.GetById(exp_id)
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('Tags')).toArray()
-        sim_md = {sim.getId().toString() : { tag.getKey() : tag.getValue() for tag in sim.getTags().entrySet().toArray() } for sim in sims}
+        sim_md = {}
+        for sim in sims:
+            md={}
+            for tag in sim.getTags().entrySet().toArray():
+                # COMPS turns nested tags into strings like "{'key':'value'}"
+                try:
+                    v=eval(tag.getValue())
+                    #print('Converting string to value: %s' % v)
+                except:
+                    v=tag.getValue()
+                md[tag.getKey()]=v
+            sim_md[sim.getId().toString()] = md
         # print(sim_md)
         return sim_md
 

@@ -85,7 +85,7 @@ class CompsDTKOutputParser(DTKOutputParser):
         e = Experiment.GetById(exp_id)
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
         sim_map = { sim.getId().toString() : sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims }
-        print(sim_map)
+        #print(sim_map)
         return sim_map
 
     def get_sim_dir(self):
