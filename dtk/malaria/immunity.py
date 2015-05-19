@@ -1,3 +1,5 @@
+import os
+
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 from dtk.utils.parsers.JSON import json2dict
 from dtk.vector.study_sites import StudySite, set_habitat_scale
@@ -57,5 +59,5 @@ def add_immune_init(cb, site, x_temp_habitats, directory=None):
 
 def scale_habitat_with_immunity(cb, scale):
     set_habitat_scale(cb, scale)
-    cb.set_param("Config_Name", StudySite.site+'x_'+str(scale))
+    cb.set_param("Config_Name", StudySite.site+'_x_'+str(scale))
     add_immune_init(cb, StudySite.site, [scale])
