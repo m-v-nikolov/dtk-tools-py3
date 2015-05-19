@@ -1,3 +1,5 @@
+import copy
+
 # Ivermectin parameters
 ivermectin_cfg = { "class": "Ivermectin",
                    "Killing_Config": { "class": "WaningEffectBox",
@@ -5,17 +7,24 @@ ivermectin_cfg = { "class": "Ivermectin",
                                        "Initial_Effect": 0.95 },
                    "Cost_To_Consumer": 15.0 }
 
+def ivermectin_config_by_duration(drug_code=None):
+    if not drug_code:
+        return {}
+    cfg=copy.deepcopy(ivermectin_cfg)
+    if drug_code == 'DAY':
+        cfg['Killing_Config']['Box_Duration'] = 1
+    elif drug_code == 'WEEK':
+        cfg['Killing_Config']['Box_Duration'] = 7
+    elif drug_code == 'MONTH':
+        cfg['Killing_Config']['Box_Duration'] = 30
+    else:
+        raise Exception("Don't recognize drug_code" % drug_code)
+    return cfg
+
 # IVM distribution event parameters
 def add_ivermectin(config_builder, drug_code, coverage, start_days):
 
-    if drug_code == 'DAY':
-        ivermectin_cfg['Killing_Config']['Box_Duration'] = 1
-    elif drug_code == 'WEEK':
-        ivermectin_cfg['Killing_Config']['Box_Duration'] = 7
-    elif drug_code == 'MONTH':        
-        ivermectin_cfg['Killing_Config']['Box_Duration'] = 30
-    else:
-        raise Exception("Don't recognize drug_code" % drug_code)
+    cfg=ivermectin_config_by_duration(drug_code)
 
     for start_day in start_days:
         IVM_event = { "class" : "CampaignEvent",
@@ -23,7 +32,7 @@ def add_ivermectin(config_builder, drug_code, coverage, start_days):
                       "Event_Coordinator_Config": {
                           "class": "StandardInterventionDistributionEventCoordinator",
                           "Demographic_Coverage": coverage,
-                          "Intervention_Config": ivermectin_cfg
+                          "Intervention_Config": cfg
                       }
                     }
 

@@ -1,5 +1,6 @@
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 from dtk.utils.parsers.JSON import json2dict
+from dtk.vector.study_sites import StudySite, set_habitat_scale
 
 params = {
     "Antibody_CSP_Decay_Days": 90,
@@ -31,6 +32,7 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
     demogfiles = cb.get_param("Demographics_Filenames")
 
     if len(demogfiles) != 1:
+        print(demogfiles)
         raise Exception('add_immune_init function is expecting only a single demographics file.')
 
     demog_filename=demogfiles[0]
@@ -52,3 +54,8 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
 def add_immune_init(cb, site, x_temp_habitats, directory=None):
     tags = ["x_"+str(x) for x in x_temp_habitats]
     add_immune_overlays(cb, tags, directory)
+
+def scale_habitat_with_immunity(cb, scale):
+    set_habitat_scale(cb, scale)
+    cb.set_param("Config_Name", StudySite.site+'x_'+str(scale))
+    add_immune_init(cb, StudySite.site, [scale])

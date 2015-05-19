@@ -13,19 +13,12 @@ class StudySite(object):
             cls.static=True
         else:
             cls.site=geography
+            cls.static=False
 
     @classmethod
     def set_geography(cls,cb,site):
         set_geography(cb,site,cls.static)
 
-def geography_from_site(site):
-    site_to_geography={ 'Sugungum':'Garki_Single',
-                        'Matsari':'Garki_Single',
-                        'Rafin_Marke':'Garki_Single'}
-    geo = site_to_geography.get(site,'')
-    return geo if geo else site
-
-# Configuration of study-site geographies
 def configure_site(cb, site):
     StudySite.setup(site)
     cb.set_param("Config_Name", StudySite.site)
@@ -35,6 +28,18 @@ def configure_site(cb, site):
         cfg_fn(cb)
     else:
         raise Exception('%s study site not yet implemented.' % StudySite.site)
+
+def geography_from_site(site):
+    site_to_geography={ 'Sugungum':'Garki_Single',
+                        'Matsari':'Garki_Single',
+                        'Rafin_Marke':'Garki_Single'}
+    geo = site_to_geography.get(site,'')
+    return geo if geo else site
+
+def set_habitat_scale(cb,scale):
+    cb.set_param('x_Temporary_Larval_Habitat',scale)
+
+#-------------------------------------------------------------------------------
 
 #Namawala, Tanzania: EIR = 400
 def configure_namawala(cb):
