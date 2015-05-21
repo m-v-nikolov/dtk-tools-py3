@@ -21,6 +21,7 @@ def get_converted_paths_for_geography(geography):
     return params
 
 def get_geography_parameter(geography,param):
+    geography=geography.split('.')[0] # e.g. Sinazongwe.static
     params=get_converted_paths_for_geography(geography)
     return params.get(param)
 

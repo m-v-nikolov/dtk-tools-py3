@@ -57,7 +57,9 @@ def add_immune_init(cb, site, x_temp_habitats, directory=None):
     tags = ["x_"+str(x) for x in x_temp_habitats]
     add_immune_overlays(cb, tags, directory)
 
-def scale_habitat_with_immunity(cb, scale):
+def scale_habitat_with_immunity(cb, available=[], scale=1.0):
     set_habitat_scale(cb, scale)
     cb.set_param("Config_Name", StudySite.site+'_x_'+str(scale))
-    add_immune_init(cb, StudySite.site, [scale])
+    nearest = lambda num,numlist: min(numlist, key=lambda x:abs(x-num))
+    nearest_scale=scale if not available else nearest(scale,available)
+    add_immune_init(cb, StudySite.site, [nearest_scale])

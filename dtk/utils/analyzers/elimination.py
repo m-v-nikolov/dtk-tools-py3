@@ -8,13 +8,13 @@ def default_scatter_fn(df,ax):
     df.plot(kind='scatter',
             x='scale',y='coverage', 
             c='eliminated', cmap='afmhot',
-            s=200, ax=ax)
+            s=200, ax=ax, vmin=0, vmax=1)
 
 class EliminationAnalyzer(TimeseriesAnalyzer):
 
     def __init__(self,
                  filter_function = lambda md: True, # no filtering based on metadata
-                 select_function = lambda ts: pd.Series(ts[-365] == 0,index=['eliminated']),
+                 select_function = lambda ts: pd.Series(ts[-730] == 0,index=['eliminated']),
                  group_function  = lambda k,v: k,   # group by unique simid-key from parser
                  plot_function   = default_scatter_fn,
                  saveOutput = False):
@@ -33,12 +33,13 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
         df = df.drop('group',axis=1).set_index(['coverage','duration','scale'],drop=False)
         df=df.reorder_levels(['duration','coverage','scale'])
         dd=df.index.levels[0]
-        fig=plt.figure('EliminationPlots',figsize=(12,3))
+        fig=plt.figure('EliminationPlots',figsize=(15,4))
         for i,d in enumerate(dd):
             ax=fig.add_subplot(1,len(dd),i+1)
             ax.set_title('Duration=%d'%d)
             s=df.loc[d]
             self.plot_function(s,ax)
+        plt.tight_layout()
 
     def save(self):
         self.data.to_csv('elimination.csv')
