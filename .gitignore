@@ -17,5 +17,6 @@
 deprecate/
 
 # Setup
+*.eggs
 *egg-info
 *build/
