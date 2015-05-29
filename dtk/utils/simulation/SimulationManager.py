@@ -67,6 +67,8 @@ class LocalSimulationManager():
     Manages the creation, submission, status, parsing, and analysis of local DTK simulations
     '''
 
+    parserClass=DTKOutputParser
+
     def __init__(self, exe_path, exp_data):
         self.location  = 'LOCAL'
         self.exp_data  = exp_data
@@ -74,6 +76,7 @@ class LocalSimulationManager():
         self.setup     = DTKSetupParser()
         self.emodules  = []
         self.analyzers = []
+        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('HPC','max_threads'))) # TODO: move out of HPC if this will be used to limit local multi-threaded commissioning/parsing?
 
     def RunSimulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), show_progress=False):
 
@@ -295,7 +298,7 @@ class LocalSimulationManager():
     def AnalyzeSimulations(self):
         parsers = {}
 
-        for (sim_id, sim) in self.exp_data['sims'].items():
+        for i,(sim_id, sim) in enumerate(self.exp_data['sims'].items()):
 
             # pass filtered analyses for this sim to its own threaded parser
             filtered_analyses = [a for a in self.analyzers if a.filter(sim)]
@@ -303,6 +306,9 @@ class LocalSimulationManager():
                 logger.debug('Simulation did not pass filter on any analyzer.')
                 continue
 
+            if self.maxThreadSemaphore:
+                print(i,sim_id)
+                self.maxThreadSemaphore.acquire()
             parser = self.getOutputParser(sim_id, filtered_analyses)
             parser.start()
             parsers[parser.sim_id] = parser
@@ -319,11 +325,12 @@ class LocalSimulationManager():
             a.finalize()
 
     def getOutputParser(self, sim_id, filtered_analyses):
-        return DTKOutputParser(os.path.join(self.exp_data['sim_root'],
+        return self.parserClass(os.path.join(self.exp_data['sim_root'],
                                             self.exp_data['exp_name'] + '_' + self.exp_data['exp_id']),
                                sim_id,
                                self.exp_data['sims'][sim_id],
-                               filtered_analyses)
+                               filtered_analyses,
+                               self.maxThreadSemaphore)
 
     def StageExecutable(self, bin_root):
         dtk_hash = getMd5FromFile(self.exe_path)
@@ -424,16 +431,21 @@ class CompsSimulationManager(LocalSimulationManager):
     Extends the LocalSimulationManager to manage DTK simulations through COMPS wrappers
     e.g. creation of Simulation, Experiment, Suite objects
     '''
+
+    parserClass=CompsDTKOutputParser
+
     def __init__(self, exe_path, exp_data):
         LocalSimulationManager.__init__(self,exe_path,exp_data)
         self.location = 'HPC'
         self.comps_logged_in = False
+        self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))
+        #self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
 
     def getExperimentId(self):
         self.exp_id = CompsSimulationCommissioner.createExperiment(self.setup, self.config_builder, self.exp_name, self.bin_path, self.eradication_command.Options)
         self.sims_created = 0
-        self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))
-        self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
+        #self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))
+        #self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
 
     def createSimulation(self, sim_path):
         files = self.config_builder.dump_files_to_string()
@@ -496,13 +508,5 @@ class CompsSimulationManager(LocalSimulationManager):
         s.Cancel()
 
     def AnalyzeSimulations(self):
-        self.sim_dir_map = CompsDTKOutputParser.createSimDirectoryMap(self.exp_data['exp_id'])
+        CompsDTKOutputParser.createSimDirectoryMap(self.exp_data['exp_id'])
         LocalSimulationManager.AnalyzeSimulations(self)
-
-    def getOutputParser(self, sim_id, filtered_analyses):
-        return CompsDTKOutputParser(self.sim_dir_map,
-                                    os.path.join(self.exp_data['sim_root'],
-                                                 self.exp_data['exp_name'] + '_' + self.exp_data['exp_id']),
-                                    sim_id,
-                                    self.exp_data['sims'][sim_id],
-                                    filtered_analyses)

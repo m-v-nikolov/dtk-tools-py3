@@ -4,10 +4,13 @@ import numpy as np  # for reading spatial output data by node and timestep
 import struct       # for binary file unpacking
 import threading    # for multi-threaded job submission and monitoring
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
+
 # A class to parse output files
 class DTKOutputParser(threading.Thread):
 
-    def __init__(self, sim_dir, sim_id, sim_data, analyzers):
+    def __init__(self, sim_dir, sim_id, sim_data, analyzers, semaphore=None):
         threading.Thread.__init__(self)
         self.sim_dir = sim_dir
         self.sim_id = sim_id
@@ -15,33 +18,38 @@ class DTKOutputParser(threading.Thread):
         self.analyzers = analyzers
         self.raw_data = {}
         self.selected_data = {}
+        self.semaphore = semaphore
 
     def run(self):
+        try:
+            # list of output files needed by any analysis
+            filenames = set()
+            for a in self.analyzers:
+                filenames.update(a.filenames)
+            filenames = list(filenames)
 
-        # list of output files needed by any analysis
-        filenames = set()
-        for a in self.analyzers:
-            filenames.update(a.filenames)
-        filenames = list(filenames)
+            # parse output files for analysis
+            for filename in filenames:
+                file_extension = os.path.splitext(filename)[1][1:]
+                if file_extension == 'json':
+                    #print(filename + ' is a JSON file.  Loading JSON output data...\n')
+                    logging.debug('reading JSON')
+                    self.load_json_file(filename)
+                elif file_extension == 'bin' and 'SpatialReport' in filename:
+                    #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
+                    self.load_bin_file(filename)
+                else:
+                    print(filename + ' is of an unknown type.  Skipping...')
+                    continue
 
-        # parse output files for analysis
-        for filename in filenames:
-            file_extension = os.path.splitext(filename)[1][1:]
-            if file_extension == 'json':
-                #print(filename + ' is a JSON file.  Loading JSON output data...\n')
-                self.load_json_file(filename)
-            elif file_extension == 'bin' and 'SpatialReport' in filename:
-                #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
-                self.load_bin_file(filename)
-            else:
-                print(filename + ' is of an unknown type.  Skipping...')
-                continue
+            # do sim-specific part of analysis on parsed output data
+            for analyzer in self.analyzers:
+                self.selected_data[id(analyzer)]=analyzer.apply(self)
 
-        # do sim-specific part of analysis on parsed output data
-        for analyzer in self.analyzers:
-            self.selected_data[id(analyzer)]=analyzer.apply(self)
-
-        del self.raw_data #?
+            del self.raw_data #?
+        finally:
+            if self.semaphore:
+                self.semaphore.release()
 
     def load_json_file(self, filename):
         with open(os.path.join(self.get_sim_dir(), 'output', filename)) as json_file:
@@ -71,21 +79,19 @@ class DTKOutputParser(threading.Thread):
     def get_sim_dir(self):
         return os.path.join(self.sim_dir, self.sim_id)
 
-        
 class CompsDTKOutputParser(DTKOutputParser):
 
-    def __init__(self, sim_dir_map, sim_dir, sim_id, sim_data, analyzers):
-        DTKOutputParser.__init__(self, sim_dir, sim_id, sim_data, analyzers)
-        self.sim_dir_map = sim_dir_map
+    sim_dir_map={}
 
-    @staticmethod
-    def createSimDirectoryMap(exp_id):
+    @classmethod
+    def createSimDirectoryMap(cls,exp_id):
         from COMPS.Data import Experiment, QueryCriteria
 
         e = Experiment.GetById(exp_id)
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
         sim_map = { sim.getId().toString() : sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims }
-        #print(sim_map)
+        print('Populated map of %d simulation IDs to output directories' % len(sim_map))
+        cls.sim_dir_map=sim_map
         return sim_map
 
     def get_sim_dir(self):
