@@ -10,7 +10,7 @@ def DTKSetupParser(setup_file=''):
     if not os.path.exists(setup_file):
         raise Exception('DTKSetupParser requires a setup file (' + setup_file + ') defining e.g. environmental variables.')
 
-    user=os.environ['USERNAME'] if sys.platform is 'win32' else os.getlogin()
+    user=os.environ['USERNAME'] if sys.platform == 'win32' else os.getlogin()
 
     setup = ConfigParser({'password':''})
     setup.read(setup_file)
