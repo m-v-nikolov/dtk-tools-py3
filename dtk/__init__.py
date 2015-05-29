@@ -1,5 +1,5 @@
 try:
-    import COMPS.COMPSJavaInterop as COMPSJavaInterop
+    from COMPSJavaInterop import COMPSJavaInterop
 except ImportError:
     print("Failed loading COMPSJavaInterop package; you will only be able to run local simulations")
 
