@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='dtk',
       version='0.1',
@@ -6,7 +6,7 @@ setup(name='dtk',
       url='https://github.com/edwenger/dtk',
       author='Edward Wenger',
       author_email='ewenger@intven.com',
-      packages=['dtk'],
+      packages=find_packages(),
       install_requires=[
           'psutil',
           'matplotlib',

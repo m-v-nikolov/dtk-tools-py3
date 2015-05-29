@@ -20,3 +20,4 @@ deprecate/
 *.eggs
 *egg-info
 *build/
+*dist/
