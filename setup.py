@@ -7,7 +7,6 @@ setup(name='dtk',
       author='Edward Wenger',
       author_email='ewenger@intven.com',
       packages=['dtk'],
-	  setup_requires=['numpy'],#,'COMPS'],
       install_requires=[
           'psutil',
           'matplotlib',
