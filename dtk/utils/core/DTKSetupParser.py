@@ -1,4 +1,5 @@
 import os
+import sys
 from ConfigParser import ConfigParser  # to parse dtk_setup.cfg
 
 def DTKSetupParser(setup_file=''):
@@ -9,10 +10,12 @@ def DTKSetupParser(setup_file=''):
     if not os.path.exists(setup_file):
         raise Exception('DTKSetupParser requires a setup file (' + setup_file + ') defining e.g. environmental variables.')
 
+    user=os.environ['USERNAME'] if sys.platform is 'win32' else os.getlogin()
+
     setup = ConfigParser({'password':''})
     setup.read(setup_file)
-    setup.set('HPC', 'user', os.environ['USERNAME'])
-    setup.set('HPC-OLD', 'user', os.environ['USERNAME'])
-    setup.set('BINARIES', 'user', os.environ['USERNAME'])
+    setup.set('HPC', 'user', user)
+    setup.set('HPC-OLD', 'user', user)
+    setup.set('BINARIES', 'user', user)
 
     return setup
