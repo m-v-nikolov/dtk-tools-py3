@@ -11,7 +11,7 @@ from .timeseries import TimeseriesAnalyzer
 def default_scatter_fn(df,ax):
 
     #channel='eliminated'
-    channel='infectiondays'
+    channel='prevalence'
 
     model=nparam.KernelReg([df[channel]],
                            [df.scale,df.coverage],
@@ -22,7 +22,7 @@ def default_scatter_fn(df,ax):
     sm_mean, sm_mfx = model.fit(positions)
     Z = np.reshape(sm_mean, X.shape)
 
-    color_args=dict(cmap='afmhot', vmin=0, vmax=365, alpha=0.5) ###############
+    color_args=dict(cmap='afmhot', vmin=0, vmax=1, alpha=0.5)
 
     im=ax.pcolor(X,Y,Z,**color_args)
 
@@ -55,11 +55,13 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
         dd=df.index.levels[0]
         fig=plt.figure('EliminationPlots',figsize=(17,4))
         ax=None
+        #print(df)
         for i,d in enumerate(dd):
             ax=fig.add_subplot(1,len(dd),i+1,sharex=ax,sharey=ax)
-            ax.set_title('IVM duration = %dd'%d if d else 'No IVM')
+            ax.set_title('RTS,S half-life = %dd'%d if d else 'No RTS,S')
             ax.set(xlim=[0,1],ylim=[0.5,1])
-            s=df.loc[d]
+            s=df[df.duration==d]
+            #print(s)
             self.plot_function(s,ax)
         plt.tight_layout()
 

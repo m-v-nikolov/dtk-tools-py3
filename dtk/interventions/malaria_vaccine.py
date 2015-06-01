@@ -21,7 +21,7 @@ sexual_stage_vaccine.update({
 # RTS,S simple vaccine
 rtss_simple_vaccine = copy.deepcopy(preerythrocytic_vaccine)
 rtss_simple_vaccine.update({
-    "Reduced_Acquire": 0.556,  # phase III (5-17 mo.) efficacy against clinical disease in first year
-    "Primary_Decay_Time_Constant": 365*3.0/math.log(2), # half-life-yr to mean-life-time-days
+    "Reduced_Acquire": 0.8, # 80% initial infection-blocking efficacy
+    "Primary_Decay_Time_Constant": 365*1.125/math.log(2), # 13.5 month half-life
     "Cost_To_Consumer": 15 # 3 doses * $5/dose
 })
