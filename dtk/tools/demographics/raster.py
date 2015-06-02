@@ -54,6 +54,7 @@ def read(bingrid_name, cropX=None, cropY=None):
 
     def transform_fn(x,y):
         ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY = geotransform
+        print('geotransform',ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY)
         cropY0=cropY[0] if cropY else 0
         cropX0=cropX[0] if cropX else 0
         return coordtransform.TransformPoint((x+cropX0)*cellsizeX+ulX,(y+cropY0)*cellsizeY+ulY)
