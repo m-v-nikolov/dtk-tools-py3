@@ -8,21 +8,9 @@ Modules contained in this package are intended to:
 
 #### Installation
 
-Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, it is required to have installed that package first, e.g.
+Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, it is required to have installed that package first, e.g. `pip install numpy`, or after downloading a platform-appropriate wheel file from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs), `pip install numpy-1.92+mkl-cp27-none-win_amd64.whl`
 
-`pip install numpy`
-
-Or after downloading a platform-appropriate wheel file from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs) 
-
-`pip install numpy-1.92+mkl-cp27-none-win_amd64.whl`
-
-Then, with administrator privileges, run the following from the current directory:
-
-`python setup.py install`
-
-Or to do active development on the package:
-
-`python setup.py develop`
+Then, with administrator privileges, run the following from the current directory: `python setup.py install`, or to do active development on the package, `python setup.py develop`
 
 On Windows, one may need to add the `Scripts` subdirectory of your local Python installation to the `%PATH%` [environment variable](https://www.java.com/en/download/help/path.xml) to have access to the `dtk` commandline utility.
 
