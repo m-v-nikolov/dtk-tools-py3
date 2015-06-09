@@ -9,7 +9,7 @@ def convert_filepaths(params):
         if k=='Demographics_Filename':
             params['Demographics_Filenames']=[os.path.join(g,fn) for fn in params.pop(k).split(';')]
         elif k=='Demographics_Filenames':
-            params[k]=[os.path.join(g,fb) for fn in v]
+            params[k]=[os.path.join(g,fn) for fn in v]
         elif 'Filename' in k:
             params[k] = os.path.join(g,v)
 
