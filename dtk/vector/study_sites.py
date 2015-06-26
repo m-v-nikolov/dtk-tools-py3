@@ -28,6 +28,7 @@ def configure_site(cb, site):
         cfg_fn(cb)
     else:
         raise Exception('%s study site not yet implemented.' % StudySite.site)
+    return {'_site_': site}
 
 def geography_from_site(site):
     site_to_geography={ 'Sugungum':'Garki_Single',

@@ -85,3 +85,4 @@ setup_functions['BFinf'] = [ config_setup_fn(duration=1461),
 def set_calibration_site(cb,site):
     for fn in setup_functions[site]:
         fn(cb)
+    return {'_site_': site}

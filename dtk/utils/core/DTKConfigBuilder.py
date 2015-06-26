@@ -117,3 +117,7 @@ class DTKConfigBuilder:
             write_fn(name, dump(content))
 
         write_fn('config',dump(self.config))
+
+def set_param(cb, param, value):
+    cb.set_param(param, value)
+    return {param:value}

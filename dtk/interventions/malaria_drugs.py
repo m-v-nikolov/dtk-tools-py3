@@ -40,14 +40,15 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
 
         cb.add_event(drug_event)
 
-def set_drug_param(cb,drugname,parameter,value):
-    cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]=value
+def set_drug_param(cb, drugname, parameter, value):
+    cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter] = value
+    return {'.'.join([drugname, parameter]): value}
 
-def get_drug_param(cb,drugname,parameter):
+def get_drug_param(cb, drugname, parameter):
     try:
         return cb.config['parameters']['Malaria_Drug_Params'][drugname][parameter]
     except:
-        print('Unable to get parameter %s for drug %s' % (parameter,drugname))
+        print('Unable to get parameter %s for drug %s' % (parameter, drugname))
         return None
 
 # Definitions of drug blocks
