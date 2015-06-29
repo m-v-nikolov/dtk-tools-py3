@@ -14,7 +14,7 @@ params = {
     "Enable_Demographics_Gender": 1,
     "Enable_Demographics_Initial": 1,
     "Enable_Demographics_Other": 1,
-    "Enable_Demographics_Reporting": 1,
+    "Enable_Demographics_Reporting": 0,
 
     "Enable_Immunity_Initialization_Distribution": 0,
 
