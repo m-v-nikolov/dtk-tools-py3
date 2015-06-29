@@ -3,34 +3,38 @@ import os
 from dtk.generic.demographics import set_static_demographics
 
 def convert_filepaths(params):
-    g=params.pop('Geography',None)
+    g = params.pop('Geography',None)
     if not g: return
-    for k,v in params.items():
-        if k=='Demographics_Filename':
-            params['Demographics_Filenames']=[os.path.join(g,fn) for fn in params.pop(k).split(';')]
-        elif k=='Demographics_Filenames':
-            params[k]=[os.path.join(g,fn) for fn in v]
+    for k, v in params.items():
+        if k == 'Demographics_Filename':
+            params['Demographics_Filenames'] = [os.path.join(g, fn) for fn in params.pop(k).split(';')]
+        elif k == 'Demographics_Filenames':
+            params[k] = [os.path.join(g, fn) for fn in v]
         elif 'Filename' in k:
-            params[k] = os.path.join(g,v)
+            params[k] = os.path.join(g, v)
 
 def get_converted_paths_for_geography(geography):
-    params=geographies.get(geography).copy()
+    params = geographies.get(geography).copy()
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
     convert_filepaths(params)
     return params
 
-def get_geography_parameter(geography,param):
-    geography=geography.split('.')[0] # e.g. Sinazongwe.static
-    params=get_converted_paths_for_geography(geography)
+def get_geography_parameter(geography, param):
+    geography = geography.split('.')[0] # e.g. Sinazongwe.static
+    params = get_converted_paths_for_geography(geography)
     return params.get(param)
 
 # Set climate and demographics files by geography
-def set_geography(cb, geography, static=False):
-    params=get_converted_paths_for_geography(geography)
+def set_geography(cb, geography, static=False, pop_scale=1):
+    params = get_converted_paths_for_geography(geography)
     cb.update_params(params)
     if static:
-        set_static_demographics(cb,use_existing=True)
+        set_static_demographics(cb, use_existing=True)
+    if pop_scale != 1:
+        cb.set_param('Base_Population_Scale_Factor', pop_scale*cb.get_param('Base_Population_Scale_Factor'))
+        if cb.get_param('Birth_Rate_Dependence') == 'FIXED_BIRTH_RATE':
+            cb.set_param('x_Birth', pop_scale*cb.get_param('x_Birth'))
 
 geographies = {
 

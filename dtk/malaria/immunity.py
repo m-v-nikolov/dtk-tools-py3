@@ -63,4 +63,5 @@ def scale_habitat_with_immunity(cb, available=[], scale=1.0):
     nearest = lambda num,numlist: min(numlist, key=lambda x:abs(x-num))
     nearest_scale=scale if not available else nearest(scale,available)
     add_immune_init(cb, StudySite.site, [nearest_scale])
-    return {'habitat_scale': StudySite.site + '_x_' + str(scale)}
+    return {'Config_Name': StudySite.site + '_x_' + str(scale),
+            'habitat_scale': scale}

@@ -57,7 +57,7 @@ def set_risk_mod(filename, distribution, par1, par2):
 def set_immune_mod(filename, distribution, par1, par2):
     set_demog_distributions(filename, [("Immunity", distribution, par1, par2)])
 
-def apply_to_defaults_or_nodes(demog,fn,*args):
+def apply_to_defaults_or_nodes(demog, fn, *args):
     # distributions may be in Defaults or in Nodes list
     if "Defaults" in demog and "IndividualAttributes" in demog["Defaults"]:
         fn(demog["Defaults"],*args)
@@ -85,15 +85,15 @@ def set_demog_distributions(filename, distributions):
     with open( filename, "w" ) as output_file:
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
-def set_static_demographics(cb,use_existing=False):
+def set_static_demographics(cb, use_existing=False):
 
-    demog_filenames=cb.get_param('Demographics_Filenames')
-    if len(demog_filenames)!=1:
+    demog_filenames = cb.get_param('Demographics_Filenames')
+    if len(demog_filenames) != 1:
         raise Exception('Expecting only one demographics filename.')
-    demog_filename=demog_filenames[0]
-    static_demog_filename=demog_filename.replace("compiled.","").replace(".json",".static.json",1)
-    cb.set_param("Demographics_Filenames",[static_demog_filename])
-    cb.set_param("Birth_Rate_Dependence","FIXED_BIRTH_RATE")
+    demog_filename = demog_filenames[0]
+    static_demog_filename = demog_filename.replace("compiled.", "").replace(".json", ".static.json", 1)
+    cb.set_param("Demographics_Filenames", [static_demog_filename])
+    cb.set_param("Birth_Rate_Dependence", "FIXED_BIRTH_RATE")
 
     if use_existing:
         return

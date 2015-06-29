@@ -2,43 +2,43 @@ from ..generic.geography import set_geography
 from species import set_larval_habitat, set_species_param
 
 class StudySite(object):
-    site=''
-    static=False
+    site = ''
+    static = False
 
     @classmethod
-    def setup(cls,geography):
-        geo_parts=geography.split('.')
-        if len(geo_parts)==2 and geo_parts[1]=='static':
-            cls.site=geo_parts[0]
-            cls.static=True
+    def setup(cls, geography):
+        geo_parts = geography.split('.')
+        if len(geo_parts) == 2 and geo_parts[1] == 'static':
+            cls.site = geo_parts[0]
+            cls.static = True
         else:
-            cls.site=geography
-            cls.static=False
+            cls.site = geography
+            cls.static = False
 
     @classmethod
-    def set_geography(cls,cb,site):
-        set_geography(cb,site,cls.static)
+    def set_geography(cls, cb, site, pop_scale=1):
+        set_geography(cb, site, cls.static, pop_scale)
 
-def configure_site(cb, site):
+def configure_site(cb, site, pop_scale=1):
     StudySite.setup(site)
     cb.set_param("Config_Name", StudySite.site)
-    cfg_fn=globals().get('configure_' + StudySite.site.lower(), None)
+    cfg_fn = globals().get('configure_' + StudySite.site.lower(), None)
     if cfg_fn:
-        StudySite.set_geography(cb, geography_from_site(StudySite.site))
+        StudySite.set_geography(cb, geography_from_site(StudySite.site), pop_scale)
         cfg_fn(cb)
     else:
         raise Exception('%s study site not yet implemented.' % StudySite.site)
     return {'_site_': site}
 
 def geography_from_site(site):
-    site_to_geography={ 'Sugungum':'Garki_Single',
-                        'Matsari':'Garki_Single',
-                        'Rafin_Marke':'Garki_Single'}
-    geo = site_to_geography.get(site,'')
+    site_to_geography = {'Sugungum': 'Garki_Single',
+                         'Matsari': 'Garki_Single',
+                         'Rafin_Marke': 'Garki_Single'}
+    geo = site_to_geography.get(site, '')
     return geo if geo else site
 
-def set_habitat_scale(cb,scale):
-    cb.set_param('x_Temporary_Larval_Habitat',scale)
+def set_habitat_scale(cb, scale):
+    cb.set_param('x_Temporary_Larval_Habitat', scale)
 
 #-------------------------------------------------------------------------------
 
