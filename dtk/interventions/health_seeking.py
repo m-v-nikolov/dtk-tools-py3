@@ -49,9 +49,10 @@ def add_health_seeking(config_builder,
         }
 
         if all([k in t.keys() for k in ['agemin','agemax']]):
-            health_seeking_config["Intervention_Config"].update({ 
-                                           "Target_Age_Min": t['agemin'],
-                                           "Target_Age_Max": t['agemax'] })
+            health_seeking_config["Intervention_Config"].update({
+                   "Target_Demographic": "ExplicitAgeRanges", # Otherwise default is Everyone
+                   "Target_Age_Min": t['agemin'],
+                   "Target_Age_Max": t['agemax'] })
 
         health_seeking_event = { "class": "CampaignEvent",
                                  "Start_Day": start_day,
