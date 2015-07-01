@@ -54,7 +54,7 @@ def read(bingrid_name, cropX=None, cropY=None):
 
     def transform_fn(x,y):
         ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY = geotransform
-        print('geotransform',ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY)
+        #print('geotransform',ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY)
         cropY0=cropY[0] if cropY else 0
         cropX0=cropX[0] if cropX else 0
         return coordtransform.TransformPoint((x+cropX0)*cellsizeX+ulX,(y+cropY0)*cellsizeY+ulY)
@@ -172,6 +172,7 @@ def make_nodes(sums,centroids,transform_fn,min_pop=100):
     for x,y,pop in zip(xx,yy,sums):
         if not pop > min_pop:
             continue
+        #print(x,y,pop)
         lon,lat,alt=transform_fn(x,y)
         n=Node(lat,lon,pop)
         nodes.append(n)

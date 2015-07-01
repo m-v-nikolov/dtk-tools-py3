@@ -1,7 +1,9 @@
 import json
+import time
 
+import node
+import raster
 from routes import get_raster_nodes
-from node import nodeid_from_lat_lon
 from db import *
 
 def query_PfPR_by_node(node_ids):
@@ -21,9 +23,38 @@ def query_PfPR_by_node(node_ids):
     cnxn.close()
     return rows
 
+def PfPR_from_file(geotiff_file, node_ids):
+    A, transform_fn = raster.read(geotiff_file)
+    lon,lat,alt = transform_fn(0,0) # upper-left corner of MAP
+    xpixUL,ypixUL = node.xpix_ypix_from_lat_lon(lat,lon,node.Node.res_in_degrees) #default is 2.5arcmin
+    
+    # utility to map nodeid to raster index
+    def raster_idx_from_nodeid(nodeid):
+        xpix,ypix = node.get_xpix_ypix(nodeid) # indexed to ll=(-90,-180)
+        return ((xpix-xpixUL),(ypixUL-ypix))
+
+    rows=[]
+    for nid in node_ids:
+        x,y = raster_idx_from_nodeid(nid)
+        pfpr=float(A[y][x]) # tranposed?
+        rows.append((nid,pfpr))
+    return rows
+
 if __name__ == '__main__':
-    nodes=get_raster_nodes('cache/raster_nodes_Haiti.json',N=-1)
-    nodeids=[nodeid_from_lat_lon(node['Latitude'],node['Longitude'],res_in_deg=2.5/60) for node in nodes]
-    PfPR_by_node=query_PfPR_by_node(nodeids)
+
+    nodes = get_raster_nodes('cache/raster_nodes_Haiti.json', N=-1)
+    nodeids = [node.nodeid_from_lat_lon(n['Latitude'],
+                                        n['Longitude'],
+                                        res_in_deg=2.5/60) for n in nodes]
+
+    begin = time.time()
+    map_file = 'Q:/Malaria/MAP_cube_2000_2015/PfPR_cube_2000-2015_MEANS/MODEL42.2015.MEAN.PR.tif'
+    PfPR_by_node = PfPR_from_file(map_file, nodeids)
+    print('From file: elapsed time = %0.2f seconds' % (time.time() - begin))
+
     with open('cache/MAP_Haiti.json','w') as fp:
-        json.dump(PfPR_by_node,fp,indent=4,sort_keys=True)
+        json.dump(PfPR_by_node, fp, indent=4, sort_keys=True)
+
+    begin = time.time()
+    PfPR_by_node = query_PfPR_by_node(nodeids)
+    print('From DB: elapsed time = %0.2f seconds' % (time.time() - begin))
