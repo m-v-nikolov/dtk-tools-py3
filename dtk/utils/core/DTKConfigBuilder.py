@@ -69,6 +69,21 @@ class DTKConfigBuilder:
     def get_param(self, param, default=None):
         return self.config["parameters"].get(param, default)
 
+    def validate_param(self, param):
+        if param not in self.config["parameters"]:
+            raise Exception('No parameter named %s' % param)
+        return True
+
+    def enable(self, param):
+        param = 'Enable_' + param
+        self.validate_param(param)
+        self.set_param(param, 1)
+
+    def disable(self, param):
+        param = 'Enable_' + param
+        self.validate_param(param)
+        self.set_param(param, 0)
+
     def add_event(self, event):
         self.campaign["Events"].append(event)
 

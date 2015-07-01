@@ -1,5 +1,5 @@
 from ..generic.geography import set_geography
-from species import set_larval_habitat, set_species_param
+from species import set_larval_habitat, set_species_param, scale_all_habitats
 
 class StudySite(object):
     site = ''
@@ -26,6 +26,8 @@ def configure_site(cb, site, pop_scale=1):
     if cfg_fn:
         StudySite.set_geography(cb, geography_from_site(StudySite.site), pop_scale)
         cfg_fn(cb)
+        if pop_scale != 1:
+            scale_all_habitats(cb, pop_scale)
     else:
         raise Exception('%s study site not yet implemented.' % StudySite.site)
     return {'_site_': site}
@@ -38,7 +40,7 @@ def geography_from_site(site):
     return geo if geo else site
 
 def set_habitat_scale(cb, scale):
-    cb.set_param('x_Temporary_Larval_Habitat', scale)
+    cb.set_param('x_Temporary_Larval_Habitat', scale)    
 
 #-------------------------------------------------------------------------------
 
