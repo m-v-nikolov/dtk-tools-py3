@@ -2,12 +2,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def default_plot_fn(df,ax):
+from plot import plot_by_channel
+
+def default_plot_fn(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
-    m=grouped.mean()
-    m.plot(ax=ax,legend=True)
+    m = grouped.mean()
+    m.plot(ax=ax, legend=True)
 
 class TimeseriesAnalyzer():
+
+    plot_name = 'ChannelPlots'
+    data_group_names = []
+    output_file = 'timeseries.csv'
 
     def __init__(self,
                  filename = 'InsetChart.json',
@@ -32,35 +38,32 @@ class TimeseriesAnalyzer():
     def filter(self, sim_metadata):
         return self.filter_function(sim_metadata)
 
-    def apply(self, parser):
-        data_by_channel=parser.raw_data[self.filenames[0]]["Channels"]
-        if not self.channels:
-            self.channels=data_by_channel.keys()
-        else:
-            self.channels = [c for c in self.channels if c in data_by_channel]
+    def validate_channels(self, keys):
+        self.channels = [c for c in self.channels if c in keys] if self.channels else keys
+
+    def get_channel_data(self, data_by_channel, header=None):
         channel_series = [self.select_function(data_by_channel[channel]["Data"]) for channel in self.channels]
-        channel_data = pd.concat(channel_series, axis=1, keys=self.channels)
-        channel_data.group = self.group_function(parser.sim_id,parser.sim_data)
+        return pd.concat(channel_series, axis=1, keys=self.channels)
+
+    def apply(self, parser):
+        data = parser.raw_data[self.filenames[0]]
+        data_by_channel = data['Channels']
+        self.validate_channels(data_by_channel.keys())
+        channel_data = self.get_channel_data(data_by_channel, data['Header'])
+        channel_data.group = self.group_function(parser.sim_id, parser.sim_data)
         channel_data.sim_id = parser.sim_id
         return channel_data
 
     def combine(self, parsers):
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
-        combined = pd.concat(selected,axis=1,keys=[(d.group,d.sim_id) for d in selected],names=['group','sim_id','channel'])
-        self.data=combined.reorder_levels(['channel','group','sim_id'],axis=1).sortlevel(axis=1)
+        combined = pd.concat(selected, axis=1, 
+                             keys=[(d.group, d.sim_id) for d in selected], 
+                             names=['group', 'sim_id'] + self.data_group_names + ['channel'])
+        reordered_levels = ['channel'] + self.data_group_names + ['group', 'sim_id']
+        self.data = combined.reorder_levels(reordered_levels, axis=1).sortlevel(axis=1)
 
     def finalize(self):
-        fig=plt.figure('BasePlots',figsize=(10,8))
-        ncol = 1+len(self.channels)/4
-        nrow = np.ceil(float(len(self.channels))/ncol)
-        ax=None
-        for (i,channel) in enumerate(self.channels):
-            ax=fig.add_subplot(nrow, ncol, i+1, sharex=ax)
-            plt.title(channel)
-            self.plot_function(self.data[channel],ax)
-
-        plt.tight_layout()
-        if self.saveOutput: self.save()
-
-    def save(self):
-        self.data.to_csv('timeseries.csv')
+        plot_channel_on_axes = lambda channel, ax: self.plot_function(self.data[channel].dropna(), ax)
+        plot_by_channel(self.plot_name, self.channels, plot_channel_on_axes)
+        if self.saveOutput:
+            self.data.to_csv(self.output_file)

@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+### Plot functions ###
 def no_plots(df, ax):
     pass
 
@@ -37,10 +38,27 @@ def plot_std_bands(df, ax):
 
 def plot_grouped_lines(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
-    palette=sns.color_palette()
+    palette = sns.color_palette()
     leg=[]
     for i, (g, dfg) in enumerate(grouped):
         color = palette[i % len(palette)]
-        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, color=color)
+        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, color=[color]) #?
         leg.append(plt.Line2D((0, 1), (0, 0), color=color))
     plt.legend(leg, df.keys().levels[0].tolist(), title='group')
+
+### Subplots by channel
+def plot_by_channel(plot_name, channels, plot_fn):
+    ncol = 1 + len(channels)/4
+    nrow = int(np.ceil(float(len(channels)) / ncol))
+
+    fig, axs = plt.subplots(num=plot_name, 
+                            figsize=(min(8, 4*ncol), min(6, 3*nrow)), 
+                            nrows=nrow, ncols=ncol, 
+                            sharex=True)
+    axs = np.array(axs) # for 1x1 case
+
+    for (channel, ax) in zip(channels, axs.reshape(-1)):
+        ax.set_title(channel)
+        plot_fn(channel, ax)
+
+    fig.set_tight_layout(True)
