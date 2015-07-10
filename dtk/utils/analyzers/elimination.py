@@ -23,7 +23,7 @@ def interp_scatter(x, y, z, ranges, cmap='afmhot', **kwargs):
     Z = np.reshape(sm_mean, X.shape)
 
     color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.5)
-    im = plt.pcolor(X, Y, Z, **color_args)
+    im = plt.pcolormesh(X, Y, Z, shading='gouraud', **color_args)
             
     kwargs.update(color_args)
     plt.scatter(x, y, s=10, c=z, **kwargs)
@@ -38,7 +38,7 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
                  filter_function = lambda md: True,
                  select_function = lambda ts: pd.Series(ts[-1] == 0, index=['probability eliminated']),
                  xlim=(0, 1), ylim=(0, 1), zlim=(0, 1), cmap='afmhot',
-                 channels=['Infected'], saveOutput=False):
+                 channels=['Infected'], saveOutput=True):
 
         self.facet_point = FacetPoint(x, y, row, col)
         self.metadata = [p for p in self.facet_point if p] + extra_metadata
@@ -64,13 +64,15 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
         df = df.drop('group', axis=1).set_index('sim_id')
 
         x, y, row, col = self.facet_point
-        #plt.figure(self.plot_name) #?
-        g = sns.FacetGrid(df, col=col, row=row, margin_titles=True, size=4)
+        g = sns.FacetGrid(df, col=col, row=row, margin_titles=True, size=4.5, aspect=1.2)
         g.map(interp_scatter, x, y, z, ranges=self.ranges, cmap=self.cmap)\
          .fig.subplots_adjust(wspace=0.1, hspace=0.05, right=0.85)
                 
-        cax = plt.gcf().add_axes([0.93, 0.1, 0.02, 0.8])
-        cb = plt.colorbar(cax=cax, label=z)
+        cax = plt.gcf().add_axes([0.9, 0.1, 0.02, 0.8])
+        cb = plt.colorbar(cax=cax)
+        cb.ax.set_ylabel(z, rotation=270)
+        cb.ax.get_yaxis().labelpad = 25
 
         if self.saveOutput:
+            plt.savefig(self.plot_name + '.pdf', format='pdf')
             df.to_csv(self.output_file)
