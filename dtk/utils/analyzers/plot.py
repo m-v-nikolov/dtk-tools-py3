@@ -55,9 +55,8 @@ def plot_by_channel(plot_name, channels, plot_fn):
                             figsize=(min(8, 4*ncol), min(6, 3*nrow)), 
                             nrows=nrow, ncols=ncol, 
                             sharex=True)
-    axs = np.array(axs) # for 1x1 case
 
-    for (channel, ax) in zip(channels, axs.reshape(-1)):
+    for (channel, ax) in zip(channels, axs.flat):
         ax.set_title(channel)
         plot_fn(channel, ax)
 

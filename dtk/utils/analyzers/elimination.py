@@ -1,69 +1,71 @@
+from collections import namedtuple
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import pandas as pd
 import statsmodels.nonparametric.api as nparam
+import seaborn as sns
 
 from .timeseries import TimeseriesAnalyzer
+from .group import group_by_name, combo_group
 
-## TODO: generalize the functionality of this to be less custom to a specific example!!
+FacetPoint = namedtuple('FacetPoint', ['x', 'y', 'row', 'col'])
+Ranges = namedtuple('Ranges', ['x', 'y', 'z'])
 
-def default_scatter_fn(df,ax):
+def interp_scatter(x, y, z, ranges, cmap='afmhot_r', **kwargs):
+    xlim, ylim, (vmin, vmax) = ranges
 
-    #channel='eliminated'
-    channel='prevalence'
-
-    model=nparam.KernelReg([df[channel]],
-                           [df.scale,df.coverage],
-                           reg_type='ll',var_type='cc',bw='cv_ls')
-
-    X, Y = np.mgrid[0:1:100j, 0.5:1:100j]
+    model = nparam.KernelReg([z], [x, y], reg_type='ll', var_type='cc', bw='cv_ls')
+    X, Y = np.mgrid[slice(xlim[0], xlim[1], 100j), slice(ylim[0], ylim[1], 100j)]
     positions = np.vstack([X.ravel(), Y.ravel()]).T
     sm_mean, sm_mfx = model.fit(positions)
     Z = np.reshape(sm_mean, X.shape)
 
-    color_args=dict(cmap='afmhot', vmin=0, vmax=1, alpha=0.5)
-
-    im=ax.pcolor(X,Y,Z,**color_args)
-
-    df.plot(kind='scatter',
-            x='scale',y='coverage', 
-            c=channel, s=10, ax=ax, **color_args)
+    color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.5)
+    im = plt.pcolor(X, Y, Z, **color_args)
+            
+    kwargs.update(color_args)
+    plt.scatter(x, y, s=10, c=z, **kwargs)
+    plt.gca().set(xlim=xlim, ylim=ylim)
 
 class EliminationAnalyzer(TimeseriesAnalyzer):
 
-    def __init__(self,
-                 filter_function = lambda md: True, # no filtering based on metadata
-                 select_function = lambda ts: pd.Series(ts[-730] == 0,index=['eliminated']),
-                 group_function  = lambda k,v: k,   # group by unique simid-key from parser
-                 plot_function   = default_scatter_fn,
-                 saveOutput = False):
+    plot_name = 'EliminationPlots'
+    output_file = 'elimination.csv'
 
-        TimeseriesAnalyzer.__init__(self,'InsetChart.json',
-                                    filter_function,select_function,
-                                    group_function,plot_function,
-                                    ['Infected'],saveOutput)
+    def __init__(self, x, y, row=None, col=None,
+                 filter_function = lambda md: True,
+                 select_function = lambda ts: pd.Series(ts[-1] == 0, index=['probability eliminated']),
+                 xlim=(0, 1), ylim=(0, 1), zlim=(0, 1), cmap='afmhot',
+                 channels=['Infected'], saveOutput=False):
+
+        self.facet_point = FacetPoint(x, y, row, col)
+        self.ranges = Ranges(xlim, ylim, zlim)
+        self.cmap = cmap
+        group_function = combo_group(*[group_by_name(p) for p in tuple(self.facet_point) if p])
+
+        TimeseriesAnalyzer.__init__(self, 'InsetChart.json',
+                                    filter_function, select_function,
+                                    group_function, plot_function=None,
+                                    channels=channels, saveOutput=saveOutput)
 
     def finalize(self):
-        df=self.data.groupby(level=['group'], axis=1).mean()
-        df=df.stack('group').unstack(0).reset_index()
-        new_col_list = ['coverage','duration','scale']
-        for n,col in enumerate(new_col_list):
+        df = self.data.groupby(level=['group', 'sim_id'], axis=1).mean()
+        z = df.index[0]
+        df = df.stack(['group', 'sim_id']).unstack(0).reset_index()
+        for n, col in enumerate([p for p in self.facet_point if p]):
             df[col] = df['group'].apply(lambda g: g[n])
-        df = df.drop('group',axis=1).set_index(['coverage','duration','scale'],drop=False)
-        df=df.reorder_levels(['duration','coverage','scale'])
-        dd=df.index.levels[0]
-        fig=plt.figure('EliminationPlots',figsize=(17,4))
-        ax=None
-        #print(df)
-        for i,d in enumerate(dd):
-            ax=fig.add_subplot(1,len(dd),i+1,sharex=ax,sharey=ax)
-            ax.set_title('RTS,S half-life = %dd'%d if d else 'No RTS,S')
-            ax.set(xlim=[0,1],ylim=[0.5,1])
-            s=df[df.duration==d]
-            #print(s)
-            self.plot_function(s,ax)
-        plt.tight_layout()
+        df = df.drop('group', axis=1).set_index('sim_id')
 
-    def save(self):
-        self.data.to_csv('elimination.csv')
+        x, y, row, col = self.facet_point
+        #plt.figure(self.plot_name) #?
+        g = sns.FacetGrid(df, col=col, row=row, margin_titles=True, size=4)
+        g.map(interp_scatter, x, y, z, ranges=self.ranges, cmap=self.cmap)\
+         .fig.subplots_adjust(wspace=0.1, hspace=0.05, right=0.85)
+                
+        cax = plt.gcf().add_axes([0.93, 0.1, 0.02, 0.8])
+        cb = plt.colorbar(cax=cax, label=z)
+
+        if self.saveOutput:
+            df.to_csv(self.output_file)

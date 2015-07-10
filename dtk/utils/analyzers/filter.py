@@ -20,6 +20,9 @@ def key_value_within(key, value, threshold):
         return (abs(sim_value-value) < threshold)
     return f
 
+def key_value_equals(key, value):
+    return lambda metadata: metadata[key] == value
+
 def combo_filter(*args):
     def f(metadata):
         return all(filter(metadata) for filter in args)
