@@ -1,11 +1,12 @@
 import pandas as pd
 
-def example_selection(start_date='1/1/2000'):
+def example_selection(start_date='1/1/2000', freq='W'):
     def f(timeseries):
-        # N.B. once-per-week snapshots, not weekly (running) averages...
-        weekly = timeseries[::7]
-        dates = pd.date_range(start_date, periods=len(weekly), freq='W')
-        return pd.Series(weekly, index=dates)
+        # N.B. once-per-period snapshots, not period-sliding-window averages...
+        freq_days = {'W': 7, 'M': 30, 'D': 1, 'Y': 365}
+        freq_sliced = timeseries[::freq_days[freq]]
+        dates = pd.date_range(start_date, periods=len(freq_sliced), freq=freq)
+        return pd.Series(freq_sliced, index=dates)
     return f
 
 def summary_interval_selection(start_date='1/1/2000', freq='M'):
