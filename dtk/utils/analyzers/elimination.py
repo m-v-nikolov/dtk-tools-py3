@@ -34,16 +34,18 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
     plot_name = 'EliminationPlots'
     output_file = 'elimination.csv'
 
-    def __init__(self, x, y, row=None, col=None,
+    def __init__(self, x, y, row=None, col=None, extra_metadata=[],
                  filter_function = lambda md: True,
                  select_function = lambda ts: pd.Series(ts[-1] == 0, index=['probability eliminated']),
                  xlim=(0, 1), ylim=(0, 1), zlim=(0, 1), cmap='afmhot',
                  channels=['Infected'], saveOutput=False):
 
         self.facet_point = FacetPoint(x, y, row, col)
+        self.metadata = [p for p in self.facet_point if p] + extra_metadata
         self.ranges = Ranges(xlim, ylim, zlim)
         self.cmap = cmap
-        group_function = combo_group(*[group_by_name(p) for p in tuple(self.facet_point) if p])
+
+        group_function = combo_group(*[group_by_name(p) for p in self.metadata])
 
         TimeseriesAnalyzer.__init__(self, 'InsetChart.json',
                                     filter_function, select_function,
@@ -54,7 +56,10 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
         df = self.data.groupby(level=['group', 'sim_id'], axis=1).mean()
         z = df.index[0]
         df = df.stack(['group', 'sim_id']).unstack(0).reset_index()
-        for n, col in enumerate([p for p in self.facet_point if p]):
+        for n, col in enumerate(self.metadata):
+            if col in df.columns:
+                print('WARNING: "%s" already in DataFrame. Probably derived quantity rather than simulation metadata.' % col)
+                continue
             df[col] = df['group'].apply(lambda g: g[n])
         df = df.drop('group', axis=1).set_index('sim_id')
 
