@@ -8,7 +8,6 @@ from .plot import plot_grouped_lines
 class SummaryAnalyzer(TimeseriesAnalyzer):
 
     plot_name = 'SummaryPlots'
-    data_group_names = []
     output_file = 'summary.csv'
 
     def __init__(self,

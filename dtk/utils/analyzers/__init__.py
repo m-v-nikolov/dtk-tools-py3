@@ -7,3 +7,4 @@ from .timeseries import TimeseriesAnalyzer
 from .vector import VectorSpeciesAnalyzer
 from .summary import SummaryAnalyzer
 from .elimination import EliminationAnalyzer
+from .regression import RegressionTestAnalyzer

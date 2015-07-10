@@ -15,7 +15,8 @@ def default_vectorplot_fn(df, ax):
 class VectorSpeciesAnalyzer(TimeseriesAnalyzer):
 
     plot_name = 'VectorChannelPlots'
-    data_group_names = ['species']
+    data_group_names = ['group', 'sim_id', 'species', 'channel']
+    ordered_levels = ['channel', 'species', 'group', 'sim_id']
     output_file = 'vector.csv'
 
     def __init__(self,

@@ -13,7 +13,7 @@ from .group import group_by_name, combo_group
 FacetPoint = namedtuple('FacetPoint', ['x', 'y', 'row', 'col'])
 Ranges = namedtuple('Ranges', ['x', 'y', 'z'])
 
-def interp_scatter(x, y, z, ranges, cmap='afmhot_r', **kwargs):
+def interp_scatter(x, y, z, ranges, cmap='afmhot', **kwargs):
     xlim, ylim, (vmin, vmax) = ranges
 
     model = nparam.KernelReg([z], [x, y], reg_type='ll', var_type='cc', bw='cv_ls')

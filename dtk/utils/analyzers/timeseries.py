@@ -12,7 +12,8 @@ def default_plot_fn(df, ax):
 class TimeseriesAnalyzer():
 
     plot_name = 'ChannelPlots'
-    data_group_names = []
+    data_group_names = ['group', 'sim_id', 'channel']
+    ordered_levels = ['channel', 'group', 'sim_id']
     output_file = 'timeseries.csv'
 
     def __init__(self,
@@ -58,9 +59,8 @@ class TimeseriesAnalyzer():
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
         combined = pd.concat(selected, axis=1, 
                              keys=[(d.group, d.sim_id) for d in selected], 
-                             names=['group', 'sim_id'] + self.data_group_names + ['channel'])
-        reordered_levels = ['channel'] + self.data_group_names + ['group', 'sim_id']
-        self.data = combined.reorder_levels(reordered_levels, axis=1).sortlevel(axis=1)
+                             names=self.data_group_names)
+        self.data = combined.reorder_levels(self.ordered_levels, axis=1).sortlevel(axis=1)
 
     def finalize(self):
         plot_channel_on_axes = lambda channel, ax: self.plot_function(self.data[channel].dropna(), ax)

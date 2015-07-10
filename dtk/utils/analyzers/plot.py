@@ -21,7 +21,7 @@ def plot_CI_bands(df, ax):
     reshaped = np.reshape(values, shape)
     cube = np.transpose(reshaped, (2, 0, 1)) # samples,timepoints,groups
     sns.tsplot(cube, condition=pd.Series(groups, name='group'),
-               err_style='ci_band', ci=np.linspace(95, 10, 4), time=df.index)
+               err_style='ci_band', ci=np.linspace(95, 10, 4), time=df.index, ax=ax)
 
 def plot_std_bands(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
@@ -36,13 +36,18 @@ def plot_std_bands(df, ax):
             plt.fill_between(df.index, lower_ci[g], upper_ci[g],
                              alpha=0.1, color=color)
 
+def plot_lines(df, ax):
+    palette = sns.color_palette()
+    df.plot(ax=ax, alpha=0.6, lw=1, legend=True)
+
 def plot_grouped_lines(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
     palette = sns.color_palette()
     leg=[]
     for i, (g, dfg) in enumerate(grouped):
         color = palette[i % len(palette)]
-        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, color=[color]) #?
+        pcolor = [color] if len(dfg.columns) > 1 else color
+        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, color=pcolor)
         leg.append(plt.Line2D((0, 1), (0, 0), color=color))
     plt.legend(leg, df.keys().levels[0].tolist(), title='group')
 
