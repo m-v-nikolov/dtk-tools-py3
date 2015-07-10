@@ -22,11 +22,11 @@ def interp_scatter(x, y, z, ranges, cmap='afmhot', **kwargs):
     sm_mean, sm_mfx = model.fit(positions)
     Z = np.reshape(sm_mean, X.shape)
 
-    color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.5)
+    color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=1)
     im = plt.pcolormesh(X, Y, Z, shading='gouraud', **color_args)
             
     kwargs.update(color_args)
-    plt.scatter(x, y, s=10, c=z, **kwargs)
+    plt.scatter(x, y, s=20, c=z, lw=0.5, edgecolor='darkgray', **kwargs)
     plt.gca().set(xlim=xlim, ylim=ylim)
 
 class EliminationAnalyzer(TimeseriesAnalyzer):
@@ -64,6 +64,7 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
         df = df.drop('group', axis=1).set_index('sim_id')
 
         x, y, row, col = self.facet_point
+        df.sort([v for v in [row, col] if v], inplace=True)
         g = sns.FacetGrid(df, col=col, row=row, margin_titles=True, size=4.5, aspect=1.2)
         g.map(interp_scatter, x, y, z, ranges=self.ranges, cmap=self.cmap)\
          .fig.subplots_adjust(wspace=0.1, hspace=0.05, right=0.85)
