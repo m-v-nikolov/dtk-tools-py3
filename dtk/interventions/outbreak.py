@@ -23,3 +23,5 @@ def recurring_outbreak(cb, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=3
                                  }
 
     cb.add_event(outbreak_event)
+    return {'outbreak_fraction': outbreak_fraction,
+            'tsteps_btwn': tsteps_btwn}

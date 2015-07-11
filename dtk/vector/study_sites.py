@@ -30,7 +30,7 @@ def configure_site(cb, site, pop_scale=1):
             scale_all_habitats(cb, pop_scale)
     else:
         raise Exception('%s study site not yet implemented.' % StudySite.site)
-    return {'_site_': site}
+    return {'_site_': site, 'population_scale': pop_scale}
 
 def geography_from_site(site):
     site_to_geography = {'Sugungum': 'Garki_Single',
