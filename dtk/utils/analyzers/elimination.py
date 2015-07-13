@@ -52,28 +52,32 @@ class EliminationAnalyzer(TimeseriesAnalyzer):
                                     group_function, plot_function=None,
                                     channels=channels, saveOutput=saveOutput)
 
-    def finalize(self):
-        df = self.data.groupby(level=['group', 'sim_id'], axis=1).mean()
-        z = df.index[0]
-        df = df.stack(['group', 'sim_id']).unstack(0).reset_index()
-        for n, col in enumerate(self.metadata):
-            if col in df.columns:
-                print('WARNING: "%s" already in DataFrame. Probably derived quantity rather than simulation metadata.' % col)
-                continue
-            df[col] = df['group'].apply(lambda g: g[n])
-        df = df.drop('group', axis=1).set_index('sim_id')
-
+    def plot(self):
         x, y, row, col = self.facet_point
-        df.sort([v for v in [row, col] if v], inplace=True)
-        g = sns.FacetGrid(df, col=col, row=row, margin_titles=True, size=4.5, aspect=1.2)
-        g.map(interp_scatter, x, y, z, ranges=self.ranges, cmap=self.cmap)\
+        self.df.sort([v for v in [row, col] if v], inplace=True)
+        g = sns.FacetGrid(self.df, col=col, row=row, margin_titles=True, size=4.5, aspect=1.2)
+
+        g.map(interp_scatter, x, y, self.outcome, ranges=self.ranges, cmap=self.cmap)\
          .fig.subplots_adjust(wspace=0.1, hspace=0.05, right=0.85)
                 
         cax = plt.gcf().add_axes([0.9, 0.1, 0.02, 0.8])
         cb = plt.colorbar(cax=cax)
-        cb.ax.set_ylabel(z, rotation=270)
+        cb.ax.set_ylabel(self.outcome, rotation=270)
         cb.ax.get_yaxis().labelpad = 25
+
+    def finalize(self):
+        self.df = self.data.groupby(level=['group', 'sim_id'], axis=1).mean()
+        self.outcome = self.df.index[0]
+        self.df = self.df.stack(['group', 'sim_id']).unstack(0).reset_index()
+        for n, col in enumerate(self.metadata):
+            if col in self.df.columns:
+                print('WARNING: "%s" already in DataFrame. Probably derived quantity rather than simulation metadata.' % col)
+                continue
+            self.df[col] = self.df['group'].apply(lambda g: g[n])
+        self.df = self.df.drop('group', axis=1).set_index('sim_id')
+
+        self.plot()
 
         if self.saveOutput:
             plt.savefig(self.plot_name + '.pdf', format='pdf')
-            df.to_csv(self.output_file)
+            self.df.to_csv(self.output_file)
