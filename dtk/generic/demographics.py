@@ -16,12 +16,13 @@ params = {
     "Enable_Demographics_Other": 1,
     "Enable_Demographics_Reporting": 0,
 
-    "Enable_Immunity_Initialization_Distribution": 0,
+    "Immunity_Initialization_Distribution_Type": "DISTRIBUTION_OFF",
 
     "Enable_Vital_Dynamics": 1,
     "Death_Rate_Dependence": "NONDISEASE_MORTALITY_BY_AGE_AND_GENDER",
     "Enable_Birth": 1,
     "Birth_Rate_Dependence": "POPULATION_DEP_RATE",
+    "Birth_Rate_Time_Dependence": "NONE",
     "x_Birth": 1,
 
     "Enable_Disease_Mortality": 0,

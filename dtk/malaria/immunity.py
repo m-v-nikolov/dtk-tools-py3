@@ -29,7 +29,7 @@ params = {
     "Erythropoiesis_Anemia_Effect": 3.5
     }
 
-def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_root')):
+def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_root'), site=None):
 
     demogfiles = cb.get_param("Demographics_Filenames")
 
@@ -37,31 +37,37 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
         print(demogfiles)
         raise Exception('add_immune_init function is expecting only a single demographics file.')
 
-    demog_filename=demogfiles[0]
+    demog_filename = demogfiles[0]
+
+    subdirs, demog_filename = os.path.split(demog_filename)
     prefix = demog_filename.split('.')[0]
+
+    # e.g. DataFiles/Zambia/Sinamalima_single_node/immune_init/SinazongweConstant/..._immune_init_x_...json
+    if site:
+        subdirs = os.path.join(subdirs, 'immune_init', site)
 
     if 'demographics' not in prefix:
         raise Exception('add_immune_init function expecting a base demographics layer with demographics in the name.')
 
     for tag in tags:
-        immune_init_name = prefix.replace("demographics","immune_init_" + tag, 1)
+        immune_init_name = prefix.replace("demographics", "immune_init_" + tag, 1)
         if directory:
-            cb.add_demog_overlay(immune_init_name,json2dict(os.path.join(directory,'%s.json'%immune_init_name)))
+            cb.add_demog_overlay(immune_init_name, json2dict(os.path.join(directory, subdirs, '%s.json' % immune_init_name)))
         else:
-            cb.append_overlay('%s.json'%immune_init_name)
+            cb.append_overlay(os.path.join(subdirs, '%s.json' % immune_init_name))
 
-    cb.set_param("Enable_Immunity_Initialization_Distribution",1)
+    cb.set_param("Immunity_Initialization_Distribution_Type", "DISTRIBUTION_COMPLEX")
 
 # Immune initialization based on habitat scaling
 def add_immune_init(cb, site, x_temp_habitats, directory=None):
-    tags = ["x_"+str(x) for x in x_temp_habitats]
-    add_immune_overlays(cb, tags, directory)
+    tags = ["x_" + str(x) for x in x_temp_habitats]
+    add_immune_overlays(cb, tags, directory, site=site)
 
 def scale_habitat_with_immunity(cb, available=[], scale=1.0):
     set_habitat_scale(cb, scale)
-    cb.set_param("Config_Name", StudySite.site+'_x_'+str(scale))
-    nearest = lambda num,numlist: min(numlist, key=lambda x:abs(x-num))
-    nearest_scale=scale if not available else nearest(scale,available)
+    cb.set_param("Config_Name", StudySite.site + '_x_' + str(scale))
+    nearest = lambda num, numlist: min(numlist, key=lambda x: abs(x - num))
+    nearest_scale = scale if not available else nearest(scale, available)
     add_immune_init(cb, StudySite.site, [nearest_scale])
     return {'Config_Name': StudySite.site + '_x_' + str(scale),
             'habitat_scale': scale}
