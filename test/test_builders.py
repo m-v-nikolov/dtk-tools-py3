@@ -28,7 +28,7 @@ class TestBuilders(unittest.TestCase):
         fn = Builder.ModFn(configure_site, s)
         fn(self.cb)
         self.assertTrue('Namawala' in self.cb.get_param('Demographics_Filenames')[0])
-        self.assertEqual(Builder.metadata, {'_site_': 'Namawala'})
+        self.assertEqual(Builder.metadata, {'_site_': 'Namawala', 'population_scale': 1})
 
     def test_calibsite_fn(self):
         s = 'Namawala'
@@ -77,7 +77,9 @@ class TestBuilders(unittest.TestCase):
             for i, ml in enumerate(b.mod_generator):
                 for m in ml: 
                     m(self.cb)
-                self.assertEqual(b.metadata, dict(zip(('x_Temporary_Larval_Habitat', 'Simulation_Duration', '_site_'), md[i])))
+                mdd = dict(zip(('x_Temporary_Larval_Habitat', 'Simulation_Duration', '_site_'), md[i]))
+                mdd.update({'population_scale': 1})
+                self.assertEqual(b.metadata, mdd)
                 self.assertEqual(self.cb.get_param('x_Temporary_Larval_Habitat'), md[i][0])
                 ngenerated += 1
             self.assertEqual(ngenerated, 4)
