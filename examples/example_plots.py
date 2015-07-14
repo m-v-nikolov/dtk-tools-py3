@@ -8,7 +8,7 @@ from dtk.utils.analyzers.vector import VectorSpeciesAnalyzer
 analyzers = [ TimeseriesAnalyzer(
                 select_function=example_selection(),
                 group_function=group_by_name('_site_'),
-                plot_function=plot_std_bands
+                plot_function=plot_grouped_lines
                 ),
               VectorSpeciesAnalyzer(
                 select_function=example_selection(),

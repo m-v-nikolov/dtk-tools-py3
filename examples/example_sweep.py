@@ -8,14 +8,12 @@ from dtk.vector.study_sites import configure_site
 exp_name  = 'ExampleSweep'
 builder   = GenericSweepBuilder.from_dict({'Run_Number': range(3),
                                            'x_Temporary_Larval_Habitat': [0.05],
-                                           '_site_'    : ['Namawala','Matsari']})
+                                           '_site_' : ['Namawala', 'Matsari']})
 
-cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
-cb.update_params({
-                'Num_Cores': 1,
-                'Base_Population_Scale_Factor' : 0.1,
-                'Simulation_Duration' : 365*5
-                })
+cb = DTKConfigBuilder.from_defaults('MALARIA_SIM', 
+                                    Num_Cores=1, 
+                                    Base_Population_Scale_Factor=0.1, 
+                                    Simulation_Duration=365*5)
 
 run_sim_args =  { 'config_builder' : cb,
                   'exp_name'       : exp_name,

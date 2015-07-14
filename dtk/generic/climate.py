@@ -26,4 +26,6 @@ params = {
 
 }
 
-# climate: constant, koppen, off?
+def set_climate_constant(cb, **kwargs):
+    cb.set_param('Climate_Model', 'CLIMATE_CONSTANT')
+    cb.update_params(kwargs, validate=True)

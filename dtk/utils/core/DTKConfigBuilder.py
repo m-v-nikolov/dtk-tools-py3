@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 import dtk.generic.params as generic_params
 import dtk.vector.params as vector_params
@@ -11,15 +12,16 @@ from dtk.utils.parsers.JSON import json2dict, dict2json
 # A class for building and modifying config/campaign files
 class DTKConfigBuilder:
 
-    def __init__(self, config={'parameters':{}}, campaign=empty_campaign):
+    def __init__(self, config={'parameters':{}}, campaign=empty_campaign, **kwargs):
         self.config = config
         self.campaign = campaign
         self.demog_overlays = {}
         self.custom_reports = []
         self.dlls = set()
+        self.update_params(kwargs, validate=True)
 
     @classmethod
-    def from_defaults(cls, sim_type=None):
+    def from_defaults(cls, sim_type=None, **kwargs):
         if not sim_type:
             raise Exception("Instantiating DTKConfigBuilder from defaults requires a sim_type argument, e.g. 'MALARIA_SIM'.")
 
@@ -49,7 +51,7 @@ class DTKConfigBuilder:
 
         config["parameters"]["Simulation_Type"] = sim_type
 
-        return cls(config, empty_campaign)
+        return cls(config, empty_campaign, **kwargs)
 
     @classmethod
     def from_files(cls, config_name, campaign_name=None):
@@ -60,8 +62,14 @@ class DTKConfigBuilder:
     def copy_from(self,other):
         self.__dict__ = other.__dict__.copy()
 
-    def update_params(self, params):
-        self.config["parameters"].update(params)
+    def update_params(self, params, validate=False):
+        if not validate:
+            self.config["parameters"].update(params)
+        else:
+            for k, v in params.items():
+                self.validate_param(k)
+                logging.debug('Overriding: %s = %s' % (k, v))
+                self.set_param(k, v)
 
     def set_param(self, param, value):
         self.config["parameters"][param] = value

@@ -1,4 +1,5 @@
 from ..generic.geography import set_geography
+from ..generic.climate import set_climate_constant
 from species import set_larval_habitat, set_species_param, scale_all_habitats
 
 class StudySite(object):
@@ -33,9 +34,15 @@ def configure_site(cb, site, pop_scale=1):
     return {'_site_': site, 'population_scale': pop_scale}
 
 def geography_from_site(site):
-    site_to_geography = {'Sugungum': 'Garki_Single',
-                         'Matsari': 'Garki_Single',
-                         'Rafin_Marke': 'Garki_Single'}
+    site_to_geography = {
+        'Sugungum': 'Garki_Single',
+        'Matsari': 'Garki_Single',
+        'Rafin_Marke': 'Garki_Single',
+                         
+        'Chipepo': 'Sinazongwe',
+        'SinazongweConstant': 'Sinazongwe'
+        }
+
     geo = site_to_geography.get(site, '')
     return geo if geo else site
 
@@ -93,8 +100,18 @@ def configure_laye(cb) :
 
 # Sinazongwe, Southern, Zambia: EIR ~= 20
 def configure_sinazongwe(cb):
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
-    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
+    set_larval_habitat(cb, {"arabiensis": {'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
+    set_species_param(cb, "arabiensis", "Indoor_Feeding_Fraction", 0.5)
+
+def configure_chipepo(cb):
+    set_larval_habitat(cb, {"arabiensis": {'TEMPORARY_RAINFALL': 1e9, 'CONSTANT': 1e9}})
+    set_species_param(cb, "arabiensis", "Indoor_Feeding_Fraction", 0.5)
+
+def configure_sinazongweconstant(cb):
+    set_larval_habitat(cb, {"arabiensis": {'CONSTANT': 1.5e9}})
+    set_species_param(cb, "arabiensis", "Indoor_Feeding_Fraction", 0.5)
+    set_climate_constant(cb, Base_Air_Temperature=22, Base_Rainfall=10)
+    cb.enable('Climate_Stochasticity')
 
 # Gwembe, Southern, Zambia: EIR ~= 0.1-20
 def configure_gwembe2node(cb):
