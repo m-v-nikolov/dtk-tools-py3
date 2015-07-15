@@ -143,7 +143,7 @@ def immune_init_from_binned_report(demog_name, binned_report_path, ConfigName, d
     else:
         print(json.dumps(demog_json,sort_keys=True,indent=4))
 
-def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, BaseName='TEST', doWrite=True, doCompile=True):
+def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, BaseName='TEST', site='', doWrite=True, doCompile=True):
 
     make_template_from_demographics(demog_json)
     print('Loading MalariaImmunityReport')
@@ -160,7 +160,11 @@ def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, B
 
     if doWrite:
         immune_overlay_name = BaseName + '_immune_init_' + ConfigName + '.json'
-        output_file_name = os.path.join(input_path, immune_overlay_name)
+        subdirs, immune_overlay_name = os.path.split(immune_overlay_name)
+        output_dir = os.path.join(input_path, subdirs, 'immune_init', site)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_file_name = os.path.join(output_dir, immune_overlay_name)
         print(output_file_name)
         with open( output_file_name, 'w' ) as f:
             f.write( json.dumps( demog_json, sort_keys=True, indent=4 ) )

@@ -34,6 +34,7 @@ def configure_site(cb, site, pop_scale=1):
     return {'_site_': site, 'population_scale': pop_scale}
 
 def geography_from_site(site):
+    site_splits = site.split('.') # e.g. to accommodate site='Chipepo.static'
     site_to_geography = {
         'Sugungum': 'Garki_Single',
         'Matsari': 'Garki_Single',
@@ -43,8 +44,8 @@ def geography_from_site(site):
         'SinazongweConstant': 'Sinazongwe'
         }
 
-    geo = site_to_geography.get(site, '')
-    return geo if geo else site
+    geo = site_to_geography.get(site_splits[0], '')
+    return '.'.join([geo] + site_splits[1:]) if geo else site
 
 def set_habitat_scale(cb, scale):
     cb.set_param('x_Temporary_Larval_Habitat', scale)    
