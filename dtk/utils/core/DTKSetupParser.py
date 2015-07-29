@@ -15,7 +15,6 @@ def DTKSetupParser(setup_file=''):
     setup = ConfigParser({'password':''})
     setup.read(setup_file)
     setup.set('HPC', 'user', user)
-    setup.set('HPC-OLD', 'user', user)
     setup.set('BINARIES', 'user', user)
 
     return setup

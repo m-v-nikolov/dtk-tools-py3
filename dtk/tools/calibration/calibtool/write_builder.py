@@ -86,17 +86,6 @@ num_retries     = """ + settings['hpc_num_retries'] + """
 sims_per_thread = """ + settings['hpc_sims_per_thread'] + """
 max_threads     = """ + settings['hpc_max_threads'] + """
 
-[HPC-OLD]
-username   = NA\jgerardin
-#password   = [password] # not necessary if credentials are cached locally
-head_node  = idmpphpc01
-node_group = emod_abcd
-priority   = Lowest
-sim_root   = \\\\idmppfil01\\IDM\home\\%(user)s\\output\\simulations\\
-input_root = \\\\idmppfil01\\IDM\home\\%(user)s\\input\\
-bin_root   = \\\\idmppfil01\\IDM\home\\%(user)s\\bin\\
-dll_root   = \\\\idmppfil01\\IDM\home\\%(user)s\\emodules\\
-
 [LOCAL]
 sim_root   = """ + settings['local_sim_root'] + """
 input_root = """ + settings['local_input_root'] + """

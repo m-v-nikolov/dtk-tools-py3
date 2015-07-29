@@ -29,18 +29,7 @@ class DTKOutputParser(threading.Thread):
             filenames = list(filenames)
 
             # parse output files for analysis
-            for filename in filenames:
-                file_extension = os.path.splitext(filename)[1][1:]
-                if file_extension == 'json':
-                    #print(filename + ' is a JSON file.  Loading JSON output data...\n')
-                    logging.debug('reading JSON')
-                    self.load_json_file(filename)
-                elif file_extension == 'bin' and 'SpatialReport' in filename:
-                    #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
-                    self.load_bin_file(filename)
-                else:
-                    print(filename + ' is of an unknown type.  Skipping...')
-                    continue
+            self.load_all_files(filenames)
 
             # do sim-specific part of analysis on parsed output data
             for analyzer in self.analyzers:
@@ -51,11 +40,28 @@ class DTKOutputParser(threading.Thread):
             if self.semaphore:
                 self.semaphore.release()
 
-    def load_json_file(self, filename):
+    def load_all_files(self, filenames):
+        for filename in filenames:
+            self.load_single_file(filename)
+            
+    def load_single_file(self, filename, *args):
+        file_extension = os.path.splitext(filename)[1][1:]
+        if file_extension == 'json':
+            #print(filename + ' is a JSON file.  Loading JSON output data...\n')
+            logging.debug('reading JSON')
+            self.load_json_file(filename, *args)
+        elif file_extension == 'bin' and 'SpatialReport' in filename:
+            #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
+            self.load_bin_file(filename, *args)
+        else:
+            print(filename + ' is of an unknown type.  Skipping...')
+            return
+    
+    def load_json_file(self, filename, *args):
         with open(os.path.join(self.get_sim_dir(), 'output', filename)) as json_file:
             self.raw_data[filename] = json.loads(json_file.read())
 
-    def load_bin_file(self, filename):
+    def load_bin_file(self, filename, *args):
         with open(os.path.join(self.get_sim_dir(), 'output', filename), 'rb') as bin_file:
             data = bin_file.read(8)
             n_nodes, = struct.unpack( 'i', data[0:4] )
@@ -81,7 +87,13 @@ class DTKOutputParser(threading.Thread):
 
 class CompsDTKOutputParser(DTKOutputParser):
 
-    sim_dir_map={}
+    sim_dir_map = None
+    use_compression = False
+
+    @classmethod
+    def enableCompression(cls):
+        print('Enabling COMPS asset service compression')
+        cls.use_compression = True
 
     @classmethod
     def createSimDirectoryMap(cls,exp_id):
@@ -91,8 +103,58 @@ class CompsDTKOutputParser(DTKOutputParser):
         sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
         sim_map = { sim.getId().toString() : sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims }
         print('Populated map of %d simulation IDs to output directories' % len(sim_map))
-        cls.sim_dir_map=sim_map
+        cls.sim_dir_map = sim_map
         return sim_map
+
+    def load_all_files(self, filenames):
+        from COMPS.Data import Simulation, AssetType
+        from java.util import ArrayList, UUID
+
+        if self.sim_dir_map is not None:
+            # sim_dir_map -> we can just open files locally...
+            super(CompsDTKOutputParser, self).load_all_files(filenames)
+            return
+            
+        # can't open files locally... we have to go through the COMPS asset service
+        paths = ArrayList()
+        for filename in filenames:
+            paths.add('output/' + filename)
+
+        asset_byte_arrays = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
+        
+        #print('done retrieving files; starting load')
+        
+        for filename, byte_array in zip(filenames, asset_byte_arrays.toArray()):
+            self.load_single_file(filename, byte_array)
+
+    def load_json_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_json_file(filename)
+        else:
+            self.raw_data[filename] = json.loads(args[0].tostring())
+
+    def load_bin_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_json_file(filename)
+        else:
+            arr = args[0]
+
+            n_nodes, = struct.unpack( 'i', arr[0:4] )
+            n_tstep, = struct.unpack( 'i', arr[4:8] )
+            #print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
+
+            nodeids = struct.unpack( str(n_nodes)+'i', arr[8:8+n_nodes*4])
+            nodeids = np.asarray(nodeids)
+            #print( "node IDs: " + str(nodeids) )
+            
+            channel_data = struct.unpack( str(n_nodes*n_tstep)+'f', arr[8+n_nodes*4:8+n_nodes*4+n_nodes*n_tstep*4])
+            channel_data = np.asarray(channel_data)
+            channel_data = channel_data.reshape(n_tstep, n_nodes)
+
+            self.raw_data[filename] = {'n_nodes': n_nodes,
+                                       'n_tstep': n_tstep,
+                                       'nodeids': nodeids,
+                                       'data': channel_data}
 
     def get_sim_dir(self):
         return self.sim_dir_map[self.sim_id]

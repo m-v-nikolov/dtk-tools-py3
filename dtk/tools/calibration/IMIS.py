@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # TODO: generalize interfaces and patterns after port
 #       - run DTK, BarcodeModel, DiseaseModel inside iteration loop
 #       - flexible next-point for different calib algo, separatrix, filtering
-#       - maintain flexibility of LOCAL/HPC-OLD/HPC (refactor SimulationManager and/or dtk.py commandline with some polymorphism?)
+#       - maintain flexibility of LOCAL/HPC (refactor SimulationManager and/or dtk.py commandline with some polymorphism?)
 
 class IMIS:
     '''

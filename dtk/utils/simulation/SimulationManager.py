@@ -21,8 +21,8 @@ from CommandlineGenerator import CommandlineGenerator # for command line strings
 from ..core.DTKSetupParser import DTKSetupParser      # to parse user-specific setup
 from ..builders.sweep import SingleSimulationBuilder
 
-from Commisioner import SimulationCommissioner, HpcSimulationCommissioner, CompsSimulationCommissioner
-from Monitor import SimulationMonitor, HpcSimulationMonitor, CompsSimulationMonitor
+from Commisioner import SimulationCommissioner, CompsSimulationCommissioner
+from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import DTKOutputParser, CompsDTKOutputParser
 
 def getMd5FromFile(filename):
@@ -44,9 +44,6 @@ class SimulationManagerFactory():
             return LocalSimulationManager
         if type == 'HPC':
             return CompsSimulationManager
-        if type == 'HPC-OLD': 
-            warnings.warn("The 'HPC-OLD' flag for direct HPC submission by 'job submit' is being removed in favor of COMPS submission.", DeprecationWarning)
-            return HpcSimulationManager
         raise Exception("SimulationManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
@@ -333,6 +330,10 @@ class LocalSimulationManager():
                                self.maxThreadSemaphore)
 
     def StageExecutable(self, bin_root):
+        if self.exe_path.startswith('\\\\'):
+            logger.info('Executable is already staged; skipping copy to file-share')
+            return self.exe_path
+    
         dtk_hash = getMd5FromFile(self.exe_path)
         logger.info('MD5 of ' + os.path.basename(self.exe_path) + ': ' + dtk_hash)
         bin_dir = os.path.join(bin_root, dtk_hash)
@@ -350,6 +351,11 @@ class LocalSimulationManager():
         return bin_path
 
     def StageEmodules(self, dll_root):
+        if self.setup.get('BINARIES','dll_path').startswith('\\\\'):
+            # now that I think about it more, I'm not sure what we actually want to do here...
+            logger.info('Not implemented')
+            return {}
+
         tt = {'interventions':'interventions', 'disease_plugins':'diseases', 'reporter_plugins':'reporter_plugins'}
         emodules_map = {'interventions':[], 'diseases':[], 'reporter_plugins':[]}
         for emodule in self.emodules:
@@ -378,53 +384,6 @@ class LocalSimulationManager():
 
     def getProperty(self,property):
         return self.setup.get(self.location,property)
-
-class HpcSimulationManager(LocalSimulationManager):
-    '''
-    Extends the LocalSimulationManager to manage DTK simulations through direct HPC commands
-    e.g. job submit, job view
-    '''
-    def __init__(self, exe_path, exp_data):
-        LocalSimulationManager.__init__(self,exe_path,exp_data)
-        self.location = 'HPC-OLD'
-
-    def commissionSimulation(self, sim_path, sims):
-        sim_dir = self.createSimulation(sim_path)
-
-        logger.debug('Commissioning HPC simulation(s)...')
-        config_name = self.config_builder.get_param('Config_Name')[:79]
-        num_cores = self.config_builder.get_param('Num_Cores')
-        self.commissioner = HpcSimulationCommissioner(sim_dir, 
-                                        self.eradication_command, 
-                                        self.setup, 
-                                        config_name, 
-                                        num_cores)
-
-        # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][self.commissioner.sim_id] = self.exp_builder.metadata
-
-        # submit simulation
-        self.commissioner.start()
-        sims.append(self.commissioner)
-        return True
-
-    def getSimulationMonitor(self, sim_id, job_id):
-        return HpcSimulationMonitor(job_id, self.getProperty('head_node'))
-
-    def resubmitJob(self, job_id):
-        resubmit_cmd_line = "job requeue " + str(job_id) + " /scheduler:" + self.getProperty('head_node')
-        hpc_pipe = subprocess.Popen(resubmit_cmd_line.split(), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        [hpc_pipe_stdout, hpc_pipe_stderr] = hpc_pipe.communicate()
-
-    def killJob(self, job_id):
-        logger.debug('Killing HPC simulations by job ID...')
-        cancel_cmd_line = "job cancel " + str(job_id) + " /scheduler:" + self.getProperty('head_node')
-        logger.debug("Executing hpc_command_line: " + cancel_cmd_line)
-        logger.debug("Canceling job " + str(job_id))
-        hpc_pipe = subprocess.Popen(cancel_cmd_line.split(), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        [hpc_pipe_stdout, hpc_pipe_stderr] = hpc_pipe.communicate()
-        logger.debug(hpc_pipe_stdout)
-        logger.debug(hpc_pipe_stderr)
 
 class CompsSimulationManager(LocalSimulationManager):
     '''
@@ -508,5 +467,9 @@ class CompsSimulationManager(LocalSimulationManager):
         s.Cancel()
 
     def AnalyzeSimulations(self):
-        CompsDTKOutputParser.createSimDirectoryMap(self.exp_data['exp_id'])
+        if not self.setup.getboolean(self.location, 'use_comps_asset_svc'):
+            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data['exp_id'])
+        if self.setup.getboolean(self.location, 'compress_assets'):
+            CompsDTKOutputParser.enableCompression()
+
         LocalSimulationManager.AnalyzeSimulations(self)

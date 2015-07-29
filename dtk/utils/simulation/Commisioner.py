@@ -27,66 +27,6 @@ class SimulationCommissioner(threading.Thread):
                 time.sleep(3)
                 #print('Process ID: ' + str(p.pid))
 
-# A class to commission simulations to an HPC
-class HpcSimulationCommissioner(SimulationCommissioner):
-
-    def __init__(self, sim_dir, eradication_command, setup, config_name, numcores):
-        SimulationCommissioner.__init__(self, sim_dir, eradication_command)
-        self.setup = setup
-        self.config_name = config_name
-        if not numcores:
-            print("config.json didn't contain 'Num_Cores' parameter.  Defaulting to one.")
-            numcores = 1
-        self.numcores = numcores
-
-    def run(self):
-        #mpiexec commandline
-        mpi_bin = 'mpiexec'
-        mpi_options = {}
-        mpi_params = [self.eradication_command.Commandline]
-        mpi_command = CommandlineGenerator(mpi_bin, mpi_options, mpi_params)
-
-        #job submit commandline
-        jobsubmit_bin = 'job submit'
-        jobsubmit_options = { '/workdir:'  : self.sim_dir,
-                              '/scheduler:': self.setup.get('HPC-OLD','head_node'),
-                              '/nodegroup:': self.setup.get('HPC-OLD','node_group'),
-                              '/user:'     : self.setup.get('HPC-OLD','username'),
-                              '/jobname:'  : self.config_name,
-                              '/numcores:' : str(self.numcores),
-                              '/stdout:'   : 'StdOut.txt',
-                              '/stderr:'   : 'StdErr.txt',
-                              '/priority:' : self.setup.get('HPC-OLD','priority') }
-
-        hpc_pwd = self.setup.get('HPC-OLD','password')
-        if hpc_pwd:
-            jobsubmit_options['/password:'] = hpc_pwd
-
-        jobsubmit_params = [mpi_command.Commandline]
-        jobsubmit_command = CommandlineGenerator(jobsubmit_bin, jobsubmit_options, jobsubmit_params)
-
-        hpc_command_line = jobsubmit_command.Commandline
-        #print("Executing hpc_command_line: " + hpc_command_line + '\n')
-        p = subprocess.Popen( hpc_command_line.split(), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-        [hpc_pipe_stdout, hpc_pipe_stderr] = p.communicate()
-        #print("Trying to read hpc response...")
-        #print(hpc_pipe_stdout)
-
-        if p.returncode == 0:
-            job_id = hpc_pipe_stdout.split( ' ' )[-1].strip().rstrip('.')
-            if str.isdigit(job_id) and job_id > 0:
-                print( self.config_name + " submitted (as job_id " + str(job_id) + ")\n" )
-                self.job_id = int(job_id)
-            else:
-                print( "ERROR: Job did not receive Id from HPC:\n" )
-                print( hpc_pipe_stdout )
-                print( hpc_pipe_stderr )
-                return
-        else:
-            print( "ERROR: job submit of " + self.config_name + " failed!" )
-            print( hpc_pipe_stdout )
-            print( hpc_pipe_stderr )
-
 # A class to commission simulations through COMPS
 class CompsSimulationCommissioner(SimulationCommissioner):
 

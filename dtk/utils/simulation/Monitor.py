@@ -44,27 +44,6 @@ class SimulationMonitor(threading.Thread):
             else:
                 self.state = 'Failed'
 
-# A class to monitor simulations on an HPC
-class HpcSimulationMonitor(SimulationMonitor):
-
-    def __init__(self, job_id, head_node):
-        SimulationMonitor.__init__(self, job_id)
-        self.head_node = head_node
-
-    def run(self):
-        monitor_cmd_line = "job view /scheduler:" + self.head_node + " " + str(self.job_id)
-        #print( "Executing hpc_command_line: " + monitor_cmd_line )
-        #print( "Checking status of job " + str(self.job_id) )
-        hpc_pipe = subprocess.Popen( monitor_cmd_line.split(), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-        [hpc_pipe_stdout, hpc_pipe_stderr] = hpc_pipe.communicate()
-        #print(hpc_pipe_stdout, hpc_pipe_stderr)
-
-        hpc_status = [tuple(l.split(':', 1)) for l in hpc_pipe_stdout.split('\n')]
-        hpc_state_lookup = dict( [(t[0].strip(),t[1].strip()) for t in hpc_status if len(t) is 2] )
-
-        self.state = hpc_state_lookup.get("State", "Unknown")
-        self.msg = hpc_state_lookup.get("Progress Message", "")
-
 # A class to monitor simulation through COMPS
 class CompsSimulationMonitor(SimulationMonitor):
 

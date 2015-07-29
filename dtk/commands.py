@@ -24,7 +24,7 @@ def run(args):
     mod=load_config_module(args.config_name)
     
     # run the simulation
-    location = 'HPC' if (args and args.hpc) else 'HPC-OLD' if (args and args.hpc_old) else 'LOCAL'
+    location = 'HPC' if (args and args.hpc) else 'LOCAL'
     setup = DTKSetupParser()
     sm = SimulationManagerFactory.from_exe(setup.get('BINARIES','exe_path'),location)
     sm.RunSimulations(**mod.run_sim_args)
@@ -135,7 +135,6 @@ def main():
     parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
     parser_run.add_argument('--hpc', action='store_true', help='Run simulation on HPC using COMPS (default is local simulation).')
-    parser_run.add_argument('--hpc-old', action='store_true', help='Run simulation on HPC using "job submit" (deprecated).')
     parser_run.set_defaults(func=run)
 
     # 'dtk status' options
