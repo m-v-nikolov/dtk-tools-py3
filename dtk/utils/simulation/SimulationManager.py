@@ -352,30 +352,33 @@ class LocalSimulationManager():
 
     def StageEmodules(self, dll_root):
         if self.setup.get('BINARIES','dll_path').startswith('\\\\'):
-            # now that I think about it more, I'm not sure what we actually want to do here...
-            logger.info('Not implemented')
-            return {}
+            logger.info('Emodules are already staged; skipping copy to file-share')
 
-        tt = {'interventions':'interventions', 'disease_plugins':'diseases', 'reporter_plugins':'reporter_plugins'}
-        emodules_map = {'interventions':[], 'diseases':[], 'reporter_plugins':[]}
+        emodules_map = {'interventions':[], 'disease_plugins':[], 'reporter_plugins':[]}
         for emodule in self.emodules:
             logger.debug(emodule)
             (head, emodule_name) = os.path.split(emodule)
             (head, emodule_type) = os.path.split(head)
-            emodule_hash = getMd5FromFile(emodule)
-            emodule_dir = os.path.join(dll_root, emodule_type, emodule_hash)
-            emodule_path = os.path.join(emodule_dir, emodule_name)
-            logger.debug(emodule_path)
-            emodules_map[tt[emodule_type]].append(emodule_path)
-            if not os.path.exists(emodule_dir):
-                try:
-                    os.makedirs(emodule_dir)
-                except:
-                    logger.warning("Unable to create directory: " + emodule_dir)
-            if not os.path.exists(emodule_path):
-                logger.info('Copying ' + emodule_name + ' to ' + emodule_dir + '...')
-                shutil.copy(emodule, emodule_path)
-                logger.info('Copying complete.')
+            
+            if not self.setup.get('BINARIES','dll_path').startswith('\\\\'):
+                emodule_hash = getMd5FromFile(emodule)
+                emodule_dir = os.path.join(dll_root, emodule_type, emodule_hash)
+                emodule_path = os.path.join(emodule_dir, emodule_name)
+                logger.debug(emodule_path)
+                if not os.path.exists(emodule_dir):
+                    try:
+                        os.makedirs(emodule_dir)
+                    except:
+                        logger.warning("Unable to create directory: " + emodule_dir)
+                if not os.path.exists(emodule_path):
+                    logger.info('Copying ' + emodule_name + ' to ' + emodule_dir + '...')
+                    shutil.copy(emodule, emodule_path)
+                    logger.info('Copying complete.')
+            else:
+                emodule_path = os.path.join(self.setup.get('BINARIES','dll_path'), emodule_type, emodule_name)
+
+            emodules_map[emodule_type].append(emodule_path)
+
         logger.info('EMODules map: ' + str(emodules_map))
         return emodules_map
 
