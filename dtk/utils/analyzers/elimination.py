@@ -13,21 +13,24 @@ from .group import group_by_name, combo_group
 FacetPoint = namedtuple('FacetPoint', ['x', 'y', 'row', 'col'])
 Ranges = namedtuple('Ranges', ['x', 'y', 'z'])
 
-def interp_scatter(x, y, z, ranges, cmap='afmhot', **kwargs):
+def interp_scatter(x, y, z, ranges, cmap='afmhot', plot=True, **kwargs):
     xlim, ylim, (vmin, vmax) = ranges
 
     model = nparam.KernelReg([z], [x, y], reg_type='ll', var_type='cc', bw='cv_ls')
-    X, Y = np.mgrid[slice(xlim[0], xlim[1], 100j), slice(ylim[0], ylim[1], 100j)]
+    X, Y = np.mgrid[slice(xlim[0], xlim[1], 101j), slice(ylim[0], ylim[1], 101j)]
     positions = np.vstack([X.ravel(), Y.ravel()]).T
     sm_mean, sm_mfx = model.fit(positions)
     Z = np.reshape(sm_mean, X.shape)
 
-    color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=1)
-    im = plt.pcolormesh(X, Y, Z, shading='gouraud', **color_args)
-            
-    kwargs.update(color_args)
-    plt.scatter(x, y, s=20, c=z, lw=0.5, edgecolor='darkgray', **kwargs)
-    plt.gca().set(xlim=xlim, ylim=ylim)
+    if plot:
+        color_args=dict(cmap=cmap, vmin=vmin, vmax=vmax, alpha=1)
+        im = plt.pcolormesh(X, Y, Z, shading='gouraud', **color_args)
+
+        kwargs.update(color_args)
+        plt.scatter(x, y, s=20, c=z, lw=0.5, edgecolor='darkgray', **kwargs)
+        plt.gca().set(xlim=xlim, ylim=ylim)
+    else:
+        return X, Y, Z
 
 class EliminationAnalyzer(TimeseriesAnalyzer):
 

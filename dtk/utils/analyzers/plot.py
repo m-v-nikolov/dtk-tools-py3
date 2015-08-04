@@ -61,7 +61,8 @@ def plot_by_channel(plot_name, channels, plot_fn):
                             nrows=nrow, ncols=ncol, 
                             sharex=True)
 
-    for (channel, ax) in zip(channels, axs.flat):
+    flat_axes = [axs] if ncol*nrow == 1 else axs.flat
+    for (channel, ax) in zip(channels, flat_axes):
         ax.set_title(channel)
         plot_fn(channel, ax)
 
