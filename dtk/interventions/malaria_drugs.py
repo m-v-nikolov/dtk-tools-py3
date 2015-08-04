@@ -219,6 +219,10 @@ drug_params = {
     "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
     "Drug_Hepatocyte_Killrate":   0.0,   # ... hepatocytes
     "Max_Drug_IRBC_Kill":         0.0,   # ... asexual parasites
+
+    # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+    "Bodyweight_Exponent": 0,
+    "Fractional_Dose_By_Upper_Age": []
   }
 }
 

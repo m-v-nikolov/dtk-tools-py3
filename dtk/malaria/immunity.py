@@ -56,6 +56,7 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
         else:
             cb.append_overlay(os.path.join(subdirs, '%s.json' % immune_init_name))
 
+    cb.enable("Immunity_Initialization_Distribution")  # compatibility with EMOD v2.0 and earlier
     cb.set_param("Immunity_Initialization_Distribution_Type", "DISTRIBUTION_COMPLEX")
 
 # Immune initialization based on habitat scaling

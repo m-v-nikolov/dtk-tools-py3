@@ -12,6 +12,7 @@ params = {
     "Enable_Timestep_Channel_In_Report": 0,
     "Enable_Default_Reporting": 1,
     "Enable_Heterogeneous_Intranode_Transmission": 0,
+    "Report_Event_Recorder": 0,
 
     "Listed_Events": [],
 
