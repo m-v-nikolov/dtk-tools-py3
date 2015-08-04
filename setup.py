@@ -15,5 +15,5 @@ setup(name='dtk',
       entry_points = {
         'console_scripts': ['dtk = dtk.commands:main']
       },
-      data_files = [('',['dtk_setup.cfg'])],
+      package_data = { '': ['dtk_setup.cfg'] },
       zip_safe=False)

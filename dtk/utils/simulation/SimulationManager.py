@@ -418,10 +418,9 @@ class CompsSimulationManager(LocalSimulationManager):
     def commissionSimulation(self, sim_path, sims):
         if self.sims_created % self.comps_sims_to_batch == 0:
             self.maxThreadSemaphore.acquire()    # Is this okay outside the thread?  Stops the thread from being created
-                                                 # until it can actually go, but
-                                                 # asymmetrical
-                                                                                              # acquire()/release() is not
-                                                                                              # ideal...
+                                                 # until it can actually go, but asymmetrical acquire()/release() is not
+                                                 # ideal...
+
             self.commissioner = CompsSimulationCommissioner(self.exp_id, self.maxThreadSemaphore)
             sims.append(self.commissioner)
 
