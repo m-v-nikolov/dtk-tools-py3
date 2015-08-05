@@ -21,15 +21,19 @@ class SimulationMonitor(threading.Thread):
 
     def run(self):
         try:
-            jobids = psutil.get_pid_list()
+            job_running = ('Eradication.exe' in psutil.Process(self.job_id).exe())
         except NameError:
             print("Failed to import 'psutil' package.  Unable to query status of locally submitted simulations.")
             return self.state
+        except psutil.AccessDenied:
+            print("Access to process ID denied.")
+            job_running = False
+        except psutil.NoSuchProcess:
+            job_running = False
 
         status_path = os.path.join(self.sim_dir, 'status.txt')
-        if self.job_id in jobids and ('Eradication.exe' in psutil.Process(self.job_id).exe()):
+        if job_running:
             self.state = 'Running'
-
             if os.path.exists(status_path):
                 with open(status_path) as status_file:
                     self.msg = list(status_file)[-1]
