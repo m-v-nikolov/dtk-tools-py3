@@ -96,20 +96,17 @@ class LocalSimulationManager():
             eradication_options['--progress'] = ''
         self.eradication_command = CommandlineGenerator(self.bin_path, eradication_options, [])
 
-        self.getExperimentId()
-
-        logger.info("Creating exp_id = " + self.exp_id)
-        sim_path = os.path.join(sim_root, exp_name + '_' + self.exp_id)
         self.exp_data.update({'sim_root': sim_root, 
                               'exp_name': exp_name, 
-                              'exp_id': self.exp_id,
                               'location': self.location, 
                               'sim_type': self.config_builder.get_param('Simulation_Type')})
 
-        sims = []
+        self.exp_id = self.createExperiment()
+        self.exp_data['exp_id'] = self.exp_id
+        
+        commissioners = []
         self.exp_data['sims'] = {}
         cache_cwd = os.getcwd()
-        self.doLocalBatching = False
 
         # Cache original config_builder for exp_builder to alter
         cached_cb = copy.deepcopy(self.config_builder)
@@ -123,19 +120,17 @@ class LocalSimulationManager():
             for mod_fn in mod_fn_list:
                 mod_fn(self.config_builder)
 
-            commissioned = self.commissionSimulation(sim_path,sims)
-            if not commissioned: 
-                break
+            commissioner = self.createSimulation()
+            if commissioner is not None:
+                commissioners.append(commissioner)
 
-        if not self.commissioner.isAlive():
-            self.commissioner.start() # e.g. last accumulated COMPS batch
-
-        # join threads before proceeding
-        for s in sims:
-            s.join()
+        if self.location == 'HPC':      # sigh... this will go away once we refactor
+            self.completeSimCreation(commissioners)
+            
+        self.commissionSimulations(commissioners)
 
         # collect information on submitted simulations
-        self.collectSimMetaData(sims)
+        self.collectSimMetaData(commissioners)
         
         # dump experiment data to output
         os.chdir(cache_cwd)
@@ -147,74 +142,93 @@ class LocalSimulationManager():
             logger.info(os.getcwd())
             exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
 
-    def getExperimentId(self):
-        self.exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
+    def createExperiment(self):
+        id = re.sub('[ :.-]', '_', str(datetime.now()))
+        logger.info("Creating exp_id = " + id)
+        simpath = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + id)
+        if not os.path.exists(simpath):
+            os.makedirs(simpath)
+        return id
 
-    def createSimulation(self, sim_path):
+    def createSimulation(self):
         time.sleep(0.01) # just in case?
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(sim_path, sim_id)
+        sim_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_id, sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
         with open(os.path.join(sim_dir, 'emodules_map.json'), 'w') as emodules_file:
             emodules_file.write(json.dumps(self.emodules_map, sort_keys=True, indent=4))
-        return sim_dir
 
-    def commissionSimulation(self, sim_path, sims):
-        # create simulation directory and populate with configuration files
-        sim_dir = self.createSimulation(sim_path)
+        commissioner = SimulationCommissioner(sim_dir, self.eradication_command)
+
+        # store meta-data related to experiment builder for each sim
+        self.exp_data['sims'][commissioner.sim_id] = self.exp_builder.metadata
+
+        return commissioner
+
+    def commissionSimulations(self, commissioners):
+        doLocalBatching = False        # TODO: might want to take this out after refactoring commissionSimulation() into create() and commission()...
 
         max_local_sims = int(self.setup.get('LOCAL', 'max_local_sims'))
-        if len(sims) == max_local_sims:
+        if len(commissioners) > max_local_sims:
             warnings.warn("Trying to submit more than %d concurrent local simulations." % max_local_sims, Warning)
             choice = raw_input('Do you want to continue?  Yes [Y], Batch [B], No [N]...')
             if choice.lower() == 'y':
                 logger.info('Continuing all in parallel...')
             elif choice.lower() == 'b':
                 logger.info('Batching...')
-                self.doLocalBatching = True
+                doLocalBatching = True
             else:
                 logger.info('Truncating...')
                 return False
 
-        if self.doLocalBatching:
-            while True:
-                for s in sims:
-                    s.join()
-                for s in sims:
-                    self.exp_data['sims'][s.sim_id]['jobId'] = s.job_id
+        if doLocalBatching:
+            for c in commissioners[:max_local_sims] :
+                c.start()
+
+            num_commissioners_started = max_local_sims
+
+            while num_commissioners_started < len(commissioners):
+                for c in commissioners[:num_commissioners_started]:
+                    c.join()
+                for c in commissioners[:num_commissioners_started]:
+                    self.exp_data['sims'][c.sim_id]['jobId'] = c.job_id
                 states, msgs = self.SimulationStatus()
                 running_ids = [ id for (id, state) in states.iteritems() if state in ['Running'] ]
                 if len(running_ids) >= max_local_sims:
                     logger.info(dict(Counter(states.values())))
                     time.sleep(10)
                 else:
-                    break
+                    for c in commissioners[num_commissioners_started:num_commissioners_started + (max_local_sims - len(running_ids))] :
+                        c.start()
+                    num_commissioners_started += max_local_sims - len(running_ids)
 
-        self.commissioner = SimulationCommissioner(sim_dir, self.eradication_command)
+            for c in commissioners:
+                c.join()
+        else:
+            for c in commissioners:
+                c.start()
 
-        # store meta-data related to experiment builder for each sim
-        self.exp_data['sims'][self.commissioner.sim_id] = self.exp_builder.metadata
+            for c in commissioners:
+                c.join()
 
-        # submit simulation
-        self.commissioner.start()
-        sims.append(self.commissioner)
         return True
 
-    def collectSimMetaData(self,sims):
-        for s in sims:
-            self.exp_data['sims'][s.sim_id]['jobId'] = s.job_id
+    def collectSimMetaData(self,commissioners):
+        for c in commissioners:
+            self.exp_data['sims'][c.sim_id]['jobId'] = c.job_id
 
     def SimulationStatus(self):
         logger.debug("Status of simulations run on '%s':" % self.location)
 
         monitors = []
         for (sim_id, sim) in self.exp_data['sims'].items():
-            job_id = sim['jobId']
-            monitor = self.getSimulationMonitor(sim_id, job_id)
-            monitor.start()
-            monitors.append(monitor)
+            if 'jobId' in sim:
+                job_id = sim['jobId']
+                monitor = self.getSimulationMonitor(sim_id, job_id)
+                monitor.start()
+                monitors.append(monitor)
 
         for m in monitors:
             m.join()
@@ -403,39 +417,50 @@ class CompsSimulationManager(LocalSimulationManager):
         self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))
         #self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
 
-    def getExperimentId(self):
-        self.exp_id = CompsSimulationCommissioner.createExperiment(self.setup, self.config_builder, self.exp_name, self.bin_path, self.eradication_command.Options)
+    def createExperiment(self):
+        id = CompsSimulationCommissioner.createExperiment(self.setup, self.config_builder, self.exp_name, self.bin_path, self.eradication_command.Options)
         self.sims_created = 0
         #self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))
         #self.maxThreadSemaphore = threading.Semaphore(int(self.getProperty('max_threads')))
+        return id
 
-    def createSimulation(self, sim_path):
-        files = self.config_builder.dump_files_to_string()
-        files.update({'emodules':json.dumps(self.emodules_map, sort_keys=True, indent=4)})
-        tags = self.exp_builder.metadata
-        self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), files, tags)
-
-    def commissionSimulation(self, sim_path, sims):
+    def createSimulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
             self.maxThreadSemaphore.acquire()    # Is this okay outside the thread?  Stops the thread from being created
                                                  # until it can actually go, but asymmetrical acquire()/release() is not
                                                  # ideal...
 
             self.commissioner = CompsSimulationCommissioner(self.exp_id, self.maxThreadSemaphore)
-            sims.append(self.commissioner)
+            ret = self.commissioner
+        else:
+            ret = None
 
-        # create simulation in COMPS
-        self.createSimulation(sim_path)
+        files = self.config_builder.dump_files_to_string()
+        files.update({'emodules':json.dumps(self.emodules_map, sort_keys=True, indent=4)})
+        tags = self.exp_builder.metadata
+        self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), files, tags)
+
         self.sims_created = self.sims_created + 1
-
+        
         if self.sims_created % self.comps_sims_to_batch == 0:
-            logger.debug('starting thread ' + str(len(sims)))
             self.commissioner.start()
+            self.commissioner = None
+
+        return ret
+
+    def completeSimCreation(self, commissioners):
+        for c in commissioners:
+            if not c.isAlive():
+                c.start()
+            
+        for c in commissioners:
+            c.join()
+    
+    def commissionSimulations(self, commissioners):
+        CompsSimulationCommissioner.commissionExperiment(self.exp_id)        
         return True
 
-    # TODO: rename function if this is doing the commissioning!
-    def collectSimMetaData(self, sims):
-        CompsSimulationCommissioner.commissionExperiment(self.exp_id)
+    def collectSimMetaData(self, commissioners):
         self.exp_data['sims'] = CompsSimulationCommissioner.getSimMetadataForExp(self.exp_id)
 
     def SimulationStatus(self):

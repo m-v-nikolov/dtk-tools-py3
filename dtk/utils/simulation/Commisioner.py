@@ -118,9 +118,5 @@ class CompsSimulationCommissioner(SimulationCommissioner):
             self.sims = []
             
             Simulation.SaveAll()
-            
-            # threading issues on the server side... don't commission now, we'll do it on the main thread (by calling commissionExperiment()) instead
-            # e = Experiment.GetById(self.exp_id)
-            # e.Commission()
         finally:
             self.maxThreadSemaphore.release()
