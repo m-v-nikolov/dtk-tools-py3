@@ -37,4 +37,4 @@ Recommended optional dependencies:
 
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
-Interoperability with the Java layer of COMPS requires installation of the COMPSJavaInterop package.  [More detailed instructions](https://github.com/edwenger/COMPS/blob/master/README.md) can be found within the [`COMPS`](https://github.com/edwenger/COMPS) package.
+Interoperability with the Java layer of COMPS requires installation of the COMPSJavaInterop package.  [More detailed instructions](https://github.com/InstituteforDiseaseModeling/pyCOMPS/blob/master/README.md) can be found within the [`pyCOMPS`](https://github.com/InstituteforDiseaseModeling/pyCOMPS) repository.
