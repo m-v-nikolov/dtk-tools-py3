@@ -451,9 +451,9 @@ class CompsSimulationManager(LocalSimulationManager):
         return ret
 
     def completeSimCreation(self, commissioners):
-        for c in commissioners:
-            if not c.isAlive():
-                c.start()
+        last_batch = commissioners[-1]
+        if not last_batch.isAlive() and len(last_batch.sims) > 0:
+            last_batch.start()
             
         for c in commissioners:
             c.join()
