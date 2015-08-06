@@ -124,8 +124,7 @@ class LocalSimulationManager():
             if commissioner is not None:
                 commissioners.append(commissioner)
 
-        if self.location == 'HPC':      # sigh... this will go away once we refactor
-            self.completeSimCreation(commissioners)
+        self.completeSimCreation(commissioners)
             
         self.commissionSimulations(commissioners)
 
@@ -167,8 +166,11 @@ class LocalSimulationManager():
 
         return commissioner
 
+    def completeSimCreation(self, commissioners):
+        return  # NOOP in LOCAL
+    
     def commissionSimulations(self, commissioners):
-        doLocalBatching = False        # TODO: might want to take this out after refactoring commissionSimulation() into create() and commission()...
+        doLocalBatching = False
 
         max_local_sims = int(self.setup.get('LOCAL', 'max_local_sims'))
         if len(commissioners) > max_local_sims:
