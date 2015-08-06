@@ -24,16 +24,16 @@ Simulation job management is handled through the various `dtk` command-line opti
 
 #### Dependencies
 
-Excluding [`numpy`](https://pypi.python.org/pypi/numpy), which is discussed in the Installation section above, the core dependencies should all be installed automatically.  These include:
+* [`numpy`](https://pypi.python.org/pypi/numpy) (Windows compilation issues discussed in Installation section above)
 * [`psutil`](https://pypi.python.org/pypi/psutil) for process ID lookup of local simulations with the `dtk status` command
 * statistical analysis with [`pandas`](https://pypi.python.org/pypi/pandas)
 * plotting of output with [`matplotlib`](https://pypi.python.org/pypi/matplotlib).
-
-Optional dependencies for some extra plotting functions include: 
-* `nose`
 * `scipy` (e.g. from [scipy-0.15.1-cp27-none-win_amd64.whl](http://www.lfd.uci.edu/~gohlke/pythonlibs))
-* `seaborn` (requires scipy)
-* `statsmodels` (requires scipy)
+* statistical data visualization with [`seaborn`](http://stanford.edu/~mwaskom/software/seaborn/) (requires scipy)
+* statistical estimation and inference with [`statsmodels`](https://pypi.python.org/pypi/statsmodels) (requires scipy)
+
+Optional dependency for running test suite: 
+* `nose`
 
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 

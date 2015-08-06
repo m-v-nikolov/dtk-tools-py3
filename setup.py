@@ -8,9 +8,12 @@ setup(name='dtk',
       author_email='ewenger@intven.com',
       packages=find_packages(),
       install_requires=[
-          'psutil',
+          'psutil>=3.1.1',
           'matplotlib',
-          'pandas'
+          'pandas',
+          'scipy',
+          'seaborn',
+          'statsmodels'
       ],
       entry_points = {
         'console_scripts': ['dtk = dtk.commands:main']
