@@ -27,5 +27,19 @@ params = {
 }
 
 def set_climate_constant(cb, **kwargs):
+    """
+    Test 123das asd
+    
+    Longer explanation
+
+    PARAMETERS
+    =============
+    :param cb: fdsfs
+
+    OTHER PARAMETERS
+    ==================
+    :param kwargs: fsd fsd
+    :return: fsdf sdf
+    """
     cb.set_param('Climate_Model', 'CLIMATE_CONSTANT')
     cb.update_params(kwargs, validate=True)

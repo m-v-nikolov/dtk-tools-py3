@@ -8,6 +8,15 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   intro
+   generic
+   interventions
+   malaria
+   tools
+   utils
+   vector
+
+
 
 
 Indices and tables
