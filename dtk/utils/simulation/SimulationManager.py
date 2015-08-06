@@ -2,7 +2,7 @@ from ConfigParser import ConfigParser  # to parse dtk_setup.cfg
 from datetime import datetime          # for unique sim_id
 from hashlib import md5                # for re-use of identical Eradication.exe
 from collections import Counter        # for concise job-state status during batching
-import os                              # mkdir, chdir, path, kill, etc.
+import os                              # mkdir, path, kill, etc.
 import json                            # for dumping metadata
 import re                              # for regex substitutions
 import shutil                          # for file copy
@@ -132,13 +132,11 @@ class LocalSimulationManager():
         self.collectSimMetaData(commissioners)
         
         # dump experiment data to output
-        os.chdir(cache_cwd)
-        if not os.path.exists('simulations'):
-            os.mkdir('simulations')
-        with open(os.path.join('simulations', exp_name + '_' + self.exp_id + '.json'), 'w') as exp_file:
+        if not os.path.exists(os.path.join(cache_cwd, 'simulations')):
+            os.mkdir(os.path.join(cache_cwd, 'simulations'))
+        with open(os.path.join(cache_cwd, 'simulations', exp_name + '_' + self.exp_id + '.json'), 'w') as exp_file:
             logger.info('Saving meta-data for experiment:')
             logger.info(json.dumps(self.exp_data, sort_keys=True, indent=4))
-            logger.info(os.getcwd())
             exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
 
     def createExperiment(self):
@@ -291,6 +289,7 @@ class LocalSimulationManager():
             self.cancelAllSimulations(states)
             return
         for id in ids:
+            id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
             state = states.get(id)
             if not state:
                 logger.warning('No job in current experiment with ID = %s' % id)
@@ -338,8 +337,8 @@ class LocalSimulationManager():
             a.finalize()
 
     def getOutputParser(self, sim_id, filtered_analyses):
-        return self.parserClass(os.path.join(self.exp_data['sim_root'],
-                                            self.exp_data['exp_name'] + '_' + self.exp_data['exp_id']),
+        return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
+                                             self.exp_data.get('exp_name', '') + '_' + self.exp_data.get('exp_id', '')),
                                sim_id,
                                self.exp_data['sims'][sim_id],
                                filtered_analyses,
@@ -459,7 +458,7 @@ class CompsSimulationManager(LocalSimulationManager):
             c.join()
     
     def commissionSimulations(self, commissioners):
-        CompsSimulationCommissioner.commissionExperiment(self.exp_id)        
+        CompsSimulationCommissioner.commissionExperiment(self.exp_id)
         return True
 
     def collectSimMetaData(self, commissioners):
@@ -467,13 +466,13 @@ class CompsSimulationManager(LocalSimulationManager):
 
     def SimulationStatus(self):
         logger.debug("Status of simulations run on '%s':" % self.location)
-        m = self.getSimulationMonitor(self.exp_data['exp_id'], self.exp_data['exp_id'])
+        m = self.getSimulationMonitor()
         m.start()
         m.join()
         return m.state,m.msg
 
-    def getSimulationMonitor(self, sim_id, job_id):
-        return CompsSimulationMonitor(job_id, self.getProperty('server_endpoint'))
+    def getSimulationMonitor(self):
+        return CompsSimulationMonitor(self.exp_data, self.getProperty('server_endpoint'))
 
     def cancelAllSimulations(self,states):
         from COMPS import Client
@@ -497,7 +496,7 @@ class CompsSimulationManager(LocalSimulationManager):
 
     def AnalyzeSimulations(self):
         if not self.setup.getboolean(self.location, 'use_comps_asset_svc'):
-            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data['exp_id'])
+            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
         if self.setup.getboolean(self.location, 'compress_assets'):
             CompsDTKOutputParser.enableCompression()
 

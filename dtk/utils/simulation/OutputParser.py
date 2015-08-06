@@ -1,4 +1,4 @@
-import os           # mkdir, chdir, path, etc.
+import os           # mkdir, path, etc.
 import json         # to read JSON output files
 import numpy as np  # for reading spatial output data by node and timestep
 import struct       # for binary file unpacking
@@ -96,12 +96,38 @@ class CompsDTKOutputParser(DTKOutputParser):
         cls.use_compression = True
 
     @classmethod
-    def createSimDirectoryMap(cls,exp_id):
-        from COMPS.Data import Experiment, QueryCriteria
+    def createSimDirectoryMap(cls, exp_id=None, suite_id=None):
+        from COMPS.Data import Experiment, Suite, QueryCriteria
 
-        e = Experiment.GetById(exp_id)
-        sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
-        sim_map = { sim.getId().toString() : sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims }
+        def workdirs_from_simulations(sims):
+            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory()
+                    for sim in sims}
+
+        def sims_from_experiment(e):
+            print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
+            return e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
+
+        def workdirs_from_experiment_id(exp_id):
+            e = Experiment.GetById(exp_id)
+            sims = sims_from_experiment(e)
+            return workdirs_from_simulations(sims)
+
+        def workdirs_from_suite_id(suite_id):
+            print('Simulation working directories for SuiteId = %s' % suite_id)
+            s = Suite.GetById(suite_id)
+            exps = s.GetExperiments(QueryCriteria().Select('Id')).toArray()
+            sims = []
+            for e in exps:
+                sims += sims_from_experiment(e)
+            return workdirs_from_simulations(sims)
+
+        if suite_id:
+            sim_map = workdirs_from_suite_id(suite_id)
+        elif exp_id:
+            sim_map = workdirs_from_experiment_id(exp_id)
+        else:
+            raise Exception('Unable to map COMPS simulations to output directories without Suite or Experiment ID.')
+
         print('Populated map of %d simulation IDs to output directories' % len(sim_map))
         cls.sim_dir_map = sim_map
         return sim_map

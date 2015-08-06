@@ -1,4 +1,4 @@
-import os           # mkdir, chdir, path, etc.
+import os           # mkdir, path, etc.
 import subprocess   # to execute command-line instructions
 import threading    # for multi-threaded job submission and monitoring
 import time         # for sleep
@@ -18,14 +18,11 @@ class SimulationCommissioner(threading.Thread):
         self.sim_id = os.path.basename(self.sim_dir)
 
     def run(self):
-        os.chdir(self.sim_dir)
         with open("StdOut.txt","w") as out:
             with open("StdErr.txt","w") as err:
                 p = subprocess.Popen( self.eradication_command.Commandline.split(), 
-                                      shell=False, stdout=out, stderr=err )
+                                      cwd=self.sim_dir, shell=False, stdout=out, stderr=err )
                 self.job_id = p.pid
-                time.sleep(3)
-                #print('Process ID: ' + str(p.pid))
 
 # A class to commission simulations through COMPS
 class CompsSimulationCommissioner(SimulationCommissioner):
