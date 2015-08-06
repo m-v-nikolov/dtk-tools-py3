@@ -21,3 +21,6 @@ deprecate/
 *egg-info
 *build/
 *dist/
+
+# PyCharm
+*.idea*

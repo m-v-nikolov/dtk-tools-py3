@@ -1,13 +1,18 @@
 Generic package
-======================
+===============
 
-Climate
---------------
+.. include:: generic/climate.rst
 
-This file holds the generic defaults for the climate part of the simulation.
-It initializes the model to use the following weather:
+.. include:: generic/demographics.rst
+
+.. include:: generic/disease.rst
+
+.. include:: generic/geography.rst
+
+.. include:: generic/migration.rst
+
+.. include:: generic/params.rst
+
+.. include:: generic/properties.rst
 
 
-.. automodule:: dtk.generic.climate
-    :members:
-    :undoc-members:
