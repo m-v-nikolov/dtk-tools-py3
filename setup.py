@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='dtk',
-      version='0.1',
+      version='0.2',
       description='Facilitating DTK disease model configuration, submission, and analysis',
       url='https://github.com/edwenger/dtk',
       author='Edward Wenger',

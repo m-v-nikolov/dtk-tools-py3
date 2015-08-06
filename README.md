@@ -8,9 +8,9 @@ Modules contained in this package are intended to:
 
 #### Installation
 
-Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, it is required to have installed that package first, e.g. `pip install numpy`, or after downloading a platform-appropriate wheel file from [here](http://www.lfd.uci.edu/~gohlke/pythonlibs), `pip install numpy-1.92+mkl-cp27-none-win_amd64.whl`
+On Windows, from an administrator command-prompt, run the following from the current directory: `pip install --find-links=.\install dtk==0.2`, or to do active development on the package, `python setup.py develop`.
 
-Then, with administrator privileges, run the following from the current directory: `python setup.py install`, or to do active development on the package, `python setup.py develop`
+Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, we have included the win_amd64 version 1.9.2+mkl of the numpy wheel locally.  On other platforms, it is required to have installed that package first, e.g. `pip install numpy`
 
 On Windows, one may need to add the `Scripts` subdirectory of your local Python installation to the `%PATH%` [environment variable](https://www.java.com/en/download/help/path.xml) to have access to the `dtk` commandline utility.
 
@@ -37,4 +37,4 @@ Recommended optional dependencies:
 
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
-Interoperability with the JAVA layer of COMPS requires installation of the [Java Runtime Environment](http://www.oracle.com/technetwork/java/javase/downloads/server-jre7-downloads-1931105.html) and setup of the [`COMPS`](https://github.com/edwenger/COMPS) package, which in turn has dependencies on `cython` and `pyjnius`.  [More detailed instructions](https://github.com/edwenger/COMPS/blob/master/README.md) can be found within the [`COMPS`](https://github.com/edwenger/COMPS) package.
+Interoperability with the Java layer of COMPS requires installation of the COMPSJavaInterop package.  [More detailed instructions](https://github.com/edwenger/COMPS/blob/master/README.md) can be found within the [`COMPS`](https://github.com/edwenger/COMPS) package.
