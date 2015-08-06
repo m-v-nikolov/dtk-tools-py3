@@ -1,7 +1,13 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+
+try:
+    import seaborn as sns
+    palette = sns.color_palette()
+except:
+    print('Install seaborn package for more pleasing aesthetics.')
+    palette = ['navy', 'green', 'firebrick', 'black']
 
 ### Plot functions ###
 def no_plots(df, ax):
@@ -28,7 +34,6 @@ def plot_std_bands(df, ax):
     m = grouped.mean()
     m.plot(ax=ax, legend=True)
     s = grouped.std()
-    palette = sns.color_palette()
     for n_std in [2, 1]:
         lower_ci, upper_ci = m-n_std*s, m+n_std*s
         for i, g in enumerate(m.keys()):
@@ -37,12 +42,10 @@ def plot_std_bands(df, ax):
                              alpha=0.1, color=color)
 
 def plot_lines(df, ax):
-    palette = sns.color_palette()
     df.plot(ax=ax, alpha=0.6, lw=1, legend=True)
 
 def plot_grouped_lines(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
-    palette = sns.color_palette()
     leg=[]
     for i, (g, dfg) in enumerate(grouped):
         color = palette[i % len(palette)]
@@ -57,7 +60,7 @@ def plot_by_channel(plot_name, channels, plot_fn):
     nrow = int(np.ceil(float(len(channels)) / ncol))
 
     fig, axs = plt.subplots(num=plot_name, 
-                            figsize=(min(8, 4*ncol), min(6, 3*nrow)), 
+                            figsize=(max(6, min(8, 4*ncol)), min(6, 3*nrow)), 
                             nrows=nrow, ncols=ncol, 
                             sharex=True)
 

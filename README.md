@@ -28,12 +28,12 @@ Simulation job management is handled through the various `dtk` command-line opti
 * [`psutil`](https://pypi.python.org/pypi/psutil) for process ID lookup of local simulations with the `dtk status` command
 * statistical analysis with [`pandas`](https://pypi.python.org/pypi/pandas)
 * plotting of output with [`matplotlib`](https://pypi.python.org/pypi/matplotlib).
-* `scipy` (e.g. from [scipy-0.15.1-cp27-none-win_amd64.whl](http://www.lfd.uci.edu/~gohlke/pythonlibs))
-* statistical data visualization with [`seaborn`](http://stanford.edu/~mwaskom/software/seaborn/) (requires scipy)
-* statistical estimation and inference with [`statsmodels`](https://pypi.python.org/pypi/statsmodels) (requires scipy)
 
-Optional dependency for running test suite: 
-* `nose`
+Recommended optional dependencies: 
+* [`seaborn`](http://stanford.edu/~mwaskom/software/seaborn/) for statistical data visualization (requires scipy)
+* [`statsmodels`](https://pypi.python.org/pypi/statsmodels) for statistical estimation and inference (requires scipy)
+* `scipy` (e.g. from [scipy-0.15.1-cp27-none-win_amd64.whl](http://www.lfd.uci.edu/~gohlke/pythonlibs))
+* `nose` for running test suite
 
 32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 

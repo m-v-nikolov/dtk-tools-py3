@@ -442,7 +442,7 @@ class CompsSimulationManager(LocalSimulationManager):
         tags = self.exp_builder.metadata
         self.commissioner.createSimulation(self.config_builder.get_param('Config_Name'), files, tags)
 
-        self.sims_created = self.sims_created + 1
+        self.sims_created += 1
         
         if self.sims_created % self.comps_sims_to_batch == 0:
             self.commissioner.start()

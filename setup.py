@@ -10,10 +10,7 @@ setup(name='dtk',
       install_requires=[
           'psutil>=3.1.1',
           'matplotlib',
-          'pandas',
-          'scipy',
-          'seaborn',
-          'statsmodels'
+          'pandas'
       ],
       entry_points = {
         'console_scripts': ['dtk = dtk.commands:main']
