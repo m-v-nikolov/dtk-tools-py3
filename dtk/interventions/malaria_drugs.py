@@ -66,7 +66,7 @@ def set_drug_param(cb, drugname, parameter, value):
     """
     Set a drug parameter in the config builder passed.
 
-    :param cb: :any:`DTKConfigBuilder` containing the simulation configuration
+    :param cb: :py:class:`DTKConfigBuilder` containing the simulation configuration
     :param drugname: The drug that has a parameter to set
     :param parameter:  The parameter to set
     :param value: The new value to set

@@ -1,20 +1,6 @@
 Interventions package
 =====================
 
-.. toctree::
-    :hidden:
-    interventions/empty_campaign.rst
-    interventions/habitat_scale.rst
-    interventions/health_seeking.rst
-    interventions/inputs_EIR.rst
-    interventions/irs.rst
-    interventions/itn.rst
-    interventions/ivernectin.rst
-    interventions/malaria_challenge.rst
-    interventions/malaria_drugs.rst
-    interventions/malaria_vaccine.rst
-    interventions/outbreak.rst
-
 .. include:: interventions/empty_campaign.rst
 
 .. include:: interventions/habitat_scale.rst

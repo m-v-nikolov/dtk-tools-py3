@@ -54,13 +54,13 @@ def get_geography_parameter(geography, param):
 
 def set_geography(cb, geography, static=False, pop_scale=1):
     """
-    Set the demographics in a given :any:`ConfigBuilder` for the selected geography.
+    Set the demographics in a given :py:class:`DTKConfigBuilder` for the selected geography.
     The demographics can be set to static and created with the :any:`set_static_demographics` function or it can be created
     with the population scale parameter passed.
 
     .. note:: The population scale will act on the ``x_Birth`` configuration parameter if the ``Birth_Rate_dependence`` is set to a ``FIXED_BIRTH_DATE``. It will also act on the ``Base_Population_Scale_Factor``.
 
-    :param cb: The :any:`ConfigBuilder` containing the current configuration
+    :param cb: The :py:class:`DTKConfigBuilder` containing the current configuration
     :param geography: The selected geography
     :param static: If True, will create a static demographics. if False, will use the ``pop_scale``
     :param pop_scale: Used if the demographics is not static and will

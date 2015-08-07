@@ -103,6 +103,13 @@ vector_params_by_species = {
 }
 
 def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
+    """
+
+    :param params:
+    :param ss:
+    :param sim_type:
+    :return:
+    """
     pp = {}
     for s in ss:
         pp[s] = vector_params_by_species[s]
@@ -133,12 +140,12 @@ def scale_all_habitats(cb, scale):
         set_species_param(cb, s, 'Required_Habitat_Factor', v)
 
 def set_larval_habitat(cb, habitats):
-    '''
+    """
     Set vector species and habitat parameters of config argument and return
     Example:
-      habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }
-      habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
-    '''
+    habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }
+    habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
+    """
     cb.set_param('Vector_Species_Names', habitats.keys())
 
     for (species, habitat) in habitats.items():
