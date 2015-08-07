@@ -53,22 +53,78 @@ distribution_types = {
     "BIMODAL_DISTRIBUTION" : 6
     }
 
+
 def set_risk_mod(filename, distribution, par1, par2):
+    """
+    Set the ``RiskDistributionFlag``, ``RiskDistribution1`` and ``RiskDistribution2`` in a demographics file.
+
+    :param filename: The demographics file location
+    :param distribution: The selected distribution (need to come from ``distribution_types``)
+    :param par1: Parameter 1 of the distribution
+    :param par2: Parameter 2 of the distribution (may be unused depending on the selected distribution)
+    :return: Nothing
+    """
     set_demog_distributions(filename, [("Risk", distribution, par1, par2)])
 
+
 def set_immune_mod(filename, distribution, par1, par2):
+    """
+    Set the ``ImmunityDistributionFlag``, ``ImmunityDistribution1`` and ``ImmunityDistribution2`` in a demographics file.
+
+    :param filename: The demographics file location
+    :param distribution: The selected distribution (need to come from `distribution_types`)
+    :param par1: Parameter 1 of the distribution
+    :param par2: Parameter 2 of the distribution (may be unused depending on the selected distribution)
+    :return: Nothing
+    """
     set_demog_distributions(filename, [("Immunity", distribution, par1, par2)])
 
+
 def apply_to_defaults_or_nodes(demog, fn, *args):
-    # distributions may be in Defaults or in Nodes list
+    """
+    Apply the ``fn`` function either to the ``Defaults`` dictionary or to each of the nodes depending
+    if the ``IndividualAttributes`` parameter is present in the ``Defaults`` or not.
+
+    .. todo::
+        This function should be refactored to look at both the ``Defaults`` and each individual nodes.
+        It will make sure that if a node override the default ``IndividualAttributes`` the change will still
+        be effective.
+
+    :param demog: The demographic file represented as a dictionary
+    :param fn: The function to apply the ``Defaults`` or individual nodes
+    :param args: Argument list needed by ``fn``
+    :return: Nothing
+    """
     if "Defaults" in demog and "IndividualAttributes" in demog["Defaults"]:
         fn(demog["Defaults"],*args)
     else:
         for node in demog["Nodes"]:
             fn(node,*args)
 
-def set_demog_distributions(filename, distributions):
 
+def set_demog_distributions(filename, distributions):
+    """
+    Apply distributions to a given demographics file.
+    The distributions needs to be formatted as a list of (name, distribution, par1, par2) with:
+
+    * **name:** Immunity, Risk, Age, Prevalence or MigrationHeterogeneity
+    * **distribution:** One distribution contained in ``distribution_types``
+    * **par1, par2:** the values for the distribution parameters
+
+    .. code-block:: python
+
+        # Set the PrevalenceDistribution to a uniform distribution with 0.1 and 0.2
+        # and the ImmunityDistributionFlag to a constant distribution with 1
+        demog = json.load(open("demographics.json","r"))
+        distributions = list()
+        distributions.add(("Prevalence","UNIFORM_DISTRIBUTION",0.1,0.2))
+        distributions.add(("Immunity","CONSTANT_DISTRIBUTION",1,0))
+        set_demog_distribution(demog, distributions)
+
+    :param filename: the demographics file as json
+    :param distributions: the different distributions to set contained in a list
+    :return: Nothing
+    """
     with open( filename, "r" ) as demogjson_file:
         demog = json.loads( demogjson_file.read() )
 
@@ -87,8 +143,23 @@ def set_demog_distributions(filename, distributions):
     with open( filename, "w" ) as output_file:
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
-def set_static_demographics(cb, use_existing=False):
 
+def set_static_demographics(cb, use_existing=False):
+    """
+    Create a static demographics based on the demographics file specified in the config file
+    of the :any:`DTKConfigBuilder` object passed to the function.
+
+    This function takes the current demographics file and adjust the birth rate/death rate
+    to get a static population (the deaths are always compensated by new births).
+
+    .. todo::
+        Make sure that the population is 1000 individuals. For now rely on the fact that the base
+        demographics file will be 1000 Initial Population.
+
+    :param cb: The config builder object
+    :param use_existing: If ``True`` will only take the demographics file name and add the .static to it. If ``False`` will create a static demographics file based on the specified demographics file.
+    :return: Nothing
+    """
     demog_filenames = cb.get_param('Demographics_Filenames')
     if len(demog_filenames) != 1:
         raise Exception('Expecting only one demographics filename.')
@@ -137,7 +208,20 @@ def set_static_demographics(cb, use_existing=False):
     with open( output_file_path, "w" ) as output_file:
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
+
 def set_growing_demographics(cb,use_existing=False):
+    """
+    This function creates a growing population. It works the same way as the :any:`set_static_demographics` but with
+    a birth rate more important than the death rate which leads to a growing population.
+
+    .. todo::
+        Make sure that the population is 1000 individuals. For now rely on the fact that the base
+        demographics file will be 1000 Initial Population.
+
+    :param cb: The config builder object
+    :param use_existing: If ``True`` will only take the demographics file name and add the .growing to it. If ``False`` will create a growing demographics file based on the specified demographics file.
+    :return: Nothing
+    """
 
     demog_filenames=cb.get_param('Demographics_Filenames')
     if len(demog_filenames)!=1:
