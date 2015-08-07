@@ -2,7 +2,7 @@ def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start
     """
     Create an intervention introducing new infections (see `InputEIR <http://idmod.org/idmdoc/#EMOD/ParameterReference/InputEIR.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____33>`_ for detail)
 
-    :param cb: The :py:class:`DTKConfigBuilder` containing the campaign parameters
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` containing the campaign parameters
     :param monthlyEIRs: a list of monthly EIRs (must be 12 items)
     :param age_dependence: "LINEAR" or "SURFACE_AREA_DEPENDENT"
     :param start_day: Start day of the introduction of new infections

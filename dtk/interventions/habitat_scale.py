@@ -4,8 +4,8 @@ def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0):
     """
     Reduce available larval habitat in a node-specific way.
 
-    :param cb: The :py:class:`DTKConfigBuilder`
-    :param scales: Dictionnary associating a nodeID with the larval habitat scale
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` object
+    :param scales: Dictionary associating a nodeID with the larval habitat scale
     :param target: the target habitat affected by the reduction
     :param variation: Faction of the overall scale used when randomizing the scale
     :return: Nothing

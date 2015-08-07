@@ -2,7 +2,7 @@ def add_challenge_trial(config_builder):
     """
     Add a MalariaChallenge to the passed config_builder with default parameters.
 
-    :param config_builder: The :py:class:`DTKConfigBuilder` that will receive the intervention.
+    :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` that will receive the intervention.
     :return: Nothing
     """
     # No mosquitoes or births/deaths

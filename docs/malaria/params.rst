@@ -1,4 +1,3 @@
-:orphan:
 Params
 ------
 
@@ -10,3 +9,5 @@ by calling the :any:`set_params_by_species` function.
 .. automodule:: dtk.malaria.params
     :members:
     :undoc-members:
+
+:orphan:

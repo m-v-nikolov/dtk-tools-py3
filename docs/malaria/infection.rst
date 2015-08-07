@@ -1,4 +1,3 @@
-:orphan:
 Infection
 ---------
 
@@ -6,3 +5,5 @@ The infection.py file contains a ``params`` dictionary detailing the default par
 
 .. automodule:: dtk.malaria.infection
     :members:
+
+:orphan:

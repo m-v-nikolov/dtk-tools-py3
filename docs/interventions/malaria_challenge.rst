@@ -1,4 +1,3 @@
-:orphan:
 Malaria Challenge
 -----------------
 
@@ -8,3 +7,5 @@ intervention.
 .. automodule:: dtk.interventions.malaria_challenge
     :members:
     :undoc-members:
+
+

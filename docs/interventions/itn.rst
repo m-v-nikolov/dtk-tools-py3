@@ -1,4 +1,3 @@
-:orphan:
 ITN
 ----
 
@@ -7,3 +6,5 @@ Contains the ``itn_bednet`` defining an ITN intervention along with the function
 .. automodule:: dtk.interventions.itn
     :members:
     :undoc-members:
+
+

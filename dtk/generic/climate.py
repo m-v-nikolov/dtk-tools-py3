@@ -32,7 +32,7 @@ def set_climate_constant(cb, **kwargs):
     Set the climate to constant weather by changing the ``Climate_Model`` parameter to ``CLIMATE_CONSTANT``.
     Also set the extra parameters passed.
 
-    :param cb: The :py:class:`DTKConfigBuilder` object containing the current configuration
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` object containing the current configuration
     :param kwargs: Extra parameters to change in the config file
     :return: Nothing
     """

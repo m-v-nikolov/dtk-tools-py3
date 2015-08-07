@@ -1,4 +1,3 @@
-:orphan:
 Immunity
 --------
 
@@ -7,3 +6,5 @@ This file also holds utility function to create immunity overlays or initialize 
 
 .. automodule:: dtk.malaria.immunity
     :members:
+
+:orphan:

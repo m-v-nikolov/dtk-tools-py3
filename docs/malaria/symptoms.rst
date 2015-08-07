@@ -1,4 +1,3 @@
-:orphan:
 Symptoms
 --------
 
@@ -7,3 +6,5 @@ Symptoms.py contains a ``params`` dictionary defining the default parameters for
 .. automodule:: dtk.malaria.symptoms
     :members:
     :undoc-members:
+
+:orphan:

@@ -5,6 +5,7 @@ import datetime
 
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 
+
 def set_property(property, values, initial):
     """
     Set the value of a property.
@@ -20,6 +21,7 @@ def set_property(property, values, initial):
     """
     return {'Property': property, 'Values': values, 'Initial_Distribution': initial, 'Transitions': []}
 
+
 def init_access(**kwargs):
     """
     A shortcut function allowing to set the initial distribution of the Accessibility property.
@@ -33,11 +35,12 @@ def init_access(**kwargs):
     """
     return set_property('Accessibility', kwargs.keys(), kwargs.values())
 
+
 def add_properties_overlay(cb, properties, directory=DTKSetupParser().get('LOCAL','input_root'), tag=''):
     """
     Creates a property overlay with the given properties.
 
-    :param cb: The :any:`DTKConfigBuilder` containing the configuration
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` containing the configuration
     :param properties: The list of properties to add
     :param directory: The directory where the demographics file is stored
     :param tag: Properties tag

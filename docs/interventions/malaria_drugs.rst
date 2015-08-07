@@ -1,4 +1,3 @@
-:orphan:
 Malaria drugs
 -------------
 
@@ -32,3 +31,4 @@ Also contains the ``drug_cfg`` dictionary holding the different configurations f
 .. automodule:: dtk.interventions.malaria_drugs
     :members:
     :undoc-members:
+

@@ -1,4 +1,3 @@
-:orphan:
 Ivermectin
 ----------
 
@@ -8,3 +7,5 @@ intervention along with a function to create an ivermectin campaign event.
 .. automodule:: dtk.interventions.ivermectin
     :members:
     :undoc-members:
+
+

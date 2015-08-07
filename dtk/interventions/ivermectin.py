@@ -11,8 +11,8 @@ def ivermectin_config_by_duration(drug_code=None):
     """
     Returns the correct ``Killing_Config`` parameter depending on the ``drug_code``
 
-    :param drug_code: Can be 'DAY', 'WEEK' or 'MONTH' and drive the ``Killing_config`` (see `Killing config doc <http://idmod.org/idmdoc/#EMOD/ParameterReference/Killing_Config.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|Ivermectin|_____1>`_ for more info).
-    :return: a dictionnary with the correct ``Killing_Config / Box_Duration`` set.
+    :param drug_code: Can be ``'DAY'``, ``'WEEK'`` or ``'MONTH'`` and drive the ``Killing_config`` (see `Killing config doc <http://idmod.org/idmdoc/#EMOD/ParameterReference/Killing_Config.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|Ivermectin|_____1>`_ for more info).
+    :return: a dictionary with the correct ``Killing_Config / Box_Duration`` set.
     """
     if not drug_code:
         return {}

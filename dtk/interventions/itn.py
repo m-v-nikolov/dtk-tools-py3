@@ -13,7 +13,7 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     """
     Add an ITN intervention to the config_builder passed.
 
-    :param config_builder: The config builder holding the campaign that will receive the ITN event
+    :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bednet distribution
     :param coverage_by_ages: a list of dictionaries defining the coverage per age group
     :param waning: a dictionary defining the durability of the nets. if empty the default ``DECAYDURABILITY`` with 4 years primary and 2 years secondary will be used.

@@ -2,15 +2,16 @@ import os
 
 from dtk.generic.demographics import set_static_demographics
 
+
 def convert_filepaths(params):
     """
     Make sure to add the geography folder in front of the paths.
-    For example, if the geography is Namawala, we want the climate/demographics files to be Namawala\file.json
+    For example, if the geography is Namawala, we want the climate/demographics files to be Namawala\\file.json
 
     :param params: The config parameters
     :return: Nothing
     """
-    g = params.pop('Geography',None)
+    g = params.pop('Geography', None)
     if not g: return
     for k, v in params.items():
         if k == 'Demographics_Filename':

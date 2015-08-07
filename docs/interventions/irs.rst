@@ -1,4 +1,3 @@
-:orphan:
 IRS
 ----
 
@@ -10,3 +9,4 @@ Contains the ``irs_housingmod`` defining an IRS intervention.
 .. automodule:: dtk.interventions.irs
     :members:
     :undoc-members:
+

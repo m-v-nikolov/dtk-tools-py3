@@ -1,4 +1,3 @@
-:orphan:
 Geography
 ---------
 
@@ -27,3 +26,5 @@ Currently supported geographies include:
 .. automodule:: dtk.generic.geography
     :members:
     :undoc-members:
+
+

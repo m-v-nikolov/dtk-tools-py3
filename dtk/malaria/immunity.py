@@ -35,12 +35,11 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
 
     To do so, reads the demographics files and find the corresponding immunity initialization overlay.
 
-    :param cb: The :any:`DTKConfigBuilder` holding the configuration
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the configuration
     :param tags: List of immunity tags that have corresponding initialization files
     :param directory: Main directory where the ..._immune_init_x_...json files are stored
     :param site: If the site is specified, the files will be expected to be found in the immune_init/site subdirectory.
     :return: Nothing
-
     """
 
     demogfiles = cb.get_param("Demographics_Filenames")
@@ -80,12 +79,11 @@ def add_immune_init(cb, site, x_temp_habitats, directory=None):
     .. todo::
         This function needs more precise documentation
 
-    :param cb: The :py:class:`DTKConfigBuilder` holding the configuration
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the configuration
     :param site: If the site is specified, the files will be expected to be found in the immune_init/site subdirectory.
     :param x_temp_habitats: List of temp habitats
     :param directory: Main directory where the ..._immune_init_x_...json files are stored
     :return: Nothing
-
     """
     tags = ["x_" + str(x) for x in x_temp_habitats]
     add_immune_overlays(cb, tags, directory, site=site)
@@ -100,7 +98,6 @@ def scale_habitat_with_immunity(cb, available=[], scale=1.0):
     :param available:
     :param scale:
     :return:
-
     """
     set_habitat_scale(cb, scale)
     cb.set_param("Config_Name", StudySite.site + '_x_' + str(scale))

@@ -1,4 +1,3 @@
-:orphan:
 Malaria vaccine
 ---------------
 
@@ -11,3 +10,4 @@ Contains dictionaries defining the following vaccine interventions:
 .. automodule:: dtk.interventions.malaria_vaccine
     :members:
     :undoc-members:
+
