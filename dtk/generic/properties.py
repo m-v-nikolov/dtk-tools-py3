@@ -6,21 +6,43 @@ import datetime
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 
 def set_property(property, values, initial):
-    '''
-    For example:
-    set_property('Accessibility', ['Easy', 'Hard'], [0.5, 0.5])
-    '''
+    """
+    Set the value of a property.
+
+     .. code-block:: python
+
+        set_property('Accessibility', ['Easy', 'Hard'], [0.5, 0.5])
+
+    :param property: The property to set
+    :param values: A list of different values this property can take
+    :param initial: The initial distribution
+    :return: A dictionary representing the property ready for DTK
+    """
     return {'Property': property, 'Values': values, 'Initial_Distribution': initial, 'Transitions': []}
 
 def init_access(**kwargs):
-    '''
-    For example:
-    init_access(Easy=0.5, Hard=0.5)
-    '''
+    """
+    A shortcut function allowing to set the initial distribution of the Accessibility property.
+
+     .. code-block:: python
+
+        init_access(Easy=0.5, Hard=0.5)
+
+    :param kwargs: A list of key,value pairs representing the property value and initial distribution
+    :return: A dictionary representing the property ready for DTK
+    """
     return set_property('Accessibility', kwargs.keys(), kwargs.values())
 
 def add_properties_overlay(cb, properties, directory=DTKSetupParser().get('LOCAL','input_root'), tag=''):
+    """
+    Creates a property overlay with the given properties.
 
+    :param cb: The :any:`ConfigBuilder` containing the configuration
+    :param properties: The list of properties to add
+    :param directory: The directory where the demographics file is stored
+    :param tag: Properties tag
+    :return: Nothing
+    """
     filenames = cb.get_param('Demographics_Filenames')
     demogfiles = [f for f in filenames if 'demographics' in f]
 
