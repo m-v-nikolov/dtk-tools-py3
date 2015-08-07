@@ -37,7 +37,7 @@ def add_properties_overlay(cb, properties, directory=DTKSetupParser().get('LOCAL
     """
     Creates a property overlay with the given properties.
 
-    :param cb: The :any:`ConfigBuilder` containing the configuration
+    :param cb: The :any:`DTKConfigBuilder` containing the configuration
     :param properties: The list of properties to add
     :param directory: The directory where the demographics file is stored
     :param tag: Properties tag

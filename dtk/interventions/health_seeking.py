@@ -5,6 +5,16 @@ def add_health_seeking(config_builder,
                                    { 'trigger': 'NewSevereCase',   'coverage': 0.8, 'seek': 0.6, 'rate': 0.5 } ],
                        drug    = ['Artemether', 'Lumefantrine'],
                        dosing  = 'FullTreatmentNewDetectionTech'):
+    """
+    Add a `SimpleHealthSeekingBehavior <http://idmod.org/idmdoc/#EMOD/ParameterReference/SimpleHealthSeekingBehav.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____53>`_ .
+
+    :param config_builder: The config builder containing the campaign configuration
+    :param start_day: Day we want to start the intervention
+    :param targets: The different targets held in a list of dictionaries (see default for example)
+    :param drug: The drug to administer
+    :param dosing: The dosing for the drugs
+    :return:
+    """
 
 
 

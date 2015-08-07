@@ -9,9 +9,18 @@ itn_bednet = { "class": "SimpleBednet",
                "Cost_To_Consumer": 3.75
 }
 
-# Bednet distribution event parameters
 def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[]):
+    """
+    Add an ITN intervention to the config_builder passed.
 
+    :param config_builder: The config builder holding the campaign that will receive the ITN event
+    :param start: The start day of the bednet distribution
+    :param coverage_by_ages: a list of dictionaries defining the coverage per age group
+    :param waning: a dictionary defining the durability of the nets. if empty the default ``DECAYDURABILITY`` with 4 years primary and 2 years secondary will be used.
+    :param cost: Set the ``Cost_To_Consumer`` parameter
+    :param nodeIDs: If empty, all nodes will get the intervention. If set, only the nodeIDs specified will receive the intervention.
+    :return: Nothing
+    """
     if waning:
         itn_bednet.update({ "Durability_Time_Profile":       waning['profile'], 
                             "Primary_Decay_Time_Constant":   waning['kill'] * 365,
