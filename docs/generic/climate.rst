@@ -7,3 +7,4 @@ It contains a ``params`` dictionary setting the default weather values.
 .. automodule:: dtk.generic.climate
     :members:
     :undoc-members:
+

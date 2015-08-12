@@ -2,15 +2,16 @@ import os
 
 from dtk.generic.demographics import set_static_demographics
 
+
 def convert_filepaths(params):
     """
     Make sure to add the geography folder in front of the paths.
-    For example, if the geography is Namawala, we want the climate/demographics files to be Namawala\file.json
+    For example, if the geography is Namawala, we want the climate/demographics files to be Namawala\\file.json
 
     :param params: The config parameters
     :return: Nothing
     """
-    g = params.pop('Geography',None)
+    g = params.pop('Geography', None)
     if not g: return
     for k, v in params.items():
         if k == 'Demographics_Filename':
@@ -20,8 +21,17 @@ def convert_filepaths(params):
         elif 'Filename' in k:
             params[k] = os.path.join(g, v)
 
-def get_converted_paths_for_geography(geography):
 
+def get_converted_paths_for_geography(geography):
+    """
+    Returns the converted paths for a given geography.
+
+    Simply copy the geography specific parameters and send it to the :any:'convert_filepaths' function to get the correct paths.
+    Then return the updated parameters.
+
+    :param geography: The selected geography
+    :return: parameters with the correct path
+    """
     params = geographies.get(geography).copy()
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
@@ -29,12 +39,34 @@ def get_converted_paths_for_geography(geography):
     return params
 
 def get_geography_parameter(geography, param):
+    """
+    Return a particular parameter for a given geography.
+    This function will return the parameter value with the updated path and can accommodate geography of the form:
+    ``Sinazongwe.static``. The ``.static`` will be removed.
+
+    :param geography: The desired geography
+    :param param: The parameter we want to retrieve
+    :return: The value of the parameter for the given geography
+    """
     geography = geography.split('.')[0] # e.g. Sinazongwe.static
     params = get_converted_paths_for_geography(geography)
     return params.get(param)
 
-# Set climate and demographics files by geography
+
 def set_geography(cb, geography, static=False, pop_scale=1):
+    """
+    Set the demographics in a given :py:class:`DTKConfigBuilder` for the selected geography.
+    The demographics can be set to static and created with the :any:`set_static_demographics` function or it can be created
+    with the population scale parameter passed.
+
+    .. note:: The population scale will act on the ``x_Birth`` configuration parameter if the ``Birth_Rate_dependence`` is set to a ``FIXED_BIRTH_DATE``. It will also act on the ``Base_Population_Scale_Factor``.
+
+    :param cb: The :py:class:`DTKConfigBuilder` containing the current configuration
+    :param geography: The selected geography
+    :param static: If True, will create a static demographics. if False, will use the ``pop_scale``
+    :param pop_scale: Used if the demographics is not static and will
+    :return: Nothing
+    """
     params = get_converted_paths_for_geography(geography)
     cb.update_params(params)
     if static:
