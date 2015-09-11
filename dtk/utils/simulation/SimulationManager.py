@@ -289,7 +289,8 @@ class LocalSimulationManager():
             self.cancelAllSimulations(states)
             return
         for id in ids:
-            id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
+            if type(id) is str :
+                id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
             state = states.get(id)
             if not state:
                 logger.warning('No job in current experiment with ID = %s' % id)
