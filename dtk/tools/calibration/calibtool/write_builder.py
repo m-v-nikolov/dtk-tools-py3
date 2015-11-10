@@ -1,100 +1,83 @@
 from load_parameters import load_samples
+import pandas as pd
 
 def write_submission(settings, iteration) :
 
-    if iteration == 0 :
-        write_dtk_setup(settings)
-    pnames, pvals = get_parameters(settings, iteration)
-    sitestring = '[' + ', '.join(['\'' + x + '\'' for x in settings['sites'].keys()]) + ']'
+    if 'hpc' in settings['run_location'].lower() :
+        write_dtk_cfg(settings)
+    samples = load_samples(settings, iteration)
+    numvals = len(samples.index)
+
+    modstr = ''
+    for i in range(numvals) :
+        parstr = ''
+        for pname in samples.columns.values :
+            pval = str(samples[pname].values[i])
+            mystr = ''
+            if 'CAMPAIGN' in pname :
+                vname = pname.split('.')
+                if vname[1] == 'DRUG' :
+                    camp_code = vname[2]
+                    start_day = vname[3]
+                    mystr = 'Builder.ModFn(add_drug_campaign, \'' + camp_code + '\', start_days=[' + start_day + '], coverage=' + pval + ', repetitions=1),'
+            elif 'HABSCALE' in pname :
+                node = pname.split('.')[1]
+                mystr = 'Builder.ModFn(scale_larval_habitats, [([\'' + node + '\'], \'' + pval + '\')]),'
+            elif 'VECTOR' in pname :
+                vname = pname.split('.')[1]
+                vpar = pname.split('.')[2]
+                set_param = True
+                if 'Required_Habitat_Factor' in vpar :
+                    if vname + '.Required_Habitat_Factor' not in parstr :
+                        habnames = [x for x in samples.columns.values if vname+'.Required_Habitat_Factor' in x]
+                        habvals = [samples[x].values[i] for x in habnames]
+                        mystr = 'Builder.ModFn(set_larval_habitat, {\'' + vname + '\':{' + ','.join(['\'' + habnames[x].split('.')[3] + '\':' + str(habvals[x]) for x in range(len(habnames))]) + '}}),'
+                else :
+                    mystr = 'Builder.ModFn(set_species_param, \'' + vname + '\', \'' + vpar + '\', value=' + pval + '),'
+                pval = str(samples[pname].values[i])
+            elif 'DRUG' in pname :
+                vname = pname.split('.')[1]
+                vpar = pname.split('.')[2]
+                mystr = 'Builder.ModFn(set_drug_param, \'' + vname + '\', \'' + vpar + '\', value=' + pval + '),'
+            
+            mystr += 'Builder.ModFn(set_param, \'' + pname + '\', ' + pval + '),'
+            parstr += mystr
+        for site in settings['sites'] :
+            for run_num in range(settings['sim_runs_per_param_set']) :
+                modstr = modstr+'[Builder.ModFn(set_calibration_site, \'' + site + '\'),' + parstr + 'Builder.ModFn(set_param, \'Run_Number\', ' + str(run_num) + ')],'
+    modstr = modstr[:-1]
 
     with open('temp_dtk.py', 'w') as fout :
         fout.write("""
-
-import os
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
-from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.generic.demographics import add_immune_overlays, set_immune_mod
-from sweep_calibration import GenericSweepBuilder
-
-setup = DTKSetupParser()
-dll_root = setup.get('BINARIES', 'dll_path')
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder, set_param
+from dtk.utils.builders.sweep import Builder
+from dtk.vector.species import set_larval_habitat, set_species_param
+from dtk.interventions.malaria_drugs import set_drug_param, add_drug_campaign
+from dtk.interventions.habitat_scale import scale_larval_habitats
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import set_calibration_site
 
 exp_name  = \'""" + settings['expname'] + """\'
-
-sites = """ + sitestring + """
-params_to_test = """ + pnames + """
-param_vals = """ + pvals + """
-
-num_params = len(params_to_test)
-num_vals = len(param_vals[0])
-
-simlist = []
-for site in sites :
-    for j in range(num_vals) :
-        t = (site, )
-        for i in range(num_params) :
-            t = t + (param_vals[i][j],)
-        simlist.append(t)
 
 # Load default config for sim_type
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
-builder = GenericSweepBuilder.from_list(['_site_']+params_to_test,
-                                        simlist, """ + str(settings['geographies']) + """)
-
-dlls = [os.path.join(dll_root, 'libmalariasummary_report_plugin.dll'), os.path.join(dll_root, 'libmalariasurveyJSON_analyzer_plugin.dll')]
+builder = Builder.from_list([""" + modstr + """])
 
 run_sim_args =  {   'config_builder': cb,
                     'exp_name': exp_name,
                     'exp_builder': builder}
 
-if __name__ == "__main__":
+""")
 
-    from dtk.utils.core.DTKSetupParser import DTKSetupParser
-    from dtk.utils.simulation.SimulationManager import SimulationManagerFactory
+def write_dtk_cfg(settings) :
 
-    sm = SimulationManagerFactory.from_exe(DTKSetupParser().get('BINARIES','exe_path'),'LOCAL')
-    sm.RunSimulations(**run_sim_args)
-
-    """)
-
-
-def get_parameters(settings, iteration) :
-
-    samples = load_samples(settings, iteration)
-
-    pnames = samples.keys()
-    pvals = []
-    for p in pnames :
-        pvals.append(', '.join([str(x) for x in samples[p]]))
-
-    return '[' + ', '.join(['\'' + x + '\'' for x in pnames]) + ']', '[[' + '], ['.join(pvals) + ']]'
-
-def write_dtk_setup(settings) :
-
+    with open(settings['dtk_setup_config']) as fin :
+        cfg = [x[:-1] for x in fin.readlines()]
+        for i, line in enumerate(cfg) :
+            if 'priority' in line :
+                p = line.split()
+                p[-1] = settings['hpc_priority']
+                break
+        cfg[i] = ' '.join(p)
     with open(settings['dtk_setup_config'], 'w') as fout :
-        fout.write("""
-[HPC]
-server_endpoint = """ + settings['hpc_server_endpoint'] + """
-node_group      = """ + settings['hpc_node_group'] + """
-priority        = """ + settings['hpc_priority'] + """
-sim_root        = """ + settings['hpc_sim_root'] + settings['expname'] + """\\ 
-input_root      = """ + settings['hpc_input_root'] + """
-bin_root        = """ + settings['hpc_bin_root'] + """
-dll_root        = """ + settings['hpc_dll_root'] + """
-num_retries     = """ + settings['hpc_num_retries'] + """
-sims_per_thread = """ + settings['hpc_sims_per_thread'] + """
-max_threads     = """ + settings['hpc_max_threads'] + """
-
-[LOCAL]
-sim_root   = """ + settings['local_sim_root'] + """
-input_root = """ + settings['local_input_root'] + """
-bin_root   = """ + settings['local_bin_root'] + """
-dll_root   = """ + settings['local_dll_root'] + """
-max_local_sims = 3
-
-[BINARIES]
-exe_path   = """ + settings['binaries_exe_path'] + """
-dll_path   = """ + settings['binaries_dll_path'] + """
-
-    """)
+        fout.write('\n'.join(cfg))

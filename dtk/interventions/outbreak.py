@@ -1,5 +1,5 @@
 
-def recurring_outbreak(cb, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, target='Everyone', start_day=0, strain=(0,0)):
+def recurring_outbreak(cb, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, target='Everyone', start_day=0, strain=(0,0), nodes={"class": "NodeSetAll"}, outbreak_source="PrevalenceIncrease"):
     """
     Function to add recurring introduction of new infections to the current configuration builder
 
@@ -24,13 +24,11 @@ def recurring_outbreak(cb, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=3
                                      "Intervention_Config": {
                                          "Antigen": strain[0], 
                                          "Genome": strain[1], 
-                                         "Outbreak_Source": "PrevalenceIncrease", 
+                                         "Outbreak_Source": outbreak_source, 
                                          "class": "OutbreakIndividual"
                                          }
                                      },
-                                 "Nodeset_Config": {
-                                     "class": "NodeSetAll"
-                                     }
+                                 "Nodeset_Config": nodes
                                  }
 
     cb.add_event(outbreak_event)

@@ -86,8 +86,6 @@ class LocalSimulationManager():
         dll_root = self.getProperty('dll_root')
 
         self.bin_path = self.StageExecutable(bin_root)
-        self.emodules.extend(list(config_builder.dlls))
-        self.emodules_map = self.StageEmodules(dll_root)
 
         input_path = self.getProperty('input_root')
 
@@ -107,7 +105,7 @@ class LocalSimulationManager():
         commissioners = []
         self.exp_data['sims'] = {}
         cache_cwd = os.getcwd()
-
+    
         # Cache original config_builder for exp_builder to alter
         cached_cb = copy.deepcopy(self.config_builder)
 
@@ -119,6 +117,12 @@ class LocalSimulationManager():
             # modify next simulation according to experiment builder
             for mod_fn in mod_fn_list:
                 mod_fn(self.config_builder)
+
+            # moved this block from after grabbing root paths
+            self.emodules.extend(list(self.config_builder.dlls))
+            self.emodules = list(set(self.emodules))
+            self.emodules_map = self.StageEmodules(dll_root)
+            # end block
 
             commissioner = self.createSimulation()
             if commissioner is not None:

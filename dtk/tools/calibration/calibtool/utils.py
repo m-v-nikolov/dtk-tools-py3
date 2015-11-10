@@ -10,27 +10,31 @@
 # clean_directory()
 #
 # check_for_done()
-#
+# cleanup()
 #####################################################################
 
 
 import json
 import os
 import time
+import pandas as pd
+import math
 
-def write_to_file(samples, outstem, types=['json', 'txt']) :
+def concat_likelihoods(settings) :
 
-    for fout_type in types :
-        if fout_type == 'json' :
-            with open(outstem + '.json', 'w') as fout :
-                json.dump(samples, fout)
-        else :
-            with open(outstem + '.' + fout_type, 'w') as fout :
-                my_keys = samples.keys()
-                numsamples = len(samples[samples.keys()[0]])
-                fout.write('\t'.join(my_keys) + '\n')
-                for i in range(numsamples) :
-                    fout.write('\t'.join([str(samples[x][i]) for x in my_keys]) + '\n')
+    df = pd.DataFrame()
+    for i in range(settings['max_iterations']) :
+        try :
+            LL = pd.read_csv(settings['exp_dir'] + 'iter' + str(i) + '/LL.csv')
+            LL['iteration'] = pd.Series([i]*len(LL.index))
+            df = pd.concat([df, LL])
+        except IOError :
+            break
+    write_to_file(df, settings['exp_dir'] + 'LL_all')
+
+def write_to_file(samples, outstem) :
+
+    samples.to_csv(outstem + '.csv', index=False)
 
 def update_settings(settings, iteration) :
 
@@ -61,7 +65,11 @@ def clean_directory(settings) :
     except WindowsError :
         pass
     
-def check_for_done(sleeptime=0) :
+def check_for_done(settings, sleeptime=0) :
+
+    with open(settings['curr_iteration_dir'] + 'sim.json') as fin :
+        sim = json.loads(fin.read())
+    exp_id = sim['exp_name'] + '_' + sim['exp_id']
 
     if sleeptime > 0 :
         time.sleep(sleeptime)
@@ -74,7 +82,7 @@ def check_for_done(sleeptime=0) :
     start_run_time = -1
 
     while True :
-        os.system('dtk status > ' + status_fname)
+        os.system('dtk status -e ' + exp_id + ' > ' + status_fname)
         status = reset_status()
         with open(status_fname) as fin :
             f = fin.read()
@@ -118,3 +126,38 @@ def get_sleep_time(status, numsims, curr_time, start_run_time) :
         return min([60, 10*status['Running']])
 
     return 60
+
+def calc_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    c = 2 * math.asin(math.sqrt(a))
+    km = 6371 * c
+    return km
+
+def latlon_to_anon(lats, lons, reflat=0, reflon=0) :
+
+    if reflat == 0 or reflon == 0 :
+        reflat = lats[0]
+        reflon = lons[0]
+
+    ycoord = [calc_distance(x, reflon, reflat, reflon) for x in lats]
+    xcoord = [calc_distance(reflat, x, reflat, reflon) for x in lons]
+    for i in range(len(lats)) :
+        if lats[i] < reflat :
+            ycoord[i] *= -1
+        if lons[i] < reflon :
+            xcoord[i] *= -1
+    midx = (max(xcoord) + min(xcoord))/2
+    midy = (max(ycoord) + min(ycoord))/2
+    xcoord = [x - midx for x in xcoord]
+    ycoord = [x - midy for x in ycoord]
+
+    return xcoord, ycoord

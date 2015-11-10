@@ -9,7 +9,7 @@ itn_bednet = { "class": "SimpleBednet",
                "Cost_To_Consumer": 3.75
 }
 
-def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[]):
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], perfect=False):
     """
     Add an ITN intervention to the config_builder passed.
 
@@ -26,6 +26,13 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
                             "Primary_Decay_Time_Constant":   waning['kill'] * 365,
                             "Secondary_Decay_Time_Constant": waning['block'] * 365 })
 
+    if perfect :
+        itn_bednet.update({ "Blocking_Rate": 1.0,
+                            "Killing_Rate": 1.0, 
+                            "Durability_Time_Profile": "BOXDURABILITY", 
+                            "Primary_Decay_Time_Constant":   400 * 365,   # killing
+                            "Secondary_Decay_Time_Constant": 400 * 365    # blocking
+                            })
     if cost:
         itn_bednet['Cost_To_Consumer'] = cost
 

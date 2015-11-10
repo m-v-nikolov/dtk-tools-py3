@@ -114,7 +114,7 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
     for s in ss:
         pp[s] = vector_params_by_species[s]
         if sim_type == "MALARIA_SIM":
-            pp[s]["Acquire_Modifier"] = 1.0  ## gametocyte success modeled explicitly
+            pp[s]["Acquire_Modifier"] = 0.8  ## gametocyte success modeled explicitly
 
     vector_species_params = {
         "Vector_Species_Names": ss,

@@ -26,10 +26,17 @@ cohort_params = {
 
     "Enable_Temperature_Dependent_Feeding_Cycle": 0,
     "Enable_Vector_Aging": 0, 
+    "Enable_Vector_Mortality": 0, 
     "Enable_Vector_Migration": 0, 
     "Enable_Vector_Migration_Human": 0, 
     "Enable_Vector_Migration_Local": 0, 
     "Enable_Vector_Migration_Wind": 0, 
+
+	"Enable_Vector_Migration_Regional" : 0,
+	"x_Vector_Migration_Local" : 0,
+	"x_Vector_Migration_Regional" : 0,
+    "Vector_Migration_Filename_Local":   "",
+    "Vector_Migration_Filename_Regional":   "",
 
     "Age_Dependent_Biting_Risk_Type" : "SURFACE_AREA_DEPENDENT",
     "Newborn_Biting_Risk_Multiplier" : 0.2, # for LINEAR option (also picked up by InputEIR)

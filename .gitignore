@@ -24,3 +24,9 @@ deprecate/
 
 # PyCharm
 *.idea*
+*.log
+dtk/tools/calibration/calibtool/temp
+dtk/tools/calibration/calibtool/temp_dtk.py
+dtk/tools/calibration/calibtool/StdOut.txt
+dtk/tools/calibration/calibtool/StdErr.txt
+dtk/tools/calibration/calibtool/simIDs

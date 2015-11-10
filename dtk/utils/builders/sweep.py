@@ -2,7 +2,7 @@ import itertools
 from collections import deque
 
 from dtk.vector.study_sites import configure_site
-from dtk.vector.calibration_sites import set_calibration_site
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import set_calibration_site
 from dtk.utils.core.DTKConfigBuilder import set_param
 
 class Builder(object):

@@ -8,7 +8,7 @@ class MalariaReport(BaseEventReportIntervalOutput):
     def __init__(self,
                  event_trigger_list,
                  start_day = 0,
-                 duration_days = 10000,
+                 duration_days = 1000000,
                  report_description = "",
                  nodeset_config = {"class":"NodeSetAll"},
                  age_bins =  [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 1000 ],

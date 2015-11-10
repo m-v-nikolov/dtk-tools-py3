@@ -79,3 +79,13 @@ def gamma_poisson(raw_nobs, sim_nobs, raw_data, sim_data) :
 
     LL /= num_bins
     return LL
+
+def euclidean_distance(raw_data, sim_data) :
+
+    num_obs = len(raw_data)
+    return math.sqrt(sum([(raw_data[x] - sim_data[x])**2 for x in range(num_obs)]))*-1
+
+def weighted_squares(raw_data, sim_data) :
+
+    num_obs = len(raw_data)
+    return math.sqrt(sum([(raw_data[x] - sim_data[x])**2/raw_data[x] for x in range(num_obs)]))*-1

@@ -155,7 +155,7 @@ class IMIS:
         weighted_covariance=self.calculate_weighted_covariance(n_closest_samples,weights=n_closest_weights+1./len(self.weights),center=important_sample)
         self.gaussian_covariances.append(weighted_covariance)
 
-        mvn=multivariate_normal( mean=important_sample, cov=weighted_covariance )
+        mvn=multivariate_normal( mean=important_sample, cov=weighted_covariance)
         t=self.sample_from_function(mvn,self.n_samples_per_iteration)
         while True :
             p=self.prior_fn.pdf(t)

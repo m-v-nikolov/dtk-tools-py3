@@ -1,0 +1,22 @@
+{ 
+    "expname" : "test",
+    "sites" : { "BFinf_Dapelogo" : ["seasonal_infectiousness_analyzer"] },
+    "run_location" : "--hpc",
+    "hpc_priority" : "Lowest",
+    "sim_type" : "MALARIA_SIM",
+    "sim_runs_per_param_set" : 1,
+    "combine_site_likelihoods" : 1,
+    "weight_by_site" : {},
+    "num_to_plot" : 10,
+    "num_initial_samples" : 10,
+    "num_samples_per_iteration" : 5,
+    "num_resamples" : 5,
+    "max_iterations" : 2,
+    "initial_sampling_type" : "LHC",
+    "initial_sampling_range_file": "C:/Users/jgerardin/SVN/python_github/dtk-tools/dtk/tools/calibration/calibtool/initial_sampling_range.csv",
+    "dtk_path": "C:/Users/jgerardin/SVN/python_github/dtk-tools/",
+    "dtk_setup_config": "C:/Users/jgerardin/SVN/python_github/dtk-tools/dtk/dtk_setup.cfg",
+    "calibtool_dir" : "C:/Users/jgerardin/SVN/python_github/dtk-tools/dtk/tools/calibration/calibtool/",
+    "working_dir": "C:/Users/jgerardin/SVN/python_github/dtk-tools/dtk/tools/calibration/calibtool/",
+    "ERROR": 1e-07
+}

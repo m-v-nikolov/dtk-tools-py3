@@ -7,10 +7,11 @@ from matplotlib.ticker import FixedLocator
 from math import sqrt
 from parsers_malaria import get_site_data
 import matplotlib.cm as cm
+import pandas as pd
 
-def analyze_seasonal_infectiousness(analyzer, site, data, samples) :
+def analyze_seasonal_infectiousness(settings, analyzer, site, data, samples) :
 
-    raw_data = load_comparison_data(site, 'infectiousness_by_age_and_season')
+    raw_data = load_comparison_data(settings, site, 'infectiousness_by_age_and_season')
     agebins = raw_data['age_bins']
     numsamples = len(data)
     
@@ -19,14 +20,15 @@ def analyze_seasonal_infectiousness(analyzer, site, data, samples) :
     ad_age = [100]*numsamples
     min_inf = [1]*numsamples
     seas_m = [1]*numsamples
-    if 'Acquire_Modifier' in samples :
-        scale_factor = samples['Acquire_Modifier']
-    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in samples :
-        min_inf = samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity']
-    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in samples :
-        ad_age = samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age']
-    if 'Seasonal_Multiplier' in samples :
-        seas_m = samples['Seasonal_Multiplier']
+    paramnames = list(samples.columns.values)
+    if 'Acquire_Modifier' in paramnames :
+        scale_factor = samples['Acquire_Modifier'].values
+    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in paramnames :
+        min_inf = samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity'].values
+    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in paramnames :
+        ad_age = samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age'].values
+    if 'Seasonal_Multiplier' in paramnames :
+        seas_m = samples['Seasonal_Multiplier'].values
     for rownum in range(numsamples) :
         LL[rownum] += compare_infectiousness(raw_data, data[rownum], agebins, analyzer['seasons'], analyzer['start_day'], scale_factor[rownum], min_inf[rownum], ad_age[rownum], seas_m[rownum])
 
@@ -40,30 +42,31 @@ def visualize_seasonal_infectiousness(settings, iteration, analyzer, site, sampl
 def plot_all_LL(settings, iteration, analyzer, site, samples) :
 
     data = get_site_data(settings, {}, site, iteration)[analyzer['name']]
-    raw_data = load_comparison_data(site, 'infectiousness_by_age_and_season')
+    raw_data = load_comparison_data(settings, site, 'infectiousness_by_age_and_season')
     agebins = raw_data['age_bins']
     inf_bins = raw_data['fraction_infected_bins']
     seasons = ['start_wet', 'peak_wet', 'end_wet']
     numsamples = len(data)
     theseagebins = [0] + agebins
-    LL_max = max(samples['LL'])
-    LL_min = min(samples['LL'])
+    LL_max = max(samples['LL'].values)
+    LL_min = min(samples['LL'].values)
     if LL_min == LL_max : LL_min = LL_max-1
     
     scale_factor = [1]*numsamples
     ad_age = [100]*numsamples
     min_inf = [1]*numsamples
     seas_m = [1]*numsamples
-    if 'Acquire_Modifier' in samples :
-        scale_factor = samples['Acquire_Modifier']
-    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in samples :
-        min_inf = samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity']
-    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in samples :
-        ad_age = samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age']
-    if 'Seasonal_Multiplier' in samples :
-        seas_m = samples['Seasonal_Multiplier']
+    paramnames = list(samples.columns.values)
+    if 'Acquire_Modifier' in paramnames :
+        scale_factor = samples['Acquire_Modifier'].values
+    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in paramnames :
+        min_inf = samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity'].values
+    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in paramnames :
+        ad_age = samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age'].values
+    if 'Seasonal_Multiplier' in paramnames :
+        seas_m = samples['Seasonal_Multiplier'].values
 
-    fname = settings['curr_iteration_dir'] + site + '_infectiousness_all'
+    fname = settings['plot_dir'] + site + '_infectiousness_all'
     fig = plt.figure(fname, figsize=(len(seasons)*4, len(agebins)*3))
     plt.subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.95, hspace=0.25)
 
@@ -95,8 +98,8 @@ def plot_all_LL(settings, iteration, analyzer, site, samples) :
 
 def plot_best_LL(settings, iteration, analyzer, site, samples, index_list) :
 
-    raw_data = { 'inf_data' : load_comparison_data(site, 'infectiousness_by_age_and_season'),
-                'gam_inf_data' : load_comparison_data(site, 'density_and_infectiousness_by_age_and_season') }
+    raw_data = { 'inf_data' : load_comparison_data(settings, site, 'infectiousness_by_age_and_season'),
+                'gam_inf_data' : load_comparison_data(settings, site, 'density_and_infectiousness_by_age_and_season') }
 
     agebins = raw_data['inf_data']['age_bins']
     inf_bins = raw_data['inf_data']['fraction_infected_bins']
@@ -110,26 +113,27 @@ def plot_best_LL(settings, iteration, analyzer, site, samples, index_list) :
     ad_age = [100]*len(outpaths)
     min_inf = [1]*len(outpaths)
     seas_m = [1]*len(outpaths)
-    if 'Acquire_Modifier' in samples :
-        scale_factor = [samples['Acquire_Modifier'][x] for x in index_list]
-    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in samples :
-        min_inf = [samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity'][x] for x in index_list]
-    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in samples :
-        ad_age = [samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age'][x] for x in index_list]
-    if 'Seasonal_Multiplier' in samples :
-        scale_factor = [samples['Seasonal_Multiplier'][x] for x in index_list]
+    paramnames = list(samples.columns.values)
+    if 'Acquire_Modifier' in paramnames :
+        scale_factor = [samples['Acquire_Modifier'].values[x] for x in index_list]
+    if 'Age_Dependent_Decrease_In_Infectivity_Min_Infectivity' in paramnames :
+        min_inf = [samples['Age_Dependent_Decrease_In_Infectivity_Min_Infectivity'].values[x] for x in index_list]
+    if 'Age_Dependent_Decrease_In_Infectivity_Adult_Age' in paramnames :
+        ad_age = [samples['Age_Dependent_Decrease_In_Infectivity_Adult_Age'].values[x] for x in index_list]
+    if 'Seasonal_Multiplier' in paramnames :
+        scale_factor = [samples['Seasonal_Multiplier'].values[x] for x in index_list]
     
     if iteration == 0 :
-        plot_infectiousness(settings['exp_dir'] + site + '_reference_infectiousness', raw_data['inf_data'], agebins, inf_bins,
+        plot_infectiousness(settings['plot_dir'] + site + '_reference_infectiousness', raw_data['inf_data'], agebins, inf_bins,
                             seasons, ref=True)
-        plot_inf_vs_gam_density(settings['exp_dir'] + site + '_reference_inf_vs_gam_density', raw_data['gam_inf_data'], agebins, inf_bins, gam_bins,
+        plot_inf_vs_gam_density(settings['plot_dir'] + site + '_reference_inf_vs_gam_density', raw_data['gam_inf_data'], agebins, inf_bins, gam_bins,
                                 seasons, ref=True)
     
     for i, outpath in enumerate(outpaths) :
         data = get_survey_report_data(outpath, ['initial_age', 'infectiousness', 'true_gametocytes'], analyzer['start_day'])
-        plot_infectiousness(settings['curr_iteration_dir'] + site + '_infectiousness_' + str(i), data, agebins, inf_bins,
+        plot_infectiousness(settings['plot_dir'] + site + '_infectiousness_LLrank' + str(i), data, agebins, inf_bins,
                             seasons, scale_factor=scale_factor[i], min_inf=min_inf[i], ad_age=ad_age[i], seas_m=seas_m[i])
-        plot_inf_vs_gam_density(settings['curr_iteration_dir'] + site + '_reference_inf_vs_gam_density_' + str(i), data, agebins, inf_bins, gam_bins,
+        plot_inf_vs_gam_density(settings['plot_dir'] + site + '_reference_inf_vs_gam_density_LLrank' + str(i), data, agebins, inf_bins, gam_bins,
                                 seasons, scale_factor=scale_factor[i], min_inf=min_inf[i], ad_age=ad_age[i], seas_m=seas_m[i])
 
     return
