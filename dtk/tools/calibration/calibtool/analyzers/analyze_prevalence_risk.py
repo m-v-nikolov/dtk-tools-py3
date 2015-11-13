@@ -15,9 +15,7 @@ def analyze_prevalence_risk(settings, analyzer, site, data, samples) :
     LL_fn = getattr(LL_calculators, analyzer['LL_fn'])
     raw_data = get_reference_data(site, 'risk_by_distance')
     distances = raw_data['distances']
-    raw_risk_data = raw_data['risks']
-    raw_prev = raw_data['prevalence']
-    raw_risk_data.append(raw_prev)
+    raw_risk_data = raw_data['risks'] + [raw_data['prevalence']]
     
     field = analyzer['fields_to_get'][0]
     LL = [0]*len(samples.index)
@@ -61,9 +59,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         
     raw_data = get_reference_data(site, 'risk_by_distance')
     distances = raw_data['distances']
-    raw_risk_data = raw_data['risks']
-    raw_prev = raw_data['prevalence']
-    raw_risk_data.append(raw_prev)
+    raw_risk_data = raw_data['risks'] + [raw_data['prevalence']]
 
     for j, LL_index in enumerate(top_LL_index) :
         fname = settings['plot_dir'] + site + '_risk_of_rdtpos_LLrank' + str(j)
@@ -99,9 +95,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
 
     raw_data = get_reference_data(site, 'risk_by_distance')
     distances = raw_data['distances']
-    raw_risk_data = raw_data['risks']
-    raw_prev = raw_data['prevalence']
-    raw_risk_data.append(raw_prev)
+    raw_risk_data = raw_data['risks'] + [raw_data['prevalence']]
 
     LL = samples['LL'].values
     LL_max = max(LL)

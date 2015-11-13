@@ -1,11 +1,12 @@
 from site_setup_functions import *
 
-sim_duration = 2*365
+sim_duration = 50*365
 setup_functions = [ config_setup_fn(duration=sim_duration) ,
                     larval_habitat_fn(species="arabiensis", habitats=[2e7, 8e9]),
                     species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.8),
                     summary_report_fn(start=sim_duration-199,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report'),
                     add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_itn_coverage.csv', start=sim_duration-365),
+                    #add_outbreak_fn(start_day=0, outbreak_fraction=0.1, tsteps_btwn=365),
                     lambda cb : cb.update_params( { "Geography": "Household",
                                                     "Air_Temperature_Filename":   "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
                                                     "Land_Temperature_Filename":  "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
@@ -31,8 +32,10 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Vector_Migration_Modifier_Equation" : "EXPONENTIAL",
                                                     "x_Vector_Migration_Local" : 100,
                                                     "x_Vector_Migration_Regional" : 0.1,
+                                                    "Vector_Migration_Habitat_Modifier": 6.5, 
                                                     "Vector_Migration_Food_Modifier" : 0,
-                                                    "Demographics_Filenames": ["Household/Bbondo_households_demographics_uniform_hab_2missing.json"],
+                                                    "Vector_Migration_Stay_Put_Modifier" : 0.3,
+                                                    "Demographics_Filenames": ["Household/Bbondo_households_demographics_calib151107_v3_v2.json"],
                                                     "x_Temporary_Larval_Habitat" : 0.01,
                                                     "Enable_Spatial_Output" : 1,
                                                     "Spatial_Output_Channels" : ["Daily_EIR", "Population", 'New_Diagnostic_Prevalence']
@@ -62,12 +65,18 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
                                               'burn_in' : 10,
                                               'map_size' : 1.7
                                           },
-    'bbondo_household_prevalence_analyzer' : { 'name' : 'bbondo_household_prevalence_analyzer',
+    'household_prevalence_analyzer' : { 'name' : 'analyze_prevalence_by_node',
                                               'reporter' : 'Spatial Report',
                                               'fields_to_get' : ['New_Diagnostic_Prevalence', 'Population'],
-                                              'burn_in' : 10,
                                               'testdays' : [-1*(365-166)],
-                                              'map_size' : 1.7
+                                              'map_size' : 1.7,
+                                              'LL_fn' : 'euclidean_distance'
+                                            },
+    'prevalence_by_age_analyzer' : { 'name' : 'analyze_prevalence_by_age_noncohort',
+                                             'reporter' : 'Annual Summary Report',
+                                             'fields_to_get' : ['RDT PfPR by Age Bin',
+                                                                'Average Population by Age Bin'],
+                                             'LL_fn' : 'beta_binomial'
                                           },
     'prevalence_risk_analyzer' : { 'name' : 'analyze_prevalence_risk',
                                               'reporter' : 'Spatial Report',

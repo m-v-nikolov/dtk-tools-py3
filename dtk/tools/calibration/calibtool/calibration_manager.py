@@ -7,6 +7,7 @@ import sys
 from utils import clean_directory, check_for_done, update_settings, concat_likelihoods
 from next_parameters import update_params
 import json
+from shutil import copy as shcopy
 
 def run(ofname) :
 
@@ -43,7 +44,13 @@ def run_one_iteration(settings, iteration=0) :
             with open(settings['curr_iteration_dir'] + 'sim.json') as fin :
                 return False
         except IOError :
-            write_submission(settings, iteration)
+            if os.path.isfile(settings['curr_iteration_dir'] + 'temp_dtk.py') :
+                shcopy(settings['curr_iteration_dir'] + 'temp_dtk.py', '.')
+            else :
+                print 'building dtk script'
+                write_submission(settings, iteration)
+                shcopy('temp_dtk.py', settings['curr_iteration_dir'])
+            print 'submitting dtk script'
             os.system('dtk run temp_dtk ' + settings['run_location'])
             sim_json_dir = 'simulations\\'
             os.system('dir ' + sim_json_dir + ' /o:d > simIDs')

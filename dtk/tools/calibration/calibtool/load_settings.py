@@ -57,6 +57,8 @@ def load_settings(ofname) :
             simroot = filter(lambda x : 'sim_root' in x, sec.split('\n'))[0]
             settings['simulation_dir'] = simroot.split()[-1]
             settings[loc + '_sim_root'] = simroot.split()[-1]
+            inputroot = filter(lambda x : 'input_root' in x, sec.split('\n'))[0]
+            settings[loc + '_input_root'] = inputroot.split()[-1]
 
         with open(settings['exp_dir'] + 'settings.json', 'w') as fout :
             json.dump(settings, fout, sort_keys=True, indent=4, separators=(',', ': '))

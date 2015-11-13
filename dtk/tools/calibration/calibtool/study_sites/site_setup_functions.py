@@ -34,13 +34,16 @@ def add_immunity_fn(tags):
 def site_input_eir_fn(site,birth_cohort=True, set_site_geography=False):
     return lambda cb: configure_site_EIR(cb,site=site,birth_cohort=birth_cohort, set_site_geography=False)
 
+# importation pressure
+def add_outbreak_fn(start_day=0, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365) :
+    return lambda cb: recurring_outbreak(cb, outbreak_fraction=outbreak_fraction, repetitions=repetitions, tsteps_btwn=tsteps_btwn, start_day=start_day)
+
 # health-seeking
 def add_treatment_fn(start=0,drug=['Artemether', 'Lumefantrine'],targets=[{'trigger':'NewClinicalCase','coverage':0.8,'seek':0.6,'rate':0.2}]):
     def fn(cb,start=start,drug=drug,targets=targets):
         add_health_seeking(cb,start_day=start,drug=drug,targets=targets)
         cb.update_params({'PKPD_Model': 'CONCENTRATION_VERSUS_TIME'})
     return fn
-
 
 # ITNs from nodeid-coverage specified in csv
 def add_itn_by_node_id_fn(reffname, start=0) :

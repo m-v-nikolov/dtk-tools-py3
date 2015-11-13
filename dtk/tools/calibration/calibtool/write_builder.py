@@ -72,7 +72,7 @@ run_sim_args =  {   'config_builder': cb,
 def write_dtk_cfg(settings) :
 
     with open(settings['dtk_setup_config']) as fin :
-        cfg = [x[:-1] for x in fin.readlines()]
+        cfg = fin.read().split('\n')
         for i, line in enumerate(cfg) :
             if 'priority' in line :
                 p = line.split()
