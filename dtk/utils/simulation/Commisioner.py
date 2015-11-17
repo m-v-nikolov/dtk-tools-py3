@@ -18,8 +18,8 @@ class SimulationCommissioner(threading.Thread):
         self.sim_id = os.path.basename(self.sim_dir)
 
     def run(self):
-        with open("StdOut.txt","w") as out:
-            with open("StdErr.txt","w") as err:
+        with open(os.path.join(self.sim_dir,"StdOut.txt"),"w") as out:
+            with open(os.path.join(self.sim_dir,"StdErr.txt"),"w") as err:
                 p = subprocess.Popen( self.eradication_command.Commandline.split(), 
                                       cwd=self.sim_dir, shell=False, stdout=out, stderr=err )
                 self.job_id = p.pid
