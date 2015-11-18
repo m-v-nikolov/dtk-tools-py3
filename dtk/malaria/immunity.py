@@ -76,9 +76,6 @@ def add_immune_init(cb, site, x_temp_habitats, directory=None):
 
     Simply create the tags and call the :any:`add_immune_overlays` function.
 
-    .. todo::
-        This function needs more precise documentation
-
     :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the configuration
     :param site: If the site is specified, the files will be expected to be found in the immune_init/site subdirectory.
     :param x_temp_habitats: List of temp habitats
