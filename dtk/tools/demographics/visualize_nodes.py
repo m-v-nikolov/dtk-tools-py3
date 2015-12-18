@@ -11,8 +11,9 @@ import psycopg2
 
 def get_country_shape(country):
     try:
-        cnxn = psycopg2.connect(host='ivlabsdssql01.na.corp.intven.com', port=5432, dbname='idm_db')
-    except pycopg2.Error:
+        server_name = 'ivlabsdssql01.na.corp.intven.com'
+        cnxn = psycopg2.connect(host=server_name, port=5432, dbname='idm_db')
+    except psycopg2.Error:
         raise Exception("Failed connection to %s." % server_name)
     cursor = cnxn.cursor()
     SQL = ("SELECT ST_AsGeoJSON(d.geom) as geom "

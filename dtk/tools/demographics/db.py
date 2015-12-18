@@ -7,7 +7,8 @@ class reg(object):
 
 def idm_DB_connection():
     try:
-        cnxn = psycopg2.connect(host='ivlabsdssql01.na.corp.intven.com', port=5432, dbname='idm_db')
+        server_name = 'ivlabsdssql01.na.corp.intven.com'
+        cnxn = psycopg2.connect(host=server_name, port=5432, dbname='idm_db')
     except pycopg2.Error:
         raise Exception("Failed connection to %s." % server_name)
     return cnxn
