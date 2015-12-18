@@ -4,7 +4,7 @@ def example_selection(start_date='1/1/2000', freq='W'):
     def f(timeseries):
         # N.B. once-per-period snapshots, not period-sliding-window averages...
         freq_days = {'W': 7, 'M': 30, 'D': 1, 'Y': 365}
-        freq_sliced = timeseries[::freq_days[freq]]
+        freq_sliced = timeseries[::freq_days[freq.upper()]]
         dates = pd.date_range(start_date, periods=len(freq_sliced), freq=freq)
         return pd.Series(freq_sliced, index=dates)
     return f

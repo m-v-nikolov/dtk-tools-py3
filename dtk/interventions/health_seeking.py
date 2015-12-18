@@ -30,8 +30,10 @@ def add_health_seeking(config_builder,
 
         if t['rate']>0:
             actual_config={
-                    "class": "SimpleHealthSeekingBehavior",
-                    "Tendency": t['rate'],
+                    "class": "DelayedIntervention",
+                    "Coverage": 1.0,
+                    "Delay_Distribution": "EXPONENTIAL_DURATION",
+                    "Delay_Period": 1.0/t['rate'],
                     "Actual_IndividualIntervention_Config": drug_config
                  }
         else:
