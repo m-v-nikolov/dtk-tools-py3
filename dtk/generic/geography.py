@@ -98,6 +98,42 @@ geographies = {
                        "Enable_Demographics_Other": 0 # no 'AbovePoverty' etc. in these files
                      },
 
+    "Sinamalima": {"Geography": "Zambia/Sinamalima_1_node",
+                   "Demographics_Filename": "sinamalima_30arcsec_demographics_alt_600.json",
+                   "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                   "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                   "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin", 
+                   "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                   "Enable_Climate_Stochasticity": 0 # daily in raw data series
+        },
+
+    "Munyumbwe": {"Geography": "Zambia/Munyumbwe_1_node",
+                  "Demographics_Filename": "munyumbwe_30arcsec_demographics_alt_800.json",
+                  "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                  "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                  "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin", 
+                  "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                  "Enable_Climate_Stochasticity": 0 # daily in raw data series
+        },
+
+    "Lukonde": {"Geography": "Zambia/Lukonde_1_node",
+                "Demographics_Filename": "lukonde_30arcsec_demographics_alt_1000.json",
+                "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+                "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin", 
+                "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                "Enable_Climate_Stochasticity": 0 # daily in raw data series
+        },
+
+    "Gwembe": {"Geography": "Zambia/Gwembe_1_node",
+               "Demographics_Filename": "gwembe_30arcsec_demographics_alt_1300.json",
+               "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+               "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
+               "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin", 
+               "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+               "Enable_Climate_Stochasticity": 0 # daily in raw data series
+        },
+
     "Sinazongwe" :   { "Geography": "Zambia/Sinamalima_single_node",
                        "Air_Temperature_Filename":   "Zambia_Sinamalima_2_5arcmin_air_temperature_daily.bin",
                        "Demographics_Filename":      "Zambia_Sinamalima_single_node_demographics.compiled.json", 

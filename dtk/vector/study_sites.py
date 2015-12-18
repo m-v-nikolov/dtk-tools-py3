@@ -130,6 +130,21 @@ def configure_gwembesinazongwepopcluster(cb):
     set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
 
+# Updated single-node sites in Sinazongwe/Gwembe
+# Just copy larval parameters of previous Sinamalima single-node
+# But with altitude-specific climate files
+def configure_sinamalima(cb):
+    configure_sinazongwe(cb)
+
+def configure_munyumbwe(cb):
+    configure_sinazongwe(cb)
+
+def configure_lukonde(cb):
+    configure_sinazongwe(cb)
+
+def configure_gwembe(cb):
+    configure_sinazongwe(cb)
+
 # Mocuba, Zambezia, Mozambique: EIR = 70
 def configure_mocuba(cb):
     set_larval_habitat(cb, {"arabiensis"  : [1e8, 5e6],

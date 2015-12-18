@@ -68,3 +68,6 @@ def add_survey_report(cb, survey_days, reporting_interval=21,
 
 def add_patient_report(cb):
     cb.add_reports(BaseReport(type="MalariaPatientJSONReport"))
+
+def add_habitat_report(cb):
+    cb.add_reports(BaseReport(type="VectorHabitatReport"))

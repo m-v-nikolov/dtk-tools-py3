@@ -13,7 +13,8 @@ def format(reports):
 
 class BaseReport(object):
 
-    dlls = {'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll'}
+    dlls = {'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll',
+            'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll'}
 
     dll_root = DTKSetupParser().get('BINARIES', 'dll_path')
 

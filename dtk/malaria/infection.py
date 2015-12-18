@@ -28,4 +28,4 @@ params = {
     "Number_Of_Asexual_Cycles_Without_Gametocytes": 1, 
     "Base_Gametocyte_Fraction_Male": 0.2, 
     "Enable_Sexual_Combination": 0
-    }
+}
