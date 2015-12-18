@@ -69,4 +69,4 @@ def plot_by_channel(plot_name, channels, plot_fn):
         ax.set_title(channel)
         plot_fn(channel, ax)
 
-    fig.set_tight_layout(True)
+    #fig.set_tight_layout(True)
