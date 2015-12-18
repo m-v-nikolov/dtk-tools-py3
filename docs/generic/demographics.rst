@@ -7,3 +7,5 @@ It also initialized the ``distribution_types`` dictionary containing the differe
 .. automodule:: dtk.generic.demographics
     :members:
     :undoc-members:
+
+

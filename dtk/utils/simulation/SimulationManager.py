@@ -73,7 +73,7 @@ class LocalSimulationManager():
         self.setup     = DTKSetupParser()
         self.emodules  = []
         self.analyzers = []
-        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('HPC','max_threads'))) # TODO: move out of HPC if this will be used to limit local multi-threaded commissioning/parsing?
+        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('LOCAL','max_threads')))
 
     def RunSimulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), show_progress=False):
 
@@ -289,7 +289,8 @@ class LocalSimulationManager():
             self.cancelAllSimulations(states)
             return
         for id in ids:
-            id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
+            if type(id) is str :
+                id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
             state = states.get(id)
             if not state:
                 logger.warning('No job in current experiment with ID = %s' % id)

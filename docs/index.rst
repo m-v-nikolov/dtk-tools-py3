@@ -9,10 +9,10 @@ Contents:
    :maxdepth: 2
 
    intro
-   generic
-   interventions
-   malaria
-   tools
+   generic/index
+   interventions/index
+   malaria/index
+   tools/index
    utils
    vector
 

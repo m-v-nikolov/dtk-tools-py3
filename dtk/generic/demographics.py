@@ -147,7 +147,7 @@ def set_demog_distributions(filename, distributions):
 def set_static_demographics(cb, use_existing=False):
     """
     Create a static demographics based on the demographics file specified in the config file
-    of the :any:`DTKConfigBuilder` object passed to the function.
+    of the :py:class:`DTKConfigBuilder` object passed to the function.
 
     This function takes the current demographics file and adjust the birth rate/death rate
     to get a static population (the deaths are always compensated by new births).
@@ -218,7 +218,7 @@ def set_growing_demographics(cb,use_existing=False):
         Make sure that the population is 1000 individuals. For now rely on the fact that the base
         demographics file will be 1000 Initial Population.
 
-    :param cb: The config builder object
+    :param cb: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` object
     :param use_existing: If ``True`` will only take the demographics file name and add the .growing to it. If ``False`` will create a growing demographics file based on the specified demographics file.
     :return: Nothing
     """
