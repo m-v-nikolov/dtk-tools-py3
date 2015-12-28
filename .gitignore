@@ -24,3 +24,4 @@ deprecate/
 
 # PyCharm
 *.idea*
+.ipynb_checkpoints
