@@ -17,4 +17,4 @@ Deploy the generated html to the `gh-pages` branch:
 ./deploy.sh
 ```
 
-The resulting documentation appears at http://edwenger.github.io/dtk-tools
+The resulting documentation appears at http://InstituteforDiseaseModeling.github.io/dtk-tools
