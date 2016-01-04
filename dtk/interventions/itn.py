@@ -21,6 +21,11 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     :param nodeIDs: If empty, all nodes will get the intervention. If set, only the nodeIDs specified will receive the intervention.
     :return: Nothing
     """
+    receiving_itn_event = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": "Received_ITN"
+    }
+
     if waning:
         itn_bednet.update({ "Durability_Time_Profile":       waning['profile'], 
                             "Primary_Decay_Time_Constant":   waning['kill'] * 365,
@@ -36,14 +41,20 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     if cost:
         itn_bednet['Cost_To_Consumer'] = cost
 
+    itn_bednet_w_event = {
+        "Intervention_List" : [itn_bednet, receiving_itn_event] ,
+        "class" : "MultiInterventionDistributor"
+        }   
+
     for coverage_by_age in coverage_by_ages:
 
         ITN_event = { "class" : "CampaignEvent",
                       "Start_Day": start,
                       "Event_Coordinator_Config": {
                           "class": "StandardInterventionDistributionEventCoordinator",
+                          "Target_Residents_Only" : 1,
                           "Demographic_Coverage": coverage_by_age["coverage"],
-                          "Intervention_Config": itn_bednet
+                          "Intervention_Config": itn_bednet_w_event #itn_bednet
                       }
                     }
 
@@ -63,7 +74,7 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
                 "class": "BirthTriggeredIV",
                 "Duration": -1, # forever.  could expire and redistribute every year with different coverage values
                 "Demographic_Coverage": coverage_by_age["coverage"],
-                "Actual_IndividualIntervention_Config": itn_bednet
+                "Actual_IndividualIntervention_Config": itn_bednet_w_event #itn_bednet
             }
             ITN_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention
             ITN_event["Event_Coordinator_Config"].pop("Demographic_Coverage")

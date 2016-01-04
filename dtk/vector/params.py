@@ -38,6 +38,11 @@ cohort_params = {
     "Vector_Migration_Filename_Local":   "",
     "Vector_Migration_Filename_Regional":   "",
 
+    # placeholder param values
+    "Vector_Migration_Habitat_Modifier": 6.5, 
+    "Vector_Migration_Food_Modifier" : 0,
+    "Vector_Migration_Stay_Put_Modifier" : 0.3,
+
     "Age_Dependent_Biting_Risk_Type" : "SURFACE_AREA_DEPENDENT",
     "Newborn_Biting_Risk_Multiplier" : 0.2, # for LINEAR option (also picked up by InputEIR)
     "Human_Feeding_Mortality": 0.1, 

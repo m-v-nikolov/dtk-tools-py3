@@ -28,10 +28,10 @@ def analyze_prevalence_risk(settings, analyzer, site, data, samples) :
         prevdata = []
         popdata = []
         for y in range(settings['sim_runs_per_param_set']) :
-            prev = [data[y][field][rownum][0][x] for x in range(len(nodes))] # prev for each node for one run
-            pop = [data[y]['Population'][rownum][0][x] for x in range(len(nodes))] # pop for each node for one run
+            prev = [data[y][field][rownum][0][x] for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']] # prev for each node for one run
+            pop = [data[y]['Population'][rownum][0][x] for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']] # pop for each node for one run
 
-            df = pd.DataFrame({'ids' : nodes, 'pop' : pop, 'pos' : [prev[x]*pop[x] for x in range(len(nodes))]})
+            df = pd.DataFrame({'ids' : filter(lambda x : x not in analyzer['worknode'], nodes), 'pop' : pop, 'pos' : [prev[x]*pop[x] for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']]})
             sim_data_run = get_relative_risk_by_distance(df, dist_mat, distances)
             sim_data_run.append(sum(df['pos'].values)/sum(df['pop'].values))
 
@@ -43,8 +43,8 @@ def analyze_prevalence_risk(settings, analyzer, site, data, samples) :
         mean_sim_data = [np.mean([sim_data[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(raw_risk_data))]
         LL[rownum] += LL_fn(raw_risk_data, mean_sim_data)
         record_data_by_sample['risk_by_distance'].append(mean_sim_data)
-        record_data_by_sample['Population'].append([np.mean([popdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes))])
-        record_data_by_sample['Prevalence'].append([np.mean([prevdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes))])
+        record_data_by_sample['Population'].append([np.mean([popdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']])
+        record_data_by_sample['Prevalence'].append([np.mean([prevdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']])
 
     with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
         json.dump(record_data_by_sample, fout)
@@ -80,7 +80,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
 
         if j == 0 :
             outpath = samples[site + ' outpath 0'].values[LL_index]
-            demodf = get_node_locations(settings, outpath)
+            demodf = get_node_locations(settings, outpath, analyzer['worknode'])
 
         mapdf = pd.DataFrame({'Population' : data['Population'][rownum],
                               'Prevalence' : data['Prevalence'][rownum],
@@ -125,8 +125,8 @@ def plot_risks(ax, risk_data, distances, style='-o', color='#CB5FA4', alpha=0.5,
     ax.plot(range(len(risk_data)), risk_data, style, color=color, alpha=alpha, linewidth=linewidth) 
 
     ax.xaxis.set_major_locator(FixedLocator(range(len(risk_data))))
-    ax.set_xticklabels(['all', 'hh'] + [str(x) for x in distances[1:]])
-    ax.set_ylim(0,1)
+    ax.set_xticklabels(['hh'] + [str(x) for x in distances[1:]] + ['all'])
+    ax.set_ylim(0,0.3)
     ax.set_ylabel('prob rdt pos')
     ax.set_xlim(-0.1, len(risk_data)-1+0.1)
 
@@ -142,7 +142,7 @@ def plot_map(df, map_size, sizefield='', colorfield='') :
         else :
             smin = 0
             smax = max(df[sizefield].values)
-            df = df[df[sizefield] > 0]
+            #df = df[df[sizefield] > 0]
             s = [(1.*x-smin)/(smax-smin) for x in df[sizefield].values]
     else :
         s = [1]*len(df.index)
@@ -160,9 +160,9 @@ def plot_map(df, map_size, sizefield='', colorfield='') :
     ax = fig.add_subplot(111)
     xcoords, ycoords = latlon_to_anon(df['Latitude'].values, 
                                       df['Longitude'].values)
-
+    
     ax.scatter(xcoords, ycoords,
-               [math.sqrt(x)*scale for x in s], 
+               [math.sqrt(x)*scale+5 for x in s], 
                facecolor=[palette[x] for x in c], edgecolor='#6D6E71',
                linewidth=0.5, alpha=0.5)
     ax.set_xlim(-1*map_size, map_size)
@@ -182,12 +182,13 @@ def get_demographics(settings, outpath) :
     with open(demofile) as fin :
         return json.loads(fin.read())
 
-def get_node_locations(settings, outpath) :
+def get_node_locations(settings, outpath, worknode) :
 
     t = get_demographics(settings, outpath)['Nodes']
     demo = [x['NodeAttributes'] for x in t]
     for i in range(len(demo)) :
         demo[i]['NodeID'] = t[i]['NodeID']
+    demo = filter(lambda x : x['NodeID'] not in worknode, demo)
     demo = pd.DataFrame(demo)
     return demo
 

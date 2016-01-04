@@ -109,7 +109,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
 def plot(ax, agebins, data, style='-o', color='#CB5FA4', alpha=0.5, linewidth=0.5) :
 
     ax.plot(agebins, data, style, color=color, alpha=alpha, linewidth=linewidth) 
-    ax.set_ylim(0,1)
+    ax.set_ylim(0,0.3)
     ax.set_ylabel('Prevalence')
     ax.set_xlabel('age')
     return

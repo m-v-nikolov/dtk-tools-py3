@@ -42,6 +42,8 @@ def update_params(settings, iteration, samples, updater='dumb') :
                 newsamples, keep_going = update_IMIS(settings, iteration, samples)
             elif updater == 'dumb' :
                 newsamples, keep_going = update_dumb(settings, samples)
+            elif updater == 'resample' :
+                newsamples, keep_going = update_resample_from_prior(settings)
             else :
                 print 'updater', updater, 'does not exist.'
                 keep_going = False
@@ -146,6 +148,10 @@ def box_prior_generator(p, paramnames) :
             return [uniform(self.param_limits.ix[k,'min'], self.param_limits.ix[k,'max']) for k in self.param_limits.index]
 
     return prior_fn(p, paramnames)
+
+def update_resample_from_prior(settings) :
+
+    return load_initial_samples_LHC(settings['initial_sampling_range_file'], settings['num_initial_samples'], settings['curr_iteration_dir']), True
 
 def update_dumb(settings, samples) :
 

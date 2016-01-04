@@ -21,7 +21,7 @@ def run(ofname) :
         settings = update_settings(settings, iteration)
 
         print 'generating params for iteration', iteration
-        keep_going = update_params(settings, iteration, samples, updater='IMIS')
+        keep_going = update_params(settings, iteration, samples, updater=settings['updater'])
         if not keep_going :
             break
 
