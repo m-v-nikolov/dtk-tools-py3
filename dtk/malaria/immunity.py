@@ -51,7 +51,10 @@ def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_
     demog_filename = demogfiles[0]
 
     subdirs, demog_filename = os.path.split(demog_filename)
-    prefix = demog_filename.split('.')[0]
+    if '2.5' not in demog_filename :
+        prefix = demog_filename.split('.')[0]
+    else :
+        prefix = '.'.join(demog_filename.split('.')[:2])
 
     # e.g. DataFiles/Zambia/Sinamalima_single_node/immune_init/SinazongweConstant/..._immune_init_x_...json
     if site:

@@ -14,22 +14,25 @@ def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0):
     if variation > 1 or variation < 0:
         raise Exception("Variation is a fraction of the overall scale and cannot be set to less than zero or more than 1.")
 
+    rando = 1
     for (nodeIDs, scale) in scales:
 
+        if variation > 0 :
+            rando = random.uniform(1-variation,1+variation)
         # A permanent node-specific scaling of larval habitat by habitat type
         habitat_reduction_event = { "class" : "CampaignEvent",
                                     "Start_Day": 0,
                                     "Event_Coordinator_Config": {
                                         "class": "NodeEventCoordinator",
                                         "Intervention_Config": {
-                                            "Habitat_Scale": scale*random.uniform(1-variation,1+variation),
+                                            "Habitat_Scale": float(scale)*rando,
                                             "Habitat_Target": target, 
                                             "class": "ScaleLarvalHabitat"
                                          }
                                         },
                                     "Nodeset_Config": {
                                         "class": "NodeSetNodeList", 
-                                        "Node_List": nodeIDs
+                                        "Node_List": [int(x) for x in nodeIDs]
                                         }
                                     }
 

@@ -28,6 +28,7 @@ import numpy as np
 from math import log10
 import json
 from utils import write_to_file
+import pandas as pd
 
 def load_samples(settings, iteration) :
 
@@ -35,11 +36,9 @@ def load_samples(settings, iteration) :
     fname = parameter_dir + 'params'
 
     try :
-        with open(fname + '.json') as fin :
-            samples = json.loads(fin.read())
+        samples = pd.read_csv(fname + '.csv')
 
     except IOError :
-        samples = {}
         if iteration == 0 :
             num_initial_samples = settings['num_initial_samples']
             initial_sampling_type = settings['initial_sampling_type']
@@ -53,24 +52,25 @@ def load_samples(settings, iteration) :
 
 def load_initial_samples_LHC(initial_sampling_range_file, num_initial_samples, parameter_dir) :
 
-    with open(initial_sampling_range_file) as fin :
-        samplerange = json.loads(fin.read())
+    samplerange = pd.read_csv(initial_sampling_range_file)
+    samplerange.to_csv(parameter_dir + 'initial_sampling_range.csv')
 
     samples = {}
-    for param in samplerange.keys() :
-        if 'log' in samplerange[param]['type'] :
-            samples[param] = np.logspace(log10(samplerange[param]['min']),
-                                         log10(samplerange[param]['max']),
+    for i in samplerange.index :
+        param = samplerange.ix[i, 'parameter']
+        if 'log' in samplerange.ix[i, 'type'] :
+            samples[param] = np.logspace(log10(samplerange.ix[i, 'min']),
+                                         log10(samplerange.ix[i, 'max']),
                                          num_initial_samples)
         else :
-            samples[param] = np.linspace(samplerange[param]['min'],
-                                         samplerange[param]['max'],
+            samples[param] = np.linspace(samplerange.ix[i, 'min'],
+                                         samplerange.ix[i, 'max'],
                                          num_initial_samples)
 
         np.random.shuffle(samples[param])
-        if 'int' in samplerange[param]['type'] :
+        if 'int' in samplerange.ix[i, 'type'] :
             samples[param] = [int(x) for x in samples[param].tolist()]
         else :
             samples[param] = samples[param].tolist()
     
-    return samples
+    return pd.DataFrame(samples)

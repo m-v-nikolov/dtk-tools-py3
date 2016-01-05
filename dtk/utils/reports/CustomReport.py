@@ -14,7 +14,10 @@ def format(reports):
 class BaseReport(object):
 
     dlls = {'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll',
-            'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll'}
+            'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll',
+            'ReportVectorStats': 'libvectorstats.dll',
+            'ReportVectorMigration': 'libvectormigration.dll',
+            'ReportHumanMigrationTracking' : 'libhumanmigrationtracking.dll'}
 
     dll_root = DTKSetupParser().get('BINARIES', 'dll_path')
 
@@ -36,7 +39,7 @@ class BaseEventReport(BaseReport):
     def __init__(self,
                  event_trigger_list,
                  start_day = 0,
-                 duration_days = 10000,
+                 duration_days = 1000000,
                  report_description = "",
                  nodeset_config = {"class":"NodeSetAll"},
                  type = ""):
@@ -62,7 +65,7 @@ class BaseEventReportIntervalOutput(BaseEventReport):
     def __init__(self,
                  event_trigger_list,
                  start_day = 0,
-                 duration_days = 10000,
+                 duration_days = 1000000,
                  report_description = "",
                  nodeset_config = {"class":"NodeSetAll"},
                  max_number_reports = 15,

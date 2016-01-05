@@ -15,6 +15,7 @@ params = {
     "Report_Event_Recorder": 0,
 
     "Listed_Events": [],
+    "Minimum_Adult_Age_Years" : 15,
 
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###

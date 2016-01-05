@@ -142,18 +142,26 @@ geographies = {
                        "Relative_Humidity_Filename": "Zambia_Sinamalima_2_5arcmin_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                      },
+    "Sinamalima_1_node" :   { "Geography": "Zambia/Sinamalima_1_node",
+                       "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Demographics_Filename":      "sinamalima_30arcsec_demographics_alt_600.json", 
+                       "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin", 
+                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                       "Enable_Climate_Stochasticity": 0 # daily in raw data series
+                     },
 
     "GwembeSinazongwePopCluster" : {
-                       "Geography": "Zambia/Gwembe_Sinazongwe_pop_cluster",
+                       "Geography": "Zambia/GwembeSinazongwePopCluster",
                        #"Node_Grid_Size": 0.00833,    ## 30arcsec/3600
-                       "Air_Temperature_Filename":   "Zambia_Gwembe_Sinazongwe_30arcsec_air_temperature_daily.bin",
-                       "Demographics_Filename":      "Zambia_Gwembe_Sinazongwe_pop_cluster_demographics.compiled.json", 
-                       "Land_Temperature_Filename":  "Zambia_Gwembe_Sinazongwe_30arcsec_land_temperature_daily.bin",
-                       "Rainfall_Filename":          "Zambia_Gwembe_Sinazongwe_30arcsec_rainfall_daily.bin", 
-                       "Relative_Humidity_Filename": "Zambia_Gwembe_Sinazongwe_30arcsec_relative_humidity_daily.bin",
+                       "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+                       #"Demographics_Filename":      "Zambia_30arcsec_demographics.json", 
+                       "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin", 
+                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0, # daily in raw data series
                        "Enable_Local_Migration": 1, 
-                       "Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_pop_cluster_local_migration.bin"
+                       "Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_121_nodes_local_migration.bin"
                      },
 
     "Dielmo" :       { "Geography": "Senegal_Gambia/Dielmo_Ndiop",
@@ -262,5 +270,41 @@ geographies = {
                        'Base_Population_Scale_Factor' : 10,
                        'Enable_Vital_Dynamics' : 0, # No births/deaths.  Just following a birth cohort.
                        "Climate_Model" : "CLIMATE_CONSTANT" # no mosquitoes
-                     }
+                     },
+    "Bbondo_households" :    { "Geography": "Household",
+                        "Demographics_Filename":      "Bbondo_households_demographics.json", 
+                        #"Air_Temperature_Filename":   "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
+                        #"Land_Temperature_Filename":  "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
+                        #"Rainfall_Filename":          "Household/Zambia_Zambia_30arcsec_rainfall_daily.bin", 
+                        #"Relative_Humidity_Filename": "Household/Zambia_Zambia_30arcsec_relative_humidity_daily.bin",
+                        "Air_Temperature_Filename":   "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
+                        "Land_Temperature_Filename":  "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
+                        "Rainfall_Filename":          "Zambia_Gwembe_30arcsec_rainfall_daily.bin", 
+                        "Relative_Humidity_Filename": "Zambia_Gwembe_30arcsec_relative_humidity_daily.bin",
+                        "Local_Migration_Filename":   "Bbondo_households_Local_Migration.bin",
+                        "Regional_Migration_Filename":"Bbondo_households_Regional_Migration.bin",
+                        "Sea_Migration_Filename":     "Bbondo_households_Work_Migration.bin",
+                        "Vector_Migration_Filename_Local":   "Bbondo_households_Local_Vector_Migration.bin",
+                        "Vector_Migration_Filename_Regional":   "Bbondo_households_Regional_Vector_Migration.bin",
+                        "Enable_Climate_Stochasticity": 0, # daily in raw data series
+                        "Climate_Model": "CLIMATE_BY_DATA",
+                        'Enable_Nondisease_Mortality' : 1,
+                        "Minimum_Adult_Age_Years"                  : 15,
+                        "Vector_Sampling_Type": "TRACK_ALL_VECTORS",
+                        "Enable_Vector_Aging": 1, 
+                        "Enable_Vector_Mortality": 1,
+                        "Birth_Rate_Dependence" : "FIXED_BIRTH_RATE",
+                        "Enable_Demographics_Other": 0,
+                        "Enable_Demographics_Initial": 1,
+                        "Enable_Vital_Dynamics" : 1,
+                        "Enable_Vector_Migration": 1, 
+                        "Enable_Vector_Migration_Local": 1, 
+                        "Enable_Vector_Migration_Regional" : 1,
+                        "Vector_Migration_Modifier_Equation" : "EXPONENTIAL",
+                        "x_Vector_Migration_Local" : 100,
+                        "x_Vector_Migration_Regional" : 0.1,
+                        "Vector_Migration_Food_Modifier" : 0,
+                        "Node_Grid_Size": 0.042
+
+                      }
 }

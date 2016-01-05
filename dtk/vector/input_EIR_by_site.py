@@ -25,7 +25,7 @@ def mAb_vs_EIR(EIR):
     return min(mAb, 1.0)
 
 # Configuration of study-site input EIR
-def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True):
+def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True, set_site_geography=True):
 
     if site not in study_site_monthly_EIRs.keys():
         raise Exception("Don't know how to configure site: %s " % site)
@@ -40,7 +40,7 @@ def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True)
 
     if birth_cohort:
         set_geography(cb, "Birth_Cohort")
-    else:
+    elif set_site_geography :
         set_geography(cb,site)
     cb.update_params({ 'Config_Name': site, 
                        'Vector_Species_Names': [], # no mosquitoes

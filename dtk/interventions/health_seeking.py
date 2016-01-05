@@ -4,7 +4,8 @@ def add_health_seeking(config_builder,
                        targets = [ { 'trigger': 'NewClinicalCase', 'coverage': 0.8, 'agemin':15, 'agemax':70, 'seek': 0.4, 'rate': 0.3 },
                                    { 'trigger': 'NewSevereCase',   'coverage': 0.8, 'seek': 0.6, 'rate': 0.5 } ],
                        drug    = ['Artemether', 'Lumefantrine'],
-                       dosing  = 'FullTreatmentNewDetectionTech'):
+                       dosing  = 'FullTreatmentNewDetectionTech',
+                       nodes={"class": "NodeSetAll"}):
     """
     Add a `SimpleHealthSeekingBehavior <http://idmod.org/idmdoc/#EMOD/ParameterReference/SimpleHealthSeekingBehav.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____53>`_ .
 
@@ -16,7 +17,10 @@ def add_health_seeking(config_builder,
     :return:
     """
 
-
+    receiving_drugs_event = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": "Received_Treatment"
+        }
 
     # if drug variable is a list, let's use MultiInterventionDistributor
     if isinstance(drug, basestring):
@@ -33,6 +37,7 @@ def add_health_seeking(config_builder,
                             "Drug_Type": d,
                             "Dosing_Type": dosing,
                             "class": "AntimalarialDrug" })
+        drugs.append(receiving_drugs_event)
         drug_config = { "class": "MultiInterventionDistributor",
                         "Intervention_List": drugs }
 
@@ -69,6 +74,6 @@ def add_health_seeking(config_builder,
         health_seeking_event = { "class": "CampaignEvent",
                                  "Start_Day": start_day,
                                  "Event_Coordinator_Config": health_seeking_config, 
-                                 "Nodeset_Config": { "class": "NodeSetAll" } }
+                                 "Nodeset_Config": nodes }
 
         config_builder.add_event(health_seeking_event)

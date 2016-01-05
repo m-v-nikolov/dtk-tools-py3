@@ -19,6 +19,8 @@ params = {
     "Min_Days_Between_Clinical_Incidents": 14,
 
     "Fever_Detection_Threshold": 1, 
+    "PCR_Sensitivity": 20, # 0.05/uL
+    "RDT_Sensitivity": 0.01, # 100/uL
     "New_Diagnostic_Sensitivity": 0.025, # 40/uL
     "Parasite_Smear_Sensitivity": 0.1    # 10/uL
 }

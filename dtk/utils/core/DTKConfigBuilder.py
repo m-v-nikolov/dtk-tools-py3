@@ -126,6 +126,7 @@ class DTKConfigBuilder:
         return files
 
     def file_writer(self,write_fn):
+
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
         self.set_param('Campaign_Filename','campaign.json')

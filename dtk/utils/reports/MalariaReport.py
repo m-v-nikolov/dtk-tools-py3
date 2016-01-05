@@ -8,7 +8,7 @@ class MalariaReport(BaseEventReportIntervalOutput):
     def __init__(self,
                  event_trigger_list,
                  start_day = 0,
-                 duration_days = 10000,
+                 duration_days = 1000000,
                  report_description = "",
                  nodeset_config = {"class":"NodeSetAll"},
                  age_bins =  [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 1000 ],
@@ -30,14 +30,16 @@ default_age_bins=[ 1.0/12, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 
 def add_summary_report(cb, start=0, interval=365, nreports=10000, 
                        description = 'AnnualAverage', 
-                       age_bins = default_age_bins):
+                       age_bins = default_age_bins,
+                       nodes={"class": "NodeSetAll"}):
 
     summary_report = MalariaReport(event_trigger_list=['EveryUpdate'],
                                    start_day = start,
                                    report_description = description,
                                    age_bins =  age_bins,
                                    max_number_reports = nreports,
-                                   reporting_interval = interval)
+                                   reporting_interval = interval,
+                                   nodeset_config=nodes)
     summary_report.type="MalariaSummaryReport"
     cb.add_reports(summary_report)
 
@@ -55,7 +57,8 @@ def add_immunity_report(cb, start=0, interval=365, nreports=10000,
     cb.add_reports(immunity_report)
 
 def add_survey_report(cb, survey_days, reporting_interval=21, 
-                      trigger=["EveryUpdate"], nreports=1):
+                      trigger=["EveryUpdate"], nreports=1,
+                      nodes={"class": "NodeSetAll"}):
 
     survey_reports = [BaseEventReportIntervalOutput(
                           event_trigger_list=trigger,
@@ -63,7 +66,8 @@ def add_survey_report(cb, survey_days, reporting_interval=21,
                           max_number_reports = nreports,
                           reporting_interval = reporting_interval,
                           report_description = 'Day_' + str(survey_day),
-                          type = "MalariaSurveyJSONAnalyzer" ) for survey_day in survey_days]
+                          type = "MalariaSurveyJSONAnalyzer", 
+                          nodeset_config=nodes ) for survey_day in survey_days]
     cb.add_reports(*survey_reports)
 
 def add_patient_report(cb):
