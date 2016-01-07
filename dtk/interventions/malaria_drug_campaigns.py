@@ -91,13 +91,16 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                                                  "class" : "MultiInterventionDistributor"
                                                                })
 
+        # distributes drugs to individuals broadcasting "Give_Drugs"
+        # who is broadcasting is determined by other events
+        # if campaign drugs change (less effective, different cocktail), then this event should have an expiration date.
         fmda_distribute_drugs = {   "Event_Name": "Distribute fMDA", 
                                     "class": "CampaignEvent",
                                     "Start_Day": start_days[0],
                                     "Event_Coordinator_Config": 
                                     {
                                         "class": "StandardInterventionDistributionEventCoordinator",
-                                        "Demographic_Coverage": coverage,
+                                        "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
                                         "Intervention_Config" : { 
                                             "class": "NodeLevelHealthTriggeredIV",
                                             "Trigger_Condition": "TriggerString",

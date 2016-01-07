@@ -49,7 +49,7 @@ def add_health_seeking(config_builder,
                     "Coverage": 1.0,
                     "Delay_Distribution": "EXPONENTIAL_DURATION",
                     "Delay_Period": 1.0/t['rate'],
-                    "Actual_IndividualIntervention_Config": drug_config
+                    "Actual_IndividualIntervention_Configs": drugs
                  }
         else:
             actual_config=drug_config

@@ -75,3 +75,29 @@ def add_patient_report(cb):
 
 def add_habitat_report(cb):
     cb.add_reports(BaseReport(type="VectorHabitatReport"))
+
+
+class FilteredMalariaReport(BaseReport):
+
+    def __init__(self,
+                 start_day = 0,
+                 end_day = 1000000,
+                 nodes=[],
+                 description='',
+                 type = "ReportMalariaFiltered"):
+
+        BaseReport.__init__(self, type)
+        self.start_day = start_day
+        self.end_day = end_day
+        self.nodes = nodes
+        self.description = description
+
+    def to_dict(self):
+        return {"Start_Day":self.start_day,
+                "End_Day":self.end_day,
+                "Node_IDs_Of_Interest":self.nodes,
+                "Report_Description":self.description}
+
+def add_filtered_report(cb, start=0, end=10000, nodes=[], description='') :
+    filtered_report = FilteredMalariaReport(start_day=start, end_day=end, nodes=nodes, description=description)
+    cb.add_reports(filtered_report)

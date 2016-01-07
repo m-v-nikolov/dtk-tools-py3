@@ -16,7 +16,7 @@ def config_setup_fn(duration=21915):
 
 # reporters
 def summary_report_fn(start=1,interval=365,nreports=2000,age_bins=[1000],description='Annual_Report', nodes={"class": "NodeSetAll"}):
-    return lambda cb: add_summary_report(cb, start=start, interval=interval, nreports=nreports, description=description,age_bins=age_bins)
+    return lambda cb: add_summary_report(cb, start=start, interval=interval, nreports=nreports, description=description,age_bins=age_bins, nodes=nodes)
 
 def survey_report_fn(days,interval=10000,nreports=1):
     return lambda cb: add_survey_report(cb,survey_days=days,reporting_interval=interval,nreports=nreports)

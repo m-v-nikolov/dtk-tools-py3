@@ -17,7 +17,8 @@ class BaseReport(object):
             'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll',
             'ReportVectorStats': 'libvectorstats.dll',
             'ReportVectorMigration': 'libvectormigration.dll',
-            'ReportHumanMigrationTracking' : 'libhumanmigrationtracking.dll'}
+            'ReportHumanMigrationTracking' : 'libhumanmigrationtracking.dll',
+            'ReportMalariaFiltered' : 'libReportMalariaFiltered.dll'}
 
     dll_root = DTKSetupParser().get('BINARIES', 'dll_path')
 
