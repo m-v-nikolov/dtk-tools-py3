@@ -1,4 +1,4 @@
-def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start_day=0):
+def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start_day=0, nodes={"class": "NodeSetAll"}):
     """
     Create an intervention introducing new infections (see `InputEIR <http://idmod.org/idmdoc/#EMOD/ParameterReference/InputEIR.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____33>`_ for detail)
 
@@ -26,10 +26,7 @@ def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start
                     "class": "InputEIR",
                 }
             },
-            "Nodeset_Config": 
-            { 
-                "class": "NodeSetAll"
-            }
+            "Nodeset_Config": nodes
         }
 
     cb.add_event(input_EIR_event)

@@ -70,6 +70,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                     "class": "NodeLevelHealthTriggeredIV",
                                     "Trigger_Condition": "TriggerString",
                                     "Trigger_Condition_String": "Received_Treatment", # triggered by successful health-seeking
+                                    "Duration" : interval, # interval argument indicates how long RCD will be implemented
                                     "Actual_IndividualIntervention_Config" : { 
                                         "class": "DelayedIntervention",                    
                                         "Delay_Distribution": "FIXED_DURATION",

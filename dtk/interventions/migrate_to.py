@@ -22,15 +22,6 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         "Nodeset_Config": nodesfrom
                         }
 
-    if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
-        migration_event["Event_Coordinator_Config"].update({
-                "Target_Demographic": "ExplicitAgeRanges", 
-                "Target_Age_Min": target['agemin'],
-                "Target_Age_Max": target['agemax'] })
-    else :
-        migration_event["Event_Coordinator_Config"].update({
-                "Target_Demographic": target } ) # default is Everyone
-
     if duration_at_node_distr_type == 'FIXED_DURATION' :
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "FIXED_DURATION"
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Fixed"] = duration_of_stay
@@ -52,5 +43,14 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
         print "warning: unsupported duration distribution type, reverting to fixed duration"
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "FIXED_DURATION"
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Fixed"] = duration_of_stay
+
+    if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
+        migration_event["Event_Coordinator_Config"].update({
+                "Target_Demographic": "ExplicitAgeRanges", 
+                "Target_Age_Min": target['agemin'],
+                "Target_Age_Max": target['agemax'] })
+    else :
+        migration_event["Event_Coordinator_Config"].update({
+                "Target_Demographic": target } ) # default is Everyone
 
     cb.add_event(migration_event)

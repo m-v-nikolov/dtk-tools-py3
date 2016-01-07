@@ -1,5 +1,6 @@
 from dtk.malaria.immunity import add_immune_overlays
 from dtk.vector.input_EIR_by_site import configure_site_EIR
+from dtk.interventions.input_EIR import add_InputEIR
 from dtk.vector.species import set_larval_habitat, set_species_param
 from dtk.interventions.health_seeking import add_health_seeking
 from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report
@@ -34,6 +35,8 @@ def add_immunity_fn(tags):
 # input EIR
 def site_input_eir_fn(site,birth_cohort=True, set_site_geography=False):
     return lambda cb: configure_site_EIR(cb,site=site,birth_cohort=birth_cohort, set_site_geography=False)
+def input_eir_fn(monthlyEIRs, start_day=0, nodes={"class": "NodeSetAll"}):
+    return lambda cb: add_InputEIR(cb,monthlyEIRs, start_day=start_day, nodes=nodes)
 
 # importation pressure
 def add_outbreak_fn(start_day=0, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, nodes={"class": "NodeSetAll"}) :
@@ -70,4 +73,6 @@ def add_itn_by_node_id_fn(reffname, start=0) :
 
 # migration
 def add_migration_fn(nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, duration_of_stay=100, is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
-    return lambda cb : add_migration_event(cb, nodeto, start_day, coverage, repetitions, tsteps_btwn, duration_of_stay, is_family_trip, target, nodesfrom)
+    return lambda cb : add_migration_event(cb, nodeto, start_day=start_day, coverage=coverage, repetitions=repetitions, 
+                                           tsteps_btwn=tsteps_btwn, duration_of_stay=duration_of_stay, 
+                                           is_family_trip=is_family_trip, target=target, nodesfrom=nodesfrom)
