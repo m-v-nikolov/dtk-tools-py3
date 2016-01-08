@@ -22,27 +22,8 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         "Nodeset_Config": nodesfrom
                         }
 
-    if duration_at_node_distr_type == 'FIXED_DURATION' :
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "FIXED_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Fixed"] = duration_of_stay
-    elif duration_at_node_distr_type == 'UNIFORM_DURATION' :
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "UNIFORM_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Uniform_Min"] = duration_of_stay
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Uniform_Max"] = duration_of_stay
-    elif duration_at_node_distr_type == 'GAUSSIAN_DURATION' :
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "GAUSSIAN_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Gausian_Mean"] = duration_of_stay
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Gausian_StdDev"] = duration_of_stay
-    elif duration_at_node_distr_type == 'EXPONENTIAL_DURATION' :
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "EXPONENTIAL_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Exponential_Period"] = duration_of_stay
-    elif duration_at_node_distr_type == 'POISSON_DURATION' :
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "POISSON_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Poisson_Mean"] = duration_of_stay
-    else :
-        print "warning: unsupported duration distribution type, reverting to fixed duration"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Distribution_Type"] = "FIXED_DURATION"
-        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_At_Node_Fixed"] = duration_of_stay
+    migration_event = update_duration_type(migration_event, duration_at_node_distr_type, dur_param_1=duration_of_stay, leaving_or_at='at')
+    migration_event = update_duration_type(migration_event, duration_at_node_distr_type, leaving_or_at='leaving')
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         migration_event["Event_Coordinator_Config"].update({
@@ -54,3 +35,34 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                 "Target_Demographic": target } ) # default is Everyone
 
     cb.add_event(migration_event)
+
+def update_duration_type(migration_event, duration_at_node_distr_type, dur_param_1=0, dur_param_2=0, leaving_or_at='at') :
+
+    if leaving_or_at == 'leaving' :
+        trip_end = 'Before_Leaving'
+    else :
+        trip_end = 'At_Node'
+
+    if duration_at_node_distr_type == 'FIXED_DURATION' :
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "FIXED_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Fixed"] = dur_param_1
+    elif duration_at_node_distr_type == 'UNIFORM_DURATION' :
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "UNIFORM_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Uniform_Min"] = dur_param_1
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Uniform_Max"] = dur_param_2
+    elif duration_at_node_distr_type == 'GAUSSIAN_DURATION' :
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "GAUSSIAN_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Gausian_Mean"] = dur_param_1
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Gausian_StdDev"] = dur_param_2
+    elif duration_at_node_distr_type == 'EXPONENTIAL_DURATION' :
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "EXPONENTIAL_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Exponential_Period"] = dur_param_1
+    elif duration_at_node_distr_type == 'POISSON_DURATION' :
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "POISSON_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Poisson_Mean"] = dur_param_1
+    else :
+        print "warning: unsupported duration distribution type, reverting to fixed duration"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "FIXED_DURATION"
+        migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Fixed"] = dur_param_1
+
+    return migration_event

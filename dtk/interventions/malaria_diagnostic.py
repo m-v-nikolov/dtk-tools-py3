@@ -33,6 +33,7 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
 
     survey_event = { "class" : "CampaignEvent",
                                  "Start_Day": start_day,
+                                 "Event_Name" : "Malaria Diagnostic Survey",
                                  "Event_Coordinator_Config": {
                                      "class": "StandardInterventionDistributionEventCoordinator",
                                      "Number_Distributions": -1,

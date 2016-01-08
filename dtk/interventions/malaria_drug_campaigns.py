@@ -22,10 +22,13 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
             "class": "BroadcastEvent",
             "Broadcast_Event": "Received_Campaign_Drugs"
             }
+    if 'Vehicle' in drug_code :
+        receiving_drugs_event["Broadcast_Event"] = "Received_Vehicle"
 
     if campaign_type in ['MSAT', 'MDA'] : # standard drug campaign: MDA, MSAT, no event triggering
 
         drug_configs = drug_configs_from_code(cb,drug_code)        
+
 
         for start_day in start_days:
             drug_event = {
