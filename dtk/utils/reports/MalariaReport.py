@@ -96,7 +96,7 @@ class FilteredMalariaReport(BaseReport):
         return {"Start_Day":self.start_day,
                 "End_Day":self.end_day,
                 "Node_IDs_Of_Interest":self.nodes,
-                "Report_Description":self.description}
+                "Report_File_Name":'ReportMalariaFiltered' + self.description + '.json'}
 
 def add_filtered_report(cb, start=0, end=10000, nodes=[], description='') :
     filtered_report = FilteredMalariaReport(start_day=start, end_day=end, nodes=nodes, description=description)
