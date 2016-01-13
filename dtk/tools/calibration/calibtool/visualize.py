@@ -128,8 +128,7 @@ def visualize_malaria_sim(settings, iteration, analyzers, site, samples, top_LL_
     sys.path.append(settings['calibtool_dir'] + 'analyzers/')
 
     for this_analyzer in settings['sites'][site] :
-
-        mod = importlib.import_module(analyzers[this_analyzer]['name'])
+        mod = importlib.import_module("."+analyzers[this_analyzer]['name'], "dtk.tools.calibration.calibtool.analyzers")
         an_fn = getattr(mod, analyzers[this_analyzer]['name'].replace('analyze', 'visualize'))
         an_fn(settings, iteration, analyzers[this_analyzer], site, samples, top_LL_index)
 

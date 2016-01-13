@@ -81,7 +81,7 @@ def analyze_malaria_sim(settings, analyzers, site, iteration, numsamples) :
     samples = pd.read_csv(settings['curr_iteration_dir'] + 'params_withpaths.csv')
     for this_analyzer in settings['sites'][site] :
 
-        mod = importlib.import_module(analyzers[this_analyzer]['name'])
+        mod = importlib.import_module("."+analyzers[this_analyzer]['name'], "dtk.tools.calibration.calibtool.analyzers")
         an_fn = getattr(mod, analyzers[this_analyzer]['name'])
         single_LL = an_fn(settings, analyzers[this_analyzer], site, data[this_analyzer], samples)
 
