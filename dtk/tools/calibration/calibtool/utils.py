@@ -33,13 +33,12 @@ def concat_likelihoods(settings) :
     write_to_file(df, settings['exp_dir'] + 'LL_all')
 
 def write_to_file(samples, outstem) :
-
-    samples.to_csv(outstem + '.csv', index=False)
+    samples.to_csv(outstem, index=False)
 
 def update_settings(settings, iteration) :
 
-    settings['curr_iteration_dir'] = settings['exp_dir'] + 'iter' + str(iteration) + '/'
-    settings['prev_iteration_dir'] = settings['exp_dir'] + 'iter' + str(iteration-1) + '/'
+    settings['curr_iteration_dir'] = os.path.join(settings['exp_dir'], 'iter' + str(iteration))
+    settings['prev_iteration_dir'] = os.path.join(settings['exp_dir'], 'iter' + str(iteration-1))
     try :
         os.mkdir(settings['curr_iteration_dir'])
     except WindowsError :
@@ -67,7 +66,7 @@ def clean_directory(settings) :
     
 def check_for_done(settings, sleeptime=0) :
 
-    with open(settings['curr_iteration_dir'] + 'sim.json') as fin :
+    with open(os.path.join(settings['curr_iteration_dir'],'sim.json')) as fin :
         sim = json.loads(fin.read())
     exp_id = sim['exp_name'] + '_' + sim['exp_id']
 

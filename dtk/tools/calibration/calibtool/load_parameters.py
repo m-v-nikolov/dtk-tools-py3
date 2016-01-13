@@ -23,6 +23,7 @@
 # [values]}.
 #
 #####################################################################
+import os
 
 import numpy as np
 from math import log10
@@ -33,10 +34,10 @@ import pandas as pd
 def load_samples(settings, iteration) :
 
     parameter_dir = settings['curr_iteration_dir']
-    fname = parameter_dir + 'params'
+    fname = os.path.join(parameter_dir,'params.csv')
 
     try :
-        samples = pd.read_csv(fname + '.csv')
+        samples = pd.read_csv(fname)
 
     except IOError :
         if iteration == 0 :
@@ -53,7 +54,7 @@ def load_samples(settings, iteration) :
 def load_initial_samples_LHC(initial_sampling_range_file, num_initial_samples, parameter_dir) :
 
     samplerange = pd.read_csv(initial_sampling_range_file)
-    samplerange.to_csv(parameter_dir + 'initial_sampling_range.csv')
+    samplerange.to_csv(os.path.join(parameter_dir,'initial_sampling_range.csv'))
 
     samples = {}
     for i in samplerange.index :

@@ -19,6 +19,7 @@
 # Chooses next samples with a dummy algorithm. Use only for testing.
 #
 #####################################################################
+import os
 
 from utils import update_settings, write_to_file
 import numpy as np
@@ -35,7 +36,7 @@ def update_params(settings, iteration, samples, updater='dumb') :
         keep_going = False
     else :
         try :
-            fin = open(settings['curr_iteration_dir'] + 'params' + '.csv')
+            fin = open(os.path.join(settings['curr_iteration_dir'],'params.csv'))
 
         except IOError :
             if updater == 'IMIS' :
@@ -49,20 +50,20 @@ def update_params(settings, iteration, samples, updater='dumb') :
                 keep_going = False
 
             if keep_going :
-                write_to_file(clean_new_samples(settings, newsamples), settings['curr_iteration_dir'] + 'params')
+                write_to_file(clean_new_samples(settings, newsamples), os.path.join(settings['curr_iteration_dir'],'params.csv'))
  
     return keep_going
 
 def update_IMIS(settings, iteration, samples) :
 
-    initial_sampling_range_file = settings['exp_dir'] + 'iter0/initial_sampling_range.csv'
+    initial_sampling_range_file = os.path.join(settings['exp_dir'],'iter0','initial_sampling_range.csv')
     nparrays = ['gaussian_probs', 'samples', 'latest_samples']
     list_of_nparrays = ['gaussian_centers', 'gaussian_covariances']
     
     curr_status = {}
     isamples = []
     if iteration > 0 :
-        with open(settings['prev_iteration_dir'] + 'imis.json') as fin :
+        with open(os.path.join(settings['prev_iteration_dir'],'imis.json')) as fin :
             curr_status = json.loads(fin.read())
         for key in curr_status :
             if key in nparrays :
@@ -116,7 +117,7 @@ def update_IMIS(settings, iteration, samples) :
             for i in range(len(t[key])) :
                 t[key][i] = t[key][i].tolist()
 
-    with open(settings['curr_iteration_dir'] + 'imis.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'],'imis.json'), 'w') as fout :
         json.dump(t, fout)
     next_samples = imis.get_next_samples()
     new_samples = {}
@@ -175,7 +176,7 @@ def update_dumb(settings, samples) :
 
 def clean_new_samples(settings, samples) :
 
-    initial_sampling_range_file = settings['exp_dir'] + 'iter0/initial_sampling_range.csv'
+    initial_sampling_range_file =os.path.join(settings['exp_dir'],'iter0','initial_sampling_range.csv')
     samplerange = pd.read_csv(initial_sampling_range_file)
 
     for i, par in enumerate(samplerange['parameter'].values) :
