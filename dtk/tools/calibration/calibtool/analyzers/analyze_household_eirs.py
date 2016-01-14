@@ -1,17 +1,19 @@
 import os
 
 import numpy as np
-import dtk.tools.calibration.calibtool.LL_calculators
-from load_comparison_data import load_comparison_data
+
 import matplotlib.pyplot as plt
 import json
-from parsers_malaria import get_site_data
+
 import matplotlib.cm as cm
 import pandas as pd
 import math
 import seaborn as sns
+from dtk.tools.calibration.calibtool.load_comparison_data import load_comparison_data
 from scipy import stats
-from utils import calc_distance, latlon_to_anon
+
+from dtk.tools.calibration.calibtool.utils import latlon_to_anon
+
 
 def analyze_household_eirs(settings, analyzer, site, data) :
 
@@ -134,8 +136,8 @@ def plot_eir_map(df, map_size, sizefield='', colorfield='') :
 
 def get_spatial_report_data(outpath, channel) :
 
-    from parsers_malaria import load_bin_file
     simfile = 'SpatialReport_' + channel + '.bin'
+    from dtk.tools.calibration.calibtool.parsers_malaria import load_bin_file
     spatial_data = load_bin_file(os.path.join(outpath,'output',simfile))
 
     return spatial_data

@@ -7,7 +7,6 @@
 import os
 
 import numpy as np
-import dtk.tools.calibration.calibtool.LL_calculators
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import FixedLocator
@@ -15,7 +14,9 @@ import pandas as pd
 import json
 import math
 import seaborn as sns
-from study_sites.set_calibration_site import get_reference_data
+
+from dtk.tools.calibration.calibtool import LL_calculators
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import get_reference_data
 
 def analyze_malariatherapy_density(settings, analyzer, site, data, samples) :
 
