@@ -19,8 +19,8 @@ import sys
 import json
 
 def load_settings(ofname) :
-
-    with open('calibration_defaults.json') as fin :
+    # the calibration defaults are in a JSON file in the same folder as this script
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'calibration_defaults.json')) as fin :
         settings = json.loads(fin.read())
 
     if ofname :
