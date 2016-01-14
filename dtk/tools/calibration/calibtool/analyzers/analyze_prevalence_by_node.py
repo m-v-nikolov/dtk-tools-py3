@@ -4,6 +4,7 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
 import LL_calculators
@@ -56,7 +57,7 @@ def analyze_prevalence_by_node(settings, analyzer, site, data, samples) :
         record_data_by_sample['Prevalence'].append(mean_prev_data)
     record_data_by_sample['nodeids'] = nodes
 
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'],site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
@@ -80,7 +81,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         iter = samples['iteration'].values[LL_index]
         prevsamples = len(samples[samples['iteration'] < iter].index)
         rownum = LL_index-prevsamples
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'],'iter' + str(iter),site + '_' + analyzer['name'] + '.json')) as fin :
             data = json.loads(fin.read())
         if j == 0 :
             nodes = data['nodeids']

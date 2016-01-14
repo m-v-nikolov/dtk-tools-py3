@@ -28,7 +28,7 @@ import numpy as np
 
 def get_site_data(settings, analyzers, site, iteration) :
 
-    parsed_file = settings['curr_iteration_dir'] + 'parsed_' + site + '.json'
+    parsed_file = os.path.join(settings['curr_iteration_dir'], 'parsed_' + site + '.json')
 
     try :
         with open(parsed_file) as fin :
@@ -57,8 +57,8 @@ def get_site_data(settings, analyzers, site, iteration) :
 
 def load_output_paths(settings, iteration) :
 
-    parfile = settings['curr_iteration_dir'] + 'params' + '.csv'
-    pathfile = settings['curr_iteration_dir'] + 'params' + '_withpaths'
+    parfile = os.path.join(settings['curr_iteration_dir'],'params.csv')
+    pathfile = os.path.join(settings['curr_iteration_dir'],'params_withpaths.csv')
     try :
         samples = pd.read_csv(pathfile + '.csv')
 
@@ -248,7 +248,7 @@ def get_directories_local(settings) :
     
 def createSimDirectoryMap(settings):
 
-    with open(settings['curr_iteration_dir'] + 'sim.json') as fin :
+    with open(os.path.join(settings['curr_iteration_dir'],'sim.json')) as fin :
         t = json.loads(fin.read())
         exp_id = t['exp_id']
         sim_pars = t['sims']

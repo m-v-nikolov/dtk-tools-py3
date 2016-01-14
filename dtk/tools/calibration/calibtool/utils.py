@@ -25,12 +25,12 @@ def concat_likelihoods(settings) :
     df = pd.DataFrame()
     for i in range(settings['max_iterations']) :
         try :
-            LL = pd.read_csv(settings['exp_dir'] + 'iter' + str(i) + '/LL.csv')
+            LL = pd.read_csv(os.path.join(settings['exp_dir'] ,'iter' + str(i),'LL.csv'))
             LL['iteration'] = pd.Series([i]*len(LL.index))
             df = pd.concat([df, LL])
         except IOError :
             break
-    write_to_file(df, settings['exp_dir'] + 'LL_all')
+    write_to_file(df, os.path.join(settings['exp_dir'],'LL_all.csv'))
 
 def write_to_file(samples, outstem) :
     samples.to_csv(outstem, index=False)

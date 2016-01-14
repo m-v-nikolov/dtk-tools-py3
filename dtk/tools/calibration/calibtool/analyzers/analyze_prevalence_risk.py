@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import LL_calculators
 import matplotlib.pyplot as plt
@@ -46,7 +48,7 @@ def analyze_prevalence_risk(settings, analyzer, site, data, samples) :
         record_data_by_sample['Population'].append([np.mean([popdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']])
         record_data_by_sample['Prevalence'].append([np.mean([prevdata[y][x] for y in range(settings['sim_runs_per_param_set'])]) for x in range(len(nodes)) if nodes[x] not in analyzer['worknode']])
 
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'],site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
@@ -62,7 +64,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     raw_risk_data = raw_data['risks'] + [raw_data['prevalence']]
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_risk_of_rdtpos_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'],site + '_risk_of_rdtpos_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(4,3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -87,7 +89,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
                               'Latitude' : demodf['Latitude'].values,
                               'Longitude' : demodf['Longitude'].values})
         plot_map(mapdf, analyzer['map_size'], 'Population', 'Prevalence')
-        plt.savefig(settings['plot_dir'] + site + '_prev_map_LLrank' + str(j) + '.pdf', format='PDF')
+        plt.savefig(os.path.join(settings['plot_dir'],site + '_prev_map_LLrank' + str(j) + '.pdf'), format='PDF')
         plt.close()
 
 
@@ -102,7 +104,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
 
-    fname = settings['plot_dir'] + site + '_risk_of_rdtpos_all'
+    fname = os.path.join(settings['plot_dir'],site + '_risk_of_rdtpos_all')
     sns.set_style('white')
     fig = plt.figure(fname, figsize=(4,3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -172,7 +174,7 @@ def plot_map(df, map_size, sizefield='', colorfield='') :
 
 def get_demographics(settings, outpath) :
 
-    with open(outpath + '/config.json') as fin :
+    with open(os.path.join(outpath, 'config.json')) as fin :
         config = json.loads(fin.read())['parameters']
     if settings['run_location'] == '' :
         demofile = settings['local_input_root'] + config['Demographics_Filenames'][0]

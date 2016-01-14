@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import json
 import LL_calculators
@@ -66,7 +68,7 @@ def plot_all_LL(settings, iteration, analyzer, site, samples) :
     if 'Seasonal_Multiplier' in paramnames :
         seas_m = samples['Seasonal_Multiplier'].values
 
-    fname = settings['plot_dir'] + site + '_infectiousness_all'
+    fname = os.path.join(settings['plot_dir'],site + '_infectiousness_all')
     fig = plt.figure(fname, figsize=(len(seasons)*4, len(agebins)*3))
     plt.subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.95, hspace=0.25)
 
@@ -223,7 +225,7 @@ def plot_infectiousness(fname, data, agebins, inf_bins, seasons, scale_factor=1,
 def get_survey_report_data(simpath, channels, start_day=1) :
 
     simfile = 'MalariaSurveyJSONAnalyzer_Day_' + str(start_day) + '_' + str(0) + '.json'
-    with open(simpath + '/output/' + simfile) as fin :
+    with open(os.path.join(simpath,'output',simfile)) as fin :
         all_data = json.loads(fin.read())
     patients = []
     for patient in all_data['patient_array'] :

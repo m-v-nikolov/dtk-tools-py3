@@ -4,6 +4,7 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
 import LL_calculators
@@ -41,7 +42,7 @@ def analyze_malariatherapy_duration(settings, analyzer, site, data, samples) :
             LL[rownum] += LL_fn(raw_data[partype + 'mia_durations'], mean_sim_data)
             record_data_by_sample['duration'][field].append(mean_sim_data)
 
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'], site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
@@ -57,7 +58,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     fields = analyzer['fields_to_get']
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_duration_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'], site + '_duration_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(6,len(fields)*3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, hspace=0.5)
@@ -68,7 +69,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
             iter = samples['iteration'].values[LL_index]
             prevsamples = len(samples[samples['iteration'] < iter].index)
             rownum = LL_index-prevsamples
-            with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+            with open(os.path.join(settings['exp_dir'],'iter' + str(iter), site + '_' + analyzer['name'] + '.json')) as fin :
                 data = json.loads(fin.read())['duration']
             plot(ax, duration_bins, data[field][rownum], style='-o', color='#CB5FA4', alpha=1, linewidth=1)
             plot(ax, duration_bins, raw_data[partype + 'mia_durations'], style='-o', color='#8DC63F', alpha=1, linewidth=1)
@@ -88,7 +89,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
 
-    fname = settings['plot_dir'] + site + '_duration_all'
+    fname = os.path.join(settings['plot_dir'],site + '_duration_all')
     sns.set_style('white')
     fig = plt.figure(fname, figsize=(6,len(fields)*3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95, hspace=0.5)
@@ -100,7 +101,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
         grouped = samples.groupby('iteration')
         prevsamples = 0
         for i, (iter, df_iter) in enumerate(grouped) :
-            with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+            with open(os.path.join(settings['exp_dir'],'iter' + str(iter), site + '_' + analyzer['name'] + '.json')) as fin :
                 data = json.loads(fin.read())['duration']
             for rownum, sim_data in enumerate(data[field]) :
                 plot(ax, duration_bins, sim_data, style='-', color=cm.Blues((LL[rownum + prevsamples]-LL_min)/(LL_max-LL_min)), alpha=0.5, linewidth=0.5)

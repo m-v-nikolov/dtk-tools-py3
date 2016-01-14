@@ -4,6 +4,7 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
 import LL_calculators
@@ -65,7 +66,7 @@ def analyze_seasonal_infectiousness(settings, analyzer, site, data, samples) :
             record_data_by_sample['infectiousness_by_age_and_season'][season].append(mean_sim_data)
             record_data_by_sample['density_and_infectiousness_by_age_and_season'][season].append([[[np.mean([sim_gam[y][a][x][z] for y in range(settings['sim_runs_per_param_set'])]) for z in range(len(inf_bins))] for x in range(len(gam_bins))] for a in range(len(age_bins))])
 
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'], site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
@@ -92,7 +93,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
             data = json.loads(fin.read())['density_and_infectiousness_by_age_and_season']
 
-        fname = settings['plot_dir'] + site + '_inf_vs_gam_density_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'], site + '_inf_vs_gam_density_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(len(seasons)*4,len(age_bins)*3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -130,7 +131,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
 
-    fname = settings['plot_dir'] + site + '_infectiousness_by_age_all'
+    fname = os.path.join(settings['plot_dir'],site + '_infectiousness_by_age_all')
     sns.set_style('white')
     fig = plt.figure(fname, figsize=(len(seasons)*4,len(age_bins)*3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
