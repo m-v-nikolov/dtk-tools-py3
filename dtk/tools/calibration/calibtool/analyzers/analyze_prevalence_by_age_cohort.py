@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import LL_calculators
+import dtk.tools.calibration.calibtool.LL_calculators
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import FixedLocator

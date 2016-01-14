@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import json
-import LL_calculators
+import dtk.tools.calibration.calibtool.LL_calculators
 from load_comparison_data import load_comparison_data
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
