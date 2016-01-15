@@ -4,7 +4,12 @@ import importlib
 def set_calibration_site(cb, site) :
 
     sys.path.append('study_sites/')
-    mod = importlib.import_module('site_' + site)
+     # First try to import the site locally
+    try:
+        mod = importlib.import_module('site_' + site)
+    except:
+        # The site couldnt get imported locally => fall back to the built-in
+        mod = importlib.import_module('.site_' + site,"dtk.tools.calibration.calibtool.study_sites")
     setup_functions = mod.get_setup_functions()
 
     for fn in setup_functions:
@@ -25,5 +30,10 @@ def get_reference_data(site, datatype) :
 def get_analyzers(site, analyzer) :
 
     sys.path.append('study_sites/')
-    mod = importlib.import_module('site_' + site)
+     # First try to import the site locally
+    try:
+        mod = importlib.import_module('site_' + site)
+    except:
+        # The site couldnt get imported locally => fall back to the built-in
+        mod = importlib.import_module('.site_' + site,"dtk.tools.calibration.calibtool.study_sites")
     return mod.get_analyzers(analyzer)
