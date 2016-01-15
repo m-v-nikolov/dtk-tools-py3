@@ -19,8 +19,8 @@ import sys
 import json
 
 def load_settings(ofname) :
-
-    with open('calibration_defaults.json') as fin :
+    # the calibration defaults are in a JSON file in the same folder as this script
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)),'calibration_defaults.json')) as fin :
         settings = json.loads(fin.read())
 
     if ofname :
@@ -30,8 +30,14 @@ def load_settings(ofname) :
         except IOError :
             pass
 
-    settings['exp_dir'] = settings['working_dir'] + settings['expname'] + '/'
+    # Normalize the paths to allow the user to specify paths with / or \
+    settings['working_dir'] = os.path.normpath(settings['working_dir'])
+    settings['dtk_setup_config'] = os.path.normpath(settings['dtk_setup_config'])
+    settings['initial_sampling_range_file'] = os.path.normpath(settings['initial_sampling_range_file'])
+    settings['initial_sampling_range_file'] = os.path.normpath(settings['initial_sampling_range_file'])
 
+    # Make sure the exp_dir exists
+    settings['exp_dir'] = os.path.join( settings['working_dir'], settings['expname'])
     try :
         os.mkdir(settings['exp_dir'])
     except WindowsError :
@@ -39,13 +45,12 @@ def load_settings(ofname) :
 
     newrun = True
     try :
-        with open(settings['exp_dir'] + 'settings.json') as fin :
+        with open(os.path.join(settings['exp_dir'],'settings.json')) as fin :
             settings = json.loads(fin.read())
             newrun = False
     except IOError :        
-        settings['plot_dir'] = settings['exp_dir'] + '_plots/'
-        settings['curr_iteration_dir'] = settings['exp_dir'] + 'iter0/'
-
+        settings['plot_dir'] = os.path.join(settings['exp_dir'],'_plots')
+        settings['curr_iteration_dir'] = os.path.join(settings['exp_dir'],'iter0')
         with open(settings['dtk_setup_config']) as fin :
             if 'hpc' in settings['run_location'].lower() :
                 loc = 'hpc'
@@ -60,7 +65,7 @@ def load_settings(ofname) :
             inputroot = filter(lambda x : 'input_root' in x, sec.split('\n'))[0]
             settings[loc + '_input_root'] = inputroot.split()[-1]
 
-        with open(settings['exp_dir'] + 'settings.json', 'w') as fout :
+        with open(os.path.join(settings['exp_dir'],'settings.json'), 'w') as fout :
             json.dump(settings, fout, sort_keys=True, indent=4, separators=(',', ': '))
 
     try :
@@ -89,7 +94,7 @@ def overlay(base_settings, overlay_settings) :
 def load_analyzers(settings) :
 
     try :
-        with open(settings['exp_dir'] + 'analyzers.json') as fin :
+        with open(os.path.join(settings['exp_dir'],'analyzers.json')) as fin :
             analyzers = json.loads(fin.read())
     except IOError :
         analyzers = {}
@@ -97,7 +102,7 @@ def load_analyzers(settings) :
         for site in settings['sites'] :
             for analyzer in settings['sites'][site] :
                 analyzers[analyzer] = get_analyzers(site, analyzer)
-        with open(settings['exp_dir'] + 'analyzers.json', 'w') as fout :
+        with open(os.path.join(settings['exp_dir'],'analyzers.json'), 'w') as fout :
             json.dump(analyzers, fout, sort_keys=True, indent=4, separators=(',', ': '))
 
     return analyzers

@@ -13,6 +13,8 @@
 #####################################################################
 
 import json
+import os
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -28,7 +30,7 @@ def visualize(settings, iteration, analyzers, sites=[], num_param_sets=1) :
 
 def plot_site_data(settings, iteration, analyzers, sites, num_param_sets) :
     
-    samples = pd.read_csv(settings['exp_dir'] + 'LL_all.csv')
+    samples = pd.read_csv(os.path.join(settings['exp_dir'],'LL_all.csv'))
     if sites == [] :
         sites = settings['sites'].keys()
 
@@ -63,7 +65,7 @@ def plot_likelihoods_by_parameter(settings, iteration) :
         fig = plt.figure('LL by parameter ' + par, figsize=(5,4))
         ax = fig.add_subplot(111)
         plt.subplots_adjust(left=0.15, bottom=0.15)
-        samples = pd.read_csv(settings['exp_dir'] + 'LL_all.csv')
+        samples = pd.read_csv(os.path.join(settings['exp_dir'],'LL_all.csv'))
         for i in range(iteration+1) :
             mysamples = samples[samples['iteration'] == i]
             plot_1D_likelihood(mysamples[par].values, mysamples['LL'].values, color=color[i], linewidth=(i+1)/(iteration+1.)*2, alpha=(i+1)/(iteration+1.))
@@ -75,15 +77,15 @@ def plot_likelihoods_by_parameter(settings, iteration) :
             ax.set_xlabel(par)
             ax.set_ylabel('log likelihood')
 
-        plt.savefig(settings['curr_iteration_dir'] + 'LL_' + par + '.pdf', format='PDF')
-        plt.savefig(settings['plot_dir'] + 'LL_' + par + '.pdf', format='PDF')
+        plt.savefig(os.path.join(settings['curr_iteration_dir'],'LL_' + par + '.pdf'), format='PDF')
+        plt.savefig(os.path.join(settings['plot_dir'],'LL_' + par + '.pdf'), format='PDF')
         plt.close(fig)
 
 def plot_likelihoods_by_parameter_and_site(settings, iteration) :
 
     sites = settings['sites'].keys()
 
-    initial_sampling_range_file = settings['exp_dir'] + 'iter0/initial_sampling_range.json'
+    initial_sampling_range_file = os.path.join(settings['exp_dir'],'iter0','initial_sampling_range.json')
     samplerange = pd.read_csv(initial_sampling_range_file)
     paramnames = samplerange['parameter'].values
 
@@ -95,7 +97,7 @@ def plot_likelihoods_by_parameter_and_site(settings, iteration) :
             fig = plt.figure(site + ' LL by parameter ' + par, figsize=(5,4))
             ax = fig.add_subplot(111)
             plt.subplots_adjust(left=0.15, bottom=0.15)
-            samples = pd.read_csv(settings['exp_dir'] + 'LL_all.csv')
+            samples = pd.read_csv(os.path.join(settings['exp_dir'],'LL_all.csv'))
             for i in range(iteration+1) :
                 mysamples = samples[samples['iteration'] == i]
                 plot_1D_likelihood(mysamples[par].values, mysamples['LL ' + site].values, color=color[i], linewidth=(i+1)/(iteration+1.)*2, alpha=(i+1)/(iteration+1.))
@@ -107,8 +109,8 @@ def plot_likelihoods_by_parameter_and_site(settings, iteration) :
                 ax.set_xlabel(par)
                 ax.set_ylabel('log likelihood')
 
-            plt.savefig(settings['curr_iteration_dir'] + site + ' LL_' + par + '.pdf', format='PDF')
-            plt.savefig(settings['plot_dir'] + site + ' LL_' + par + '.pdf', format='PDF')
+            plt.savefig(os.path.join(settings['curr_iteration_dir'],site + ' LL_' + par + '.pdf'), format='PDF')
+            plt.savefig(os.path.join(settings['plot_dir'], site + ' LL_' + par + '.pdf'), format='PDF')
             plt.close(fig)
 
 def plot_1D_likelihood(parvalues, LLvalues, color='k', linewidth=1, alpha=1) :
@@ -125,11 +127,10 @@ def visualize_malaria_sim(settings, iteration, analyzers, site, samples, top_LL_
 
     import importlib
     import sys
-    sys.path.append(settings['calibtool_dir'] + 'analyzers/')
+    sys.path.append(os.path.join(settings['calibtool_dir'],'analyzers'))
 
     for this_analyzer in settings['sites'][site] :
-
-        mod = importlib.import_module(analyzers[this_analyzer]['name'])
+        mod = importlib.import_module("."+analyzers[this_analyzer]['name'], "dtk.tools.calibration.calibtool.analyzers")
         an_fn = getattr(mod, analyzers[this_analyzer]['name'].replace('analyze', 'visualize'))
         an_fn(settings, iteration, analyzers[this_analyzer], site, samples, top_LL_index)
 

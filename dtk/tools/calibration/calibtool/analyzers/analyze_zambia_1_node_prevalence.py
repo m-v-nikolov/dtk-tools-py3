@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import LL_calculators
 from load_comparison_data import load_comparison_data
@@ -42,7 +44,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_max = max(LL)
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
-    fname = settings['plot_dir'] + site + '_prevalence_all'
+    fname = os.path.join(settings['plot_dir'],site + '_prevalence_all')
 
     fig = plt.figure(fname, figsize=(4,numchannels*3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -75,7 +77,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     numchannels = len(channels)
 
     if iteration == 0 :
-        fname = settings['plot_dir'] + site + '_reference_prevalence'
+        fname = os.path.join(settings['plot_dir'], site + '_reference_prevalence')
         fig = plt.figure(fname, figsize=(4,3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
         for i, channel in enumerate(channels) :
@@ -89,7 +91,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         plt.close(fig)
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_prevalence_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'],site + '_prevalence_LLrank' + str(j))
         fig = plt.figure(fname, figsize=(4,3*numchannels))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
         data_by_run = []
@@ -119,5 +121,5 @@ def plot_prevalence(ax, data, xloc, ref=False, plotstyle='o', mycolor='#C01E6C',
 def get_inset_chart_data(outpath) :
 
     simfile = 'InsetChart.json'
-    with open(outpath + '/output/' + simfile) as fin :
+    with open(os.path.join(outpath, 'output', simfile)) as fin :
         return json.loads(fin.read())['Channels'] 

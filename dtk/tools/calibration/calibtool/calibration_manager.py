@@ -41,11 +41,11 @@ def run_one_iteration(settings, iteration=0) :
 
     if settings['sim_type'] == 'MALARIA_SIM' :
         try :
-            with open(settings['curr_iteration_dir'] + 'sim.json') as fin :
+            with open(os.path.join(settings['curr_iteration_dir'],'sim.json')) as fin :
                 return False
         except IOError :
-            if os.path.isfile(settings['curr_iteration_dir'] + 'temp_dtk.py') :
-                shcopy(settings['curr_iteration_dir'] + 'temp_dtk.py', '.')
+            if os.path.isfile(os.path.join(settings['curr_iteration_dir'],'temp_dtk.py')) :
+                shcopy(os.path.join(settings['curr_iteration_dir'], 'temp_dtk.py'), '.')
             else :
                 print 'building dtk script'
                 write_submission(settings, iteration)
@@ -62,7 +62,7 @@ def run_one_iteration(settings, iteration=0) :
                         break
             with open(sim_json_dir + fname) as fin :
                 t = json.loads(fin.read())
-                with open(settings['curr_iteration_dir'] + 'sim.json', 'w') as fout :
+                with open(os.path.join(settings['curr_iteration_dir'],'sim.json'), 'w') as fout :
                     json.dump(t, fout)
 
 if __name__ == '__main__':

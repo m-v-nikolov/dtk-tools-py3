@@ -4,9 +4,9 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
-import LL_calculators
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import FixedLocator
@@ -14,7 +14,10 @@ import pandas as pd
 import json
 import math
 import seaborn as sns
-from study_sites.set_calibration_site import get_reference_data
+
+from dtk.tools.calibration.calibtool import LL_calculators
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import get_reference_data
+
 
 def analyze_clinical_incidence_by_age_cohort(settings, analyzer, site, data, samples) :
 
@@ -50,7 +53,7 @@ def analyze_clinical_incidence_by_age_cohort(settings, analyzer, site, data, sam
         record_data_by_sample['annual_clinical_incidence_by_age'].append([sim_data[x]/n_sim[x] for x in range(len(n_sim))])
 
     record_data_by_sample['bins'] = [age_bins[i] for i in range(len(age_bins)) if i not in empty_bins]
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'],site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
@@ -67,7 +70,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     raw_data = raw_data_all[field]
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_annual_clinical_incidence_by_age_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'],site + '_annual_clinical_incidence_by_age_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(4,3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -76,7 +79,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         iter = samples['iteration'].values[LL_index]
         prevsamples = len(samples[samples['iteration'] < iter].index)
         rownum = LL_index-prevsamples
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'], 'iter' + str(iter) , site + '_' + analyzer['name'] + '.json')) as fin :
             data = json.loads(fin.read())
         plot(ax, data['bins'], data['annual_clinical_incidence_by_age'][rownum], style='-o', color='#CB5FA4', alpha=1, linewidth=1)
         plot(ax, age_bins, raw_data, style='-o', color='#8DC63F', alpha=1, linewidth=1)
@@ -96,7 +99,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
 
-    fname = settings['plot_dir'] + site + '_annual_clinical_incidence_by_age_all'
+    fname = os.path.join(settings['plot_dir'],site + '_annual_clinical_incidence_by_age_all')
     sns.set_style('white')
     fig = plt.figure(fname, figsize=(4,3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -105,7 +108,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     grouped = samples.groupby('iteration')
     prevsamples = 0
     for i, (iter, df_iter) in enumerate(grouped) :
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'],'iter' + str(iter) ,site + '_' + analyzer['name'] + '.json')) as fin :
             data = json.loads(fin.read())
         for rownum, sim_data in enumerate(data['annual_clinical_incidence_by_age']) :
             plot(ax, data['bins'], sim_data, style='-', color=cm.Blues((LL[rownum + prevsamples]-LL_min)/(LL_max-LL_min)), alpha=0.5, linewidth=0.5)

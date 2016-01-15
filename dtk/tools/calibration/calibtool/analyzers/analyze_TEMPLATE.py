@@ -4,9 +4,10 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
-import LL_calculators
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import FixedLocator
@@ -14,7 +15,10 @@ import pandas as pd
 import json
 import math
 import seaborn as sns
-from study_sites.set_calibration_site import get_reference_data
+
+from dtk.tools.calibration.calibtool import LL_calculators
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import get_reference_data
+
 
 def analyze_TEMPLATE(settings, analyzer, site, data, samples) :
 
@@ -47,7 +51,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     raw_data = get_reference_data(site, 'DATATYPE')
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_DATATYPE_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'], site + '_DATATYPE_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(4,3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -73,7 +77,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     LL_min = min(LL)
     if LL_min == LL_max : LL_min = LL_max-1
 
-    fname = settings['plot_dir'] + site + '_DATATYPE_all'
+    fname = os.path.join(settings['plot_dir'], site + '_DATATYPE_all')
     sns.set_style('white')
     fig = plt.figure(fname, figsize=(4,3))
     plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -82,7 +86,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     grouped = samples.groupby('iteration')
     prevsamples = 0
     for i, (iter, df_iter) in enumerate(grouped) :
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'],'iter' + str(iter) , site + '_' + analyzer['name'] + '.json')) as fin :
             data = json.loads(fin.read())['DATATYPE']
         for rownum, sim_data in enumerate(data) :
             plot(ax, sim_data, style='-', color=cm.Blues((LL[rownum + prevsamples]-LL_min)/(LL_max-LL_min)), alpha=0.5, linewidth=0.5)

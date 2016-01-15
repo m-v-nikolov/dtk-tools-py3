@@ -17,6 +17,7 @@
 # log likelihood for each parameter set
 #
 #####################################################################
+import os
 
 from load_parameters import load_samples
 from utils import write_to_file
@@ -24,9 +25,9 @@ import pandas as pd
 
 def analyze(settings, analyzers, iteration, sites=[]) :
 
-    outfile = settings['curr_iteration_dir'] + 'LL'
+    outfile = os.path.join(settings['curr_iteration_dir'],'LL.csv')
     try :
-        samples = pd.read_csv(outfile + '.csv')
+        samples = pd.read_csv(outfile)
 
     except IOError :
 
@@ -59,7 +60,7 @@ def analyze(settings, analyzers, iteration, sites=[]) :
             else :
                 LL[site] = site_LL
            
-        samples = pd.read_csv(settings['curr_iteration_dir'] + 'params_withpaths.csv')
+        samples = pd.read_csv(os.path.join(settings['curr_iteration_dir'],'params_withpaths.csv'))
         if settings['combine_site_likelihoods'] :
             samples['LL'] = pd.Series(LL)
         else :
@@ -73,15 +74,15 @@ def analyze_malaria_sim(settings, analyzers, site, iteration, numsamples) :
 
     import importlib
     import sys
-    sys.path.append(settings['calibtool_dir'] + 'analyzers/')
+    sys.path.append(os.path.join(settings['calibtool_dir'],'analyzers'))
     from parsers_malaria import get_site_data
 
     LL = [0]*numsamples
     data = get_site_data(settings, analyzers, site, iteration)
-    samples = pd.read_csv(settings['curr_iteration_dir'] + 'params_withpaths.csv')
+    samples = pd.read_csv(os.path.join(settings['curr_iteration_dir'],'params_withpaths.csv'))
     for this_analyzer in settings['sites'][site] :
 
-        mod = importlib.import_module(analyzers[this_analyzer]['name'])
+        mod = importlib.import_module("."+analyzers[this_analyzer]['name'], "dtk.tools.calibration.calibtool.analyzers")
         an_fn = getattr(mod, analyzers[this_analyzer]['name'])
         single_LL = an_fn(settings, analyzers[this_analyzer], site, data[this_analyzer], samples)
 

@@ -1,15 +1,19 @@
+import os
+
 import numpy as np
-import LL_calculators
-from load_comparison_data import load_comparison_data
+
 import matplotlib.pyplot as plt
 import json
-from parsers_malaria import get_site_data
+
 import matplotlib.cm as cm
 import pandas as pd
 import math
 import seaborn as sns
+from dtk.tools.calibration.calibtool.load_comparison_data import load_comparison_data
 from scipy import stats
-from utils import calc_distance, latlon_to_anon
+
+from dtk.tools.calibration.calibtool.utils import latlon_to_anon
+
 
 def analyze_household_eirs(settings, analyzer, site, data) :
 
@@ -41,7 +45,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
     channel = 'Daily_EIR'
 
     for j, LL_index in enumerate(top_LL_index) :
-        fname = settings['plot_dir'] + site + '_eirs_v_ref_LLrank' + str(j)
+        fname = os.path.join(settings['plot_dir'], site + '_eirs_v_ref_LLrank' + str(j))
         sns.set_style('white')
         fig = plt.figure(fname, figsize=(4,3))
         plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
@@ -70,7 +74,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
             demodf.ix[i, 'Population'] = meanpop[i]
             demodf.ix[i, 'Annual_EIR'] = data[i]
         plot_eir_map(demodf, analyzer['map_size'], 'Population', 'Annual_EIR')
-        plt.savefig(settings['plot_dir'] + site + '_eirs_map_LLrank' + str(j) + '.pdf', format='PDF')
+        plt.savefig(os.path.join(settings['plot_dir'],site + '_eirs_map_LLrank' + str(j) + '.pdf'), format='PDF')
         plt.close()
 
     return
@@ -132,15 +136,15 @@ def plot_eir_map(df, map_size, sizefield='', colorfield='') :
 
 def get_spatial_report_data(outpath, channel) :
 
-    from parsers_malaria import load_bin_file
     simfile = 'SpatialReport_' + channel + '.bin'
-    spatial_data = load_bin_file(outpath + '/output/' + simfile)
+    from dtk.tools.calibration.calibtool.parsers_malaria import load_bin_file
+    spatial_data = load_bin_file(os.path.join(outpath,'output',simfile))
 
     return spatial_data
 
 def get_node_locations(settings, outpath) :
 
-    with open(outpath + '/config.json') as fin :
+    with open(os.path.join(outpath, 'config.json')) as fin :
         config = json.loads(fin.read())['parameters']
     if settings['run_location'] == '' :
         demofile = settings['local_input_root'] + config['Demographics_Filenames'][0]

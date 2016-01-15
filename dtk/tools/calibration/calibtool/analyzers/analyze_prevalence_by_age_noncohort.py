@@ -4,9 +4,10 @@
 # Replace all instances of DATATYPE with data descriptor
 #
 #
+import os
 
 import numpy as np
-import LL_calculators
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import FixedLocator
@@ -14,7 +15,10 @@ import pandas as pd
 import json
 import math
 import seaborn as sns
-from study_sites.set_calibration_site import get_reference_data
+
+from dtk.tools.calibration.calibtool import LL_calculators
+from dtk.tools.calibration.calibtool.study_sites.set_calibration_site import get_reference_data
+
 
 def analyze_prevalence_by_age_noncohort(settings, analyzer, site, data, samples) :
 
@@ -39,7 +43,7 @@ def analyze_prevalence_by_age_noncohort(settings, analyzer, site, data, samples)
         record_data_by_sample['prevalence_by_age'].append(sim_data)
 
     record_data_by_sample['bins'] = age_bins#[i] for i in range(len(age_bins)) if i not in empty_bins]
-    with open(settings['curr_iteration_dir'] + site + '_' + analyzer['name'] + '.json', 'w') as fout :
+    with open(os.path.join(settings['curr_iteration_dir'],site + '_' + analyzer['name'] + '.json'), 'w') as fout :
         json.dump(record_data_by_sample, fout)
     return LL
 
