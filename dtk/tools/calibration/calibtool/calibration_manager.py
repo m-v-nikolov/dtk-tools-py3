@@ -54,13 +54,16 @@ def run_one_iteration(settings, iteration=0) :
             os.system('dtk run temp_dtk ' + settings['run_location'])
             sim_json_dir = 'simulations\\'
             os.system('dir ' + sim_json_dir + ' /o:d > simIDs')
+            fname = ""
+
             with open('simIDs') as fin :
                 t = fin.readlines()
                 for i in reversed(range(len(t))) :
                     if 'json' in t[i] :
                         fname = t[i].split()[-1]
                         break
-            with open(sim_json_dir + fname) as fin :
+            print sim_json_dir
+            with open(os.path.join(sim_json_dir,fname)) as fin :
                 t = json.loads(fin.read())
                 with open(os.path.join(settings['curr_iteration_dir'],'sim.json'), 'w') as fout :
                     json.dump(t, fout)
