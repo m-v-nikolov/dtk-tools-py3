@@ -36,7 +36,6 @@ def get_site_data(settings, analyzers, site, iteration) :
 
     except IOError :
         samples = load_output_paths(settings, iteration)
-
         data = {}
         for this_analyzer in settings['sites'][site] :
             data[this_analyzer] = []
@@ -99,7 +98,7 @@ def get_summary_report_data(analyzer, simpaths) :
     for field in analyzer['fields_to_get'] :
         data[field] = []
     for i in range(numsamples) :
-        summary_data = loaddata(simpaths[i] + '/output/' + simfile)
+        summary_data = loaddata(os.path.join(simpaths[i], 'output' ,simfile))
         for field in analyzer['fields_to_get'] :
             data[field].append(summary_data[field])
     return data
@@ -206,7 +205,7 @@ def get_paths_local(settings, iteration) :
     paramnames = list(samples.columns.values)
     numsamples = len(samples[paramnames[0]].values)
 
-    sim_json_fname = settings['curr_iteration_dir'] + 'sim.json'
+    sim_json_fname = os.path.join(settings['curr_iteration_dir'],'sim.json')
     with open(sim_json_fname) as fin :
         t = json.loads(fin.read())
         exp_id = t['exp_id']
@@ -226,7 +225,7 @@ def get_paths_local(settings, iteration) :
                 if config_params['Run_Number'] != run_num :
                     match = False
                 if match :
-                    samples.ix[p, site + ' outpath ' + str(run_num)] = settings['local_sim_root'] + exp_name + '_' + exp_id + '\\' + subdirs[sindex]
+                    samples.ix[p, site + ' outpath ' + str(run_num)] = os.path.join(settings['local_sim_root'],exp_name + '_' + exp_id , subdirs[sindex])
                     break
 
     return samples
