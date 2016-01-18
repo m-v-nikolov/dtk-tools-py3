@@ -36,6 +36,9 @@ def load_settings(ofname) :
     settings['initial_sampling_range_file'] = os.path.normpath(settings['initial_sampling_range_file'])
     settings['initial_sampling_range_file'] = os.path.normpath(settings['initial_sampling_range_file'])
 
+    # Add the custom sites to the path
+    sys.path.append(os.path.join(settings['working_dir'], settings['custom_sites_module']))
+
     # Make sure the exp_dir exists
     settings['exp_dir'] = os.path.join( settings['working_dir'], settings['expname'])
     try :
@@ -113,4 +116,3 @@ def load_all_settings(ofname) :
     settings = load_settings(ofname)
     analyzers = load_analyzers(settings)
     return settings, analyzers
-    
