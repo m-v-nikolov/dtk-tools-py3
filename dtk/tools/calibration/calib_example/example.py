@@ -1,6 +1,3 @@
-import os
-import sys
-
 from dtk.tools.calibration.calibtool.calibration_manager import run
 
 # Run the calibration
