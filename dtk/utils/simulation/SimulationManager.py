@@ -73,7 +73,7 @@ class LocalSimulationManager():
         self.setup     = DTKSetupParser()
         self.emodules  = []
         self.analyzers = []
-        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('LOCAL','max_threads')))
+        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('GLOBAL','max_threads')))
 
     def RunSimulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), show_progress=False):
 

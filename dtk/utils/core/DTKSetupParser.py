@@ -18,12 +18,8 @@ def DTKSetupParser(setup_file=''):
     setup.set('BINARIES', 'user', user)
 
     # Add a fallback in case max_threads is not set
-    if not setup.has_option('LOCAL','max_threads'):
-        if (setup.has_option('HPC','max_threads')):
-            setup.set('LOCAL','max_threads',setup.get('HPC','max_threads'))
-            print "/!\\ Please update your dtk_config.cfg and change max_threads from HPC to LOCAL /!\\"
-        else:
-            print "/!\\ Please update your dtk_config.cfg and set max_threads in LOCAL. Fallback value (16) used /!\\"
-            setup.set('LOCAL','max_threads','16')
+    if not setup.has_option('GLOBAL','max_threads'):
+        print "/!\\ Please update your dtk_config.cfg and set max_threads in GLOBAL. Fallback value (16) used /!\\"
+        setup.set('GLOBAL','max_threads','16')
 
     return setup

@@ -62,7 +62,7 @@ def run_one_iteration(settings, iteration=0) :
                     if 'json' in t[i] :
                         fname = t[i].split()[-1]
                         break
-            print sim_json_dir
+
             with open(os.path.join(sim_json_dir,fname)) as fin :
                 t = json.loads(fin.read())
                 with open(os.path.join(settings['curr_iteration_dir'],'sim.json'), 'w') as fout :
