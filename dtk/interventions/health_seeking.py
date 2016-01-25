@@ -55,7 +55,7 @@ def add_health_seeking(config_builder,
             actual_config=drug_config
 
         health_seeking_config = { 
-            "class": "NodeEventCoordinator",
+            "class": "StandardInterventionDistributionEventCoordinator",
             "Intervention_Config": {
                 "class": "NodeLevelHealthTriggeredIV",
                 "Trigger_Condition": t['trigger'], 

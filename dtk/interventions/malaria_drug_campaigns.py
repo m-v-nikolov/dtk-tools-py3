@@ -29,6 +29,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
 
         drug_configs = drug_configs_from_code(cb,drug_code)        
 
+        # possible TO DO: hook MSAT up to MalariaDiagnostic instead of using FullTreatmentNewDetectionTech
 
         for start_day in start_days:
             drug_event = {
@@ -68,9 +69,9 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                             "Event_Coordinator_Config": 
                             {
                                 "class": "StandardInterventionDistributionEventCoordinator",
-                                "Demographic_Coverage": coverage,
                                 "Intervention_Config" : { 
                                     "class": "NodeLevelHealthTriggeredIV",
+                                    "Demographic_Coverage": coverage,
                                     "Trigger_Condition": "TriggerString",
                                     "Trigger_Condition_String": "Received_Treatment", # triggered by successful health-seeking
                                     "Duration" : interval, # interval argument indicates how long RCD will be implemented
@@ -104,12 +105,12 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                     "Event_Coordinator_Config": 
                                     {
                                         "class": "StandardInterventionDistributionEventCoordinator",
-                                        "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
                                         "Intervention_Config" : { 
                                             "class": "NodeLevelHealthTriggeredIV",
+                                            "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
                                             "Trigger_Condition": "TriggerString",
                                             "Trigger_Condition_String": "Give_Drugs",
-                                            "Blackout_Event_Trigger" : "Blackout",
+                                            "Blackout_Event_Trigger" : receiving_drugs_event['Broadcast_Event'],
                                             "Blackout_Period" : 3.0,
                                             "Actual_IndividualIntervention_Config" : {
                                                 "Intervention_List" : drug_configs + [receiving_drugs_event] ,

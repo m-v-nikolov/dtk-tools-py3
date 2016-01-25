@@ -10,6 +10,7 @@ from dtk.interventions.outbreak import recurring_outbreak
 from dtk.interventions.itn import add_ITN
 from dtk.interventions.migrate_to import add_migration_event
 import pandas as pd
+import json
 
 def config_setup_fn(duration=21915):
     return lambda cb: cb.update_params({'Simulation_Duration' : duration,
@@ -50,25 +51,28 @@ def add_treatment_fn(start=0,drug=['Artemether', 'Lumefantrine'],targets=[{'trig
     return fn
 
 # health-seeking from nodeid-coverage specified in csv
-def add_HS_by_node_id_fn(reffname, start=0) :
+def add_HS_by_node_id_fn(reffname, start=0) :        
     def fn(cb) :
-        df = pd.read_csv(reffname)
-        for i in range(len(df.index)) :
-            targets = [ { 'trigger': 'NewClinicalCase', 'coverage': float(df.ix[i, 'health_seeking']), 'agemin':15, 'agemax':200, 'seek': 0.4, 'rate': 0.3 },
-                        { 'trigger': 'NewClinicalCase', 'coverage': min([1, float(df.ix[i, 'health_seeking'])*1.5]), 'agemin':0, 'agemax':15, 'seek': 0.4, 'rate': 0.3 },
-                        { 'trigger': 'NewSevereCase',   'coverage': 0.8, 'seek': 0.6, 'rate': 0.5 } ]
-            add_health_seeking(cb, start_day = start, targets=targets, nodes={'Node_List' : [int(df.ix[i, 'ids'])], "class": "NodeSetNodeList"})
-
+        with open(reffname) as fin :
+            cov = json.loads(fin.read())
+        for hscov in cov['hscov'] :
+            targets = [ { 'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin':15, 'agemax':200, 'seek': hscov['coverage'], 'rate': 0.3 },
+                        { 'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin':0, 'agemax':15, 'seek':  min([1, hscov['coverage']*1.5]), 'rate': 0.3 },
+                        { 'trigger': 'NewSevereCase',   'coverage': 1, 'seek': 0.8, 'rate': 0.5 } ]
+            add_health_seeking(cb, start_day = start, targets=targets, nodes={'Node_List' : hscov['nodes'], "class": "NodeSetNodeList"})
     return fn
 
 
 # ITNs from nodeid-coverage specified in csv
-def add_itn_by_node_id_fn(reffname, start=0) :
+def add_itn_by_node_id_fn(reffname, itn_distr=[(0,0)]) :
     def fn(cb) :
-        df = pd.read_csv(reffname)
-        for i in range(len(df.index)) :
-            coverage = { 'min' : 0, 'max' : 200, 'coverage' : float(df.ix[i, 'itn'])}
-            add_ITN(cb, start, [coverage], nodeIDs=[int(df.ix[i, 'ids'])])
+        with open(reffname) as fin :
+            cov = json.loads(fin.read())
+        for itncov in cov['itncov'] :
+            if itncov['coverage'] > 0 :
+                for (itn_date, itn_frac) in itn_distr :
+                    coverage = { 'min' : 0, 'max' : 200, 'coverage' : itncov['coverage']*itn_frac}
+                    add_ITN(cb, itn_date, [coverage], nodeIDs=itncov['nodes'])
     return fn
 
 # migration

@@ -1,14 +1,19 @@
 from site_setup_functions import *
 
 sim_duration = 50*365
+itn_dates = [x/12. for x in [3, 6, 12, 24, 36, 96]]
+itn_dates = [max([0, sim_duration-365*x-199]) for x in itn_dates]
+itn_fracs = [0.29, 0.17, 0.42, 0.033, 0.047, 0.035]
+itn_distr = zip(itn_dates, itn_fracs)
+
 setup_functions = [ config_setup_fn(duration=sim_duration) ,
-                    larval_habitat_fn(species="arabiensis", habitats=[2e7, 8e9]),
+                    larval_habitat_fn(species="arabiensis", habitats=[1.2e9, 5.5e9]),
                     species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.8),
                     summary_report_fn(start=sim_duration-199,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(296), "class": "NodeSetNodeList"}),
-                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_all.csv', start=sim_duration-365),
-                    add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_all.csv', start=max([0,sim_duration-5*365])),
+                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', itn_distr),
+                    add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', start=max([0,sim_duration-5*365])),
                     #add_outbreak_fn(start_day=0, outbreak_fraction=0.2, tsteps_btwn=365, nodes={'Node_List' : [105, 95, 23, 38, 41, 45, 127], "class": "NodeSetNodeList"}),
-                    add_migration_fn(1001, start_day=130, coverage=0.5, repetitions=sim_duration/365+1, duration_of_stay=60, target={'agemin' : 15, 'agemax' : 30}),
+                    #add_migration_fn(1001, start_day=130, coverage=0.5, repetitions=sim_duration/365+1, duration_of_stay=60, target={'agemin' : 15, 'agemax' : 30}),
                     input_eir_fn([15]*12, nodes={'Node_List' : [1001], "class": "NodeSetNodeList"}),
                     lambda cb : cb.update_params( { "Geography": "Household",
                                                     "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 
@@ -43,7 +48,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "x_Vector_Migration_Regional" : 0.1,
                                                     "Vector_Migration_Habitat_Modifier": 3.8, 
                                                     "Vector_Migration_Food_Modifier" : 0,
-                                                    "Vector_Migration_Stay_Put_Modifier" : 1.1,
+                                                    "Vector_Migration_Stay_Put_Modifier" : 10,
                                                     #"Demographics_Filenames": ["Household/Bbondo_households_demographics_unif_fixedBR.json"],
                                                     "Demographics_Filenames": ["Household/Bbondo_households_all_demographics_unif_fixedBR_work.json"],
                                                     "x_Temporary_Larval_Habitat" : 0.01,
@@ -52,6 +57,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
 
                                                     "Enable_Migration_Heterogeneity": 1, 
                                                     "Migration_Model": "FIXED_RATE_MIGRATION", 
+                                                    #"Migration_Model": "NO_MIGRATION", 
                                                     "Enable_Local_Migration": 1,
                                                     "Local_Migration_Filename": "Household/Bbondo_households_Local_Migration.bin",
                                                     "Migration_Pattern": "SINGLE_ROUND_TRIPS",
@@ -59,7 +65,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Local_Migration_Roundtrip_Probability"    : 1.0,
                                                     "x_Local_Migration" : 0.1,
                                                     "Enable_Sea_Migration": 1,
-                                                    "x_Sea_Migration" : 0.1,
+                                                    "x_Sea_Migration" : 0.3,
                                                     "Sea_Migration_Filename": "Household/Bbondo_households_Work_Migration.bin",
                                                     "Sea_Migration_Roundtrip_Duration"         : 30.0,
                                                     "Sea_Migration_Roundtrip_Probability"      : 1.0
