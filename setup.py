@@ -15,5 +15,5 @@ setup(name='dtk',
       entry_points = {
         'console_scripts': ['dtk = dtk.commands:main']
       },
-      package_data = { '': ['dtk_setup.cfg'] },
+      package_data = { '': ['dtk_setup.cfg', 'tools/calibration/calibtool/calibration_defaults.json']  },
       zip_safe=False)
