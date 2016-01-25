@@ -1,6 +1,7 @@
 def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, 
                         duration_at_node_distr_type='FIXED_DURATION', 
                         duration_of_stay=100, duration_of_stay_2=0, 
+                        duration_before_leaving_distr_type='FIXED_DURATION', 
                         duration_before_leaving=0, duration_before_leaving_2=0, 
                         is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
 
@@ -24,8 +25,12 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         "Nodeset_Config": nodesfrom
                         }
 
-    migration_event = update_duration_type(migration_event, duration_at_node_distr_type, dur_param_1=duration_of_stay, dur_param_2=duration_of_stay_2, leaving_or_at='at')
-    migration_event = update_duration_type(migration_event, duration_at_node_distr_type, dur_param_1=duration_before_leaving, dur_param_2=duration_before_leaving_2, leaving_or_at='leaving')
+    migration_event = update_duration_type(migration_event, duration_at_node_distr_type, 
+                                           dur_param_1=duration_of_stay, dur_param_2=duration_of_stay_2, 
+                                           leaving_or_at='at')
+    migration_event = update_duration_type(migration_event, duration_before_leaving_distr_type, 
+                                           dur_param_1=duration_before_leaving, dur_param_2=duration_before_leaving_2, 
+                                           leaving_or_at='leaving')
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         migration_event["Event_Coordinator_Config"].update({

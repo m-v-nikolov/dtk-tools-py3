@@ -24,7 +24,8 @@ def analyze_prevalence_risk(settings, analyzer, site, data, samples) :
     field = analyzer['fields_to_get'][0]
     LL = [0]*len(samples.index)
     nodes = data[0]['nodeids']
-    dist_mat = distance_df(settings, samples.ix[0, site + ' outpath 0'])
+    dist_mat = distance_df(settings, analyzer, samples.ix[0, site + ' outpath 0'])
+    #dist_mat.to_csv('C:/Users/jgerardin/work/households_as_nodes/calibtool_distmat.csv', index=False)
 
     record_data_by_sample = { 'risk_by_distance' : [], 'Population' : [], 'Prevalence' : [] }
     for rownum in range(len(LL)) :
@@ -196,7 +197,7 @@ def get_node_locations(settings, outpath, worknode) :
     demo = pd.DataFrame(demo)
     return demo
 
-def distance_df(settings, outpath) :
+def distance_df(settings, analyzer, outpath) :
 
     demo = get_demographics(settings, outpath)
 
@@ -204,9 +205,10 @@ def distance_df(settings, outpath) :
     lons = []
     nodeids = []
     for node in demo['Nodes'] :
-        nodeids.append(node['NodeID'])
-        lats.append(node['NodeAttributes']['Latitude'])
-        lons.append(node['NodeAttributes']['Longitude'])
+        if node['NodeID'] not in analyzer['worknode'] :
+            nodeids.append(node['NodeID'])
+            lats.append(node['NodeAttributes']['Latitude'])
+            lons.append(node['NodeAttributes']['Longitude'])
     n1 = []
     n2 = []
     d = []
