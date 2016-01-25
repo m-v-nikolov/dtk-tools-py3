@@ -72,7 +72,13 @@ class DTKConfigBuilder:
                 self.set_param(k, v)
 
     def set_param(self, param, value):
-        self.config["parameters"][param] = value
+        # Try to cast the value to float. If doesnt work, assume its a string
+        try:
+            casted_value = float(value)
+        except:
+            casted_value = value
+
+        self.config["parameters"][param] = casted_value
 
     def get_param(self, param, default=None):
         return self.config["parameters"].get(param, default)
