@@ -47,10 +47,10 @@ class SimulationManagerFactory():
         raise Exception("SimulationManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
-    def from_exe(cls,exe_path, location='LOCAL'):
+    def from_exe(cls,exe_path, location='LOCAL', setup_file=None):
         if not exe_path:
             raise Exception('SimulationManagerFactory.from_exe takes the executable path as an argument.')
-        return cls.factory(location)(exe_path, {})
+        return cls.factory(location)(exe_path, {}, setup_file)
 
     @classmethod
     def from_file(cls,exp_data_path):
@@ -66,11 +66,11 @@ class LocalSimulationManager():
 
     parserClass=DTKOutputParser
 
-    def __init__(self, exe_path, exp_data):
+    def __init__(self, exe_path, exp_data, setup_file):
         self.location  = 'LOCAL'
         self.exp_data  = exp_data
         self.exe_path  = exe_path
-        self.setup     = DTKSetupParser()
+        self.setup     = DTKSetupParser(setup_file)
         self.emodules  = []
         self.analyzers = []
         self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('GLOBAL','max_threads')))
@@ -416,8 +416,8 @@ class CompsSimulationManager(LocalSimulationManager):
 
     parserClass=CompsDTKOutputParser
 
-    def __init__(self, exe_path, exp_data):
-        LocalSimulationManager.__init__(self,exe_path,exp_data)
+    def __init__(self, exe_path, exp_data,setup_file=None):
+        LocalSimulationManager.__init__(self,exe_path,exp_data,setup_file)
         self.location = 'HPC'
         self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.getProperty('sims_per_thread'))

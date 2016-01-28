@@ -76,7 +76,7 @@ def get_survey_report_data(analyzer, simpaths) :
     simfile = 'MalariaSurveyJSONAnalyzer_Day_' + analyzer['reporter_output_tail'] + '.json'
     data = []
     for i in range(numsamples) :
-        t = loaddata(simpaths[i] + '/output/' + simfile)
+        t = loaddata(os.path.join(simpaths[i] ,'output',simfile))
         patients = []
         for patient in t['patient_array'] :
             d = {}
@@ -254,7 +254,9 @@ def createSimDirectoryMap(settings):
 
     from dtk.utils.simulation.OutputParser import CompsDTKOutputParser
     from COMPS import Client
-    Client.Login('https://comps.idmod.org')
+    from dtk.utils.core.DTKSetupParser import DTKSetupParser
+
+    Client.Login(DTKSetupParser(settings['dtk_setup_config']).get('HPC','server_endpoint'))
     sim_map = CompsDTKOutputParser.createSimDirectoryMap(exp_id=exp_id)
 
     for sim_id in sim_map :

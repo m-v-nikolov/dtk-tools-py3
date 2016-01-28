@@ -8,3 +8,10 @@ Gametocyte_Stage_Survival_Rate,0.95,0.5,linear
 MSP1_Merozoite_Kill_Fraction,0.7,0.4,linear
 Max_Individual_Infections,8,3,linear_int
 Nonspecific_Antigenicity_Factor,0.9,0.1,linear
+VECTOR.arabiensis.Required_Habitat_Factor.CONSTANT, 1e7, 2e7,log_int
+VECTOR.arabiensis.Required_Habitat_Factor.TEMPORARY_RAINFALL, 1e7,2e7,log_int
+VECTOR.arabiensis.Acquire_Modifier,0.1,1,linear
+DRUG.Artemether.Drug_Adherence_Rate,0.1,1,linear
+HABSCALE.340461476,0,1,linear
+
+

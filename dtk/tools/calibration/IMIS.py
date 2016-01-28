@@ -131,6 +131,9 @@ class IMIS:
             self.sampling_envelope = np.sum(stack,0) / norm
         logger.debug('Sampling envelope:\n%s' % self.sampling_envelope)
 
+        print "PRIORS:\n%s\n" % self.priors
+        print "SAMPLES:\n%s\n" % self.latest_samples
+
         self.weights = [p*l/e for (p,l,e) in zip(self.priors,self.likelihoods,self.sampling_envelope)] # TODO: perform in log space
         self.weights /= np.sum(self.weights)
         logger.debug('Weights:\n%s' % self.weights)
