@@ -17,8 +17,13 @@
 import json
 import os
 import time
+from collections import Counter
+
 import pandas as pd
 import math
+
+from commands import reload_experiment
+
 
 def concat_likelihoods(settings) :
 
@@ -65,55 +70,59 @@ def clean_directory(settings) :
         pass
     
 def check_for_done(settings, sleeptime=0) :
-
+    # First get the experiment id with the sim.json file contained in the current iteration
     with open(os.path.join(settings['curr_iteration_dir'],'sim.json')) as fin :
         sim = json.loads(fin.read())
-    exp_id = sim['exp_name'] + '_' + sim['exp_id']
 
+    exp_id = sim['exp_name'] + '_' + sim['exp_id']
+    sim_count = len(sim["sims"])
+
+    # If we want to wait => wait
     if sleeptime > 0 :
         time.sleep(sleeptime)
         return
-
-    status_fname = 'temp'
-    numsims = -1
 
     start_time = time.time()
     start_run_time = -1
 
     while True :
-        os.system('dtk status -e ' + exp_id + ' > ' + status_fname)
-        status = reset_status()
-        with open(status_fname) as fin :
-            f = fin.read()
-            t = f.split('{')[-1].split('}')[0]
-            if numsims < 0 :
-                numsims = len(f.split('{')[-2].split('}')[0].split(','))
-            for line in t.split(',') :
-                status[line.split()[0][1:-2]] = int(line.split()[1])
-        if status['Succeeded'] + status['Failed'] + status['Canceled'] + status['Finished'] == numsims :
-            break
-        curr_time = time.time() - start_time
-        status['Finished'] = status['Succeeded'] + status['Failed'] + status['Canceled'] + status['Finished']
-        status['Waiting'] = status['Commissioned'] + status['CommissionRequested'] + status['Provisioning']
-        if start_run_time < 0 and status['Finished'] + status['Running'] > 0 :
-            start_run_time = curr_time
+        args = type('obj', (object,), {'expId' : exp_id})
 
-        print 'time since submission: ', int(curr_time/60), 
-        print 'time_since running began: ', int((curr_time - start_run_time)/60)
-        print 'Running: ' + str(status['Running']), 
-        print 'Waiting: ' + str(status['Waiting']), 
-        print 'Finished: ' + str(status['Finished'])
-        time.sleep(get_sleep_time(status, numsims, curr_time, start_run_time))
-
-
-def reset_status() :
-
-    status = { 'Commissioned' : 0, 'Running' : 0, 'Succeeded' : 0, 'Failed' : 0, 
-               'Canceled' : 0, 'Created' : 0, 'CommissionRequested' : 0, 
-               'Provisioning' : 0, 'Retry' : 0, 'CancelRequested' : 0, 
+        # Reset the count
+        new_status = { 'Commissioned' : 0, 'Running' : 0, 'Succeeded' : 0, 'Failed' : 0,
+               'Canceled' : 0, 'Created' : 0, 'CommissionRequested' : 0,
+               'Provisioning' : 0, 'Retry' : 0, 'CancelRequested' : 0,
                'Finished' : 0, 'Waiting' : 0}
 
-    return status
+        # set new_status with the data coming from the simulation status
+        sm = reload_experiment(args)
+        states, msgs = sm.SimulationStatus()
+        states_dict =  dict(Counter(states.values()))
+        for (status,number) in states_dict.iteritems():
+            new_status[status] = number
+
+        # If we have as many simulations done (failed, cancel, succeeded or finished) than total simulations => exit the loop
+        if new_status['Succeeded'] + new_status['Failed'] + new_status['Canceled'] + new_status['Finished'] ==  sim_count:
+            break
+
+        # Update the time and the count of simulations
+        curr_time = time.time() - start_time
+        new_status['Finished'] = new_status['Succeeded'] + new_status['Failed'] + new_status['Canceled'] + new_status['Finished']
+        new_status['Waiting'] = new_status['Commissioned'] + new_status['CommissionRequested'] + new_status['Provisioning']
+
+        if start_run_time < 0 and new_status['Finished'] + new_status['Running'] > 0 :
+            start_run_time = curr_time
+
+        # Display
+        print 'time since submission: ', int(curr_time/60), 
+        print 'time_since running began: ', int((curr_time - start_run_time)/60)
+        print 'Running: ' + str(new_status['Running']),
+        print 'Waiting: ' + str(new_status['Waiting']),
+        print 'Finished: ' + str(new_status['Finished'])
+
+        # Wait a certain time
+        time.sleep(get_sleep_time(new_status, sim_count, curr_time, start_run_time))
+
 
 def get_sleep_time(status, numsims, curr_time, start_run_time) :
 

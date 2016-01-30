@@ -5,7 +5,7 @@ from dtk.tools.calibration.calibtool.study_sites.site_setup_functions import con
 fine_age_bins = [ 0.08333, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                   11, 12, 13, 14, 15, 20, 25, 30, 40, 50, 60, 100 ]
 
-setup_functions = [ config_setup_fn(duration=730),
+setup_functions = [ config_setup_fn(duration=365),
                     summary_report_fn(age_bins=fine_age_bins, interval=360),
                     lambda cb : cb.update_params({ "Geography": "Calibration",
                                                    "Demographics_Filenames": ["Calibration/birth_cohort_demographics.compiled.json"], 

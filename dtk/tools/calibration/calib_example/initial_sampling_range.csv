@@ -1,5 +1,7 @@
 parameter,max,min,type
-Antigen_Switch_Rate,1.00E-08,1.00E-10,log
+Falciparum_MSP_Variants,50,5,linear_int
+Falciparum_Nonspecific_Types,100,5,linear_int
+Falciparum_PfEMP1_Variants,1700,900,linear_int
 DRUG.Artemether.Drug_Adherence_Rate,1,0.1,linear
 HABSCALE.340461476,1,0,linear
 VECTOR.arabiensis.Required_Habitat_Factor.CONSTANT, 20000000, 10000000,log_int

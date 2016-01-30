@@ -30,6 +30,7 @@ def load_settings(ofname) :
         except IOError :
             pass
 
+
     # Normalize the paths to allow the user to specify paths with / or \
     settings['working_dir'] = os.path.normpath(settings['working_dir'])
     settings['dtk_setup_config'] = os.path.normpath(settings['dtk_setup_config'])
@@ -37,7 +38,7 @@ def load_settings(ofname) :
     settings['initial_sampling_range_file'] = os.path.normpath(settings['initial_sampling_range_file'])
 
     # Add the custom sites to the path
-    sys.path.append(os.path.join(settings['working_dir'], settings['custom_sites_module']))
+    sys.path.insert(0,os.path.join(settings['working_dir'], settings['custom_sites_module']))
 
     # Make sure the exp_dir exists
     settings['exp_dir'] = os.path.join( settings['working_dir'], settings['expname'])
@@ -46,11 +47,9 @@ def load_settings(ofname) :
     except WindowsError :
         pass
 
-    newrun = True
     try :
         with open(os.path.join(settings['exp_dir'],'settings.json')) as fin :
             settings = json.loads(fin.read())
-            newrun = False
     except IOError :        
         settings['plot_dir'] = os.path.join(settings['exp_dir'],'_plots')
         settings['curr_iteration_dir'] = os.path.join(settings['exp_dir'],'iter0')
