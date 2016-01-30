@@ -1,5 +1,7 @@
+import glob
 import json
 import os
+import shutil
 import sys
 from copy import deepcopy as dcopy
 
@@ -163,21 +165,11 @@ def run_one_iteration(settings, iteration=0) :
     }
     sm.RunSimulations(**args)
 
-    sim_json_dir = 'simulations\\'
-    os.system('dir ' + sim_json_dir + ' /o:d > simIDs')
-    fname = ""
+    # Get the latest experiment json of the folder simulations to find what is the current running experiment
+    newest = max(glob.iglob('%s\\*.json' % os.path.join(settings['working_dir'],'simulations')), key=os.path.getctime)
 
-    with open('simIDs') as fin :
-        t = fin.readlines()
-        for i in reversed(range(len(t))) :
-            if 'json' in t[i] :
-                fname = t[i].split()[-1]
-                break
-
-    with open(os.path.join(sim_json_dir,fname)) as fin :
-        t = json.loads(fin.read())
-        with open(os.path.join(settings['curr_iteration_dir'],'sim.json'), 'w') as fout :
-            json.dump(t, fout)
+    # Copy this newest in the sim.json
+    shutil.copyfile(newest, os.path.join(settings['curr_iteration_dir'],'sim.json'))
 
 
 if __name__ == '__main__':
