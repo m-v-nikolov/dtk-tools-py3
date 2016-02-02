@@ -40,7 +40,7 @@ class CompsSimulationCommissioner(SimulationCommissioner):
 
         Client.Login(setup.get('HPC','server_endpoint'))
 
-        bldr = Configuration.getBuilderInstance();
+        bldr = Configuration.getBuilderInstance()
         config = bldr.setSimulationInputArgs(input_args) \
                      .setWorkingDirectoryRoot(os.path.join(setup.get('HPC','sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
                      .setExecutablePath(bin_path) \
@@ -49,7 +49,7 @@ class CompsSimulationCommissioner(SimulationCommissioner):
                      .setPriority(HPCJob__Priority.valueOf(setup.get('HPC','priority'))) \
                      .setMinCores(config_builder.get_param('Num_Cores',1)) \
                      .setMaxCores(config_builder.get_param('Num_Cores',1)) \
-                     .build();
+                     .build()
 
         # print('exp_name - ' + str(exp_name))
         # print('config - ' + str(config))

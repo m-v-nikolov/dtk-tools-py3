@@ -139,6 +139,7 @@ def scale_all_habitats(cb, scale):
         v = [scale*h for h in get_species_param(cb, s, 'Required_Habitat_Factor')]
         set_species_param(cb, s, 'Required_Habitat_Factor', v)
 
+
 def set_larval_habitat(cb, habitats):
     """
     Set vector species and habitat parameters of config argument and return
