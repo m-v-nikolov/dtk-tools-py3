@@ -28,8 +28,5 @@ deprecate/
 .ipynb_checkpoints
 
 # Calibration
-temp
-temp_dtk.py
 StdOut.txt
 StdErr.txt
-simIDs
