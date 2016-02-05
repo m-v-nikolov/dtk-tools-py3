@@ -1,11 +1,9 @@
 parameter,max,min,type
-Falciparum_MSP_Variants,50,5,linear_int
-Falciparum_Nonspecific_Types,100,5,linear_int
-Falciparum_PfEMP1_Variants,1700,900,linear_int
-DRUG.Artemether.Drug_Adherence_Rate,1,0.1,linear
-HABSCALE.340461476,1,0,linear
+Falciparum_MSP_Variants,5000,5,linear_int
+Falciparum_Nonspecific_Types,1000,5,linear_int
+Falciparum_PfEMP1_Variants,17000,900,linear_int
+CONFIG.Malaria_Drug_Params.Artemether.Fractional_Dose_By_Upper_Age.0.Fraction_Of_Adult_Dose,1,0,linear
 VECTOR.arabiensis.Required_Habitat_Factor.CONSTANT, 20000000, 10000000,log_int
 VECTOR.arabiensis.Required_Habitat_Factor.TEMPORARY_RAINFALL, 20000000,10000000,log_int
-VECTOR.arabiensis.Acquire_Modifier,1,0.1,linear
-
-
+DRUG.Artemether.Drug_Adherence_Rate,1,0.1,linear
+HABSCALE.340461476,1,0,linear
