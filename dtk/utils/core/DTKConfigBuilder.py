@@ -77,7 +77,7 @@ class DTKConfigBuilder:
         if file == "CONFIG":
             current_file = self.config["parameters"]
         else:
-            current_file = self.campaign
+            current_file = self.campaign["Events"]
 
         # Try to cast the value to float. If doesnt work, assume its a string
         try:
