@@ -77,7 +77,6 @@ def run_one_iteration(settings, iteration=0) :
 
     # For each param = value, create a simulation
     for i in range(numvals) :
-        vector_habitats_processed = False
         current_sim = list()
         for pname in samples.columns.values:
             # Get the value here
@@ -87,8 +86,7 @@ def run_one_iteration(settings, iteration=0) :
             except:
                 pval = val
 
-            # Depending on whats in the parameter carry out different actions
-            # CAMPAIGN shortcut
+            # CAMPAIGN DRUG shortcut
             if 'CAMPAIGN' in pname:
                 cparam = pname.split('.')
                 if cparam[1] == 'DRUG':
@@ -101,43 +99,7 @@ def run_one_iteration(settings, iteration=0) :
                 node = pname.split('.')[1]
                 current_sim.append(Builder.ModFn(scale_larval_habitats, scales=[([node],pval),] ))
 
-            # DRUG
-            elif 'DRUG' in pname:
-                vname = pname.split('.')[1]
-                vpar = pname.split('.')[2]
-                current_sim.append(Builder.ModFn(set_drug_param, drugname=vname, parameter=vpar , value=pval))
-
-            # VECTOR shortcut
-            elif 'VECTOR' in pname:
-                vpar = pname.split('.')[2]
-                if 'Required_Habitat_Factor' in vpar:
-                    if not vector_habitats_processed:
-                        # First time we encounter a required habitat => process all of them
-                        # We have to still let the loop finish so when other habitats are encounter we still set them in the config file (use for the priors)
-                        # Grab all the parameters with Required_Habitat_Factor in the name
-                        vectors = dict()
-                        for vec in [x for x in samples.columns.values if 'Required_Habitat_Factor' in x]:
-                            # Retrieve the vector name
-                            vname = vec.split('.')[1]
-                            habname = vec.split('.')[3]
-
-                            # If this vector doesnt exist in the dict -> create it
-                            if not vectors.has_key(vname):
-                                vectors[vname] = dict()
-
-                            # Retrieve the value for the current vector/current habitat
-                            vectors[vname][habname] = float(samples[vec].values[i])
-
-
-                        # Set the flag to true to not redo the same thing over and over
-                        vector_habitats_processed = True
-
-                        # Add the builder
-                        current_sim.append(Builder.ModFn(set_larval_habitat, vectors))
-                else :
-                    vname = pname.split('.')[1]
-                    current_sim.append(Builder.ModFn(set_species_param, species=vname, parameter=vpar, value=pval))
-
+            # For everything else, use the set_param
             current_sim.append(Builder.ModFn(set_param,pname,pval))
 
         # For each sites and run_number, duplicate the simulation, add the site and add to the builder list

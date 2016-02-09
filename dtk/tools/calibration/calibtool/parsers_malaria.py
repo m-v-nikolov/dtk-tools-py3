@@ -172,8 +172,6 @@ def loaddata(fname) :
 
 def get_paths_hpc(settings, iteration) :
 
-    sites = settings['sites'].keys()
-
     samples = load_samples(settings, iteration)
     paramnames = list(samples.columns.values)
     numsamples = len(samples[paramnames[0]].values)
@@ -198,8 +196,6 @@ def get_paths_hpc(settings, iteration) :
     return samples
 
 def get_paths_local(settings, iteration) :
-
-    sites = settings['sites'].keys()
 
     samples = load_samples(settings, iteration)
     paramnames = list(samples.columns.values)

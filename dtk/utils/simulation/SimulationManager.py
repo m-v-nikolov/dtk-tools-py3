@@ -66,7 +66,7 @@ class LocalSimulationManager():
 
     parserClass=DTKOutputParser
 
-    def __init__(self, exe_path, exp_data, setup_file):
+    def __init__(self, exe_path, exp_data, setup_file=None):
         self.location  = 'LOCAL'
         self.exp_data  = exp_data
         self.exe_path  = exe_path
