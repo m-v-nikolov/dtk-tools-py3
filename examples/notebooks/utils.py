@@ -10,9 +10,9 @@ from IPython.display import display
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 from dtk.utils.simulation.SimulationManager import SimulationManagerFactory
 
-def write_dtk_config(max_sims, sim_root, input_root, bin_path, exe_path):
-    conf_path = os.path.join(site.getsitepackages()[1], 'dtk', 'dtk_setup.cfg')
-    print conf_path
+
+def write_dtk_config(max_sims, sim_root, input_root, bin_path, exe_path, current_path):
+    conf_path = os.path.join(current_path, 'dtk_setup.cfg')
     config = ConfigParser.RawConfigParser()
     config.read(conf_path)
 
@@ -48,8 +48,9 @@ def test_if_simulation_done(states):
 
 
 def get_sim_manager():
+    dtk_setup_path = os.path.join(os.path.dirname(os.path.abspath('__file__')),"dtk_setup.cfg")
     exe_path = DTKSetupParser().get('BINARIES','exe_path')
-    return SimulationManagerFactory.from_exe(exe_path, 'LOCAL')
+    return SimulationManagerFactory.from_exe(exe_path, 'LOCAL',setup_file=dtk_setup_path)
 
 
 def run_demo(sm, run_sim_args, verbose=True):
