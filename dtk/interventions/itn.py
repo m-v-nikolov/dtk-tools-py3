@@ -1,15 +1,15 @@
 # Bednet parameters
 itn_bednet = { "class": "SimpleBednet",
-               "Bednet_Type": "ITN", 
+               "Bednet_Type": "ITN",
                "Blocking_Rate": 0.9,
-               "Killing_Rate": 0.6, 
-               "Durability_Time_Profile": "DECAYDURABILITY", 
+               "Killing_Rate": 0.6,
+               "Durability_Time_Profile": "DECAYDURABILITY",
                "Primary_Decay_Time_Constant":   4 * 365,   # killing
                "Secondary_Decay_Time_Constant": 2 * 365,   # blocking
                "Cost_To_Consumer": 3.75
 }
 
-def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], perfect=False):
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], perfect=False, receiving_itn_event =  {"class": "BroadcastEvent", "Broadcast_Event": "Received_ITN"}):
     """
     Add an ITN intervention to the config_builder passed.
 
@@ -19,32 +19,34 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     :param waning: a dictionary defining the durability of the nets. if empty the default ``DECAYDURABILITY`` with 4 years primary and 2 years secondary will be used.
     :param cost: Set the ``Cost_To_Consumer`` parameter
     :param nodeIDs: If empty, all nodes will get the intervention. If set, only the nodeIDs specified will receive the intervention.
+    :param receiving_itn_event:
     :return: Nothing
     """
-    receiving_itn_event = {
-        "class": "BroadcastEvent",
-        "Broadcast_Event": "Received_ITN"
-    }
-
     if waning:
-        itn_bednet.update({ "Durability_Time_Profile":       waning['profile'], 
+        itn_bednet.update({ "Durability_Time_Profile":       waning['profile'],
                             "Primary_Decay_Time_Constant":   waning['kill'] * 365,
                             "Secondary_Decay_Time_Constant": waning['block'] * 365 })
 
     if perfect :
         itn_bednet.update({ "Blocking_Rate": 1.0,
-                            "Killing_Rate": 1.0, 
-                            "Durability_Time_Profile": "BOXDURABILITY", 
+                            "Killing_Rate": 1.0,
+                            "Durability_Time_Profile": "BOXDURABILITY",
                             "Primary_Decay_Time_Constant":   400 * 365,   # killing
                             "Secondary_Decay_Time_Constant": 400 * 365    # blocking
                             })
     if cost:
         itn_bednet['Cost_To_Consumer'] = cost
 
-    itn_bednet_w_event = {
-        "Intervention_List" : [itn_bednet, receiving_itn_event] ,
-        "class" : "MultiInterventionDistributor"
-        }   
+    if len(receiving_itn_event.keys()) != 0:
+        itn_bednet_w_event = {
+            "Intervention_List" : [itn_bednet, receiving_itn_event] ,
+            "class" : "MultiInterventionDistributor"
+            }
+    else:
+         itn_bednet_w_event = {
+            "Intervention_List" : [itn_bednet] ,
+            "class" : "MultiInterventionDistributor"
+            }
 
     for coverage_by_age in coverage_by_ages:
 
