@@ -3,9 +3,10 @@ import unittest
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder, set_param
 from dtk.utils.builders.sweep import Builder, SingleSimulationBuilder, RunNumberSweepBuilder, GenericSweepBuilder
 from dtk.vector.study_sites import configure_site
-from dtk.vector.calibration_sites import set_calibration_site
 from dtk.vector.species import get_species_param, set_species_param
 from dtk.interventions.malaria_drugs import get_drug_param, set_drug_param
+from tools.calibration.calibtool.study_sites.set_calibration_site import set_calibration_site
+
 
 class TestBuilders(unittest.TestCase):
 
