@@ -1,0 +1,39 @@
+# Python
+*.py[cod]
+
+# Visual Studio
+*.pyproj
+*.sln
+*.suo
+
+# Simulation meta-data
+*simulations/
+
+# Analysis outputs
+*cache/
+*figs/
+
+# Old stuff
+deprecate/
+
+# Setup
+*.eggs
+*egg-info
+*build/
+*dist/
+
+# PyCharm
+*.idea*
+*.log
+.ipynb_checkpoints
+
+# Calibration
+temp
+temp_dtk.py
+StdOut.txt
+StdErr.txt
+simIDs
+dtk/calibration/calib_example/*test*/
+examples/calibration/
+examples/ExampleCalibration/
+test/tmp/
