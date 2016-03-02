@@ -78,8 +78,6 @@ class IterationState(object):
         df = pd.concat((results_df , params_df), axis=1)
         df['iteration'] = self.iteration
 
-        # TODO: # numpy.int64/object serialization issues with utils.NumpyEncoder
-        df.iteration = df.iteration.astype(int)
         #df['simIds'] = simIds
 
         return df

@@ -13,6 +13,7 @@ from simtools.ModBuilder import ModBuilder
 
 from IterationState import IterationState
 from visualize import LikelihoodPlotter, SiteDataPlotter
+from utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ class CalibManager(object):
         '''
 
         while self.iteration < self.max_iterations:
-            logger.info('Iteration %d', self.iteration)
+            logger.info('---- Iteration %d ----', self.iteration)
             next_params = self.get_next_parameters()
 
             self.commission_iteration(next_params, **kwargs)
@@ -170,7 +171,7 @@ class CalibManager(object):
 
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
-            return [sample['total'] for sample in self.iteration_state.results]
+            return self.iteration_state.results['total']
 
         exp_data = self.iteration_state.simulations
         exp_manager = ExperimentManagerFactory.from_data(exp_data)
@@ -229,7 +230,8 @@ class CalibManager(object):
     def finalize_calibration(self):
         ''' Get the final samples (and any associated information like weights) from algo. '''
         final_samples = self.next_point.get_final_samples()
-        # TODO: write this out somewhere like cache_calibration?!
+        logger.debug('Final samples:\n%s', pprint.pformat(final_samples))
+        self.cache_calibration(final_samples=final_samples)
 
     def generate_suite_id(self, exp_manager):
         '''
@@ -239,7 +241,7 @@ class CalibManager(object):
         self.suite_id = exp_manager.create_suite(self.name)
         self.cache_calibration()
 
-    def cache_calibration(self):
+    def cache_calibration(self, **kwargs):
         '''
         Cache information about the CalibManager that is needed to resume after an interruption.
         N.B. This is not currently the complete state, some of which relies on nested and frozen functions.
@@ -254,8 +256,9 @@ class CalibManager(object):
                  'iteration': self.iteration,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
-                 'results': self.all_results.to_dict(orient='list') if isinstance(self.all_results, pd.DataFrame) else None}
-        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4)
+                 'results': self.serialize_results()}
+        state.update(kwargs)
+        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
     def cache_iteration_state(self, backup_existing=False):
         '''
@@ -274,6 +277,42 @@ class CalibManager(object):
             os.rename(iter_state_path, os.path.join(iter_directory, 'IterationState_%s.json' % backup_id))
 
         self.iteration_state.to_file(iter_state_path)
+
+    def serialize_results(self):
+        '''
+        Prepare summary results for serialization.
+        N.B. we cast also the sample index and iteration to int32
+             to avoid a NumpyEncoder issue with np.int64
+        '''
+
+        if not isinstance(self.all_results, pd.DataFrame):
+            return None
+
+        self.all_results.index.name = 'sample'
+        data = self.all_results.reset_index()
+
+        data.iteration = data.iteration.astype(int)
+        data['sample'] = data['sample'].astype(int)
+
+        return data.to_dict(orient='list')
+
+    def restore_results(self, results, iteration):
+        '''
+        Restore summary results from serialized state.
+        '''
+
+        if not results:
+            logger.debug('No cached results to reload from CalibManager.')
+            return
+
+        self.all_results = pd.DataFrame.from_dict(results, orient='columns')
+        self.all_results.set_index('sample', inplace=True)
+
+        last_iteration = iteration if not self.iteration_state.results else iteration-1
+        self.all_results = self.all_results[self.all_results.iteration <= last_iteration]
+        logger.info('Restored results from iteration %d', last_iteration)
+        logger.debug(self.all_results)
+        self.cache_calibration()
 
     def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
         '''
@@ -312,12 +351,17 @@ class CalibManager(object):
 
         try:
             self.iteration_state = IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
+            self.restore_results(calib_data.get('results'), iteration)
             if iter_step:
                 self.iteration_state.reset_to_step(iter_step)
                 self.cache_iteration_state(backup_existing=True)
         except IOError:
             raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
 
+        # TODO: If we attempt to resume, with re-commissioning,
+        #       we will have to roll back next_point to previous iteration?
+        #       Do we ever want to do this, or would we just re-select the
+        #       next parameters from the previous iteration state?
         logger.info('Resuming NextPointAlgorithm from cached status.')
         logger.debug(pprint.pformat(self.iteration_state.next_point))
         self.next_point.set_current_state(self.iteration_state.next_point)

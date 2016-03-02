@@ -103,7 +103,8 @@ class IMIS(NextPointAlgorithm):
                     w^(k)_i = c * L_i * p(\theta_i) / q^(k)(\theta_i),
                 where c is chosen so that the weights add to 1, q(k) is the mixture sampling distribution:
                     q^(k) = (N_0/N_k) * p + (B/N_k) * sum(H_s)
-                where H_s is the s-th multivariate normal distribution,                and N_k = N_0 + B_k is the total number of inputs up to iteration k.
+                where H_s is the s-th multivariate normal distribution,
+                and N_k = N_0 + B_k is the total number of inputs up to iteration k.
         '''
 
         super(IMIS, self).update_iteration(iteration)
@@ -131,8 +132,11 @@ class IMIS(NextPointAlgorithm):
                 the weighted covariance of the B inputs with the smallest Mahalanobis distances
                 to \theta^(k), where the distances are calculated with respect to the covariance of the
                 prior distribution and the weights are taken to be proportional to the average of
-                the importance weights and 1/N_k.            (b) Sample 'samples_per_iteration' new inputs from a multivariate Gaussian distribution
-                H_k with covariance matrix \Sigma^(k).        '''
+                the importance weights and 1/N_k.
+
+            (b) Sample 'samples_per_iteration' new inputs from a multivariate Gaussian distribution
+                H_k with covariance matrix \Sigma^(k).
+        '''
 
         self.update_gaussian_center()
         distances = self.weighted_distances_from_center()
@@ -268,7 +272,14 @@ class IMIS(NextPointAlgorithm):
         '''
         nonzero_idxs = self.weights > 0
         idxs = [i for i, w in enumerate(self.weights[nonzero_idxs])]
-        resample_idxs = np.random.choice(idxs, self.n_resamples, replace=True, p=self.weights[nonzero_idxs])
+        try:
+            resample_idxs = np.random.choice(idxs, self.n_resamples, replace=True, p=self.weights[nonzero_idxs])
+        except ValueError:
+            # To isolate dtk-tools issue #96
+            print(nonzero_idxs)
+            print(self.weights)
+            print(idxs)
+            raise
 
         return dict(samples=self.samples[resample_idxs], weights=self.weights[resample_idxs])
 

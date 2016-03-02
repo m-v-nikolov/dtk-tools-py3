@@ -44,7 +44,7 @@ def main():
     parser = argparse.ArgumentParser(prog='calibtool')
     subparsers = parser.add_subparsers()
 
-    # 'dtk run' options
+    # 'calibtool run' options
     parser_run = subparsers.add_parser('run', help='Run a calibration configured by run-options')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
     parser_run.add_argument('--hpc', action='store_true', help='Run calibration simulations on HPC using COMPS (default is local simulation).')
@@ -52,7 +52,7 @@ def main():
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_run.set_defaults(func=run)
 
-    # 'dtk resume' options
+    # 'calibtool resume' options
     parser_resume = subparsers.add_parser('resume', help='Resume a calibration configured by resume-options')
     parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
     parser_resume.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')

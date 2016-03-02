@@ -11,20 +11,26 @@ def ivermectin_config_by_duration(drug_code=None):
     """
     Returns the correct ``Killing_Config`` parameter depending on the ``drug_code``
 
-    :param drug_code: Can be ``'DAY'``, ``'WEEK'`` or ``'MONTH'`` and drive the ``Killing_config`` (see `Killing config doc <http://idmod.org/idmdoc/#EMOD/ParameterReference/Killing_Config.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|Ivermectin|_____1>`_ for more info).
+    :param drug_code: Can be ``'DAY'``, ``'WEEK'`` or ``'MONTH'`` or a number of days and drive the ``Killing_config`` (see `Killing config doc <http://idmod.org/idmdoc/#EMOD/ParameterReference/Killing_Config.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|Ivermectin|_____1>`_ for more info).
     :return: a dictionary with the correct ``Killing_Config / Box_Duration`` set.
     """
     if not drug_code:
         return {}
     cfg=copy.deepcopy(ivermectin_cfg)
-    if drug_code == 'DAY':
-        cfg['Killing_Config']['Box_Duration'] = 1
-    elif drug_code == 'WEEK':
-        cfg['Killing_Config']['Box_Duration'] = 7
-    elif drug_code == 'MONTH':
-        cfg['Killing_Config']['Box_Duration'] = 30
+    if isinstance(drug_code, str):
+        if drug_code == 'DAY':
+            cfg['Killing_Config']['Box_Duration'] = 1
+        elif drug_code == 'WEEK':
+            cfg['Killing_Config']['Box_Duration'] = 7
+        elif drug_code == 'MONTH':
+            cfg['Killing_Config']['Box_Duration'] = 30
+        else:
+            raise Exception("Don't recognize drug_code" % drug_code)
+    elif isinstance(drug_code, (int, float)):
+        cfg['Killing_Config']['Box_Duration'] = drug_code
     else:
-        raise Exception("Don't recognize drug_code" % drug_code)
+        raise Exception("Drug code should be the IVM duration in days or a string like 'DAY', 'WEEK', 'MONTH'")
+
     return cfg
 
 

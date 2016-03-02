@@ -125,14 +125,14 @@ class TestIMIS(unittest.TestCase):
 
 class TestIterationState(unittest.TestCase):
 
-    init_state = dict(parameters=[], next_point={}, simulations={},
+    init_state = dict(parameters={}, next_point={}, simulations={},
                       analyzers={}, results=[], iteration=0)
 
     def setUp(self):
         self.state = IterationState()
 
     def example_settings(self):
-        self.state.parameters = [[0, 1], [2, 3], [4, 5]]
+        self.state.parameters = dict(values=[[0, 1], [2, 3], [4, 5]], names=['p1', 'p2'])
         prior = MultiVariatePrior.by_param(a=uniform(loc=0, scale=2))
         self.state.next_point = IMIS(prior).get_current_state()
         self.state.simulations = {
@@ -177,7 +177,7 @@ class TestIterationState(unittest.TestCase):
         self.assertEqual(self.state.simulations['sims']['id1']['p1'], 1)
         self.state.reset_to_step(iter_step='commission')
         self.assertEqual(self.state.simulations, {})
-        self.assertEqual(self.state.parameters[2][1], 5)
+        self.assertEqual(self.state.parameters['values'][2][1], 5)
 
 
 class TestNumpyDecoder(unittest.TestCase):

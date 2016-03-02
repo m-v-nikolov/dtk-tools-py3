@@ -159,7 +159,7 @@ def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, B
         demog_json["Defaults"][output_channel_titles[antibody_type_idx] + "_variance_antibody_distribution"]["ResultValues"] = [0] + ir_json[br_channel_titles[antibody_type_idx] + ' StdDev by Age Bin'][-1]
 
     if doWrite:
-        immune_overlay_name = BaseName + '_immune_init_' + ConfigName + '.json'
+        immune_overlay_name = BaseName.replace('demographics', 'immune_init_' + ConfigName, 1)
         subdirs, immune_overlay_name = os.path.split(immune_overlay_name)
         output_dir = os.path.join(input_path, subdirs, 'immune_init', site)
         if not os.path.exists(output_dir):
