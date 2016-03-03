@@ -1,5 +1,5 @@
 def example_filter(metadata):
-    rn=metadata.get('Run_Number', None)
+    rn = metadata.get('Run_Number', None)
     if rn is None:
         print("'Run_Number' key not found in metadata; simulation passing filter.")
         return True
@@ -22,6 +22,9 @@ def key_value_within(key, value, threshold):
 
 def key_value_equals(key, value):
     return lambda metadata: metadata[key] == value
+
+def key_value_isin(key, values):
+    return lambda metadata: metadata[key] in values
 
 def combo_filter(*args):
     def f(metadata):

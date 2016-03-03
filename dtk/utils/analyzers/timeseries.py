@@ -1,13 +1,19 @@
+import logging
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from plot import plot_by_channel
 
+logger = logging.getLogger(__name__)
+
+
 def default_plot_fn(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
     m = grouped.mean()
     m.plot(ax=ax, legend=True)
+
 
 class TimeseriesAnalyzer():
 
@@ -56,10 +62,13 @@ class TimeseriesAnalyzer():
         return channel_data
 
     def combine(self, parsers):
+        logger.debug('Gathering selected data from parser threads...')
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
+        logger.debug('Combining selected data...')
         combined = pd.concat(selected, axis=1, 
                              keys=[(d.group, d.sim_id) for d in selected], 
                              names=self.data_group_names)
+        logger.debug('Re-ordering multi-index levels...')
         self.data = combined.reorder_levels(self.ordered_levels, axis=1).sortlevel(axis=1)
 
     def finalize(self):
