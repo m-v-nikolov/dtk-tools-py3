@@ -1,4 +1,9 @@
+import os
+
+from SetupParser import SetupParser
+
 try:
+    os.environ['COMPS_REST_HOST'] = SetupParser().get('HPC', 'server_endpoint') + '/'
     from COMPSJavaInterop import COMPSJavaInterop
 except ImportError:
     print('Failed loading COMPSJavaInterop package; you will only be able to run local simulations.')
