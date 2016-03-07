@@ -105,6 +105,9 @@ def analyze(args):
             analyzer_obj = getattr(analyzer_module, analyzer)()
             sm.add_analyzer(analyzer_obj)
 
+    if args.comps:
+        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+
     sm.analyze_simulations()
     plt.show()
 
@@ -162,6 +165,7 @@ def main():
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers')
     parser_analyze.add_argument(dest='config_name', default=None, nargs='?', help='Name of configuration python script for custom analysis of simulations.')
+    parser_analyze.add_argument('--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
     parser_analyze.add_argument('-a', '--analyzer', dest='analyzers', nargs='*', default=[], help='Analyzers to use on simulations.')
     parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
