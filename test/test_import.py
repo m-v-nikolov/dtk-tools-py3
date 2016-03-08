@@ -1,14 +1,12 @@
+def bad():
+    import matplotlib.pyplot as plt
+    import Tkinter as tk
+    master = tk.Tk()
 
-#### BAD ####
+def ok():
+    import simtools
+    import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt
-import simtools
-
-# maybe interference with:
-# from Tk import *
-
-
-#### GOOD ####
-
-import simtools
-import matplotlib.pyplot as plt
+if __name__ == '__main__':
+    bad()
+    #ok()
