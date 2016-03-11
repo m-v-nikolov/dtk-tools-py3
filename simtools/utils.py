@@ -71,21 +71,20 @@ def stage_file(from_path, to_directory):
 
 
 def override_HPC_settings(setup, **kwargs):
-    priority = kwargs.get('priority')
-    if priority:
-        if priority in ['Lowest', 'Below Normal', 'Normal', 'Above Normal', 'Highest']:
-            setup.set('HPC', 'priority', priority)
-            logger.info('Overriding HPC priority: %s' % priority)
-        else:
-            logger.warning('Trying to override settings with unknown priority: %s' % priority)
 
-    node_group = kwargs.get('node_group')
-    if node_group:
-        if node_group in ['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab', 'emod_cd', 'emod_abcd']:
-            setup.set('HPC', 'node_group', node_group)
-            logger.info('Overriding HPC node_group: %s' % node_group)
-        else:
-            logger.warning('Trying to override settings with unknown node_group: %s' % node_group)
+    overrides_by_variable = dict(priority=['Lowest', 'Below Normal', 'Normal', 'Above Normal', 'Highest'],
+                                 node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab', 'emod_cd', 'emod_abcd'],
+                                 use_comps_asset_svc=['0', '1'])
+
+    for variable, allowed_overrides in overrides_by_variable.items():
+        value = kwargs.get(variable)
+        if value:
+            if value in allowed_overrides:
+                logger.info('Overriding HPC %s: %s', variable, value)
+                setup.set('HPC', variable, value)
+            else:
+                logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
+
 
 class CommandlineGenerator(object):
     '''
