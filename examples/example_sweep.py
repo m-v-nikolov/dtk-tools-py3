@@ -24,6 +24,5 @@ if __name__ == "__main__":
     from dtk.utils.core.DTKSetupParser import DTKSetupParser
     from simtools.ExperimentManager import ExperimentManagerFactory
 
-    # it looks like SimulationManagerFactory is not defined?
-    sm = SimulationManagerFactory.from_model(DTKSetupParser().get('BINARIES', 'exe_path'), 'LOCAL')
+    sm = ExperimentManagerFactory.from_model(DTKSetupParser().get('BINARIES', 'exe_path'), 'LOCAL')
     sm.run_simulations(**run_sim_args)
