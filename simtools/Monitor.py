@@ -52,7 +52,7 @@ class SimulationMonitor(object):
                                '_'.join([self.exp_data['exp_name'], self.exp_data['exp_id']]),
                                sim_id, 'status.txt')
 
-        if os.path.exists(status_path):
+        if os.path.exists(status_path) and os.stat(status_path).st_size != 0:
             with open(status_path, 'r') as status_file:
                 msg = list(status_file)[-1]
 
