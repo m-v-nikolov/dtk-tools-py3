@@ -1,44 +1,15 @@
-'''
-TODO: move to dtk.calibration and update import path in example_calibration.py
-'''
 
-import importlib
+# TODO: Generalize this style of CalibAnalyzer as much as possible
+#       to minimize repeated code in e.g. PrevalenceByAgeAnalyzer
 import logging
 
 import pandas as pd
 
+from calibration import LL_calculators
 from calibtool.CalibAnalyzer import CalibAnalyzer
-from calibtool.CalibSite import CalibSite
-
-from dtk.calibration import LL_calculators
+from calibtool.analyzers.Helpers import accumulate_agebins_cohort
 
 logger = logging.getLogger(__name__)
-
-
-class DTKCalibFactory(object):
-
-    @staticmethod
-    def get_analyzer(name, weight=1):
-        if name == 'ClinicalIncidenceByAgeCohortAnalyzer':
-            return ClinicalIncidenceByAgeCohortAnalyzer(name, weight)
-        else:
-            raise NotImplementedError("Don't recognize CalibAnalyzer: %s" % name)
-
-    @staticmethod
-    def get_site(name, analyzers):
-        try:
-            mod = importlib.import_module('dtk.calibration.study_sites.site_%s' % name)
-            return CalibSite.from_setup_functions(
-                       name=name,
-                       setup_functions=mod.setup_functions,
-                       reference_data=mod.reference_data,
-                       analyzers=analyzers)
-        except ImportError:
-            raise NotImplementedError("Don't recognize CalibSite: %s" % name)
-
-
-# TODO: Generalize this style of CalibAnalyzer as much as possible
-#       to minimize repeated code in e.g. PrevalenceByAgeAnalyzer
 
 class ClinicalIncidenceByAgeCohortAnalyzer(CalibAnalyzer):
 
@@ -104,8 +75,8 @@ class ClinicalIncidenceByAgeCohortAnalyzer(CalibAnalyzer):
         '''
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
-        combined = pd.concat(selected, axis=1, 
-                             keys=[(d.sample, d.sim_id) for d in selected], 
+        combined = pd.concat(selected, axis=1,
+                             keys=[(d.sample, d.sim_id) for d in selected],
                              names=self.data_group_names)
         stacked = combined.stack(['sample', 'sim_id'])
         self.data = stacked.groupby(level=['sample', 'age_bins']).mean()
@@ -155,40 +126,3 @@ class ClinicalIncidenceByAgeCohortAnalyzer(CalibAnalyzer):
     def uid(self):
         ''' A unique identifier of site-name and analyzer-name. '''
         return '_'.join([self.site.name, self.name])
-
-
-# TODO: find a nice home for this and similar functions!
-#       this is copied wholesale from dtk.calibration.analyzers.analyze_clinical_incidence_by_age_cohort
-def accumulate_agebins_cohort(simdata, average_pop, sim_agebins, raw_agebins) :
-    '''
-    A function to sum over each year's values in a summary report,
-    combining incidence rate and average population 
-    to give total counts and population in the reference age binning.
-    '''
-
-    glommed_data = [0]*len(raw_agebins)
-    simageindex = [-1]*len(sim_agebins)
-    yearageindex = [-1]*len(simdata)
-    num_in_bin = [0]*len(raw_agebins)
-
-    for i in range(len(simageindex)) :
-        for j, age in enumerate(raw_agebins) :
-            if sim_agebins[i] < age :
-                simageindex[i] = j
-                break
-    for i in range(len(yearageindex)) :
-        for j, age in enumerate(raw_agebins) :
-            if i < age :
-                yearageindex[i] = j
-                break
-
-    for i in range(len(yearageindex)) :
-        if yearageindex[i] < 0 :
-            continue
-        for j in range(len(simageindex)) :
-            if simageindex[j] < 0 :
-                continue
-            glommed_data[simageindex[j]] += simdata[i][j]*average_pop[i][j]
-            num_in_bin[simageindex[j]] += average_pop[i][j]
-
-    return num_in_bin, glommed_data
