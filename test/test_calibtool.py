@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 import shutil
 import unittest
@@ -17,7 +18,7 @@ class TestCommands(unittest.TestCase):
     def setUp(self):
         self.current_cwd = os.getcwd()
         os.mkdir('calibration')
-        shutil.copy('../examples/example_calibration.py','calibration')
+        shutil.copy('../examples/example_calibration.py', 'calibration')
 
     def tearDown(self):
         # Change the dir back to normal
@@ -34,6 +35,25 @@ class TestCommands(unittest.TestCase):
         self.assertTrue(os.path.exists('ExampleCalibration/iter1'))
         self.assertTrue(os.path.exists('ExampleCalibration/CalibManager.json'))
         #self.assertTrue(os.path.exists('ExampleCalibration/LL_summary.csv'))
+
+
+    def test_reanalyze(self):
+        # Run the calibration
+        self.test_a_run_calibration()
+
+        # Open the CalibManager.json and save the values
+        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+            cm = json.load(fp)
+            self.totals = cm['results']['total']
+
+        # Now reanalyze
+        os.system('calibtool reanalyze example_calibration.py')
+        # After reanalyze compare the totals
+        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+            cm = json.load(fp)
+            for i in range(len(self.totals)):
+                self.assertAlmostEqual(cm['results']['total'][i], self.totals[i])
+
 
 
 class TestMultiVariatePrior(unittest.TestCase):
