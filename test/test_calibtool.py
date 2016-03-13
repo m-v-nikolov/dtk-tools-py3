@@ -25,14 +25,15 @@ class TestCommands(unittest.TestCase):
         shutil.rmtree('calibration')
 
     def test_run_calibration(self):
-        #os.chdir('calibration')
-        #os.system('calibtool run example_calibration.py')
+        os.chdir('calibration')
+        os.system('calibtool run example_calibration.py')
         # Test if files are present
         self.assertTrue(os.path.exists('ExampleCalibration'))
         self.assertTrue(os.path.exists('ExampleCalibration/_plots'))
         self.assertTrue(os.path.exists('ExampleCalibration/iter0'))
         self.assertTrue(os.path.exists('ExampleCalibration/iter1'))
         self.assertTrue(os.path.exists('ExampleCalibration/CalibManager.json'))
+        #self.assertTrue(os.path.exists('ExampleCalibration/LL_summary.csv'))
 
 
 class TestMultiVariatePrior(unittest.TestCase):
