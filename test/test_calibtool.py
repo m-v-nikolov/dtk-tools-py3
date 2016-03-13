@@ -1,17 +1,38 @@
 import copy
 import os
-import time
+import shutil
 import unittest
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from scipy.stats import norm, uniform, multivariate_normal
 
-from calibtool.Prior import MultiVariatePrior
-from calibtool.NextPointAlgorithm import NextPointAlgorithm
-from calibtool.algo.IMIS import IMIS
 from calibtool.IterationState import IterationState
+from calibtool.Prior import MultiVariatePrior
+from calibtool.algo.IMIS import IMIS
+
+
+class TestCommands(unittest.TestCase):
+    def setUp(self):
+        self.current_cwd = os.getcwd()
+        os.mkdir('calibration')
+        shutil.copy('../examples/example_calibration.py','calibration')
+
+    def tearDown(self):
+        # Change the dir back to normal
+        os.chdir(self.current_cwd)
+        shutil.rmtree('calibration')
+
+    def test_run_calibration(self):
+        #os.chdir('calibration')
+        #os.system('calibtool run example_calibration.py')
+        # Test if files are present
+        self.assertTrue(os.path.exists('ExampleCalibration'))
+        self.assertTrue(os.path.exists('ExampleCalibration/_plots'))
+        self.assertTrue(os.path.exists('ExampleCalibration/iter0'))
+        self.assertTrue(os.path.exists('ExampleCalibration/iter1'))
+        self.assertTrue(os.path.exists('ExampleCalibration/CalibManager.json'))
 
 
 class TestMultiVariatePrior(unittest.TestCase):
