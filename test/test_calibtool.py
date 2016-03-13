@@ -31,6 +31,7 @@ class TestCommands(unittest.TestCase):
         # Test if files are present
         self.assertTrue(os.path.exists('ExampleCalibration'))
         self.assertTrue(os.path.exists('ExampleCalibration/_plots'))
+        self.assertNotEqual(len(os.listdir('ExampleCalibration/_plots')), 0)
         self.assertTrue(os.path.exists('ExampleCalibration/iter0'))
         self.assertTrue(os.path.exists('ExampleCalibration/iter1'))
         self.assertTrue(os.path.exists('ExampleCalibration/CalibManager.json'))
@@ -39,7 +40,8 @@ class TestCommands(unittest.TestCase):
 
     def test_reanalyze(self):
         # Run the calibration
-        self.test_a_run_calibration()
+        os.chdir('calibration')
+        os.system('calibtool run example_calibration.py')
 
         # Open the CalibManager.json and save the values
         with open('ExampleCalibration/CalibManager.json', 'r') as fp:
