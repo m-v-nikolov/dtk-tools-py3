@@ -28,6 +28,7 @@ def update_calib_args(args, calib_args):
 
 
 def run(args):
+
     manager, calib_args = get_calib_manager_args(args)
     manager.run_calibration(**calib_args)
 
@@ -38,6 +39,10 @@ def resume(args):
                                   iter_step=args.iter_step,
                                   **calib_args)
 
+def reanalyze(args):
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    manager.reanalyze()
 
 def main():
 
@@ -60,7 +65,11 @@ def main():
     parser_resume.add_argument('--hpc', action='store_true', help='Resume calibration simulations on HPC using COMPS (default is local simulation).')
     parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_resume.set_defaults(func=resume)
+
+    # 'calibtool reanalyze' options
+    parser_resume = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
+    parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
+    parser_resume.set_defaults(func=reanalyze)
 
     # run specified function passing in function-specific arguments
     args = parser.parse_args()

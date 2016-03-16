@@ -62,6 +62,7 @@ class CalibManager(object):
         self.suite_id = None
         self.all_results = None
 
+
     def run_calibration(self, **kwargs):
         '''
         Create and run a complete multi-iteration calibration suite.
@@ -208,6 +209,7 @@ class CalibManager(object):
 
         return results.total.tolist()
 
+
     def update_next_point(self, results):
         '''
         Pass the latest evaluated results back to the next-point algorithm,
@@ -326,10 +328,7 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        try:
-            calib_data = json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
-        except IOError:
-            raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+        calib_data =  self.read_calib_data()
 
         kw_location = kwargs.pop('location')
         self.location = calib_data.get('location', kw_location if kw_location else self.location)
@@ -367,6 +366,51 @@ class CalibManager(object):
         self.next_point.set_current_state(self.iteration_state.next_point)
 
         self.run_iterations(**kwargs)
+
+    def reanalyze(self):
+        '''
+        Reanalyze the current calibration
+        '''
+        calib_data =  self.read_calib_data()
+
+        # Get the count of iterations and save the suite_id
+        iter_count = calib_data.get('iteration')
+        suite_id = calib_data.get('suite_id')
+
+        # Go through each already ran iterations
+        for i in range(0, iter_count):
+            # Create the path for the iteration dir
+            iter_directory = os.path.join(self.name, 'iter%d' % i)
+            if not os.path.isdir(iter_directory):
+                raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
+
+            # Create the state for the current iteration
+            self.iteration_state = IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
+            self.iteration_state.iteration = i
+
+            # Empty the results and analyzers
+            self.iteration_state.results = {}
+            self.iteration_state.analyzers = {}
+
+            # Analyze again!
+            res = self.analyze_iteration()
+
+            # update next point
+            self.update_next_point(res)
+
+        # Before leaving -> increase the iteration / set back the suite_id
+        self.iteration_state.iteration += 1
+        self.suite_id = suite_id
+
+        # Also finalize
+        self.finalize_calibration()
+
+    def read_calib_data(self):
+        try:
+            return json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
+        except IOError:
+            raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+
 
     @property
     def iteration(self):
