@@ -72,6 +72,7 @@ class ImmunityOverlaysGenerator(object):
         with open(self.demographics_file_path, 'r') as demo_f:
             demographics = json.load(demo_f)
         
+        # consider abstracting the node_label_2_id code to its own module; could be a singleton structure available to a bunch of classes
         node_label_2_id = {}
         for node in demographics['Nodes']:
             node_label = node['NodeAttributes']['FacilityName']

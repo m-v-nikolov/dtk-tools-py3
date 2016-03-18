@@ -106,18 +106,25 @@ class MigrationGenerator(object):
                 if input file is json, assume it contains the adjacency list in the required form above 
                 '''
                 self.adjacency_list = json.load(mig_f)
-
-           
+                
             with open(self.demographics_file_path, 'r') as demo_f:
                 demographics = json.load(demo_f)
-                
+                node_label_2_id = {}
                 nodes = demographics['Nodes']
                 self.node_properties = {}
                 for node in nodes:
                     node_attributes = node['NodeAttributes']
                     self.node_properties[int(node['NodeID'])] = [float(node_attributes['Longitude']), float(node_attributes['Latitude']), int(node_attributes['InitialPopulation']), node_attributes['FacilityName']]     
-           
+                    node_label_2_id[node_attributes['FacilityName']] = int(node['NodeID'])
+                    
+                # convert the adjacency list node labels to the corresponding dtk ids from the demographics file, so that the adjacency list can be consumed downstream (e.g. see class GeoGraphGenerator)
+                adjacency_list_node_ids = {}
+                for node_label, node_links in self.adjacency_list.iteritems():
+                    adjacency_list_node_ids[node_label_2_id[node_label]] = {}
+                    for node_link_label,w in node_links.iteritems():
+                        adjacency_list_node_ids[node_label_2_id[node_label]] = {node_label_2_id[node_link_label]:w}
                 
+                self.adjacency_list = adjacency_list_node_ids
                 
         
     def generate_graph_topology(self):
