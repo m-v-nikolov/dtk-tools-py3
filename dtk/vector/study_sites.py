@@ -133,20 +133,25 @@ def configure_gwembesinazongwepopcluster(cb):
     set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
 
-# Updated single-node sites in Sinazongwe/Gwembe
-# Just copy larval parameters of previous Sinamalima single-node
-# But with altitude-specific climate files
-def configure_sinamalima(cb):
-    configure_sinazongwe(cb)
-
-def configure_munyumbwe(cb):
-    configure_sinazongwe(cb)
-
-def configure_lukonde(cb):
-    configure_sinazongwe(cb)
-
-def configure_gwembe(cb):
-    configure_sinazongwe(cb)
+def configure_sinamalima_1_node(cb):
+    set_geography(cb, "Sinamalima_1_node")
+    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
+    
+def configure_gwembe_1_node(cb):
+    set_geography(cb, "Gwembe_1_node")
+    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
+    
+def configure_lukonde_1_node(cb):
+    set_geography(cb, "Lukonde_1_node")
+    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
+    
+def configure_munumbwe_1_node(cb):
+    set_geography(cb, "Munumbwe_1_node")
+    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
 
 # Mocuba, Zambezia, Mozambique: EIR = 70
 def configure_mocuba(cb):
@@ -171,6 +176,17 @@ def configure_solomon_islands_2node(cb):
 def configure_nabang(cb):
     set_larval_habitat(cb, {"maculatus" : [1e8],
                             "minimus": [1e8]})
+    
+    
+def configure_gwembe_sinazongwe_115_nodes(cb):
+    set_geography(cb, "Gwembe_Sinazongwe_115_nodes")
+    #set_larval_habitat(cb, {"arabiensis":[2e9, 8e7]})
+    #set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.8)
+    #set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":[1e8,  2e6],
+                            "funestus":[ 1e8, 2e7 ]})    
+    set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
+    
 
 # Thailand: same habitat for two species, 
 # but maculatus more zoophilic --> fewer human bites

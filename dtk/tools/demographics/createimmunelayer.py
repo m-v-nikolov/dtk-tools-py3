@@ -16,6 +16,7 @@ def make_template_from_demographics(demog_json):
     # Keeping only the NodeID property for each node
     if "Nodes" in demog_json:
         for node in demog_json["Nodes"]:
+            
             if "IndividualAttributes" in node.keys():
                 node.pop("IndividualAttributes") 
             if "NodeAttributes" in node.keys():
@@ -83,7 +84,7 @@ def mean_and_std_from_binned_report(br_json, antibody_type_idx):
         Ab_std_results.append(scipy.mean(std_Ab))
 
     return (Ab_mean_results, Ab_std_results)
-
+'''
 def immune_init_overlays_from_burnin_sweep(metadata):
 
     config_names = set([])
@@ -173,13 +174,31 @@ def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, B
             CompileDemographics(output_file_name, forceoverwrite=True)
     else:
         print(json.dumps(demog_json,sort_keys=True,indent=4))
+'''        
+
+def immune_init_from_custom_output_for_spatial(demog_json, custom_output_file):
+
+    make_template_from_demographics(demog_json)
+
+    with open(custom_output_file) as immunity_report:
+        ir_json = json.loads( immunity_report.read() )
+    pop_groups = bin_centers_from_upper_bounds(ir_json['Age Bins'], norm=1.0) # these are ages in years already
+    insert_immunity_distribution_metadata(demog_json, pop_groups)
+
+    print('Extracting antibody distributions and inserting into immune overlay')
+    for antibody_type_idx in range(0,len(output_channel_titles)):
+        # needs extra zero since there are n_ages + 1 bins in demographics layer
+        demog_json["Defaults"][output_channel_titles[antibody_type_idx] + "_mean_antibody_distribution"]["ResultValues"]     = [0] + ir_json[br_channel_titles[antibody_type_idx] + ' Mean by Age Bin'][-1]
+        demog_json["Defaults"][output_channel_titles[antibody_type_idx] + "_variance_antibody_distribution"]["ResultValues"] = [0] + ir_json[br_channel_titles[antibody_type_idx] + ' StdDev by Age Bin'][-1]
+
+    return demog_json
 
 if __name__ == "__main__":
 
     # For running from FarEastTower on Sabalcore, where PYTHONPATH doesn't have dtk package
     #import sys
     #sys.path.append('C:/Users/jgerardin/SVN/python')
-    from dtk.utils.compiledemog import CompileDemographics
+    #from dtk.utils.compiledemog import CompileDemographics
 
     ##  Example #1
     ##  Generate immune overlay for a single input demographics file and output directory of sim with BinnedReport
@@ -190,7 +209,7 @@ if __name__ == "__main__":
     simId = "3c3/a77/458/3c3a7745-8f59-e411-93f6-f0921c16b9e0"
     binned_report_path = os.path.join(output_path, expId, simId)
     ConfigName = "Dapelogo_x_0.1"
-    immune_init_from_binned_report(demog_name, binned_report_path, ConfigName)
+    #immune_init_from_binned_report(demog_name, binned_report_path, ConfigName)
     #'''
 
     ## Example #2
