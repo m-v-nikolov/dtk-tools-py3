@@ -5,6 +5,8 @@ from simtools.OutputParser import CompsDTKOutputParser as parser
 from dtk.tools.demographics.createimmunelayer import immune_init_from_custom_output_for_spatial as immune_init 
 from dtk.tools.demographics.compiledemog import CompileDemographics
 
+from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+
 class ImmunityOverlaysGenerator(object):
     '''
     Create a set of immune overlays mapped to corresponding nodes 
@@ -155,13 +157,13 @@ class ImmunityOverlaysGenerator(object):
                         from dtk.utils.core.DTKSetupParser import DTKSetupParser
                         from COMPS import Client
 
-                        print "Pulling immunization data from COMPs."
-                        print "This requires a login."
+                        om("Pulling immunization data from COMPs.")
+                        om("This requires a login.")
                         
                         setup = DTKSetupParser()
                         Client.Login(setup.get('HPC','server_endpoint'))
                         
-                        print "Login success!"
+                        om("Login success!")
 
                         sim_dir_map = parser.createSimDirectoryMap(exp_id)
                         
@@ -173,7 +175,7 @@ class ImmunityOverlaysGenerator(object):
                         #for each simulation get the values of parameters relevant to the immune initialization burnin (i.e. the parameters 
                         # given by the keys in self.nodes_params)
                         
-                        # the mapping between nodes and immune overlays below could be done more efficiently, but for the typical numbre of parameters the
+                        # the mapping between nodes and immune overlays below could be done more efficiently, but for the typical number of parameters the
                         # mapping below should work fine
                         
                         # get the parameter keys in the right order (see group_nodes_by_params(self) and get_params_key(self...); 

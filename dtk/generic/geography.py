@@ -186,11 +186,11 @@ geographies = {
     "Gwembe_Sinazongwe_115_nodes" : {
                "Geography": "Zambia/Gwembe_Sinazongwe_115_nodes",
                #"Node_Grid_Size": 0.00833,    ## 30arcsec/3600
-               "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+               #"Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
                #"Demographics_Filename":      "Zambia_30arcsec_demographics.json", 
-               "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
-               "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin",  
-               "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+               #"Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+               #"Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin",  
+               #"Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
                "Enable_Climate_Stochasticity": 0, # daily in raw data series
                #"Enable_Local_Migration": 0,
                #"x_Local_Migration": 0 

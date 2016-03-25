@@ -15,13 +15,13 @@ class DemographicsGenerator():
     *-ed columns are optional
     '''
     
-    def __init__(self, cb, population_input_file, demographics_type = 'static', res_in_degrees = 30.0/3600, update_demographics = None):
+    def __init__(self, cb, population_input_file, demographics_type = 'static', res_in_arcsec = 30.0, update_demographics = None):
         
         """
         Initialize the SpatialManager
         :param cb: config builder reference, updated after the demographics file is generated.
         :param demographics_type: could be 'static', 'growing' or a different type; currently only static is implemented in generate_nodes(self)
-        :param res_in_degrees: sim grid resolution
+        :param res_in_arsec: sim grid resolution
         :param update_demographics: provide the user with a chance to update the demographics file before it's written via a user-defined function; (e.g. scale larval habitats based on initial population per node in the demographics file) see generate_demographics(self) 
         :return:
         """
@@ -32,7 +32,9 @@ class DemographicsGenerator():
                 
         self.demographics_type = demographics_type
         
-        self.res_in_degrees = res_in_degrees
+        self.res_in_arcsec = res_in_arcsec
+        
+        self.res_in_degrees = self.res_in_arcsec/3600.0
         
         self.update_demographics = update_demographics
 
@@ -205,7 +207,7 @@ class DemographicsGenerator():
                     "IdReference": "Gridded world grump30arcsec", 
                     "DateCreated": str(datetime.now()), 
                     "NodeCount": len(self.nodes), 
-                    "Resolution": self.res_in_degrees
+                    "Resolution": self.res_in_arcsec
                     }
     
         return metadata

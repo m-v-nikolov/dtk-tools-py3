@@ -1,3 +1,5 @@
+import sys 
+
 class OutputMessage():
     
     def __init__(self, msg, style = 'regular'):
@@ -9,6 +11,9 @@ class OutputMessage():
             
         if self.style == 'regular':
             self.regular(msg)
+            
+        if self.style == 'flushed':
+            self.flushed(msg)
         
     
     def bold(self, msg):
@@ -26,3 +31,8 @@ class OutputMessage():
         print msg
         print
         
+    
+    def flushed(self, msg):
+        sys.stdout.write('\r')
+        sys.stdout.write(msg)
+        sys.stdout.flush()

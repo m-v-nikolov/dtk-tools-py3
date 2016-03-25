@@ -4,6 +4,7 @@ import shutil
 
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator
+from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 
 from ImmunityOverlaysGenerator import ImmunityOverlaysGenerator
@@ -12,7 +13,23 @@ from DemographicsGenerator import DemographicsGenerator
 
 class SpatialManager():
     '''
-    Manages the creation of spatial input files..
+    Manages the creation of spatial input files.
+    
+    Need to make architecture more flexible so that parameters of generators internal to SpatialManager are exposed to the user, 
+    e.g. climate generation parameters such as years, region, etc.; migration generation parameters such as graph topology and link rates types, etc.
+    Preferably that shouldn't require the user knowing explicitly about the existence of CliamteGenerator, MigrationGenerator, etc. but only about the 
+    existence of their parameter sets  
+    
+    - the obvious way is to expose these parameters as SpatialManager constructor arguments; 
+    that would be the constructor with the most arguments in the world and we might bump into the 256 arguments of c/python in which case we still could transition to kwargs and args...
+    
+    - another way could be a set of mutator methods, each corresponding to generator class; e.g. something along the lines of a method 
+    setClimateGeneratorParams(**kwargs):
+        for key in attributes: # attributes is a list of climate parameters exposed to the user
+            if key in kwargs:
+                setattr(climate_generator_instance, key, kwargs[key])
+                
+    This approach may require generators instantiation in the contructor of SpatialManager. 
     '''
 
     def __init__(self, location, cb, setup, geography, name, working_dir, input_dir, 
@@ -24,6 +41,7 @@ class SpatialManager():
                  immunity_burnin_meta_file=None,\
                  nodes_params_input_file = None,\
                  update_demographics = None,\
+                 generate_climate = False,
                  existing_migration_file_path = None,\
                  existing_load_balancing_file_path = None,\
                  existing_demographics_file_path = None,\
@@ -107,6 +125,9 @@ class SpatialManager():
         # a user defined function automatically called with input the demographics file generaeted as part of the 
         # spatial manager workflow; the function updates demographics parameters as needed before the final demographics file is saved or used
         self.update_demographics = update_demographics
+        
+        # generate climate; if True execute COMPS climate generation; otherwise (default) assume climate files already exist and do nothing
+        self.generate_climate = generate_climate   
             
         # simulation number of cores (e.g. for load balancing purposes)
         self.num_cores = num_cores
@@ -269,6 +290,27 @@ class SpatialManager():
                                })
             
         om("", style = 'bold')
+        
+        
+        if self.generate_climate:
+            om("generating climate files.", style = 'bold')
+            
+            cg = ClimateGenerator(demographics_output_file_path, os.path.join(self.log_path, 'climate_wo.json'), os.path.join(self.sim_data_input, self.geography), )
+            climate_file_names = cg.generate_climate_files()
+            
+            rain_file_path = os.path.join(self.geography, climate_file_names['rain'])
+            humidity_file_path = os.path.join(self.geography, climate_file_names['humidity'])
+            temperature_file_path = os.path.join(self.geography, climate_file_names['temp'])
+            
+            self.cb.update_params({
+                                   'Land_Temperature_Filename':temperature_file_path,
+                                   'Air_Temperature_Filename':temperature_file_path,
+                                   'Rainfall_Filename':rain_file_path,
+                                   'Relative_Humidity_Filename': humidity_file_path
+                                   })
+            
+            om("", style = 'bold')
+            
       
         if self.log:
             
@@ -299,6 +341,9 @@ class SpatialManager():
         
             MigrationGenerator.save_migration_visualization(os.path.join(self.log_path, self.name + '_demographics_log.json' ), os.path.join(self.log_path, self.name + '_migration.bin'), os.path.join(self.log_path))
             om("LOG: migration network stored in " + os.path.join(self.log_path))    
+            
+            
+            om("LOG: climate work order stored in " + os.path.join(self.log_path))
                
             if self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
                 # what would be a good immunity log? One could store the immune overlays in the log directory...
