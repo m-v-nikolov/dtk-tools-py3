@@ -19,6 +19,8 @@ params = {
 
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###
+    "Default_Geography_Initial_Node_Population": 1,
+    "Default_Geography_Torus_Size": 5,
 
     "Random_Type": "USE_PSEUDO_DES", 
     "Run_Number": 5, 
