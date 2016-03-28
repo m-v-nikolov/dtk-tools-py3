@@ -16,8 +16,11 @@ study_site_monthly_EIRs = {
     "Rafin_Marke":  [0.59, 1.11, 1.71, 2.55, 3.41, 3.37, 2.87, 1.95, 0.56, 0.12, 0.15, 0.31],                   # EIR =  18
     'Kilifi_North': [0.6, 0.25, 0.0, 0.45, 0.05, 1.7, 1.75, 0.5, 0.05, 0.0, 0.1, 0.15],                         # EIR =   5.6
     'Sukuta':       [3*m for m in [0.07, 0.08, 0.04, 0.02, 0.03, 0.04, 0.22, 0.13, 0.18, 0.09, 0.07, 0.05]],    # EIR =   3.1
-    'Bakau':        [0.12*m for m in [0.02, 0.01, 0.04, 0.00, 0.00, 0.00, 0.32, 0.11, 0.24, 0.20, 0.04, 0.03]]  # EIR =   0.12
-}
+    'Bakau':        [0.12*m for m in [0.02, 0.01, 0.04, 0.00, 0.00, 0.00, 0.32, 0.11, 0.24, 0.20, 0.04, 0.03]], # EIR =   0.12
+
+    '_constant_':   [1.0/12] * 12,
+    '_pulse_':      [1] + [0] * 11
+    }
 
 def mAb_vs_EIR(EIR):
     # Rough cut at function from eyeballing a few BinnedReport outputs parsed into antibody fractions
