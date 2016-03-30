@@ -1,0 +1,13 @@
+rect.hm {
+    fill-opacity:1;
+    stroke-width:0;
+}
+
+axis{
+	
+  fill: none;
+  stroke: black;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+	
+}

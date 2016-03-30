@@ -3,14 +3,13 @@
 <head>
 	<title>Map test</title>
 
-    <link 
-        rel="stylesheet" 
-        href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"
-    />
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"/>
+    <link type="text/css" rel="stylesheet" href="colorbar.css"></link>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
     <script type="text/javascript" src="colorbrewer2.js"></script>
     <script src="spatial.js"></script>
+    <script src="heatmap.js"></script>
     <script type="text/javascript" src="colorbar.js"></script>
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
@@ -20,6 +19,11 @@
 <body>
 
 	<script type="text/javascript">
+	
+	   selected_entities = {
+			"node":"",
+			"params":""
+		}
 	
        load_map(
 	    		   'rdt_obs', 
@@ -74,6 +78,25 @@
 		   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
     		    }	   
    			);
+   	   
+   	   var colors = ['#000000','#52170b','#a51b0b','#ff0000','#c1003c','#80005f','#000080','#233381','#265a81','#008080','#46a386','#6dc88c','#90ee90','#b8f4ab','#dcfac5','#ffffe0'];
+   	   
+   	   
+   	   var color_scale = d3.scale.sqrt()
+       .domain(d3.range(0, 1, 1.0 / (15)))
+       .range(colors);
+   	   load_heatmap(
+   			   			'80202_5',
+   			   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
+   			   			color_scale,
+   	   					600,
+   	   					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
+   	   					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
+   	   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
+   	   				)
+   	   
+   	   
+   	   			
        
 	</script>
 

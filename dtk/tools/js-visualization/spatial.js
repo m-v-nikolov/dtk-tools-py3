@@ -37,19 +37,18 @@ var global_time_idx = 0;
  * label logic is handled on entity selection 
  */
 
-var selected_entities = {
-							"node":"",
-							"params":""
-						}
+
 
 
 function load_map(map_id, map_json)
 {
+		
+		var map_decorations_container = d3.select("body").append("div")
+										.attr("id","map_decorations_container_"+map_id);
 	
-	
-		var map_container = d3.select("body").append("div")
+		var map_container = d3.select("#map_decorations_container_" + map_id).append("div")
 							.attr("id","map_container_"+map_id)
-							.style({height:"400px", width:"600px"});
+							.style({height:"400px", width:"600px", float:"left"});
 	
 		var map = L.map("map_container_"+map_id).setView([-41.2858, 174.7868], 13);
 	    
@@ -61,8 +60,6 @@ function load_map(map_id, map_json)
 					attribution: '&copy; ' + mapLink + ' Contributors',
 					maxZoom: 18,
 					}).addTo(map);
-		
-		
 		
 		
 		/* Initialize the SVG layer */
@@ -90,6 +87,15 @@ function load_map(map_id, map_json)
 			})
 			
 			var bounds = new L.LatLngBounds(markers);
+			
+			
+			/* 
+			 * Should nodes be displayed on load_map?
+			 * Perhaps the most generic map should only contain 
+			 * a base map layer and avoid rendering additional objects?
+			 * 
+			 * This behavior can easily be refactored.
+			 */
 			
 			g = svg.append("g");
 			
@@ -139,52 +145,63 @@ function style_map(
 	
 	// this would set a map-local time in lieu of the global time index, if provided; if not provided global time would be used
 	if(!map_properties.hasOwnProperty('time_idx'))
-		time_idx = false;
+		var time_idx = false;
 	else
-		time_idx = map_properties.time_idx;
-	
+		var time_idx = map_properties.time_idx;
+	 
 	// base layer is always the first one in the layers array
 	if(!map_properties.hasOwnProperty('base_tile_layer'))
-		base_tile_layer = maps[map_id]["layers"][0]
+		var base_tile_layer = maps[map_id]["layers"][0];
 	else
-		base_tile_layer = map_properties.base_tile_layer;
+		var base_tile_layer = map_properties.base_tile_layer;
+	
+	//map width
+	if(!map_properties.hasOwnProperty('map_width'))
+		var map_width = $('#map_container_' + map_id).width(); 
+	else
+		var map_width = $('#map_container_' + map_id).width(map_properties.map_width);
+	
+	//map height
+	if(!map_properties.hasOwnProperty('map_height'))
+		var map_height = $('#map_container_' + map_id).height(); 
+	else
+		var map_height = $('#map_container_' + map_id).height(map_properties.map_height);
 	
 	// layers to add to map
 	if(!map_properties.hasOwnProperty('additional_layers'))
-		additional_layers = [];
+		var additional_layers = [];
 	else
-		additional_layers = map_properties.additional_layers;
+		var additional_layers = map_properties.additional_layers;
 	
 	// map the value of entity node's specific attribute to node marker color
 	if(!map_properties.hasOwnProperty('node_attr_2_color'))
-		node_attr_2_color = ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])];
-	
+		var node_attr_2_color = ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])];
 	else
-		node_attr_2_color = map_properties.node_attr_2_color;
+		var node_attr_2_color = map_properties.node_attr_2_color;
 	
 	// map the value of entity node's specific attribute to node marker radius
 	if(!map_properties.hasOwnProperty('node_attr_2_radius'))
-		node_attr_2_radius = ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])];
+		var node_attr_2_radius = ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])];
 	else
-		node_attr_2_radius = map_properties.node_attr_2_radius;
+		var node_attr_2_radius = map_properties.node_attr_2_radius;
 	
 	// node marker's opacity on map
 	if(!map_properties.hasOwnProperty('node_opacity'))
-		node_opacity = 0.6;
+		var node_opacity = 0.6;
 	else
-		node_opacity = map_properties.node_opacity;
+		var node_opacity = map_properties.node_opacity;
 	
 	//behavior of node marker's on mouse over is function onmouseover
 	if(!map_properties.hasOwnProperty('onmouseover'))
 		onmouseover = onmouseover_default;
 	else
-		onmouseover = map_properties.onmouseover;
+		var onmouseover = map_properties.onmouseover;
 	
 	// behavior of node marker's on mouse out is function onmouseout
 	if(!map_properties.hasOwnProperty('onmouseout'))
-		onmouseout = onmouseout_default;
+		var onmouseout = onmouseout_default;
 	else
-		onmouseout = map_properties.onmouseout; 
+		var onmouseout = map_properties.onmouseout; 
 	
 	
 	var map = maps[map_id]["map"];
@@ -231,6 +248,28 @@ function style_map(
 	// add attribute onmouseover
 	//maps[map_id]["onmouseout"] = onmouseout
 	
+	var orientation = "vertical";
+	
+	var colorbar = Colorbar()
+		    .origin([35,-5])
+		    .thickness(100)
+		    .scale(color_scale).barlength(map_height).thickness(20)
+		    .orient(orientation);
+	
+	var bar_container =  d3.select("#map_decorations_container_"+map_id)
+						.append("div")
+						.attr("id", "colorbar_container_"+map_id);
+	
+	var bar = d3.select("#colorbar_container_"+map_id)
+						.append("svg")
+						.attr("width", 100)
+						.attr("height", map_height + 10)
+						.append("g")
+						.attr("id","colorbar_"+map_id);
+	
+	var pointer = d3.selectAll("#colorbar_" + map_id).call(colorbar)
+	
+	
 	// traverse nodes and set respective map markers style
 	d3.json(map_json, function(map_nodes){
 		
@@ -270,7 +309,9 @@ function style_map(
 				
 				return  d.node.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
-			.style("stroke", "black");
+			
+			.style("stroke", "black")
+			.on("mouseover",function(d) { pointer.pointTo(get_entity_value(d.node[node_attr_color], time)); });
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
             //.each(function(d){if(d.node.NodeLabel == selected_entities.node){onmouseover()}})
