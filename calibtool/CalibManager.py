@@ -195,6 +195,8 @@ class CalibManager(object):
         self.cache_iteration_state()
 
         iteration_summary = self.iteration_state.summary_table()
+        #print "SUMMARY TABLE"
+        #print self.iteration_state.results
         self.all_results = pd.concat((self.all_results, iteration_summary)).sort_values(by='total', ascending=False)
         logger.info(self.all_results[['iteration', 'total']].head(10))
         self.cache_calibration()
@@ -279,6 +281,7 @@ class CalibManager(object):
             os.rename(iter_state_path, os.path.join(iter_directory, 'IterationState_%s.json' % backup_id))
 
         self.iteration_state.to_file(iter_state_path)
+
 
     def serialize_results(self):
         '''
