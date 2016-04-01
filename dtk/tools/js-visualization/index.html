@@ -5,11 +5,14 @@
 
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"/>
     <link type="text/css" rel="stylesheet" href="colorbar.css"></link>
+    <link type="text/css" rel="stylesheet" href="hm.css"></link>
+    <link type="text/css" rel="stylesheet" href="ts.css"></link>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
     <script type="text/javascript" src="colorbrewer2.js"></script>
     <script src="spatial.js"></script>
     <script src="heatmap.js"></script>
+    <script src="timeseries.js"></script>
     <script type="text/javascript" src="colorbar.js"></script>
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
@@ -93,10 +96,15 @@
    	   					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
    	   					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
    	   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
-   	   				)
+   	   				);
    	   
-   	   
-   	   			
+
+   	   	load_timeseries(
+					'80202_5', 
+					'prevalence', 
+					['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
+					'observed'
+				   );		
        
 	</script>
 

@@ -95,7 +95,7 @@ class ImmunityOverlaysGenerator(object):
         
     
     '''
-    a helper function generating a string key for a set of prameter values;
+    a helper function generating a string key for a set of parameter values;
     different ways to do that; this is a very simple one
     '''
     def get_params_key(self, param_values):

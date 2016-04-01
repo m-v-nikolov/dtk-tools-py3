@@ -250,11 +250,12 @@ function style_map(
 	
 	var orientation = "vertical";
 	
-	var colorbar = Colorbar()
+	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
 		    .origin([35,-5])
 		    .thickness(100)
-		    .scale(color_scale).barlength(map_height).thickness(20)
-		    .orient(orientation);
+		    .scale(color_scale).barlength(map_height).thickness(25)
+		    .orient(orientation)
+		    .margin({top:20, left:30, right:55, bottom:10});
 	
 	var bar_container =  d3.select("#map_decorations_container_"+map_id)
 						.append("div")
@@ -287,7 +288,7 @@ function style_map(
                 var c = 'white';
                 var val = get_entity_value(d.node[node_attr_color], time);
 
-            	if (val >= 0) { c = color_scale(val); } // TODO: color legend?
+            	if (val >= 0) { c = color_scale(val); }
             	else { c = 'gray'; }
             	
             	return c;

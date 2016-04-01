@@ -1,9 +1,14 @@
-rect.hm {
-    fill-opacity:1;
-    stroke-width:0;
+/*
+
+rect.hm:hover
+{
+		fill-opacity:0.6;
+		stroke-width: 1px;
+		stroke: #fff;
 }
 
-axis{
+axis
+{
 	
   fill: none;
   stroke: black;
@@ -11,3 +16,5 @@ axis{
   shape-rendering: crispEdges;
 	
 }
+
+*/
