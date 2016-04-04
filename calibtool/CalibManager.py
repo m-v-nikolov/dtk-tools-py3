@@ -96,11 +96,14 @@ class CalibManager(object):
             if var == 'A':
                 exit()
             elif var == 'B':
-                raise NotImplementedError("Not implemented")
+                tstamp = re.sub('[ :.-]', '_', str(datetime.now()))
+                shutil.move(self.name,"%s_backup_%s" % (self.name,tstamp))
+                self.create_calibration(location)
             elif var=="C":
-                raise NotImplementedError("Not implemented")
+                self.cleanup()
+                self.create_calibration(location)
             elif var=="R":
-                raise NotImplementedError("Not implemented")
+                self.resume_from_iteration(location=location)
 
 
 
