@@ -7,6 +7,7 @@ import pprint
 import re
 
 import pandas as pd
+import shutil
 
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
@@ -84,9 +85,24 @@ class CalibManager(object):
             os.mkdir(self.name)
             self.cache_calibration()
         except OSError :
-            #logger.warning('Calibration with name %s already exists in current directory.', self.name)
-            raise Exception('Calibration with name %s already exists in current directory. '
-                            'Use resume_calibration to continue from a previous iteration.', self.name)
+            from time import sleep
+            sleep(0.5)
+            print "Calibration with name %s already exists in current directory" % self.name
+            var = ""
+            while (var.upper() not in ('R','B','C','A')):
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [A]bort:  ')
+
+            # Abort
+            if var == 'A':
+                exit()
+            elif var == 'B':
+                raise NotImplementedError("Not implemented")
+            elif var=="C":
+                raise NotImplementedError("Not implemented")
+            elif var=="R":
+                raise NotImplementedError("Not implemented")
+
+
 
     def run_iterations(self, **kwargs):
         '''
@@ -369,6 +385,45 @@ class CalibManager(object):
         self.next_point.set_current_state(self.iteration_state.next_point)
 
         self.run_iterations(**kwargs)
+
+    def cleanup(self):
+        '''
+        Cleanup the current calibration
+        - Delete the result directory
+        - If LOCAL -> also delete the simulations
+        '''
+        if self.location == 'LOCAL':
+            calib_data = self.read_calib_data()
+            iter_count = calib_data.get('iteration')
+            # Delete the simulations too
+            logger.info('Deleting local simulations')
+            for i in range(0, iter_count):
+                # Get the iteration state
+                it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
+                # Extract the path where the simulations are stored
+                sim_path = os.path.join(it.simulations['sim_root'], "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
+                # If exist -> delete
+                if os.path.exists(sim_path):
+                    try:
+                        shutil.rmtree(sim_path)
+                    except:
+                        logger.error("Failed to delete %s" % sim_path)
+
+                # If the json exist too -> delete
+                json_path = os.path.join('simulations','%s_%s.json'%(it.simulations['exp_name'], it.simulations['exp_id']))
+                if os.path.exists(json_path):
+                    try:
+                        os.remove(json_path)
+                    except:
+                        logger.error("Failed to delete %s" % json_path)
+
+        # Then delete the whole directory
+        calib_dir = os.path.abspath(self.name)
+        if os.path.exists(calib_dir):
+            try:
+                shutil.rmtree(calib_dir)
+            except:
+                logger.error("Failed to delete %s" % calib_dir)
 
     def reanalyze(self):
         '''

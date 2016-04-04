@@ -44,6 +44,11 @@ def reanalyze(args):
     manager = mod.calib_manager
     manager.reanalyze()
 
+def cleanup(args):
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    manager.cleanup()
+
 def main():
 
     parser = argparse.ArgumentParser(prog='calibtool')
@@ -67,9 +72,16 @@ def main():
     parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
 
     # 'calibtool reanalyze' options
-    parser_resume = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
-    parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_resume.set_defaults(func=reanalyze)
+    parser_reanalyze = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
+    parser_reanalyze.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
+    parser_reanalyze.set_defaults(func=reanalyze)
+
+    # 'calibtool cleanup' options
+    parser_cleanup = subparsers.add_parser('cleanup', help='Cleanup a calibration')
+    parser_cleanup.add_argument(dest='config_name', default=None,
+                               help='Name of configuration python script for custom running of calibration.')
+    parser_cleanup.set_defaults(func=cleanup)
+
 
     # run specified function passing in function-specific arguments
     args = parser.parse_args()

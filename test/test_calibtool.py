@@ -71,6 +71,30 @@ class TestCommands(unittest.TestCase):
             for i in range(len(self.totals)):
                 self.assertAlmostEqual(cm['results']['total'][i], self.totals[i])
 
+    def test_cleanup(self):
+        # Run the calibration
+        os.chdir('calibration')
+        os.system('calibtool run dummy_calib.py')
+
+        # Get the sim paths
+        simulation_dir = os.path.join(self.current_cwd, 'calibration', 'simulations')
+        simulation_files = os.listdir(simulation_dir)
+        simulation_paths = []
+
+        for sfile in simulation_files:
+            info = json.load(open(os.path.join(simulation_dir,sfile),'rb'))
+            simulation_paths.append(os.path.join(info['sim_root'],"%s_%s" %(info['exp_name'], info['exp_id'])))
+
+        # Cleanup
+        os.system('calibtool cleanup dummy_calib.py')
+
+        # Make sure everything disappeared
+        self.assertFalse(os.path.exists('ExampleCalibration'))
+        self.assertFalse(os.listdir('simulations'))
+        for path in simulation_paths:
+            self.assertFalse(os.path.exists(path))
+
+
 
 
 class TestMultiVariatePrior(unittest.TestCase):
