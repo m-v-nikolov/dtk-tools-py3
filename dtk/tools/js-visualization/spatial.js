@@ -15,6 +15,8 @@
  */
 var maps = {};
 
+
+
 /*
  * global time index; 
  * 
@@ -48,7 +50,7 @@ function load_map(map_id, map_json)
 	
 		var map_container = d3.select("#map_decorations_container_" + map_id).append("div")
 							.attr("id","map_container_"+map_id)
-							.style({height:"400px", width:"600px", float:"left"});
+							.style({height:"400px", width:"600px", float:"left"}); // expose width/height as parameters?
 	
 		var map = L.map("map_container_"+map_id).setView([-41.2858, 174.7868], 13);
 	    
@@ -134,6 +136,11 @@ function style_map(
 	/*
 	 *  can we pass optional parameters in arbitrary order and set their defaults if not passed (similarly to python kwargs)
 	 *  in a better way than below??!!
+	 *  
+	 *  Perhaps an additional refactor might abstract some common map/node style properties away (there is some redundancy of code across 
+	 *  style_map and load_2d_scatter related to node style). A node map is a type of node scatter (it is a node scatter w/ map layers and geo coordinates).
+	 *  TODO?: This relationship can naturally be captured by object decoration.  
+	 *   
 	 */
 
 	
@@ -248,13 +255,13 @@ function style_map(
 	// add attribute onmouseover
 	//maps[map_id]["onmouseout"] = onmouseout
 	
-	var orientation = "vertical";
+	var color_bar_orientation = "vertical";
 	
 	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
 		    .origin([35,-5])
 		    .thickness(100)
 		    .scale(color_scale).barlength(map_height).thickness(25)
-		    .orient(orientation)
+		    .orient(color_bar_orientation)
 		    .margin({top:20, left:30, right:55, bottom:10});
 	
 	var bar_container =  d3.select("#map_decorations_container_"+map_id)
@@ -319,6 +326,229 @@ function style_map(
 		}
 
 		
+	}); // end d3.json(...)
+}
+
+function load_2d_scatter(	
+							scatter_id,
+							scatter_json,
+							scatter_properties // object
+						 )
+{
+	// this would set a scatter-local time in lieu of the global time index, if provided; if not provided global time would be used
+	if(!scatter_properties.hasOwnProperty('time_idx'))
+		var time_idx = false;
+	else
+		var time_idx = scatter_properties.time_idx;
+	
+	//scatater width
+	if(!scatter_properties.hasOwnProperty('scatter_width'))
+		var scatter_width = 500; 
+	else
+		var scatter_width = scatter_properties.width;
+	
+	//scatter height
+	if(!scatter_properties.hasOwnProperty('scatter_height'))
+		var scatter_height = 600;  
+	else
+		var scatter_height = scatter_properties.height;
+	
+	
+	// map the value of entity node's specific attribute to node marker color
+	if(!scatter_properties.hasOwnProperty('node_attr_2_color'))
+		var node_attr_2_color = ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])];
+	else
+		var node_attr_2_color = scatter_properties.node_attr_2_color;
+	
+	// map the value of entity node's specific attribute to node marker radius
+	if(!scatter_properties.hasOwnProperty('node_attr_2_radius'))
+		var node_attr_2_radius = ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])];
+	else
+		var node_attr_2_radius = scatter_properties.node_attr_2_radius;
+	
+	// map the value of entity node's specific attribute to x-axis
+	if(!scatter_properties.hasOwnProperty('node_attr_2_x'))
+		var node_attr_2_x = "x"; // this is just a default best-effor attempt; if the scatter node data does not contain attribute x the function would fail 
+	else
+		var node_attr_2_x = scatter_properties.node_attr_2_x;
+	
+	// map the value of entity node's specific attribute to y-axis
+	if(!scatter_properties.hasOwnProperty('node_attr_2_y'))
+		var node_attr_2_y = "y"; // this is just a default best-effor attempt; if the scatter node data does not contain attribute y the function would fail  
+	else
+		var node_attr_2_y = scatter_properties.node_attr_2_y;
+	
+	// map the value of entity node's specific attribute to node marker radius
+	if(!scatter_properties.hasOwnProperty('node_attr_2_radius'))
+		var node_attr_2_radius = ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])];
+	else
+		var node_attr_2_radius = scatter_properties.node_attr_2_radius;
+	
+	// node marker's opacity on scatter
+	if(!scatter_properties.hasOwnProperty('node_opacity'))
+		var node_opacity = 0.6;
+	else
+		var node_opacity = scatter_properties.node_opacity;
+	
+	//behavior of node marker's on mouse over is function onmouseover
+	if(!scatter_properties.hasOwnProperty('onmouseover'))
+		onmouseover = onmouseover_default;
+	else
+		var onmouseover = scatter_properties.onmouseover;
+	
+	// behavior of node marker's on mouse out is function onmouseout
+	if(!scatter_properties.hasOwnProperty('onmouseout'))
+		var onmouseout = onmouseout_default;
+	else
+		var onmouseout = scatter_properties.onmouseout;
+	
+	
+	// set local map time if provided
+	var time = 0;
+	if(time_idx)
+		time = time_idx;
+	else
+		time = global_time_idx;
+	
+	var node_attr_color = node_attr_2_color[0];
+	var color_scale = node_attr_2_color[1];
+
+	var node_attr_radius = node_attr_2_radius[0];
+	var radius_scale = node_attr_2_radius[1];
+	
+	
+	var margin = {top: 50, right: 20, bottom: 50, left: 40}, // expose margins as parameters?
+    width = scatter_width - margin.left - margin.right,
+    height = scatter_height - margin.top - margin.bottom;
+	
+	var scatter_decorations_container = d3.select("body").append("div")
+	.attr("id","scatter_decorations_container_"+scatter_id);
+
+	var scatter_container = d3.select("#scatter_decorations_container_" + scatter_id).append("div")
+	.attr("id","scatter_container_"+scatter_id)
+	.style({height:height, width:width, float:"left"});
+	
+	
+	var svg = d3.select("#scatter_container_" + scatter_id).append("svg")
+				.attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom)
+			    .attr("id", "scatter_" + scatter_id)
+			   .append("g")
+			    	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	
+	// Set the ranges
+	var x = d3.scale.linear().range([0, width]);
+	var y = d3.scale.linear().range([height, 0]);
+    
+	
+	// draw colorbar
+	var color_bar_orientation = "vertical";
+	
+	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
+		    .origin([35,margin.top - 20])
+		    .thickness(100)
+		    .scale(color_scale).barlength(height).thickness(25)
+		    .orient(color_bar_orientation)
+		    .margin({top:20, left:30, right:55, bottom:10});
+	
+	var bar_container =  d3.select("#scatter_decorations_container_"+scatter_id)
+						.append("div")
+						.attr("id", "colorbar_container_"+scatter_id);
+	
+	var bar = d3.select("#colorbar_container_"+scatter_id)
+						.append("svg")
+						.attr("width", 100)
+						.attr("height", height + 10)
+						.append("g")
+						.attr("id","colorbar_"+scatter_id);
+	
+	var pointer = d3.selectAll("#colorbar_" + scatter_id).call(colorbar)
+	
+	
+	// traverse nodes and set respective scatter markers style
+	d3.json(scatter_json, function(scatter_nodes){
+		
+		data_boundaries_x = d3.extent(scatter_nodes.map(function(d){return d[node_attr_2_x]})); //consider compiling a helper library containing functions of the sorts of map(function(d){return d[node_attr_2_x]}) 
+		data_boundaries_y = d3.extent(scatter_nodes.map(function(d){return d[node_attr_2_y]}));
+		
+		x.domain(data_boundaries_x);
+		y.domain(data_boundaries_y);
+		
+        var focus = svg.append("g")
+                       .attr("transform", "translate(-100,-100)")
+                       .attr("class", "focus");
+
+        focus.append("text")
+        		.attr("y", -10);
+
+        svg.append("g")
+        	.selectAll("circle")
+        	.data(scatter_nodes)
+        .enter().append("circle")
+        	.attr("class", function(d){ return d.NodeLabel; })
+        	.attr("id", function(d){ return get_node_key(d.NodeLabel, scatter_id);})
+        	.attr("cx", function(d){ return x(d[node_attr_2_x]); })
+        	.attr("cy", function(d){ return y(d[node_attr_2_y]); })
+			.attr("fill", function (d) {
+                var c = 'white';
+                var val = get_entity_value(d[node_attr_color], time);
+
+            	if (val >= 0) { c = color_scale(val); }
+            	else { c = 'gray'; }
+            	
+            	return c;
+			})
+			.attr("r", function (d) { 
+				var val = get_entity_value(d[node_attr_radius], time);
+				return radius_scale(val);
+			})
+			.attr("opacity", node_opacity)
+			//all of the below options (e.g. tooltip attributes) can be exposed on per scatter basis as scatter styling properties)
+			.attr("data-toggle", "tooltip")
+			.attr("data-placement", "top")
+			.attr("html", true) // tooltip style can be further improved via bootstrap css options
+			.attr("title", function(d){
+				
+				var val = get_entity_value(d[node_attr_color], time);
+				if (val < 0) { val = 'N/A'; }
+			    else { val = val } // keep else as place holder; might want to expose formatting options as function arguments to get something along the lines of d3.format('%')(val);
+				
+				return  d.NodeLabel + ": " + node_attr_color + ": " + val;
+			})
+			
+			.style("stroke", "black")
+			.on("mouseover",function(d) { pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)])); }); // if value is greater than the maximum colorbar domain poin to the maximum of the colorbar domain 
+
+			
+			// Define the axes
+			var x_axis = d3.svg.axis().scale(x)
+			    .orient("bottom").ticks(10);
+
+			var y_axis = d3.svg.axis().scale(y)
+			    .orient("left").ticks(10);
+			   
+		    // Add the X Axis
+		    svg.append("g")
+		        .attr("class", "x axis")
+		        .call(x_axis)
+		        .attr("transform", "translate(0," + height + ")")
+		      .append("text")
+		        .text(node_attr_2_x)
+		        .attr("x", 6)
+		        .attr("dx", ".71em")
+		        //.attr("class","axis_"+id);
+
+		    // Add the Y Axis
+		    svg.append("g")
+		        .attr("class", "y axis")
+		        .call(y_axis)
+		       .append("text")
+		    	.text(node_attr_2_y)
+		        .attr("transform", "rotate(-90)")
+		        .attr("y", 6)
+		        .attr("dy", ".71em")
+		        .style("text-anchor", "end");
 	}); // end d3.json(...)
 }
 
@@ -401,7 +631,7 @@ function update_global_maps(updated_maps)
 // TODO: fill in the function
 function onmouseover_default()
 {
-	return
+	return;
 }
 
 
@@ -409,5 +639,5 @@ function onmouseover_default()
 //TODO: fill in the function
 function onmouseout_default()
 {
-	return
+	return;
 }

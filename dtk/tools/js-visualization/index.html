@@ -24,7 +24,7 @@
 	<script type="text/javascript">
 	
 	
-	  /*
+	  
 	   selected_entities = {
 			"node":"",
 			"params":""
@@ -100,13 +100,27 @@
    	   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
    	   				);
    	    
-		*/
+	
    	   	load_timeseries(
 					'80202_5', 
 					'prevalence', 
 					['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
 					'observed'
 				   );		
+   	   
+   	   	
+   	    load_2d_scatter(
+			       		   'hsb_scales_rdt_pos', 
+			       		   'map.json',
+			       		    {
+			   				   time_idx : 0,
+			   		   		   node_opacity : 0.6,
+			   		   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.58]).range(colorbrewer.OrRd[9])],
+			   		   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])],
+			   		   		   node_attr_2_x : "funestus_sc",
+			   		   		   node_attr_2_y : "arabiensis_sc"
+			       		    }	   
+      					);
        
 	</script>
 
