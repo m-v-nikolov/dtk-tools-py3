@@ -180,7 +180,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                                         "Broadcast_Event": "Give_Drugs" } )
     """
         
-def fmda_cfg(fmda_type, node_selection_type) :
+def fmda_cfg(fmda_type, node_selection_type='DISTANCE_ONLY', event_trigger='Give_Drugs') :
 
     # defaults to household-only unless fmda_type is a distance in km
     # options on Node_Selection_Type :
@@ -190,7 +190,7 @@ def fmda_cfg(fmda_type, node_selection_type) :
 
     fmda = {
             "class": "BroadcastEventToOtherNodes",
-            "Event_Trigger": "Give_Drugs",
+            "Event_Trigger": event_trigger,
             "Include_My_Node" : 1,
             "Node_Selection_Type" : node_selection_type,
             "Max_Distance_To_Other_Nodes_Km" : 0                                        

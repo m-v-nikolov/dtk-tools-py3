@@ -286,8 +286,8 @@ geographies = {
                         "Sea_Migration_Filename":     "Bbondo_households_Work_Migration.bin",
                         "Vector_Migration_Filename_Local":   "Bbondo_households_Local_Vector_Migration.bin",
                         "Vector_Migration_Filename_Regional":   "Bbondo_households_Regional_Vector_Migration.bin",
-                        "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 
-                                          'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle', 'Received_Test'] + ["Diagnostic_Survey_" + str(x) for x in range(5)],
+                        "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 'Spray_IRS',
+                                          'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle', 'Received_Test'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
                         "Enable_Climate_Stochasticity": 0, # daily in raw data series
                         "Climate_Model": "CLIMATE_BY_DATA",
                         'Enable_Nondisease_Mortality' : 1,

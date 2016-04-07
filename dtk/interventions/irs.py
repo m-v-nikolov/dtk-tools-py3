@@ -1,4 +1,5 @@
-import math
+from dtk.interventions.malaria_drug_campaigns import fmda_cfg
+import copy
 
 # IRS parameters
 irs_housingmod = {"class": "IRSHousingModification",
@@ -9,6 +10,22 @@ irs_housingmod = {"class": "IRSHousingModification",
                   "Secondary_Decay_Time_Constant": 365,  # blocking
                   "Cost_To_Consumer": 8.0
                   }
+
+node_irs_config = { "Reduction_Config": {
+                        "Box_Duration": 365, 
+                        "Initial_Effect": 0, 
+                        "class": "WaningEffectExponential"
+                    }, 
+                    "Cost_To_Consumer": 8.0, 
+                    "Habitat_Target": "ALL_HABITATS", 
+                    "Killing_Config": {
+                        "Box_Duration": 365, 
+                        "Initial_Effect": 0.7, 
+                        "class": "WaningEffectExponential"
+                    }, 
+                    "Spray_Kill_Target": "SpaceSpray_Indoor", 
+                    "class": "SpaceSpraying"
+                }
 
 # add_irs() is incompatible with format of waning in dtk 2.5
 def add_IRS(config_builder, start, coverage_by_ages, waning, cost, nodeIDs):
@@ -65,41 +82,24 @@ def add_IRS(config_builder, start, coverage_by_ages, waning, cost, nodeIDs):
 
         config_builder.add_event(IRS_event)
 
-def add_node_IRS(config_builder, start, coverage=1.0, age_in_days=0, cost=None, nodeIDs=[]):
+def add_node_IRS(config_builder, start, coverage=1.0, initial_killing=0.7, box_duration=365, cost=None, nodeIDs=[]):
 
-    node_irs_config = { "Reduction_Config": {
-                            "Box_Duration": 365, 
-                            "Initial_Effect": 0, 
-                            "class": "WaningEffectExponential"
-                        }, 
-                        "Cost_To_Consumer": 8.0, 
-                        "Habitat_Target": "ALL_HABITATS", 
-                        "Killing_Config": {
-                            "Box_Duration": 365, 
-                            "Initial_Effect": 0.7, 
-                            "class": "WaningEffectExponential"
-                        }, 
-                        "Spray_Kill_Target": "SpaceSpray_Indoor", 
-                        "class": "SpaceSpraying"
-                    }
-
-    if age_in_days > 0 :
-        new_initial_effect = node_irs_config['Killing_Config']['Initial_Effect']
-        halflife = node_irs_config['Killing_Config']['Box_Duration']
-        node_irs_config['Killing_Config']['Initial_Effect'] = new_initial_effect*math.exp(-1.*age_in_days/halflife)
+    irs_config = copy.deepcopy(node_irs_config)
+    irs_config['Killing_Config']['Box_Duration'] = box_duration
+    irs_config['Killing_Config']['Initial_Effect'] = initial_killing
 
     if cost:
         node_irs_config['Cost_To_Consumer'] = cost
 
-
     IRS_event = {   "Event_Coordinator_Config": {
-                        "Intervention_Config": node_irs_config, 
+                        "Intervention_Config": irs_config, 
                         "class": "NodeEventCoordinator"
                     }, 
                     "Nodeset_Config": {
                         "class": "NodeSetAll"
                     }, 
                     "Start_Day": start, 
+                    "Event_Name": "Node Level IRS",
                     "class": "CampaignEvent"
                 }
 
@@ -108,6 +108,63 @@ def add_node_IRS(config_builder, start, coverage=1.0, age_in_days=0, cost=None, 
     else:
         import random
         nodeIDs = [x for x in nodeIDs if random.random() <= coverage]
+        if nodeIDs == [] : # no nodes were sprayed
+            return
         IRS_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
 
     config_builder.add_event(IRS_event)
+
+def add_reactive_node_IRS(config_builder, start, duration=10000, trigger_coverage=1.0, irs_coverage=1.0, node_selection_type='DISTANCE_ONLY', 
+                          reactive_radius=0, blackout_duration=60, delay=7, nodes={"class": "NodeSetAll"}) :
+
+    # PLACEHOLDER FOR FUTURE REACTIVE IRS INTERVENTION
+    pass
+    """
+    irs_trigger_config = fmda_cfg(reactive_radius, node_selection_type, 'Spray_IRS')
+
+    trigger_irs = {   "Event_Name": "Trigger Reactive IRS", 
+                    "class": "CampaignEvent",
+                    "Start_Day": start,
+                    "Event_Coordinator_Config": 
+                    {
+                        "class": "StandardInterventionDistributionEventCoordinator",
+                        "Intervention_Config" : { 
+                            "class": "NodeLevelHealthTriggeredIV",
+                            "Demographic_Coverage": trigger_coverage,
+                            "Trigger_Condition": "TriggerString",
+                            "Trigger_Condition_String": "Received_Treatment", # triggered by successful health-seeking
+                            "Duration" : duration,
+                            "Actual_IndividualIntervention_Config" : { 
+                                "class": "DelayedIntervention",                    
+                                "Delay_Distribution": "FIXED_DURATION",
+                                "Delay_Period": delay,
+                                "Actual_IndividualIntervention_Configs" : [irs_trigger_config]
+                                }
+                        }
+                    },
+                    "Nodeset_Config": nodes}
+
+
+    distribute_irs = {   "Event_Name": "Distribute IRS", 
+                                "class": "CampaignEvent",
+                                "Start_Day": start,
+                                "Event_Coordinator_Config": 
+                                {
+                                    "class": "StandardInterventionDistributionEventCoordinator",
+                                    "Intervention_Config" : { 
+                                        "class": XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX,
+                                        "Demographic_Coverage": irs_coverage,
+                                        "Trigger_Condition": "TriggerString",
+                                        "Trigger_Condition_String": "Spray_IRS",
+                                        "Blackout_Event_Trigger" : "Blackout",
+                                        "Blackout_Period" : blackout_duration,
+                                        "Actual_IndividualIntervention_Config" : node_irs_config
+                                    }
+                                },
+                                "Nodeset_Config": {"class": "NodeSetAll"}
+                            }
+
+
+    config_builder.add_event(trigger_irs)
+    config_builder.add_event(distribute_irs)
+    """
