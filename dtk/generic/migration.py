@@ -35,7 +35,12 @@ waypoints_home_params = {
     "Sea_Demographics_Modifier_Child_Males"    : 0.0,
     "Sea_Demographics_Modifier_Child_Females"  : 0.0,
     "Enable_Sea_Family_Migration"              : 0,
-    "Sea_Family_Migration_Probability"         : 0.2
+    "Sea_Family_Migration_Probability"         : 0.2,
+
+    "Enable_Family_Migration"                  : 0,
+    "Family_Migration_Filename"                : "", 
+    "Family_Migration_Roundtrip_Duration"      : 1.0, 
+    "x_Family_Migration"                       : 1
 }
 
 single_roundtrip_params = copy.deepcopy(waypoints_home_params)

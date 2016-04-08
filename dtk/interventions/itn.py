@@ -1,4 +1,5 @@
 # Bednet parameters
+""" OLD
 itn_bednet = { "class": "SimpleBednet",
                "Bednet_Type": "ITN", 
                "Blocking_Rate": 0.9,
@@ -6,6 +7,22 @@ itn_bednet = { "class": "SimpleBednet",
                "Durability_Time_Profile": "DECAYDURABILITY", 
                "Primary_Decay_Time_Constant":   4 * 365,   # killing
                "Secondary_Decay_Time_Constant": 2 * 365,   # blocking
+               "Cost_To_Consumer": 3.75
+}
+"""
+# new campaign format : need to fix some add_itn() functionalities
+itn_bednet = { "class": "SimpleBednet",
+               "Bednet_Type": "ITN", 
+                "Killing_Config": {
+                    "Initial_Effect": 0.6,
+                    "Decay_Time_Constant": 1460,
+                    "class": "WaningEffectExponential"
+                },
+                "Blocking_Config": {
+                    "Initial_Effect": 0.9,
+                    "Decay_Time_Constant": 730,
+                    "class": "WaningEffectExponential"
+                },
                "Cost_To_Consumer": 3.75
 }
 

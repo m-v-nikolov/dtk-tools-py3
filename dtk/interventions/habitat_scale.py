@@ -1,6 +1,6 @@
 import random
 
-def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0):
+def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0, start_day=0):
     """
     Reduce available larval habitat in a node-specific way.
 
@@ -21,7 +21,7 @@ def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0):
             rando = random.uniform(1-variation,1+variation)
         # A permanent node-specific scaling of larval habitat by habitat type
         habitat_reduction_event = { "class" : "CampaignEvent",
-                                    "Start_Day": 0,
+                                    "Start_Day": start_day,
                                     "Event_Coordinator_Config": {
                                         "class": "NodeEventCoordinator",
                                         "Intervention_Config": {

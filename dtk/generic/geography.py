@@ -277,10 +277,6 @@ geographies = {
                      },
     "Bbondo_households" :    { "Geography": "Household",
                         "Demographics_Filename":      "Bbondo_households_demographics.json", 
-                        #"Air_Temperature_Filename":   "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
-                        #"Land_Temperature_Filename":  "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
-                        #"Rainfall_Filename":          "Household/Zambia_Zambia_30arcsec_rainfall_daily.bin", 
-                        #"Relative_Humidity_Filename": "Household/Zambia_Zambia_30arcsec_relative_humidity_daily.bin",
                         "Air_Temperature_Filename":   "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
                         "Land_Temperature_Filename":  "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
                         "Rainfall_Filename":          "Zambia_Gwembe_30arcsec_rainfall_daily.bin", 
@@ -290,6 +286,8 @@ geographies = {
                         "Sea_Migration_Filename":     "Bbondo_households_Work_Migration.bin",
                         "Vector_Migration_Filename_Local":   "Bbondo_households_Local_Vector_Migration.bin",
                         "Vector_Migration_Filename_Regional":   "Bbondo_households_Regional_Vector_Migration.bin",
+                        "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 'Spray_IRS',
+                                          'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle', 'Received_Test'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
                         "Enable_Climate_Stochasticity": 0, # daily in raw data series
                         "Climate_Model": "CLIMATE_BY_DATA",
                         'Enable_Nondisease_Mortality' : 1,
@@ -307,8 +305,7 @@ geographies = {
                         "Vector_Migration_Modifier_Equation" : "EXPONENTIAL",
                         "x_Vector_Migration_Local" : 100,
                         "x_Vector_Migration_Regional" : 0.1,
-                        "Vector_Migration_Food_Modifier" : 0,
-                        "Node_Grid_Size": 0.042
+                        "Vector_Migration_Food_Modifier" : 0
 
                       }
 }

@@ -1,4 +1,5 @@
 def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, interval=60):
+    # PROPOSE REPLACING THIS FUNCTION WITH VERSION FROM dtk.interventions.malaria_drug_campaigns
     """
     Add a drug campaign defined by the parameters to the config builder.
 

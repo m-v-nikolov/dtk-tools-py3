@@ -1,27 +1,35 @@
 from site_setup_functions import *
 
-sim_duration = 50*365
-itn_dates = [x/12. for x in [3, 6, 12, 24, 36, 96]]
-itn_dates = [max([0, sim_duration-365*x-199]) for x in itn_dates]
-itn_fracs = [0.29, 0.17, 0.42, 0.033, 0.047, 0.035]
-itn_distr = zip(itn_dates, itn_fracs)
+burn_years = 8#37
+sim_duration = burn_years*365 + 3*365
+itn_dates = [x/12. for x in [96, 36, 24, 12, 6, 3]]
+itn_dates_2012 = [365*(burn_years-date)+165 for date in itn_dates]
+itn_fracs_2012 = [0.035, 0.047, 0.033, 0.42, 0.17, 0.29]
+
+itn_dates = [x/12. for x in [12, 6, 3]]
+itn_dates_2013 = [365*(burn_years+1-date)+165 for date in itn_dates]
+itn_fracs_2013 = [0.25, 0.5, 0.25]
+
+round_days = [365*burn_years + x*60 +165 for x in range(3)] + [365*(burn_years + 1) + x*60 +165 for x in range(3)]
 
 setup_functions = [ config_setup_fn(duration=sim_duration) ,
-                    larval_habitat_fn(species="arabiensis", habitats=[1.2e9, 5.5e9]),
-                    species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.8),
-                    summary_report_fn(start=sim_duration-199,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(296), "class": "NodeSetNodeList"}),
-                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', itn_distr),
-                    add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', start=max([0,sim_duration-5*365])),
+                    #larval_habitat_fn(species="arabiensis", habitats=[9e9, 3e9]), # more temp rain, 160224
+                    #larval_habitat_fn(species="arabiensis", habitats=[1.2e9, 5.5e9]), # 'original' calib, 160216
+                    species_param_fn(species='arabiensis', param='Larval_Habitat_Types', value={ "TEMPORARY_RAINFALL": 1.2e9, "CONSTANT": 5.5e9 }),
+                    species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.5),
+                    summary_report_fn(start=365*burn_years+165,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(296), "class": "NodeSetNodeList"}),
+                    filtered_report_fn(start=365*burn_years, end=sim_duration, nodes=range(296)),
+                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', itn_dates_2012, itn_fracs_2012, 'itn2012cov'),
+                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', itn_dates_2013, itn_fracs_2013, 'itn2013cov'),
+                    add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_hs_itn_cov.json', start=max([0,(burn_years-5)*365])),
+                    add_drug_campaign_fn('MSAT_AL', [365*burn_years+165], coverage=0.5, repetitions=3, nodes={'Node_List' : range(296), "class": "NodeSetNodeList"}),
+                    add_drug_campaign_fn('MSAT_AL', [365*(burn_years+1)+165], coverage=0.63, repetitions=3, nodes={'Node_List' : range(296), "class": "NodeSetNodeList"}),
                     #add_outbreak_fn(start_day=0, outbreak_fraction=0.2, tsteps_btwn=365, nodes={'Node_List' : [105, 95, 23, 38, 41, 45, 127], "class": "NodeSetNodeList"}),
                     #add_migration_fn(1001, start_day=130, coverage=0.5, repetitions=sim_duration/365+1, duration_of_stay=60, target={'agemin' : 15, 'agemax' : 30}),
-                    input_eir_fn([15]*12, nodes={'Node_List' : [1001], "class": "NodeSetNodeList"}),
+                    input_eir_fn([3]*12, nodes={'Node_List' : [1001], "class": "NodeSetNodeList"}),
                     lambda cb : cb.update_params( { "Geography": "Household",
                                                     "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 
-                                                                      'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN'],
-                                                    #"Air_Temperature_Filename":   "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
-                                                    #"Land_Temperature_Filename":  "Household/Zambia_Zambia_30arcsec_air_temperature_daily.bin",
-                                                    #"Rainfall_Filename":          "Household/Zambia_Zambia_30arcsec_rainfall_daily.bin", 
-                                                    #"Relative_Humidity_Filename": "Household/Zambia_Zambia_30arcsec_relative_humidity_daily.bin",
+                                                                      'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Test'],
                                                     "Air_Temperature_Filename":   "Household/Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
                                                     "Land_Temperature_Filename":  "Household/Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
                                                     "Rainfall_Filename":          "Household/Zambia_Gwembe_30arcsec_rainfall_daily.bin", 
@@ -49,24 +57,21 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Vector_Migration_Habitat_Modifier": 3.8, 
                                                     "Vector_Migration_Food_Modifier" : 0,
                                                     "Vector_Migration_Stay_Put_Modifier" : 10,
-                                                    #"Demographics_Filenames": ["Household/Bbondo_households_demographics_unif_fixedBR.json"],
                                                     "Demographics_Filenames": ["Household/Bbondo_households_all_demographics_unif_fixedBR_work.json"],
-                                                    "x_Temporary_Larval_Habitat" : 0.01,
+                                                    "x_Temporary_Larval_Habitat" : 0.001,
                                                     "Enable_Spatial_Output" : 1,
                                                     "Spatial_Output_Channels" : ["Daily_EIR", "Population", 'New_Diagnostic_Prevalence'],
-
+                                                    "Vector_Species_Names" : ['arabiensis'],
                                                     "Enable_Migration_Heterogeneity": 1, 
                                                     "Migration_Model": "FIXED_RATE_MIGRATION", 
                                                     #"Migration_Model": "NO_MIGRATION", 
                                                     "Enable_Local_Migration": 1,
-                                                    "Local_Migration_Filename": "Household/Bbondo_households_Local_Migration.bin",
                                                     "Migration_Pattern": "SINGLE_ROUND_TRIPS",
                                                     "Local_Migration_Roundtrip_Duration"       : 3.0,
                                                     "Local_Migration_Roundtrip_Probability"    : 1.0,
                                                     "x_Local_Migration" : 0.1,
                                                     "Enable_Sea_Migration": 1,
-                                                    "x_Sea_Migration" : 0.3,
-                                                    "Sea_Migration_Filename": "Household/Bbondo_households_Work_Migration.bin",
+                                                    "x_Sea_Migration" : 0.15,
                                                     "Sea_Migration_Roundtrip_Duration"         : 30.0,
                                                     "Sea_Migration_Roundtrip_Probability"      : 1.0
                                                     } )]
@@ -87,6 +92,10 @@ reference_data = {  "annual_eir" :
 	                "prevalence_by_node" :
 	                {"151": 0.0, "150": 0.33333333333333331, "153": 0.33333333333333331, "152": 0.22222222222222221, "179": 1.0, "210": 0.0, "156": 0.20000000000000001, "195": 0.14285714285714285, "197": 0.14285714285714285, "127": 0.5, "265": 0.0, "214": 0.0, "60": 0.0, "114": 0.20000000000000001, "258": 0.16666666666666666, "63": 0.0, "64": 0.0, "53": 0.0, "161": 0.18181818181818182, "276": 0.25, "69": 0.0, "87": 0.16666666666666666, "171": 0.16666666666666666, "259": 0.25, "25": 0.14285714285714285, "275": 0.20000000000000001, "22": 0.0, "23": 0.5, "44": 1.0, "45": 0.5, "43": 0.0, "105": 0.83333333333333337, "41": 0.5, "182": 0.0, "183": 0.0, "206": 0.25, "185": 0.0, "281": 0.0, "188": 0.0, "96": 0.0, "277": 0.0, "147": 0.22222222222222221, "196": 0.25, "140": 0.0, "141": 0.0, "149": 0.20000000000000001, "263": 0.33333333333333331, "244": 0.33333333333333331, "122": 0.33333333333333331, "240": 0.0, "71": 0.25, "70": 0.0, "227": 0.33333333333333331, "103": 0.25, "269": 0.0, "224": 0.0, "95": 0.66666666666666663, "94": 0.0, "221": 0.0, "58": 0.0, "118": 0.0, "270": 0.0, "38": 0.5, "59": 0.0, "14": 0.25, "283": 0.16666666666666666, "19": 0.0, "54": 0.0, "247": 0.14285714285714285, "35": 0.14285714285714285, "130": 0.14285714285714285, "107": 0.0, "116": 0.0, "48": 0.0, "264": 0.0, "110": 0.0
                     },    
+	                "prevalence_by_round" :
+	                { 
+	                  "all" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052]
+	                },
 	                "prevalence_by_age" :
                     # 75 household subset
 	                #{ "age_bins" : [5, 10, 15, 30, 200],
@@ -109,7 +118,7 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
     'household_prevalence_analyzer' : { 'name' : 'analyze_prevalence_by_node',
                                               'reporter' : 'Spatial Report',
                                               'fields_to_get' : ['New_Diagnostic_Prevalence', 'Population'],
-                                              'testdays' : [-1*(365-166)],
+                                              'testdays' : [365*burn_years+165],
                                               'map_size' : 1.7,
                                               'LL_fn' : 'euclidean_distance'
                                             },
@@ -122,11 +131,18 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
     'prevalence_risk_analyzer' : { 'name' : 'analyze_prevalence_risk',
                                               'reporter' : 'Spatial Report',
                                               'fields_to_get' : ['New_Diagnostic_Prevalence', 'Population'],
-                                              'testdays' : [-1*(365-166)],
+                                              'testdays' : [365*burn_years+165],
                                               'map_size' : 8,
                                               'LL_fn' : 'euclidean_distance',
                                               'worknode' : [1001]
-                                          }}
+                                          },
+    'prevalence_by_round_analyzer' : { 'name' : 'analyze_prevalence_by_round',
+                                              'reporter' : 'Filtered Report',
+                                              'fields_to_get' : ['New Diagnostic Prevalence'],
+                                              'testdays' : [x - burn_years*365 for x in round_days],
+                                              'LL_fn' : 'euclidean_distance'
+                                          }
+    }
 
 def get_setup_functions() :
 

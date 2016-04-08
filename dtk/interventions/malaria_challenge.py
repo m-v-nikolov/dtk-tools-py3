@@ -1,4 +1,4 @@
-def add_challenge_trial(config_builder):
+def add_challenge_trial(config_builder, start_day=0):
     """
     Add a MalariaChallenge to the passed config_builder with default parameters.
 
@@ -12,7 +12,7 @@ def add_challenge_trial(config_builder):
     # Infectious-bite challenge
     challenge_event = {
         "class": "CampaignEvent", 
-        "Start_Day": 0, 
+        "Start_Day": start_day, 
         "Event_Coordinator_Config": {
             "class": "StandardInterventionDistributionEventCoordinator", 
             "Number_Distributions": -1,

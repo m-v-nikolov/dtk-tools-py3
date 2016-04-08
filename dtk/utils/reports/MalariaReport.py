@@ -1,4 +1,4 @@
-from CustomReport import BaseReport, BaseEventReportIntervalOutput
+from CustomReport import BaseReport, BaseEventReport, BaseEventReportIntervalOutput
 
 class MalariaReport(BaseEventReportIntervalOutput):
 
@@ -101,3 +101,7 @@ class FilteredMalariaReport(BaseReport):
 def add_filtered_report(cb, start=0, end=10000, nodes=[], description='') :
     filtered_report = FilteredMalariaReport(start_day=start, end_day=end, nodes=nodes, description=description)
     cb.add_reports(filtered_report)
+
+def add_event_counter_report(cb, event_trigger_list, start=0, duration=10000, description='', nodes={"class": "NodeSetAll"}) :
+    event_counter_report = BaseEventReport(event_trigger_list, start_day=start, duration_days=duration, report_description=description, nodeset_config=nodes, type='ReportEventCounter')
+    cb.add_reports(event_counter_report)
