@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class SampleIndexWrapper(object):
-    '''
+    """
     Wrapper for a SimConfigBuilder-modifying function to add metadata
     on sample-point index when called in a iteration over sample points
-    '''
+    """
 
     def __init__(self, sample_point_fn):
         self.sample_point_fn = sample_point_fn
@@ -37,11 +37,11 @@ class SampleIndexWrapper(object):
 
 
 class CalibManager(object):
-    '''
+    """
     Manages the creation, execution, and resumption of multi-iteration a calibration suite.
     Each iteration spawns a new ExperimentManager to configure and commission either local
     or HPC simulations for a set of random seeds, sample points, and site configurations.
-    '''
+    """
 
     def __init__(self, setup, config_builder, sample_point_fn, sites, next_point, 
                  name='calib_test', iteration_state=IterationState(), location='LOCAL',
@@ -65,9 +65,9 @@ class CalibManager(object):
 
 
     def run_calibration(self, **kwargs):
-        '''
+        """
         Create and run a complete multi-iteration calibration suite.
-        '''
+        """
 
         if 'location' in kwargs:
             self.location = kwargs.pop('location')
@@ -76,10 +76,10 @@ class CalibManager(object):
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location):
-        '''
+        """
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
-        '''
+        """
 
         try :
             os.mkdir(self.name)
@@ -108,7 +108,7 @@ class CalibManager(object):
 
 
     def run_iterations(self, **kwargs):
-        '''
+        """
         Run the iteration loop consisting of the following steps:
            * getting parameters to sample from next-point algorithm
              (based on results evaluated from previous iterations)
@@ -117,7 +117,7 @@ class CalibManager(object):
              the simulation output to appropriate reference data
            * updating the next-point algorithm with sample-point results
              and either truncating or generating next sample points.
-        '''
+        """
 
         while self.iteration < self.max_iterations:
             logger.info('---- Iteration %d ----', self.iteration)
@@ -135,9 +135,9 @@ class CalibManager(object):
         self.finalize_calibration()
 
     def get_next_parameters(self):
-        '''
+        """
         Query the next-point algorithm for the next set of sample points.
-        '''
+        """
         if self.iteration_state.parameters:
             logger.info('Reloading next set of sample points from cached iteration state.')
             next_params = self.iteration_state.parameters['values']
@@ -149,11 +149,11 @@ class CalibManager(object):
         return next_params
 
     def commission_iteration(self, next_params, **kwargs):
-        '''
+        """
         Commission an experiment of simulations constructed from a list of combinations of
         random seeds, calibration sites, and the next sample points.
         Cache the relevant experiment and simulation information to the IterationState.
-        '''
+        """
 
         if self.iteration_state.simulations:
             logger.info('Reloading simulation data from cached iteration state.')
@@ -184,10 +184,10 @@ class CalibManager(object):
         exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
 
     def analyze_iteration(self):
-        '''
+        """
         Analyze the output of completed simulations by using the relevant analyzers by site.
         Cache the results that are returned by those analyzers.
-        '''
+        """
 
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
@@ -214,8 +214,7 @@ class CalibManager(object):
         self.cache_iteration_state()
 
         iteration_summary = self.iteration_state.summary_table()
-        #print "SUMMARY TABLE"
-        #print self.iteration_state.results
+
         self.all_results = pd.concat((self.all_results, iteration_summary)).sort_values(by='total', ascending=False)
         logger.info(self.all_results[['iteration', 'total']].head(10))
         self.cache_calibration()
@@ -232,44 +231,44 @@ class CalibManager(object):
 
 
     def update_next_point(self, results):
-        '''
+        """
         Pass the latest evaluated results back to the next-point algorithm,
         which will update its state to either truncate the calibration 
         or generate the next set of sample points.
-        '''
+        """
         self.next_point.update_results(results)
         self.next_point.update_state(self.iteration)
 
     def finished(self):
-        ''' The next-point algorithm has reached its truncation condition. '''
+        """ The next-point algorithm has reached its truncation condition. """
         return self.next_point.end_condition()
 
     def increment_iteration(self):
-        ''' Cache the last iteration state and initialize a new iteration. '''
+        """ Cache the last iteration state and initialize a new iteration. """
         self.cache_iteration_state()
         self.iteration_state.increment_iteration()
         self.cache_calibration()  # to update latest iteration
 
     def finalize_calibration(self):
-        ''' Get the final samples (and any associated information like weights) from algo. '''
+        """ Get the final samples (and any associated information like weights) from algo. """
         final_samples = self.next_point.get_final_samples()
         logger.debug('Final samples:\n%s', pprint.pformat(final_samples))
         self.cache_calibration(final_samples=final_samples)
 
     def generate_suite_id(self, exp_manager):
-        '''
+        """
         Get a new Suite ID from the LOCAL/HPC ExperimentManager
         and cache to calibration with this updated info.
-        '''
+        """
         self.suite_id = exp_manager.create_suite(self.name)
         self.cache_calibration()
 
     def cache_calibration(self, **kwargs):
-        '''
+        """
         Cache information about the CalibManager that is needed to resume after an interruption.
         N.B. This is not currently the complete state, some of which relies on nested and frozen functions.
              As such, the 'resume' logic relies on the existence of the original configuration script.
-        '''
+        """
 
         # TODO: resolve un-picklable nested SetupFunctions.set_calibration_site for self.sites
         #       and frozen scipy.stats functions in MultiVariatePrior.function for self.next_point
@@ -283,11 +282,12 @@ class CalibManager(object):
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
+
     def cache_iteration_state(self, backup_existing=False):
-        '''
+        """
         Cache information about the IterationState that is needed to resume after an interruption.
         If resuming from an existing iteration, also copy to backup the initial cached state.
-        '''
+        """
         try:
             iter_directory = self.iteration_directory()
             os.makedirs(iter_directory)
@@ -303,11 +303,11 @@ class CalibManager(object):
 
 
     def serialize_results(self):
-        '''
+        """
         Prepare summary results for serialization.
         N.B. we cast also the sample index and iteration to int32
              to avoid a NumpyEncoder issue with np.int64
-        '''
+        """
 
         if not isinstance(self.all_results, pd.DataFrame):
             return None
@@ -321,9 +321,9 @@ class CalibManager(object):
         return data.to_dict(orient='list')
 
     def restore_results(self, results, iteration):
-        '''
+        """
         Restore summary results from serialized state.
-        '''
+        """
 
         if not results:
             logger.debug('No cached results to reload from CalibManager.')
@@ -339,13 +339,13 @@ class CalibManager(object):
         self.cache_calibration()
 
     def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
-        '''
+        """
         Restart calibration from specified iteration (default=latest)
         and from the specified iter_step in each iteration:
            * commission -- commission a new iteration of simulations based on existing next_params
            * analyze -- calculate results for an existing iteration of simulations
            * next_point -- generate next sample points from an existing set of results
-        '''
+        """
 
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
@@ -390,11 +390,11 @@ class CalibManager(object):
         self.run_iterations(**kwargs)
 
     def cleanup(self):
-        '''
+        """
         Cleanup the current calibration
         - Delete the result directory
         - If LOCAL -> also delete the simulations
-        '''
+        """
         if self.location == 'LOCAL':
             calib_data = self.read_calib_data()
             iter_count = calib_data.get('iteration')
@@ -429,10 +429,14 @@ class CalibManager(object):
                 logger.error("Failed to delete %s" % calib_dir)
 
     def reanalyze(self):
-        '''
+        """
         Reanalyze the current calibration
-        '''
+        """
         calib_data =  self.read_calib_data()
+
+        if (calib_data['location'] == 'HPC'):
+            from COMPS import Client
+            Client.Login(self.setup.get('HPC', 'server_endpoint'))
 
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
@@ -462,6 +466,7 @@ class CalibManager(object):
         # Before leaving -> increase the iteration / set back the suite_id
         self.iteration_state.iteration += 1
         self.suite_id = suite_id
+        self.location = calib_data['location']
 
         # Also finalize
         self.finalize_calibration()
