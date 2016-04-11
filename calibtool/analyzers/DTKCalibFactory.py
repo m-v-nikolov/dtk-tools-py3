@@ -3,6 +3,8 @@ import importlib
 from calibtool.CalibSite import CalibSite
 
 from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
+from calibtool.analyzers.PrevalenceByRoundAnalyzer import PrevalenceByRoundAnalyzer
+from calibtool.analyzers.PositiveFractionByDistanceAnalyzer import PositiveFractionByDistanceAnalyzer
 
 
 class DTKCalibFactory(object):
@@ -11,6 +13,10 @@ class DTKCalibFactory(object):
     def get_analyzer(name, weight=1):
         if name == 'ClinicalIncidenceByAgeCohortAnalyzer':
             return ClinicalIncidenceByAgeCohortAnalyzer(name, weight)
+        elif name == 'PrevalenceByRoundAnalyzer':
+            return PrevalenceByRoundAnalyzer(name, weight)
+        elif name == 'PositiveFractionByDistanceAnalyzer':
+            return PositiveFractionByDistanceAnalyzer(name, weight)
         else:
             raise NotImplementedError("Don't recognize CalibAnalyzer: %s" % name)
 
@@ -22,7 +28,8 @@ class DTKCalibFactory(object):
                        name=name,
                        setup_functions=mod.setup_functions,
                        reference_data=mod.reference_data,
-                       analyzers=analyzers)
+                       analyzers=analyzers,
+                       analyzer_setups=mod.analyzers)
         except ImportError:
             raise NotImplementedError("Don't recognize CalibSite: %s" % name)
 

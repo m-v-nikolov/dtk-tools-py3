@@ -94,7 +94,8 @@ reference_data = {  "annual_eir" :
                     },    
 	                "prevalence_by_round" :
 	                { 
-	                  "all" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052]
+	                  "all" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052],
+	                  "Test" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052],
 	                },
 	                "prevalence_by_age" :
                     # 75 household subset
@@ -141,7 +142,14 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
                                               'fields_to_get' : ['New Diagnostic Prevalence'],
                                               'testdays' : [x - burn_years*365 for x in round_days],
                                               'LL_fn' : 'euclidean_distance'
-                                          }
+                                          },
+    'PrevalenceByRoundAnalyzer' : {   'testdays' : [x - burn_years*365 for x in round_days],
+                                      'regions' : ['all']
+                                          },
+    'PositiveFractionByDistanceAnalyzer' : {   "distmat" : "C:/Users/jgerardin/work/households_as_nodes/bbondo_distance_matrix.csv",
+                                               "ignore_nodes" : [1001],
+                                               'testday' : 365*burn_years+165,
+                                                }
     }
 
 def get_setup_functions() :
