@@ -281,8 +281,8 @@ class CalibManager(object):
                  'results': self.serialize_results()}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
-    
-    
+
+
     def cache_iteration_state(self, backup_existing=False):
         """
         Cache information about the IterationState that is needed to resume after an interruption.
@@ -466,6 +466,7 @@ class CalibManager(object):
         # Before leaving -> increase the iteration / set back the suite_id
         self.iteration_state.iteration += 1
         self.suite_id = suite_id
+        self.location = calib_data['location']
 
         # Also finalize
         self.finalize_calibration()
