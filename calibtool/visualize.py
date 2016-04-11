@@ -196,6 +196,7 @@ class SiteDataPlotter(CalibPlotter):
                     ax.plot(data[x], data[y], '-', color=cm.Blues((result-cmin)/(cmax-cmin)), alpha=0.5, linewidth=0.5)
                     ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
         try :
+            analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
         except AttributeError :
             ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
