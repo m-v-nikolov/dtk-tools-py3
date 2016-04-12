@@ -88,7 +88,7 @@ class CalibManager(object):
             sleep(0.5)
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
-            while (var.upper() not in ('R', 'B', 'C', 'A')):
+            while var.upper() not in ('R', 'B', 'C', 'A'):
                 var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [A]bort:  ')
 
             # Abort
@@ -103,6 +103,20 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location)
+
+    @staticmethod
+    def retrieve_iteration_state(iter_directory):
+        """
+        Retrieve IterationState from a given directory
+        """
+        if not os.path.isdir(iter_directory):
+            raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
+
+        try:
+            return IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
+
+        except IOError:
+            raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
 
     def run_iterations(self, **kwargs):
         """
@@ -176,7 +190,7 @@ class CalibManager(object):
 
             self.iteration_state.simulations = exp_manager.exp_data
             self.cache_iteration_state()
-            sim_ids = exp_manager.exp_data['sims'].keys()
+            # sim_ids = exp_manager.exp_data['sims'].keys()
 
         exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
 
@@ -296,19 +310,22 @@ class CalibManager(object):
 
         # Get the simulations information in the different iterations
         sims = list()
+        sims_paths = dict()
         for iteration in range(0, self.iteration):
             iter_directory = os.path.join(self.name, 'iter%d' % iteration)
-            if not os.path.isdir(iter_directory):
-                raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
+            self.iteration_state = self.retrieve_iteration_state(iter_directory)
+            for simid, values in self.iteration_state.simulations["sims"].iteritems():
+                values['id'] = simid
+                values['iteration'] = iteration
+                sims.append(values)
 
-            try:
-                self.iteration_state = IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
-                for simid, values in self.iteration_state.simulations["sims"].iteritems():
-                    values['id'] = simid
-                    values['iteration'] = iteration
-                    sims.append(values)
-            except IOError:
-                raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
+                # If we are local also retrieve the sims paths
+                if self.location == "LOCAL":
+                    sim_info = self.iteration_state.simulations
+                    base_path = os.path.join(sim_info['sim_root'], "%s_%s" % (sim_info['exp_name'], sim_info['exp_id']))
+
+                    for sim_id, sim in sim_info['sims'].iteritems():
+                        sims_paths[sim_id] = os.path.join(base_path, sim_id)
 
         # Put the simulation info in a dataframe and round it
         siminfo_df = pd.DataFrame(sims)
@@ -330,8 +347,9 @@ class CalibManager(object):
         results_df = pd.merge(df, results_df, on=pnames)
 
         # Retrieve the mappign between id - path
-        from simtools.OutputParser import CompsDTKOutputParser
-        sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
+        if self.location == "HPC":
+            from simtools.OutputParser import CompsDTKOutputParser
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
 
         # Transform the ids in actual paths
         def find_path(el):
@@ -343,21 +361,21 @@ class CalibManager(object):
         results_df['outputs'] = results_df['outputs'].apply(find_path)
 
         # Sort and save
-        col_order = ['iteration','sample','total']
-        col_order.extend(results_df.keys()[len(pnames)+2:-2]) # The analyzers
+        col_order = ['iteration', 'sample', 'total']
+        col_order.extend(results_df.keys()[len(pnames)+2:-2])   # The analyzers
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by=['iteration','total'], ascending=False)[col_order].to_csv()
-        with open(os.path.join(self.name,'LL_all.csv'),'w') as fp:
+        csv = results_df.sort_values(by=['iteration', 'total'], ascending=False)[col_order].to_csv()
+        with open(os.path.join(self.name, 'LL_all.csv'), 'w') as fp:
             fp.writelines(csv)
-
 
     def cache_iteration_state(self, backup_existing=False):
         """
         Cache information about the IterationState that is needed to resume after an interruption.
         If resuming from an existing iteration, also copy to backup the initial cached state.
         """
+        iter_directory = ""
         try:
             iter_directory = self.iteration_directory()
             os.makedirs(iter_directory)
@@ -426,7 +444,7 @@ class CalibManager(object):
         self.suite_id = calib_data.get('suite_id')
         latest_iteration = calib_data.get('iteration')
 
-        if iteration == None:
+        if iteration is None:
             iteration = latest_iteration
             logger.info('Resuming calibration from last iteration: %d' % iteration)
         else:
@@ -437,17 +455,11 @@ class CalibManager(object):
             logger.info('Resuming calibration from iteration %d' % iteration)
 
         iter_directory = os.path.join(self.name, 'iter%d' % iteration)
-        if not os.path.isdir(iter_directory):
-            raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
-
-        try:
-            self.iteration_state = IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
-            self.restore_results(calib_data.get('results'), iteration)
-            if iter_step:
-                self.iteration_state.reset_to_step(iter_step)
-                self.cache_iteration_state(backup_existing=True)
-        except IOError:
-            raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
+        self.iteration_state = self.retrieve_iteration_state(iter_directory)
+        self.restore_results(calib_data.get('results'), iteration)
+        if iter_step:
+            self.iteration_state.reset_to_step(iter_step)
+            self.cache_iteration_state(backup_existing=True)
 
         # TODO: If we attempt to resume, with re-commissioning,
         #       we will have to roll back next_point to previous iteration?
@@ -480,7 +492,7 @@ class CalibManager(object):
                 if os.path.exists(sim_path):
                     try:
                         shutil.rmtree(sim_path)
-                    except:
+                    except OSError:
                         logger.error("Failed to delete %s" % sim_path)
 
                 # If the json exist too -> delete
@@ -489,7 +501,7 @@ class CalibManager(object):
                 if os.path.exists(json_path):
                     try:
                         os.remove(json_path)
-                    except:
+                    except OSError:
                         logger.error("Failed to delete %s" % json_path)
 
         # Then delete the whole directory
@@ -497,7 +509,7 @@ class CalibManager(object):
         if os.path.exists(calib_dir):
             try:
                 shutil.rmtree(calib_dir)
-            except:
+            except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
 
     def reanalyze(self):
@@ -506,7 +518,7 @@ class CalibManager(object):
         """
         calib_data = self.read_calib_data()
 
-        if (calib_data['location'] == 'HPC'):
+        if calib_data['location'] == 'HPC':
             from COMPS import Client
             Client.Login(self.setup.get('HPC', 'server_endpoint'))
 
@@ -518,11 +530,9 @@ class CalibManager(object):
         for i in range(0, iter_count):
             # Create the path for the iteration dir
             iter_directory = os.path.join(self.name, 'iter%d' % i)
-            if not os.path.isdir(iter_directory):
-                raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
 
             # Create the state for the current iteration
-            self.iteration_state = IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
+            self.iteration_state = self.retrieve_iteration_state(iter_directory)
             self.iteration_state.iteration = i
 
             # Empty the results and analyzers
