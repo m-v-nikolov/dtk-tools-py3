@@ -12,9 +12,13 @@ class CalibAnalyzer(object):
         self.name = name
         self.weight = weight
         self.site = None
+        self.setup = {}
 
     def set_site(self, site):
         self.site = site
+
+    def set_setup(self, setup):
+        self.setup = setup
 
     def filter(self, sim_metadata):
         return sim_metadata.get('__site__', False) == self.site.name

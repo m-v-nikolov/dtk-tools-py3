@@ -5,6 +5,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import pandas as pd
+from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 
 try:
     import seaborn as sns
@@ -148,6 +149,9 @@ class SiteDataPlotter(CalibPlotter):
             self.plot_all(site_analyzer, all_samples, clim=(cmin, cmax))
 
     def plot_best(self, site_analyzer, iter_samples):
+
+        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
+
         for iteration, samples in iter_samples.items():
             analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
             reference = analyzer_data['reference']
@@ -157,15 +161,21 @@ class SiteDataPlotter(CalibPlotter):
                 fname = os.path.join(self.plots_directory, site_analyzer, 'rank%d' % rank)
                 fig = plt.figure(fname, figsize=(4,3))
                 plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
-                ax = fig.add_subplot(111)
                 data = sims[sample]
-                ax.plot(data[x], data[y], '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
-                ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
+                try :
+                    analyzer.plot_sim(fig, reference, data, x, y, '-o', color='#CB5FA4', alpha=1, linewidth=1)
+                    analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
+                except AttributeError :
+                    ax = fig.add_subplot(111)
+                    ax.plot(data[x], data[y], '-o', color='#CB5FA4', alpha=1, linewidth=1)
+                    ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)                
+                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
     def plot_all(self, site_analyzer, iter_samples, clim):
+
+        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
 
         fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
         fig = plt.figure(fname, figsize=(4,3))
@@ -180,7 +190,14 @@ class SiteDataPlotter(CalibPlotter):
             x, y = analyzer_data['axis_names']
             for sample, result in zip(samples['sample'], samples['result']):
                 data = sims[sample]
-                ax.plot(data[x], data[y], '-', color=cm.Blues((result-cmin)/(cmax-cmin)), alpha=0.5, linewidth=0.5)
-        ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
+                try :
+                    analyzer.plot_sim(fig, reference, data, x, y, '-', color=cm.Blues((result-cmin)/(cmax-cmin)), alpha=0.5, linewidth=0.5)
+                except AttributeError :
+                    ax.plot(data[x], data[y], '-', color=cm.Blues((result-cmin)/(cmax-cmin)), alpha=0.5, linewidth=0.5)
+                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
+        try :
+            analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
+        except AttributeError :
+            ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
