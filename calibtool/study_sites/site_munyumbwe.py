@@ -1,6 +1,6 @@
 from site_setup_functions import *
 
-burn_years = 37
+burn_years = 8#37
 sim_duration = burn_years*365 + 3*365
 
 itn_dates = [x/12. for x in [96, 36, 24, 12, 6, 3]]
@@ -24,7 +24,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                     species_param_fn(species='arabiensis', param='Larval_Habitat_Types', value={ "TEMPORARY_RAINFALL": 1e10, "CONSTANT": 2e6 }),
                     species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.5),
                     species_param_fn(species='funestus', param='Larval_Habitat_Types', value={ "PIECEWISE_MONTHLY": 1e10, "WATER_VEGETATION": 2e6 }),
-                    summary_report_fn(start=365*burn_years+165,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(1513), "class": "NodeSetNodeList"}),
+                    #summary_report_fn(start=365*burn_years+165,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(1513), "class": "NodeSetNodeList"}),
                     filtered_report_fn(start=365*burn_years, end=sim_duration, nodes=range(1513)),
                     add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/munyumbwe_all_hs_itn_cov.json', itn_dates_2012, itn_fracs_2012, 'itn2012cov'),
                     add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/munyumbwe_all_hs_itn_cov.json', itn_dates_2013, itn_fracs_2013, 'itn2013cov'),
@@ -41,7 +41,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                                       'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Test'],
                                                     "Air_Temperature_Filename":   "Household/Munyumbwe_all_air_temperature_daily.bin",
                                                     "Land_Temperature_Filename":  "Household/Munyumbwe_all_air_temperature_daily.bin",
-                                                    "Rainfall_Filename":          "Household/Munyumbwe_all3_rainfall_daily.bin", 
+                                                    "Rainfall_Filename":          "Household/Munyumbwe_all_rainfall_daily.bin", 
                                                     "Relative_Humidity_Filename": "Household/Munyumbwe_all_relative_humidity_daily.bin",
                                                     "Local_Migration_Filename":   "Household/Munyumbwe_Local_Migration.bin",
                                                     "Regional_Migration_Filename":"Household/Munyumbwe_Regional_Migration.bin",
@@ -66,11 +66,12 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Vector_Migration_Habitat_Modifier": 3.8, 
                                                     "Vector_Migration_Food_Modifier" : 0,
                                                     "Vector_Migration_Stay_Put_Modifier" : 10,
-                                                    "Demographics_Filenames": ["Household/Munyumbwe_households_all_demographics_unif_fixedBR_work.json"],
-                                                    "x_Temporary_Larval_Habitat" : 0.01,
+                                                    "Demographics_Filenames": ["Household/Munyumbwe_households_all_demographics_MN.json"],
+                                                    #"x_Temporary_Larval_Habitat" : 0.01,
                                                     "Enable_Spatial_Output" : 1,
-                                                    "Spatial_Output_Channels" : ["Daily_EIR", "Population", 'New_Diagnostic_Prevalence'],
+                                                    "Spatial_Output_Channels" : ["Population", 'New_Diagnostic_Prevalence'],
                                                     "Vector_Species_Names" : ['arabiensis', 'funestus'],
+                                                    "logLevel_VectorHabitat" : "ERROR",
                                                     "Enable_Migration_Heterogeneity": 1, 
                                                     "Migration_Model": "FIXED_RATE_MIGRATION", 
                                                     #"Migration_Model": "NO_MIGRATION", 
@@ -91,6 +92,11 @@ with open('C:/Users/jgerardin/work/households_as_nodes/munyumbwe_subsections.jso
     subset = json.loads(fin.read())
 for key in subset :
     setup_functions.append(filtered_report_fn(start=365*burn_years, end=sim_duration, nodes=subset[key], description=key))
+
+for date in range(4) :
+    setup_functions.append(add_mosquito_release_fn(152 + 10*date, 'funestus', 1, nodes={'Node_List' : subset['lowTarea'], "class": "NodeSetNodeList"}))
+    setup_functions.append(add_mosquito_release_fn(152 + 10*date, 'funestus', 5, nodes={'Node_List' : subset['NEroad'], "class": "NodeSetNodeList"}))
+    setup_functions.append(add_mosquito_release_fn(152 + 10*date, 'funestus', 10, nodes={'Node_List' : subset['SWvalley'], "class": "NodeSetNodeList"}))
 
 reference_data = {  
                   # 802 hh
@@ -139,7 +145,14 @@ analyzers = {
                                         'testdays' : [x - burn_years*365 for x in round_days],
                                         'LL_fn' : 'euclidean_distance',
                                         'regions' : subset.keys()
-                                        }
+                                        },
+    'PrevalenceByRoundAnalyzer' : {   'testdays' : [x - burn_years*365 for x in round_days],
+                                      'regions' : ['all', 'SWvalley', 'NEroad', 'lowTarea']
+                                          },
+    'PositiveFractionByDistanceAnalyzer' : {   "distmat" : "C:/Users/jgerardin/work/households_as_nodes/munyumbwe_all_distance_matrix.csv",
+                                               "ignore_nodes" : [10001],
+                                               'testday' : 365*burn_years+165,
+                                                }
     }
 
 def get_setup_functions() :
