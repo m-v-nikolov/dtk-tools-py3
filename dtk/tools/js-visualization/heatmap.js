@@ -41,13 +41,15 @@
  * 
  */
 
-function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z)
+function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z, target_container)
 {
+
+	target_container = typeof target_container !== 'undefined' ? target_container : "body";
 	
 	axis_margin = 75; // margin left on the left and bottom of the heatmap, allowing for the display of y anx x -axis respectively 
 	color_bar_margin = 50;
 	
-	var map_container = d3.select("body").append("div")
+	var map_container = d3.select(target_container).append("div")
 	.attr("id","hm_container_"+hm_id)
 	.style({height:(h) + "px", width:(h + color_bar_margin) + "px"}); // assume a square heatmap for now
 	
@@ -88,12 +90,21 @@ function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z)
 			.attr("height", tile_size)
 			.attr("y", function(d){ return h - tile_size*d.y_idx - axis_margin; })
 			.attr("x", function(d){ return axis_margin + tile_size*d.x_idx; })
+			.attr("emitted", false)
+			.attr("param", function(d) { return attr_2_x + "_" + d[attr_2_x] + "_" + attr_2_y + "_" + d[attr_2_y]; })
+			//.attr("param", function(d) { return attr_2_x + "_" + x_idx + "_" + attr_2_y + "_" + y_idx; })
 			.attr("data-toggle", "tooltip")
 			.attr("data-placement", "top")
 			.attr("html", true) // tooltip style can be further improved via bootstrap css options
 			.attr("title", function(d){ return "(" + d[attr_2_x] + ", " + d[attr_2_y] + ", " + d[attr_2_z]+")"; })
 			.attr("fill", function(d) {	return color_scale(dynamic_scale(d[attr_2_z])); })
-			.on("mouseover",function(d) {pointer.pointTo(dynamic_scale(d[attr_2_z]))})
+			.on("mouseover",function(d) {
+											d3.select(this).style({"opacity":0.6});
+											pointer.pointTo(dynamic_scale(d[attr_2_z]));
+											if (typeof(trigger_emit) == "function")
+												//trigger_emit(this, "click", {"id":"line-" + attr_2_x + "_" + d[attr_2_x] + "_" + attr_2_y + "_" + d[attr_2_y]});
+												trigger_emit(this, "click", {"param":"funestus_sc_30_arabiensis_sc_117"});
+			})
 			.attr("id", function(d) { return d[attr_2_x] + "_" + d[attr_2_y]} )
 			.style("stroke", function(d) { return color_scale(dynamic_scale(d[attr_2_z])); /*return color_scale(d.zi);*/ });
 		

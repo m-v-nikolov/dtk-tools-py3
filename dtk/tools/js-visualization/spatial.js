@@ -42,11 +42,14 @@ var global_time_idx = 0;
 
 
 
-function load_map(map_id, map_json)
+function load_map(map_id, map_json, target_container)
 {
-		
-		var map_decorations_container = d3.select("body").append("div")
-										.attr("id","map_decorations_container_"+map_id);
+	    
+		target_container = typeof target_container !== 'undefined' ? target_container : "body";
+	
+		var map_decorations_container = d3.select(target_container).append("div")
+										.attr("id","map_decorations_container_"+map_id).
+										.attr("class", "map_decorations_container");
 	
 		var map_container = d3.select("#map_decorations_container_" + map_id).append("div")
 							.attr("id","map_container_"+map_id)
@@ -99,7 +102,8 @@ function load_map(map_id, map_json)
 			 * This behavior can easily be refactored.
 			 */
 			
-			g = svg.append("g");
+			g = svg.append("g")
+				.attr("class","map");
 			
 			var node = g.selectAll("circle")
 			.data(nodes)
@@ -308,6 +312,7 @@ function style_map(
 			//all of the below options (e.g. tooltip attributes) can be exposed on per map basis as map styling properties)
 			.attr("data-toggle", "tooltip")
 			.attr("data-placement", "top")
+			.attr("emitted", false)
 			.attr("html", true) // tooltip style can be further improved via bootstrap css options
 			.attr("title", function(d){
 				
@@ -319,13 +324,18 @@ function style_map(
 			})
 			
 			.style("stroke", "black")
-			.on("mouseover",function(d) { pointer.pointTo(get_entity_value(d.node[node_attr_color], time)); });
+			.on("mouseover",function(d) { 
+											pointer.pointTo(get_entity_value(d.node[node_attr_color], time));
+											
+											alert(node_attr_color);
+											
+											if (typeof(trigger_emit) == "function")
+												trigger_emit(this, "mouseover", {"class":d.node.NodeLabel});
+			});
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
             //.each(function(d){if(d.node.NodeLabel == selected_entities.node){onmouseover()}})
-		}
-
-		
+		}	
 	}); // end d3.json(...)
 }
 
@@ -507,6 +517,7 @@ function load_2d_scatter(
 			//all of the below options (e.g. tooltip attributes) can be exposed on per scatter basis as scatter styling properties)
 			.attr("data-toggle", "tooltip")
 			.attr("data-placement", "top")
+			.attr("emitted", false)
 			.attr("html", true) // tooltip style can be further improved via bootstrap css options
 			.attr("title", function(d){
 				
@@ -516,9 +527,15 @@ function load_2d_scatter(
 				
 				return  d.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
-			
 			.style("stroke", "black")
-			.on("mouseover",function(d) { pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)])); }); // if value is greater than the maximum colorbar domain poin to the maximum of the colorbar domain 
+			.on("mouseover", function(d) { 
+											// if value is greater than the maximum colorbar domain point to the maximum of the colorbar domain
+											pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)]));
+											
+											// if this element has not emitted a message for this mouseover event, then emit
+											if (typeof(trigger_emit) == "function")
+												trigger_emit(this, "mouseover", {"class":d.NodeLabel});
+			});  
 
 			
 			// Define the axes
@@ -616,7 +633,7 @@ function update_global_time(time_idx)
 {
 	global_time_idx = time_idx 
 	
-	// TO DO: REDRAW ENTITIES AT NEW TIME
+	// TODO: REDRAW ENTITIES AT NEW TIME
 }
 
 

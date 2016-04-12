@@ -57,9 +57,10 @@ def set_habitat_scale(cb, scale):
 
 #Namawala, Tanzania: EIR = 400
 def configure_namawala(cb):
-    set_larval_habitat( cb, {"arabiensis" : [7.5e9, 1e7],
-                             "funestus"   : [4e8],
-                             "gambiae"    : [8.3e8, 1e7]})
+    set_larval_habitat( cb, {"arabiensis" : [7.5e9, 1e7]
+                             #"funestus"   : [4e8],
+                             #"gambiae"    : [8.3e8, 1e7]
+                             })
 
 #Sugungum, Garki, Jigawa, Nigeria: EIR = 132 (56 from funestus)
 def configure_sugungum(cb):

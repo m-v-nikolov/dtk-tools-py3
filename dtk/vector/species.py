@@ -1,9 +1,15 @@
 import copy
 
-param_block = {
 
+param_block = {
+    
+    "Larval_Habitat_Types":{
+                            "TEMPORARY_RAINFALL": 8e8,
+                            "CONSTANT": 8e7
+                            },
+    
     "Habitat_Type": [ "TEMPORARY_RAINFALL", "CONSTANT" ], ##
-    "Required_Habitat_Factor": [ 8e8, 8e7 ], ##
+    #"Required_Habitat_Factor": [ 8e8, 8e7 ], ##
 
     "Aquatic_Arrhenius_1": 84200000000, 
     "Aquatic_Arrhenius_2": 8328, 
@@ -30,6 +36,7 @@ param_block = {
 arabiensis_param_block = copy.deepcopy(param_block)
 
 # An. funestus
+
 '''
 # original setting
 funestus_param_block = copy.deepcopy(param_block)
@@ -40,6 +47,18 @@ mod_funestus_params = {
 }
 funestus_param_block.update(mod_funestus_params)
 '''
+
+# 2.5 release setting
+funestus_param_block = copy.deepcopy(param_block)
+mod_funestus_params = {
+    "Larval_Habitat_Types":{
+        "WATER_VEGETATION": 2e7
+        },
+    "Indoor_Feeding_Fraction": 0.95,
+}
+funestus_param_block.update(mod_funestus_params)
+
+'''
 # need this modification to run sims w/ piecewise_monthly hab; that will need to change as related code is consolidated in the DTK
 funestus_param_block = copy.deepcopy(param_block)
 mod_funestus_params = {
@@ -48,6 +67,7 @@ mod_funestus_params = {
     "Required_Habitat_Factor": [ 1e8, 2e7 ]
 }
 funestus_param_block.update(mod_funestus_params)
+'''
 
 # An. gambiae
 gambiae_param_block = copy.deepcopy(param_block)
@@ -157,8 +177,9 @@ def set_larval_habitat(cb, habitats):
     habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }
     habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
     """
+    
     cb.set_param('Vector_Species_Names', habitats.keys())
-
+    '''
     for (species, habitat) in habitats.items():
         s = cb.config["parameters"]["Vector_Species_Params"][species]
         if isinstance(habitat, dict):
@@ -170,3 +191,5 @@ def set_larval_habitat(cb, habitats):
                 raise Exception("Required_Habitat_Factor argument does not match size of Habitat_Type list")
         else:
             raise Exception("Don't recognize formatting of %s, which must be a dict or list",habitat)
+    '''
+    return

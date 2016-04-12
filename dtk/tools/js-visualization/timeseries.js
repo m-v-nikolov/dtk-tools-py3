@@ -7,8 +7,9 @@
  * column headers are used for timeseries line ids with spaces and slashes removed			
  */
 
-function load_timeseries(ts_id, ts_type, colors, special)
+function load_timeseries(ts_id, ts_type, colors, special, target_container)
 {
+	target_container = typeof target_container !== 'undefined' ? target_container : "body";
 	
 	var margin = {top: 20, right: 350, bottom: 100, left: 50},
     margin2 = { top: 430, right: 150, bottom: 20, left: 40 },
@@ -52,7 +53,9 @@ function load_timeseries(ts_id, ts_type, colors, special)
 	
 	var maxY;
 	
-	var ts_container = d3.select("body").append("div").attr("id","ts_container_" + ts_id); 
+	var ts_container = d3.select(target_container).append("div")
+							.attr("id","ts_container_" + ts_id)
+							.attr("class", "ts_container");
 	
 	var svg = ts_container.append("svg")
 	    .attr("width", width + margin.left + margin.right)
@@ -189,6 +192,7 @@ function load_timeseries(ts_id, ts_type, colors, special)
 		      .attr("class", "line")
 		      .style("pointer-events", "none") // stop line interferring with cursor
 		      .attr("id", function(d) {
+		    	//alert("line-" + d.name.replace(" ", "").replace("/", ""));
 		        return "line-" + d.name.replace(" ", "").replace("/", "");
 		      })
 		      .attr("d", function(d) { 
@@ -218,6 +222,8 @@ function load_timeseries(ts_id, ts_type, colors, special)
 		      //.attr("width", 20)
 		      //.attr("height", 20)
 		  	  .attr("r",20)
+		  	  .attr("param", function(d){ return d.name.replace(" ", "").replace("/", ""); })
+		  	  .attr("emitted", false)
 		      .attr("cx", width + (margin.right/3) - 25) 
 		      .attr("cy", function (d, i) { return (legendSpace)+i*(legendSpace) - 4; })  // spacing
 		      .attr("fill",function(d) {
@@ -227,6 +233,7 @@ function load_timeseries(ts_id, ts_type, colors, special)
 		      .attr("class", "legend-box")
 		
 		      .on("click", function(d){ 
+			  
 		        d.visible = !d.visible;
 		        
 		        maxY = findMaxY(categories); // find max Y timeseries value categories data with "visible"; true
@@ -261,10 +268,13 @@ function load_timeseries(ts_id, ts_type, colors, special)
 		          .attr("fill", function(d) {
 		          return d.visible ? color(d.name) : "#F1F1F2";
 		        });
+		        
+		        if (typeof(trigger_emit) == "function")
+					trigger_emit(this, "mouseover", {"param": d.name.replace(" ", "").replace("/", "")});
 		      })
 		
 		      .on("mouseover", function(d){
-		
+		    	  //alert("timeseries!" + d.name.replace(" ", "").replace("/", ""));
 		        d3.select(this)
 		          .transition()
 		          .attr("fill", function(d) { return color(d.name); });
