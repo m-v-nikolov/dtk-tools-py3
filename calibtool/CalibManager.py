@@ -333,11 +333,11 @@ class CalibManager(object):
 
         # Merge the info with the results to be able to have parameters -> simulations ids
         m = pd.merge(results_df, siminfo_df,
-                     on=['MSP1_Merozoite_Kill_Fraction', 'Nonspecific_Antigenicity_Factor', 'iteration'],
+                     on=pnames.extend(['iteration']),
                      indicator=True)
 
         # Group the results by parameters and transform the ids into an array
-        grouped = m.groupby(by=pnames)
+        grouped = m.groupby(by=pnames, sort=False)
         df = grouped['outputs'].aggregate(lambda x: tuple(x))
 
         # Get back a DataFrame from the GroupObject
@@ -366,7 +366,7 @@ class CalibManager(object):
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by=['iteration', 'total'], ascending=False)[col_order].to_csv()
+        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv()
         with open(os.path.join(self.name, 'LL_all.csv'), 'w') as fp:
             fp.writelines(csv)
 
