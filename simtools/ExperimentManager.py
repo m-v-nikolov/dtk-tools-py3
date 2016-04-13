@@ -223,8 +223,8 @@ class LocalExperimentManager(object):
                 continue
 
             if self.maxThreadSemaphore:
-                logger.info('Thread-%d: sim_id=%s', i, str(sim_id))
                 self.maxThreadSemaphore.acquire()
+                logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
 
             parser = self.get_output_parser(sim_id, filtered_analyses)   # execute filtered analyzers on parser thread
             parser.start()

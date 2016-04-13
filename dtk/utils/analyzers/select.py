@@ -2,11 +2,13 @@ import logging
 import random
 import time
 import warnings
+import threading
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+lock = threading.Lock()
 
 def sample_selection(start_date='1/1/2000', freq='W'):
     def f(timeseries):
@@ -15,8 +17,9 @@ def sample_selection(start_date='1/1/2000', freq='W'):
         freq_sliced = timeseries[::freq_days[freq.upper()]]
         try:
             # pd.date_range appears not to be thread-safe (Issue #100)
-            time.sleep(random.random())  # workaround?!
-            dates = pd.date_range(start_date, periods=len(freq_sliced), freq=freq)
+            # time.sleep(random.random())  # workaround?!
+            with lock:
+                dates = pd.date_range(start_date, periods=len(freq_sliced), freq=freq)
         except ValueError:
             logger.debug('freq_sliced:\n%s', freq_sliced)
             logger.info('freq = %s', freq)
