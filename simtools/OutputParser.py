@@ -162,7 +162,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
     def load_bin_file(self, filename, *args):
         if self.sim_dir_map is not None:
-            super(CompsDTKOutputParser, self).load_json_file(filename)
+            super(CompsDTKOutputParser, self).load_bin_file(filename)
         else:
             arr = args[0]
 

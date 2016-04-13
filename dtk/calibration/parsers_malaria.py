@@ -48,6 +48,8 @@ def get_site_data(settings, analyzers, site, iteration) :
                     data[this_analyzer].append(get_inset_chart_data(analyzers[this_analyzer], samples[site + ' outpath ' + str(run_num)].values))
                 elif 'Spatial Report' in analyzers[this_analyzer]['reporter'] :
                     data[this_analyzer].append(get_spatial_report_data(analyzers[this_analyzer], samples[site + ' outpath ' + str(run_num)].values))
+                elif 'Filtered Report' in analyzers[this_analyzer]['reporter'] :
+                    data[this_analyzer].append(get_filtered_report_data(analyzers[this_analyzer], samples[site + ' outpath ' + str(run_num)].values))
 
         with open(parsed_file, 'w') as fout :
             json.dump(data, fout)
@@ -117,12 +119,36 @@ def get_inset_chart_data(analyzer, simpaths) :
             data[field].append(inset_data['Channels'][field]['Data'])
     return data
 
+def get_filtered_report_data(analyzer, simpaths) :
+
+    numsamples = len(simpaths)
+
+    data = {}
+    if 'regions' not in analyzer :
+        regions = ['all']
+    else :
+        regions = analyzer['regions']
+    for region in regions :
+        if region == 'all' :
+            simfile = 'ReportMalariaFiltered.json'
+        else :
+            simfile = 'ReportMalariaFiltered' + region + '.json'
+
+        data[region] = {}
+        for field in analyzer['fields_to_get'] :
+            data[region][field] = []
+        for i in range(numsamples) :
+            filter_data = loaddata(simpaths[i] + '/output/' + simfile)
+            for field in analyzer['fields_to_get'] :
+                data[region][field].append(filter_data['Channels'][field]['Data'])
+    return data
+
 def get_spatial_report_data(analyzer, simpaths) :
 
     numsamples = len(simpaths)
-    try :
+    if 'burn_in' in analyzer :
         starttime = analyzer['burn_in']*365
-    except KeyError :
+    else :
         starttime = 0
 
     data = {}

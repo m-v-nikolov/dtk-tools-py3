@@ -32,7 +32,7 @@ class SiteFunctions(object):
 
 class CalibSite(object):
 
-    def __init__(self, name, setup_fn, reference_data, analyzers):
+    def __init__(self, name, setup_fn, reference_data, analyzers, analyzer_setups={}):
         self.name = name
         self.setup_fn = setup_fn
         self.reference_data = reference_data
@@ -47,16 +47,19 @@ class CalibSite(object):
 
         for a in analyzers:
             site_analyzer = copy.deepcopy(a)  # ensure unique instance at each site
-
+            
             for ref_type in a.required_reference_types:
                 if ref_type not in self.reference_data.keys():
                     raise Exception('Missing reference data %s for analyzer %s'
                                     % (ref_type, a.name))
-
+            try :
+                site_analyzer.set_setup(analyzer_setups[a.name])
+            except KeyError :
+                logger.warn('No analyzer settings provided for %s' % a.name)
             site_analyzer.set_site(self)
             self.analyzers.append(site_analyzer)
 
     @classmethod
-    def from_setup_functions(cls, name, setup_functions, reference_data, analyzers):
+    def from_setup_functions(cls, name, setup_functions, reference_data, analyzers, analyzer_setups):
         setup_fn = SiteFunctions(name, setup_functions).set_calibration_site
-        return cls(name, setup_fn, reference_data, analyzers)
+        return cls(name, setup_fn, reference_data, analyzers, analyzer_setups)

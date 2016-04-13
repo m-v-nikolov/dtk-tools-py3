@@ -5,6 +5,7 @@ def add_health_seeking(config_builder,
                                    { 'trigger': 'NewSevereCase',   'coverage': 0.8, 'seek': 0.6, 'rate': 0.5 } ],
                        drug    = ['Artemether', 'Lumefantrine'],
                        dosing  = 'FullTreatmentNewDetectionTech',
+                       duration= -1,
                        nodes={"class": "NodeSetAll"}):
     """
     Add a `SimpleHealthSeekingBehavior <http://idmod.org/idmdoc/#EMOD/ParameterReference/SimpleHealthSeekingBehav.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____53>`_ .
@@ -58,6 +59,7 @@ def add_health_seeking(config_builder,
             "class": "StandardInterventionDistributionEventCoordinator",
             "Intervention_Config": {
                 "class": "NodeLevelHealthTriggeredIV",
+                "Duration": duration,
                 "Trigger_Condition": t['trigger'], 
                 # "Tendency": t['seek'],
                 "Demographic_Coverage": t['coverage']*t['seek'],  # to be FIXED later for individual properties
