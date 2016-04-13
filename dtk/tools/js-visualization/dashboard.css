@@ -28,6 +28,12 @@ body {
     /*background: gray;*/
 }
 
+.resourcecontainer.timeseries {
+    float:left;
+
+    /*background: gray;*/
+}
+
 .map_decorations_container
 {
 	float:left; 
