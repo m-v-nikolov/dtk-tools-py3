@@ -37,12 +37,13 @@ body {
 .map_decorations_container
 {
 	float:left; 
-	margin:-0.5em;
+	margin-bottom:1em;
 }
 
 .scatter_decorations_container
 {
-	float:left; 
+	float:left;
+	margin-bottom:1em; 
 }
 
 .colorbar_container

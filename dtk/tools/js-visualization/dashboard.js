@@ -209,31 +209,4 @@ function load_maps(map_data_file)
    		    },
    		    ".resourcecontainer.charts"
 	);
-
-   
-   /*
-   var colors = ['#000000','#52170b','#a51b0b','#ff0000','#c1003c','#80005f','#000080','#233381','#265a81','#008080','#46a386','#6dc88c','#90ee90','#b8f4ab','#dcfac5','#ffffe0'];   
-   var color_scale = d3.scale.sqrt()
-   					.domain(d3.range(0, 1, 1.0 / (15)))
-   					.range(colors);
-   
-   load_heatmap(
-		   			'80202_5',
-		   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
-		   			color_scale,
-   					600, // height
-   					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
-   					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
-   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
-   					'.resourcecontainer.charts'
-   				);
-    
-
-   	load_timeseries(
-			'80202_5', 
-			'prevalence', 
-			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
-			'observed'
-		   );		
-   */
 }
