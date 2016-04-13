@@ -7,12 +7,41 @@ body {
 .bothcontainer {
     /*width: 1200px; */
     /*width:1240px;*/
-    width:1600px;
+    width:1900px;
     margin: 0px auto;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     background: white;
     border: 1px solid #efeeee;
     box-shadow: 3px 3px 3px #efeeee;
+}
+
+.resourcecontainer {
+    /*width: 1200px;*/
+    /*width: 1240px;*/
+    width: 1900px;
+    /*border: solid 1px gray;*/
+}
+
+.resourcecontainer.maps {
+    float:left;
+
+    /*background: gray;*/
+}
+
+.map_decorations_container
+{
+	float:left; 
+	margin:-0.5em;
+}
+
+.scatter_decorations_container
+{
+	float:left; 
+}
+
+.colorbar_container
+{
+	float:right; 
 }
 
 .containerheader img {
@@ -43,10 +72,7 @@ span.year {
 }
 
 
-.map_decorations_container
-{
-	float:left;
-}
+
 
 .ts_container
 {
@@ -213,11 +239,7 @@ a:hover {
 	cursor:hand;
 }
 
-.resourcecontainer.maps {
-    float:left;
 
-    /*background: gray;*/
-}
 
 .resourcecontainer.hists {
 	float:right
@@ -232,12 +254,6 @@ a:hover {
     margin: 0px 20px 0px;
 }
 
-.resourcecontainer {
-    /*width: 1200px;*/
-    /*width: 1240px;*/
-    width: 1600px;
-    /*border: solid 1px gray;*/
-}
 
 .resourcecontainer.maps svg
 {

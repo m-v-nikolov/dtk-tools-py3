@@ -21,14 +21,14 @@ def heg_release(cb):
                          "HEG": "NotMated"
                      },
                      "Released_HEGs": ["FULL", "NotMated"],
-                     "Released_Number": 50000, 
+                     "Released_Number": 500, 
                      "Released_Species": "arabiensis", 
                      "Cost_To_Consumer": 200,
                      "Cost_To_Consumer_Citation" : "Alphey et al Vector Borne Zoonotic Dis 2010 10 295 by projecting 1979 An albimanus cost in El Salvador to 2008 dollars",
                      "class": "MosquitoRelease"
                 }, 
-                "Number_Repetitions": 900, 
-                "Timesteps_Between_Repetitions": 5,
+                "Number_Repetitions": 52, 
+                "Timesteps_Between_Repetitions": 7,
                 "class": "StandardInterventionDistributionEventCoordinator"
            }, 
            "Event_Name": "MosquitoRelease", 
@@ -36,7 +36,7 @@ def heg_release(cb):
                 "class": "NodeSetNodeList",
                     "Node_List": [340461476]
            }, 
-           "Start_Day": 1000, 
+           "Start_Day": 365, 
            "class": "CampaignEvent"
       }
 

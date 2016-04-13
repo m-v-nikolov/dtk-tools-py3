@@ -51,6 +51,7 @@ function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z, targe
 	
 	var map_container = d3.select(target_container).append("div")
 	.attr("id","hm_container_"+hm_id)
+	.attr("class", "hm_container")
 	.style({height:(h) + "px", width:(h + color_bar_margin) + "px"}); // assume a square heatmap for now
 	
 	var svg = d3.select("#hm_container_"+hm_id).append("svg")

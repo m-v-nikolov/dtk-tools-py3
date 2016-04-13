@@ -48,21 +48,20 @@ function load_map(map_id, map_json, target_container)
 		target_container = typeof target_container !== 'undefined' ? target_container : "body";
 	
 		var map_decorations_container = d3.select(target_container).append("div")
-										.attr("id","map_decorations_container_"+map_id).
+										.attr("id","map_decorations_container_"+map_id)
 										.attr("class", "map_decorations_container");
 	
 		var map_container = d3.select("#map_decorations_container_" + map_id).append("div")
 							.attr("id","map_container_"+map_id)
-							.style({height:"400px", width:"600px", float:"left"}); // expose width/height as parameters?
+							.style({height:"400px", width:"500px", float:"left"}); // expose width/height as parameters?
 	
-		var map = L.map("map_container_"+map_id).setView([-41.2858, 174.7868], 13);
+		var map = L.map("map_container_"+map_id, { attributionControl:false }).setView([47.5826601,-122.1533733], 13);
 	    
 		
 		mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>'; 
 		 
 		tile_layer = L.tileLayer(
 					'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-					attribution: '&copy; ' + mapLink + ' Contributors',
 					maxZoom: 18,
 					}).addTo(map);
 		
@@ -264,13 +263,14 @@ function style_map(
 	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
 		    .origin([35,-5])
 		    .thickness(100)
-		    .scale(color_scale).barlength(map_height).thickness(25)
+		    .scale(color_scale).barlength(map_height).thickness(20)
 		    .orient(color_bar_orientation)
 		    .margin({top:20, left:30, right:55, bottom:10});
 	
 	var bar_container =  d3.select("#map_decorations_container_"+map_id)
 						.append("div")
-						.attr("id", "colorbar_container_"+map_id);
+						.attr("id", "colorbar_container_"+map_id)
+						.attr("class", "colorbar_container");
 	
 	var bar = d3.select("#colorbar_container_"+map_id)
 						.append("svg")
@@ -342,9 +342,14 @@ function style_map(
 function load_2d_scatter(	
 							scatter_id,
 							scatter_json,
-							scatter_properties // object
+							scatter_properties, // object
+							target_container
 						 )
 {
+	
+	
+	target_container = typeof target_container !== 'undefined' ? target_container : "body";
+	
 	// this would set a scatter-local time in lieu of the global time index, if provided; if not provided global time would be used
 	if(!scatter_properties.hasOwnProperty('time_idx'))
 		var time_idx = false;
@@ -401,10 +406,10 @@ function load_2d_scatter(
 		var node_opacity = scatter_properties.node_opacity;
 	
 	//behavior of node marker's on mouse over is function onmouseover
-	if(!scatter_properties.hasOwnProperty('onmouseover'))
-		onmouseover = onmouseover_default;
+	if(!scatter_properties.hasOwnProperty('comm_msg'))
+		var comm_msg = false;
 	else
-		var onmouseover = scatter_properties.onmouseover;
+		var comm_msg = scatter_properties.comm_msg;
 	
 	// behavior of node marker's on mouse out is function onmouseout
 	if(!scatter_properties.hasOwnProperty('onmouseout'))
@@ -431,8 +436,9 @@ function load_2d_scatter(
     width = scatter_width - margin.left - margin.right,
     height = scatter_height - margin.top - margin.bottom;
 	
-	var scatter_decorations_container = d3.select("body").append("div")
-	.attr("id","scatter_decorations_container_"+scatter_id);
+	var scatter_decorations_container = d3.select(target_container).append("div")
+											.attr("id","scatter_decorations_container_"+scatter_id)
+											.attr("class","scatter_decorations_container");
 
 	var scatter_container = d3.select("#scatter_decorations_container_" + scatter_id).append("div")
 	.attr("id","scatter_container_"+scatter_id)
@@ -456,15 +462,17 @@ function load_2d_scatter(
 	var color_bar_orientation = "vertical";
 	
 	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
-		    .origin([35,margin.top - 20])
+		    .origin([35, margin.top - 20])
 		    .thickness(100)
-		    .scale(color_scale).barlength(height).thickness(25)
+		    .scale(color_scale).barlength(height).thickness(20)
 		    .orient(color_bar_orientation)
 		    .margin({top:20, left:30, right:55, bottom:10});
 	
+	
 	var bar_container =  d3.select("#scatter_decorations_container_"+scatter_id)
 						.append("div")
-						.attr("id", "colorbar_container_"+scatter_id);
+						.attr("id", "colorbar_container_"+scatter_id)
+						.attr("class", "colorbar_container");
 	
 	var bar = d3.select("#colorbar_container_"+scatter_id)
 						.append("svg")
@@ -529,12 +537,18 @@ function load_2d_scatter(
 			})
 			.style("stroke", "black")
 			.on("mouseover", function(d) { 
-											// if value is greater than the maximum colorbar domain point to the maximum of the colorbar domain
-											pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)]));
-											
-											// if this element has not emitted a message for this mouseover event, then emit
-											if (typeof(trigger_emit) == "function")
-												trigger_emit(this, "mouseover", {"class":d.NodeLabel});
+								// if value is greater than the maximum colorbar domain point to the maximum of the colorbar domain
+								pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)]));
+								
+								// if this element has not emitted a message for this mouseover event, then emit
+								if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+								{
+									// parse comm_msg and, if requested, bind data attributes from d to comm_msg
+									comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+									
+									// emit comm_msg
+									trigger_emit(this, comm_msg);
+								}
 			});  
 
 			

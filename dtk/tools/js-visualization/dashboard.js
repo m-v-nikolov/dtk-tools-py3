@@ -8,12 +8,12 @@ function load_dashboard(gazetteer_file, gazetteer_header_file, map_data_file)
 	svg_maps.html("") // clear any existing content 
 	
 	d3.json(gazetteer_header_file, function(error, gazetteer_header){
-		load_gazeteer(gazeteer_file, map_data_file, gazetteer_header);
+		load_gazeteer(gazetteer_file, map_data_file, gazetteer_header);
 	});
 }
 
 
-function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
+function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
 {
 	
 	d3.select(".resourcecontainer.buttons").selectAll(".gazeteer").remove(); // clean up content
@@ -33,7 +33,7 @@ function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
 			
 	// options of experiments/models and the respective models' parameters values
 	// one of the models may be selected at a time 
-	d3.json(gazeteer_file, function(error, gazeteer) {
+	d3.json(gazetteer_file, function(error, gazeteer) {
 		gazeteer_selection.selectAll("li.gazeteer_option")
 			.data(gazeteer)
 			.enter().append("li")
@@ -41,7 +41,7 @@ function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
 				 	return d.model; 
 			 		})
 			 .attr("class", function(d){if (d.model == gazeteer_select_model) return "gazeteer_model_selected"; else return "gazeteer_model";})
-			 .on("click", function (d) { gazeteer_select_model = this.d.model;})
+			 .on("click", function (d) { gazeteer_select_model = d.model;})
             .html(function(d){ return d.params })
             .append("select")
             .selectAll("option")
@@ -52,7 +52,7 @@ function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
             	.attr("selected", function(d){ if (d.value == gazeteer_select) return true;})
 				.on("click", function (d) {
 			            gazeteer_select = d.value;
-			            load_widgets(map_data_file);
+			            load_maps(map_data_file);
 				}) 	
 		});
 	
@@ -63,7 +63,7 @@ function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
 						.attr("class", ".time_idxs"); // append time idx selection buttons container
 
 	// time idxs (e.g. days) associated with buttons  
-	var time_dxs = [6*365 + 160, 6*365 + 160 + 60, 6*365 + 160 + 60 + 60, 7*365 + 160, 7*365 + 160 + 60, 7*365 + 160 + 60 + 60];
+	var time_idxs = [6*365 + 160, 6*365 + 160 + 60, 6*365 + 160 + 60 + 60, 7*365 + 160, 7*365 + 160 + 60, 7*365 + 160 + 60 + 60];
 
 	time_idxs_selection.selectAll("li")
 		.data(time_idxs)
@@ -73,76 +73,153 @@ function load_gazeteer(gazeteer_file, map_data_file, calib_params_names)
 		 .attr("class", function(d){ if (d == time_idx_select) return "time_idx_selected"; else return "time_idx_option"; }) // set the selected time idx class for style
 		 .on("click", function (d) {
             time_idx_select = d;
-            load_widgets(map_data_file); // load widgets with data state at the given time idx
+            load_maps(map_data_file); // load widgets with data state at the given time idx
         });
 }
 
-
-function load_widgets(map_data_file)
+function load_node_charts(params)
 {
+	if (params.hasOwnProperty("NodeLabel"))
+	{
+		node_label = params["NodeLabel"];
+		heatmap(node_label);
+	}
+}
+
+
+function heatmap(node_label)
+{	
+    var colors = ['#000000','#52170b','#a51b0b','#ff0000','#c1003c','#80005f','#000080','#233381','#265a81','#008080','#46a386','#6dc88c','#90ee90','#b8f4ab','#dcfac5','#ffffe0'];   
+    var color_scale = d3.scale.sqrt()
+   					.domain(d3.range(0, 1, 1.0 / (15)))
+   					.range(colors);
+	
+	load_heatmap(
+		   			node_label,
+		   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
+		   			color_scale,
+					600, // height
+					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
+					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
+					'zi', // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
+					'.resourcecontainer.charts'
+	);
+}
+
+function load_maps(map_data_file)
+{
+	
+	// load the map file relevant for the gazetteer selection
+	gazetteer_map = gazeteer_select + "_" + map_data_file;
+	
 	d3.select(".resourcecontainer.maps").selectAll("*").remove(); // clear all maps
 
 	load_map(
 	 		   'rdt_obs', // map id 
-	 		   map_data_file, 
+	 		   gazetteer_map, 
 	 		   ".resourcecontainer.maps" //target container
 	);
 
 	style_map(
 	 		   'rdt_obs', 
-	 		    map_data_file,
-	 		    {
+	 		   gazetteer_map,
+	 		   {
 					   time_idx : time_idx_select,
 					   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
 											maxZoom: 20,
 											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 										}),
-			   		   node_opacity : 0.6}
+			   		   node_opacity : 0.6
+			   	}
 	);
 	
 	
 	
 	load_map(
 			   'rdt_sim', 
-			   map_data_file,
+			   gazetteer_map,
 			   ".resourcecontainer.maps" //target container
-		  	);
+	);
 	
 	style_map(
-		   'rdt_obs_rnd_2', 
-		   'map.json',
+		    'rdt_sim', 
+		    gazetteer_map,
 		    {
 			   time_idx : time_idx_select,
 			   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
 									maxZoom: 20,
 									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 								}),
+			   node_attr_2_color : ["RDT_sn_sim", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
 	   		   node_opacity : 0.6
 		    }	   
 	);
 	
 	
-	
-	load_map(
-			   'funestus', 
-			   'map.json'
-		  	);
-	
-	   style_map(
-			   'funestus', 
-			   'map.json',
-			    {
-				   time_idx : 0,
-				   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
-										attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-								   	  }),
-		   		   node_opacity : 0.6,
-		   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
-			    }	   
-			);
-	
-	
-	
-	
 
+   load_map(
+			   'funestus', 
+			   gazetteer_map,
+			   ".resourcecontainer.maps" //target container
+   );
+	
+   style_map(
+		    'funestus', 
+		    gazetteer_map,
+		    {
+			   time_idx : time_idx_select,
+			   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+									attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+							   	  }),
+	   		   node_opacity : 0.6,
+	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
+		    }	   
+	);
+   
+   
+   load_2d_scatter(
+   		   'hsb_scales_rdt_pos', 
+   		    gazetteer_map,
+   		    {
+				   time_idx : time_idx_select,
+		   		   node_opacity : 0.6,
+		   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
+		   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])],
+		   		   node_attr_2_x : "funestus_sc",
+		   		   node_attr_2_y : "arabiensis_sc",
+		   		   comm_msg: {
+		   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+   		   						"attributes_req":["NodeLabel"]
+		   		   }
+		   		
+   		    },
+   		    ".resourcecontainer.charts"
+	);
+
+   
+   /*
+   var colors = ['#000000','#52170b','#a51b0b','#ff0000','#c1003c','#80005f','#000080','#233381','#265a81','#008080','#46a386','#6dc88c','#90ee90','#b8f4ab','#dcfac5','#ffffe0'];   
+   var color_scale = d3.scale.sqrt()
+   					.domain(d3.range(0, 1, 1.0 / (15)))
+   					.range(colors);
+   
+   load_heatmap(
+		   			'80202_5',
+		   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
+		   			color_scale,
+   					600, // height
+   					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
+   					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
+   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
+   					'.resourcecontainer.charts'
+   				);
+    
+
+   	load_timeseries(
+			'80202_5', 
+			'prevalence', 
+			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
+			'observed'
+		   );		
+   */
 }

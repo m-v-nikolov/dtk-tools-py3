@@ -1,130 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Map test</title>
+	<title>Zambia Dashboard</title>
 
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7/leaflet.css"/>
+    <link type="text/css" rel="stylesheet" href="dashboard.css" media="screen" />
     <link type="text/css" rel="stylesheet" href="colorbar.css"></link>
     <link type="text/css" rel="stylesheet" href="hm.css"></link>
     <link type="text/css" rel="stylesheet" href="ts.css"></link>
     <link type="text/css" rel="stylesheet" href="spatial.css"></link>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js"></script>
-    <script type="text/javascript" src="colorbrewer2.js"></script>
+    <script src="colorbrewer2.js"></script>
     <script src="spatial.js"></script>
     <script src="heatmap.js"></script>
     <script src="timeseries.js"></script>
     <script src="comm.js"></script>
-    <script type="text/javascript" src="colorbar.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="colorbar.js"></script>
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     
 </head>
-<body>
 
-	<script type="text/javascript">"gazetteer_header.json"
-	
-	
-	  
-	   selected_entities = {
-			"node":"",
-			"params":""
-		}
-	
-       load_map(
-	    		   'rdt_obs', 
-	    		   'map.json'
-	   		  	);
-       
-       style_map(
-	    		   'rdt_obs', 
-	    		   'map.json',
-	    		    {
-					   time_idx : 0,
-					   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
-											maxZoom: 20,
-											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-										}),
-			   		   node_opacity : 0.6
-	    		    }	   
-       			);
-       
-       load_map(
-    		   'rdt_obs_rnd_2', 
-    		   'map.json'
-   		  	);
-   
-   		style_map(
-    		   'rdt_obs_rnd_2', 
-    		   'map.json',
-    		    {
-				   time_idx : 6*365 + 160 + 60,
-				   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
-										maxZoom: 20,
-										attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-									}),
-		   		   node_opacity : 0.6
-    		    }	   
-   			);
-       
-       load_map(
-    		   'funestus', 
-    		   'map.json'
-   		  	);
-   
-   	   style_map(
-    		   'funestus', 
-    		   'map.json',
-    		    {
-				   time_idx : 0,
-				   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
-										attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-								   	  }),
-		   		   node_opacity : 0.6,
-		   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
-    		    }	   
-   			);
-   	   
-   	   var colors = ['#000000','#52170b','#a51b0b','#ff0000','#c1003c','#80005f','#000080','#233381','#265a81','#008080','#46a386','#6dc88c','#90ee90','#b8f4ab','#dcfac5','#ffffe0'];
-   	   
-   	   
-   	   var color_scale = d3.scale.sqrt()
-       .domain(d3.range(0, 1, 1.0 / (15)))
-       .range(colors);
-   	   load_heatmap(
-   			   			'80202_5',
-   			   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
-   			   			color_scale,
-   	   					600,
-   	   					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
-   	   					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
-   	   					'zi' // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
-   	   				);
-   	    
-	
-   	   	load_timeseries(
-					'80202_5', 
-					'prevalence', 
-					['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
-					'observed'
-				   );		
-   	   
-   	   	
-   	    load_2d_scatter(
-			       		   'hsb_scales_rdt_pos', 
-			       		   'map.json',
-			       		    {
-			   				   time_idx : 0,
-			   		   		   node_opacity : 0.6,
-			   		   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.58]).range(colorbrewer.OrRd[9])],
-			   		   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])],
-			   		   		   node_attr_2_x : "funestus_sc",
-			   		   		   node_attr_2_y : "arabiensis_sc"
-			       		    }	   
-      					);
-       
-	</script>
+<body onload="load_dashboard('./gazetteer.json', './gazetteer_header.json', 'map.json');">
+ 
+    <div class="bothcontainer">
+
+        <div class="containerheader">
+            <img src="./zambia_flag.png" height="35"/>
+            <h1>Zambia Spatial Simulations</h1>
+        </div>
+
+        <div class="resourcecontainer buttons"></div>
+        <div class="resourcecontainer maps"></div>
+        <div class="resourcecontainer charts"></div>
+        
+
+	</div>
 
 </body>
 </html>

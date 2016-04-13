@@ -9,7 +9,7 @@ param_block = {
                             },
     
     "Habitat_Type": [ "TEMPORARY_RAINFALL", "CONSTANT" ], ##
-    #"Required_Habitat_Factor": [ 8e8, 8e7 ], ##
+    "Required_Habitat_Factor": [ 8e8, 8e7 ], ##
 
     "Aquatic_Arrhenius_1": 84200000000, 
     "Aquatic_Arrhenius_2": 8328, 
