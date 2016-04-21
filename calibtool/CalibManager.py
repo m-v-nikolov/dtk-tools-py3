@@ -8,11 +8,12 @@ import re
 import pandas as pd
 import shutil
 
+from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 
 from IterationState import IterationState
-from visualize import LikelihoodPlotter, SiteDataPlotter
 from utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class CalibManager(object):
 
     def __init__(self, setup, config_builder, sample_point_fn, sites, next_point,
                  name='calib_test', iteration_state=IterationState(), location='LOCAL',
-                 sim_runs_per_param_set=1, num_to_plot=10, max_iterations=5):
+                 sim_runs_per_param_set=1, num_to_plot=10, max_iterations=5, plotters=list()):
 
         self.name = name
         self.setup = setup
@@ -62,6 +63,8 @@ class CalibManager(object):
 
         self.suite_id = None
         self.all_results = None
+
+        self.plotters = plotters
 
     def run_calibration(self, **kwargs):
         """
@@ -231,13 +234,9 @@ class CalibManager(object):
         logger.info(self.all_results[['iteration', 'total']].head(10))
         self.cache_calibration()
 
-        # TODO: specify list of CalibPlotter instances in __init__
-        #       to allow plotting to be configured appropriately for desired workflow?
-        #       and/or re-plot from "calibtool plot commandline"?
-        combine_sites = True
-        plotters = [LikelihoodPlotter(self, combine_sites), SiteDataPlotter(self, combine_sites)]
-        for plotter in plotters:
-            plotter.visualize()
+        # Run all the plotters
+        map(lambda plotter: plotter.visualize(self), self.plotters)
+
 
         return results.total.tolist()
 
