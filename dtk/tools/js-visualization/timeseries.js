@@ -7,9 +7,10 @@
  * column headers are used for timeseries line ids with spaces and slashes removed			
  */
 
-function load_timeseries(ts_id, ts_type, colors, special, target_container)
+function load_timeseries(ts_id, ts_type, colors, special, target_container, comm_msg)
 {
 	target_container = typeof target_container !== 'undefined' ? target_container : "body";
+	comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
 	
 	var margin = {top: 20, right: 350, bottom: 100, left: 50},
     margin2 = { top: 430, right: 150, bottom: 20, left: 40 },
@@ -269,8 +270,16 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container)
 		          return d.visible ? color(d.name) : "#F1F1F2";
 		        });
 		        
-		        if (typeof(trigger_emit) == "function")
-					trigger_emit(this, "mouseover", {"param": d.name.replace(" ", "").replace("/", "")});
+		        alert("clicked " + d.name);
+		        if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+				{
+					// parse comm_msg and, if requested, bind data attributes from d to comm_msg
+					comm_msg = parse_comm_msg(comm_msg, d);
+					
+					// emit comm_msg
+					trigger_emit(this, comm_msg);
+				}
+		        
 		      })
 		
 		      .on("mouseover", function(d){

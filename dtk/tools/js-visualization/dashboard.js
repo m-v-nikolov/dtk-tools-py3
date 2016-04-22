@@ -1,11 +1,18 @@
 var gazeteer_select_model = "unselect";
 var gazeteer_select = "unselect";
+var node_select = "80202_5";
 var time_idx_select = 6*365 + 160;
 
 function load_dashboard(gazetteer_file, gazetteer_header_file, map_data_file)
 {
 	this.svg_maps = d3.select(".resourcecontainer.maps");
-	svg_maps.html("") // clear any existing content 
+	svg_maps.html("") // clear any existing content
+	
+	this.svg_charts = d3.select(".resourcecontainer.charts");
+	svg_charts.html("") // clear any existing content 
+	
+	this.svg_timeseries = d3.select(".resourcecontainer.timeseries");
+	svg_timeseries.html("") // clear any existing content 
 	
 	d3.json(gazetteer_header_file, function(error, gazetteer_header){
 		load_gazeteer(gazetteer_file, map_data_file, gazetteer_header);
@@ -17,6 +24,15 @@ function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
 {
 	
 	d3.select(".resourcecontainer.buttons").selectAll(".gazeteer").remove(); // clean up content
+	
+	this.svg_maps = d3.select(".resourcecontainer.maps");
+	svg_maps.selectAll("*").remove() // clear any existing content
+	
+	this.svg_charts = d3.select(".resourcecontainer.charts");
+	svg_charts.selectAll("*").remove() // clear any existing content 
+	
+	this.svg_timeseries = d3.select(".resourcecontainer.timeseries");
+	svg_timeseries.selectAll("*").remove() // clear any existing content 
 	
 	// building dashboard options header
 	// (e.g. parameter names)
@@ -53,6 +69,7 @@ function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
 				.on("click", function (d) {
 			            gazeteer_select = d.value;
 			            load_maps(map_data_file);
+			            load_node_charts({})
 				}) 	
 		});
 	
@@ -74,17 +91,37 @@ function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
 		 .on("click", function (d) {
             time_idx_select = d;
             load_maps(map_data_file); // load widgets with data state at the given time idx
+            load_node_charts({})
         });
 }
 
 function load_node_charts(params)
 {
-	if (params.hasOwnProperty("NodeLabel"))
-	{
-		node_label = params["NodeLabel"];
-		heatmap(node_label);
-		timeseries(node_label);
-	}
+	if (params.hasOwnProperty("NodeLabel"))		
+		node_select = params["NodeLabel"];
+	
+	heatmap(node_select);
+	timeseries(node_select);
+}
+
+
+// this function can be made more generic but for no sufficies
+// the user-programmed dashboard "knows" about the specific parameters the user is designing it for
+function emit_param_key(params)
+{
+	if (params.hasOwnProperty("funestus_sc"))
+		funestus_sc = params["funestus_sc"]
+	if (params.hasOwnProperty("arabiensis_sc"))
+		arabiensis_sc = params["arabiensis_sc"]
+	
+	// generic emit is implemented in comms.js
+	//emit("click", {"param":"funestus_sc" + "_" + funestus_sc + "_arabiensis_sc_" + arabiensis_sc});
+	emit(
+			{
+				"event":"click",
+				"selector":{"param":"funestus_sc_30_arabiensis_sc_117"}
+			}
+	);
 }
 
 
@@ -94,7 +131,7 @@ function heatmap(node_label)
     var color_scale = d3.scale.sqrt()
    					.domain(d3.range(0, 1, 1.0 / (15)))
    					.range(colors);
-	
+   
 	load_heatmap(
 		   			node_label,
 		   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
@@ -103,20 +140,33 @@ function heatmap(node_label)
 					'funestus_sc', // what attribute of the heatmap json objects corresponds to the x axis values
 					'arabiensis_sc', // what attribute of the heatmap json objects corresponds to the y axis values
 					'zi', // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
-					'.resourcecontainer.charts'
+					'.resourcecontainer.charts', // where to load the heatmap; default is <body>
+		   			{
+   			   			"selector":{"function": {"func":emit_param_key, "params":{}}},
+   			   			"attributes_req":["funestus_sc", "arabiensis_sc"]
+					}
 	);
 }
 
 
 function timeseries(node_label)
 {
+	
+	if(!d3.select('.resourcecontainer.timeseries').select(".ts_container").empty()) // make sure there is one timeseries chart w/ a given id displayed at a time
+		return;
+	
 	load_timeseries(
 			node_label, 
 			'prevalence', 
 			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
 			'observed',
-			".resourcecontainer.timeseries"
-		   );		
+			".resourcecontainer.timeseries",
+			//trigger_emit(this, "mouseover", {"param": d.name.replace(" ", "").replace("/", "")});
+			{
+	 			"event":"mouseover",
+	 			"selector":{"param": "funestus_sc_30_arabiensis_sc_117"}
+			}
+	);		
 
 }
 
@@ -127,6 +177,7 @@ function load_maps(map_data_file)
 	gazetteer_map = gazeteer_select + "_" + map_data_file;
 	
 	d3.select(".resourcecontainer.maps").selectAll("*").remove(); // clear all maps
+	d3.select(".resourcecontainer.charts").selectAll("*").remove(); // clear all charts
 
 	load_map(
 	 		   'rdt_obs', // map id 
@@ -143,7 +194,11 @@ function load_maps(map_data_file)
 											maxZoom: 20,
 											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 										}),
-			   		   node_opacity : 0.6
+			   		   node_opacity : 0.6,
+			   		   comm_msg: {
+   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+   			   			"attributes_req":["NodeLabel"]
+			   		   }
 			   	}
 	);
 	
@@ -165,7 +220,11 @@ function load_maps(map_data_file)
 									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 								}),
 			   node_attr_2_color : ["RDT_sn_sim", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-	   		   node_opacity : 0.6
+	   		   node_opacity : 0.6,
+	   		   comm_msg: {
+	   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+	   			   			"attributes_req":["NodeLabel"]
+	   		   }
 		    }	   
 	);
 	
@@ -186,7 +245,11 @@ function load_maps(map_data_file)
 									attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 							   	  }),
 	   		   node_opacity : 0.6,
-	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
+	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])],
+		       comm_msg: {
+		   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+		   			"attributes_req":["NodeLabel"]
+		       }
 		    }	   
 	);
    

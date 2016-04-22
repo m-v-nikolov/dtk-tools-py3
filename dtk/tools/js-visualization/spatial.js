@@ -201,12 +201,20 @@ function style_map(
 	else
 		var node_opacity = map_properties.node_opacity;
 	
+	
+	//check if comm_msg is passed
+	if(!map_properties.hasOwnProperty('comm_msg'))
+		var comm_msg = false;
+	else
+		var comm_msg = map_properties.comm_msg;
+	
+	/*
 	//behavior of node marker's on mouse over is function onmouseover
 	if(!map_properties.hasOwnProperty('onmouseover'))
 		onmouseover = onmouseover_default;
 	else
 		var onmouseover = map_properties.onmouseover;
-	
+	*/
 	// behavior of node marker's on mouse out is function onmouseout
 	if(!map_properties.hasOwnProperty('onmouseout'))
 		var onmouseout = onmouseout_default;
@@ -327,10 +335,14 @@ function style_map(
 			.on("mouseover",function(d) { 
 											pointer.pointTo(get_entity_value(d.node[node_attr_color], time));
 											
-											alert(node_attr_color);
-											
-											if (typeof(trigger_emit) == "function")
-												trigger_emit(this, "mouseover", {"class":d.node.NodeLabel});
+											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+											{
+												// parse comm_msg and, if requested, bind data attributes from d to comm_msg
+												comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+												
+												// emit comm_msg
+												trigger_emit(this, comm_msg);
+											}
 			});
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
@@ -405,7 +417,7 @@ function load_2d_scatter(
 	else
 		var node_opacity = scatter_properties.node_opacity;
 	
-	//behavior of node marker's on mouse over is function onmouseover
+	//check if comm_msg is passed
 	if(!scatter_properties.hasOwnProperty('comm_msg'))
 		var comm_msg = false;
 	else
@@ -544,6 +556,7 @@ function load_2d_scatter(
 								if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
 								{
 									// parse comm_msg and, if requested, bind data attributes from d to comm_msg
+									// use {"NodeLabel":"80202_5"} as a test substitute for d; will remove when the rest of nodes ' data is generated 
 									comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
 									
 									// emit comm_msg

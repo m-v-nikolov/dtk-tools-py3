@@ -10,7 +10,7 @@ function emit(comm_msg)
 		var event = comm_msg["event"];
 	else
 		return;
-	
+
 	if(comm_msg.hasOwnProperty("selector"))
 	{
 		var selector_type = Object.keys(comm_msg["selector"])[0];
@@ -23,7 +23,7 @@ function emit(comm_msg)
 	if(selector_type == "class")
 	{
 		emit_candidates = document.getElementsByClassName(selector);
-		alert(emit_candidates.length);
+		
 		for(var i = 0; i < emit_candidates.length; i++)
 		{
 			emit_candidate = emit_candidates[i];
@@ -46,7 +46,11 @@ function emit(comm_msg)
 	}
 	else // use select by attribute value
 	{
+		alert("in emit");
+		alert(selector_type);
+		alert(selector);
 		emit_candidates = document.querySelectorAll('['+selector_type+'='+ selector+ ']');
+		
 		for(var i = 0; i < emit_candidates.length; i++)
 		{
 			emit_candidate = emit_candidates[i];
@@ -70,7 +74,7 @@ function trigger_event(emit_candidate, event)
      }
      else 
      if( document.createEventObject ) 
-     { //IE
+     { 	   //IE
 	       var ev_object = document.createEventObject();
 	       trigger_object.fireEvent( 'on' + event, ev_object );
      } 
