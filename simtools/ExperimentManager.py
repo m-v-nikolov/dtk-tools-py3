@@ -361,7 +361,10 @@ class LocalExperimentManager(object):
                     long_states[jobid] += " (" + str(100*steps_complete[0]/steps_complete[1]) + "% complete)"
 
         logger.info('Job states:')
-        logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+        if len(long_states) < 20:
+            # We have less than 20 simulations, display the simulations details
+            logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+        # Display the counter no matter the number of simulations
         logger.info(dict(Counter(states.values())))
 
     @staticmethod
