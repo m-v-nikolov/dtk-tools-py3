@@ -268,26 +268,14 @@ class LocalExperimentManager(object):
         return  # no batching in LOCAL
 
     def commission_simulations(self):
-        doLocalBatching = False
-
         commissioners = []
         exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
         sim_ids = self.exp_data['sims'].keys()
 
         max_local_sims = int(self.get_property('max_local_sims'))
-        if len(commissioners) > max_local_sims:
-            warnings.warn("Trying to submit more than %d concurrent local simulations." % max_local_sims, Warning)
-            choice = raw_input('Do you want to continue?  Yes [Y], Batch [B], No [N]...')
-            if choice.lower() == 'y':
-                logger.info('Continuing all in parallel...')
-            elif choice.lower() == 'b':
-                logger.info('Batching...')
-                doLocalBatching = True
-            else:
-                logger.info('Truncating...')
-                return False
 
-        if doLocalBatching:
+        if len(sim_ids) > max_local_sims:
+            # If we exceed the number of max_local_sims -> batch
             for sim_id in sim_ids[:max_local_sims]:
                 c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
                 commissioners.append(c)
