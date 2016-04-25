@@ -1,3 +1,4 @@
+import glob
 from datetime import datetime
 import json
 import logging
@@ -469,6 +470,30 @@ class CalibManager(object):
         self.next_point.set_current_state(self.iteration_state.next_point)
 
         self.run_iterations(**kwargs)
+
+    def kill(self):
+        """
+        Kill the current calibration
+        """
+        # Find the latest iteration
+        iterations = glob.glob(os.path.join(self.name, "iter*"))
+        latest_iteration = iterations[-1]
+
+        # Load it
+        it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
+
+        # Retrieve the experiment manager and cancel all
+        exp_manager = ExperimentManagerFactory.from_data(it.simulations)
+
+        if self.location == "LOCAL":
+            # LOCAL calibration
+            exp_manager.cancel_simulations(killall=True)
+        else:
+            exp_manager.cancel_all_simulations()
+
+        # Print confirmation
+        print "Calibration %s successfully cancelled!" % self.name
+
 
     def cleanup(self):
         """

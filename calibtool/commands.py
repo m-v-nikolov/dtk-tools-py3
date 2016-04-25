@@ -28,7 +28,6 @@ def update_calib_args(args, calib_args):
 
 
 def run(args):
-
     manager, calib_args = get_calib_manager_args(args)
     manager.run_calibration(**calib_args)
 
@@ -48,6 +47,11 @@ def cleanup(args):
     mod = load_config_module(args.config_name)
     manager = mod.calib_manager
     manager.cleanup()
+
+def kill(args):
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    manager.kill()
 
 def main():
 
@@ -81,6 +85,12 @@ def main():
     parser_cleanup.add_argument(dest='config_name', default=None,
                                help='Name of configuration python script for custom running of calibration.')
     parser_cleanup.set_defaults(func=cleanup)
+
+    # 'calibtool kill' options
+    parser_cleanup = subparsers.add_parser('kill', help='Kill a calibration')
+    parser_cleanup.add_argument(dest='config_name', default=None,
+                               help='Name of configuration python script.')
+    parser_cleanup.set_defaults(func=kill)
 
 
     # run specified function passing in function-specific arguments
