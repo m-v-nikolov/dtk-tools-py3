@@ -449,7 +449,7 @@ class CompsExperimentManager(LocalExperimentManager):
     def collect_sim_metadata(self):
         self.exp_data['sims'] = CompsSimulationCommissioner.get_sim_metadata_for_exp(self.exp_data['exp_id'])
 
-    def cancel_all_simulations(self, states):
+    def cancel_all_simulations(self, states=None):
         from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 
