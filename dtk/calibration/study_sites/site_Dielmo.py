@@ -9,6 +9,7 @@ reference_data = {        "annual_clinical_incidence_by_age" : {
         }
 }
 
+analyzers = {}
 
 def get_setup_functions() :
 

@@ -8,8 +8,8 @@ import pandas as pd
 import json
 import math
 import seaborn as sns
-from utils import calc_distance, latlon_to_anon
 
+from dtk.calibration.utils import calc_distance, latlon_to_anon
 from dtk.calibration import LL_calculators
 from dtk.calibration.study_sites.set_calibration_site import get_reference_data
 
@@ -76,7 +76,7 @@ def plot_best_LL(settings, iteration, site, analyzer, samples, top_LL_index) :
         iter = samples['iteration'].values[LL_index]
         prevsamples = len(samples[samples['iteration'] < iter].index)
         rownum = LL_index-prevsamples
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'], 'iter' + str(iter) + '/' + site + '_' + analyzer['name']) + '.json') as fin :
             data = json.loads(fin.read())
         plot_risks(ax, data['risk_by_distance'][rownum], distances, style='-o', color='#CB5FA4', alpha=1, linewidth=1)
         plot_risks(ax, raw_risk_data, distances, style='-o', color='#8DC63F', alpha=1, linewidth=1)
@@ -116,7 +116,7 @@ def plot_all_LL(settings, iteration, site, analyzer, samples) :
     grouped = samples.groupby('iteration')
     prevsamples = 0
     for i, (iter, df_iter) in enumerate(grouped) :
-        with open(settings['exp_dir'] + 'iter' + str(iter) + '/' + site + '_' + analyzer['name'] + '.json') as fin :
+        with open(os.path.join(settings['exp_dir'], 'iter' + str(iter) + '/' + site + '_' + analyzer['name']) + '.json') as fin :
             data = json.loads(fin.read())['risk_by_distance']
         for rownum, sim_data in enumerate(data) :
             plot_risks(ax, sim_data, distances, style='-', color=cm.Blues((LL[rownum + prevsamples]-LL_min)/(LL_max-LL_min)), alpha=0.5, linewidth=0.5)

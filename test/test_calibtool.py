@@ -1,17 +1,100 @@
 import copy
+import json
 import os
-import time
+import shutil
 import unittest
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from scipy.stats import norm, uniform, multivariate_normal
 
-from calibtool.Prior import MultiVariatePrior
-from calibtool.NextPointAlgorithm import NextPointAlgorithm
-from calibtool.algo.IMIS import IMIS
 from calibtool.IterationState import IterationState
+from calibtool.Prior import MultiVariatePrior
+from calibtool.algo.IMIS import IMIS
+
+
+class TestCommands(unittest.TestCase):
+    def setUp(self):
+        self.current_cwd = os.getcwd()
+
+        os.mkdir('calibration')
+        shutil.copy('input/dummy_calib.py', 'calibration')
+
+
+    def tearDown(self):
+        # Change the dir back to normal
+        os.chdir(self.current_cwd)
+
+        # Get the JSONs to find the simulations
+        simulation_dir = os.path.join(self.current_cwd, 'calibration', 'simulations')
+        simulation_files = os.listdir(simulation_dir)
+
+        # For each file, look for the experiment dir and erase
+        for simulation_file in simulation_files:
+            siminfo = json.load(open(os.path.join(simulation_dir, simulation_file), 'rb'))
+            exp_dir = os.path.join(siminfo['sim_root'], "%s_%s" % (siminfo['exp_name'], siminfo['exp_id']))
+            shutil.rmtree(exp_dir)
+
+        # Clear the dir
+        shutil.rmtree('calibration')
+
+
+    def test_run_calibration(self):
+        os.chdir('calibration')
+        os.system('calibtool run dummy_calib.py')
+        # Test if files are present
+        self.assertTrue(os.path.exists('ExampleCalibration'))
+        self.assertTrue(os.path.exists('ExampleCalibration/_plots'))
+        self.assertNotEqual(len(os.listdir('ExampleCalibration/_plots')), 0)
+        self.assertTrue(os.path.exists('ExampleCalibration/iter0'))
+        self.assertTrue(os.path.exists('ExampleCalibration/iter1'))
+        self.assertTrue(os.path.exists('ExampleCalibration/CalibManager.json'))
+        #self.assertTrue(os.path.exists('ExampleCalibration/LL_summary.csv'))
+
+
+    def test_reanalyze(self):
+        # Run the calibration
+        os.chdir('calibration')
+        os.system('calibtool run dummy_calib.py')
+
+        # Open the CalibManager.json and save the values
+        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+            cm = json.load(fp)
+            self.totals = cm['results']['total']
+
+        # Now reanalyze
+        os.system('calibtool reanalyze dummy_calib.py')
+        # After reanalyze compare the totals
+        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+            cm = json.load(fp)
+            for i in range(len(self.totals)):
+                self.assertAlmostEqual(cm['results']['total'][i], self.totals[i])
+
+    def test_cleanup(self):
+        # Run the calibration
+        os.chdir('calibration')
+        os.system('calibtool run dummy_calib.py')
+
+        # Get the sim paths
+        simulation_dir = os.path.join(self.current_cwd, 'calibration', 'simulations')
+        simulation_files = os.listdir(simulation_dir)
+        simulation_paths = []
+
+        for sfile in simulation_files:
+            info = json.load(open(os.path.join(simulation_dir,sfile),'rb'))
+            simulation_paths.append(os.path.join(info['sim_root'],"%s_%s" %(info['exp_name'], info['exp_id'])))
+
+        # Cleanup
+        os.system('calibtool cleanup dummy_calib.py')
+
+        # Make sure everything disappeared
+        self.assertFalse(os.path.exists('ExampleCalibration'))
+        self.assertFalse(os.listdir('simulations'))
+        for path in simulation_paths:
+            self.assertFalse(os.path.exists(path))
+
+
 
 
 class TestMultiVariatePrior(unittest.TestCase):

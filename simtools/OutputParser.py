@@ -146,22 +146,23 @@ class CompsDTKOutputParser(SimulationOutputParser):
         for filename in filenames:
             paths.add('output/' + filename)
 
-        asset_byte_arrays = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
+        asset_byte_arrays = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None).toArray()
         
         #print('done retrieving files; starting load')
         
-        for filename, byte_array in zip(filenames, asset_byte_arrays.toArray()):
+        for filename, byte_array in zip(filenames, asset_byte_arrays):
             self.load_single_file(filename, byte_array)
 
     def load_json_file(self, filename, *args):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_json_file(filename)
         else:
-            self.raw_data[filename] = json.loads(args[0].tostring())
+            jsonstr = args[0].tostring()
+            self.raw_data[filename] = json.loads(jsonstr)
 
     def load_bin_file(self, filename, *args):
         if self.sim_dir_map is not None:
-            super(CompsDTKOutputParser, self).load_json_file(filename)
+            super(CompsDTKOutputParser, self).load_bin_file(filename)
         else:
             arr = args[0]
 
