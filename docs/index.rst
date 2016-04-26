@@ -6,17 +6,13 @@ Welcome to DTK Package's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+       :maxdepth: 2
 
-   intro
-   generic/index
-   interventions/index
-   malaria/index
-   tools/index
-   utils
-   vector
-
-
+       intro
+       gettingstarted
+       dtk
+       simtools
+       calibtool
 
 
 Indices and tables
