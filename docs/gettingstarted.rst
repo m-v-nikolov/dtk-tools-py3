@@ -25,6 +25,7 @@ Because a cross-platform solution for automatic installation of the numpy depend
 
     On Windows, it is necessary to add the location of the ``dtk`` folder to your ``PYTHONPATH`` System environment variable.
 
+
 Setup
 ----------
 To configure your user-specific paths and settings for local and HPC job submission, edit the properties in ``dtk/dtk_setup.cfg``.
