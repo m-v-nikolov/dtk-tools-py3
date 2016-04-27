@@ -21,6 +21,10 @@ Because a cross-platform solution for automatic installation of the numpy depend
 
     pip install numpy-1.9.2+mkl-cp27-none-win_amd64.whl
 
+.. warning::
+
+    On Windows, it is necessary to add the location of the ``dtk`` folder to your ``PYTHONPATH`` System environment variable.
+
 Setup
 ----------
 To configure your user-specific paths and settings for local and HPC job submission, edit the properties in ``dtk/dtk_setup.cfg``.
