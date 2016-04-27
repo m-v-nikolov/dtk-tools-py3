@@ -1,3 +1,5 @@
+.. _dtksetup:
+
 ===================
 dtk_setup.cfg file
 ===================
@@ -58,7 +60,7 @@ Priority of the simulation can be:
     - ``Highest``
 
 
-.. setting:: sim_root
+.. setting:: hpc_sim_root
 
 ``sim_root``
 --------------------------
@@ -73,7 +75,7 @@ Folder where all the simulations inputs/outputs will be stored.
 
 
 
-.. setting:: input_root
+.. setting:: hpc_input_root
 
 ``input_root``
 --------------------------
@@ -88,7 +90,7 @@ Folder where all the input files (climate and demographics) are stored.
 
 
 
-.. setting:: bin_root
+.. setting:: hpc_bin_root
 
 ``bin_root``
 --------------------------
@@ -102,7 +104,7 @@ Folder where the executable will be cached.
     The provided path needs to be accessible by your endpoint.
 
 
-.. setting:: dll_root
+.. setting:: hpc_dll_root
 
 ``dll_root``
 --------------------------
@@ -201,7 +203,7 @@ The folder where the simulations input files are stored (demographics, climate).
 ``bin_root``
 --------------------------
 
-| Default LOCAL: ``C:\Eradication\DTK_Trunk\x64\Release``
+| Default LOCAL: ``C:\Eradication\bin``
 | Default POSIX: ``/Users/%(user)s/simtools/bin``
 
 Folder where the executable will be cached.
@@ -213,8 +215,9 @@ Folder where the executable will be cached.
 ``dll_root``
 --------------------------
 
-| Default LOCAL: ``C:\Eradication\DTK_Trunk\x64\Release``
+| Default LOCAL: ``C:\Eradication\dll``
 | Default POSIX: ``/Users/%(user)s/simtools/emodules``
+
 Folder where the custom reporters and other dlls will be cached.
 
 
@@ -244,7 +247,8 @@ Path where the DLL used for the simulations are stored.
 Complete example
 ==================
 
-.. code-block:: cfg
+.. snippet:: cfg
+    :filename: dtk/dtk_setup.cfg
 
     [GLOBAL]
     max_threads    = 16
@@ -268,8 +272,8 @@ Complete example
     max_local_sims = 8
     sim_root       = C:\Eradication\simulations
     input_root     = C:\Eradication\EMOD-InputData
-    bin_root       = C:\Eradication\DTK_Trunk\x64\Release
-    dll_root       = C:\Eradication\DTK_Trunk\x64\Release
+    bin_root       = C:\Eradication\bin
+    dll_root       = C:\Eradication\dll
 
     [POSIX]
     sim_root       = /Users/%(user)s/simtools/simulations
