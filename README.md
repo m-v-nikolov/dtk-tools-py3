@@ -8,11 +8,11 @@ Modules contained in this package are intended to:
 
 #### Installation
 
-On Windows, from an administrator command-prompt, run the following from the current directory: `pip install --find-links=.\install dtk==0.3`, or to do active development on the package, `python setup.py develop`.
+On Windows, from an administrator command-prompt, run the following from the current directory: `python setup.py develop`.
+
+ALso on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example ``C:\github\dtk-tools\dtk`.
 
 Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, we have included the win_amd64 version 1.9.2+mkl of the numpy wheel locally.  On other platforms, it is required to have installed that package first, e.g. `pip install numpy`
-
-On Windows, one may need to add the `Scripts` subdirectory of your local Python installation to the `%PATH%` [environment variable](https://www.java.com/en/download/help/path.xml) to have access to the `dtk` commandline utility.
 
 #### Setup
 
