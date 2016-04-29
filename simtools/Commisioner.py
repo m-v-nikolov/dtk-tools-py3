@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import threading
+from time import sleep
 
 
 class SimulationCommissioner(threading.Thread):
@@ -13,22 +14,33 @@ class SimulationCommissioner(threading.Thread):
     Threads are spawned for each simulation to run on the local machine.
     '''
 
-    def __init__(self, sim_dir=None, eradication_command=None):
+    def __init__(self, sim_dir=None, eradication_command=None, queue=None):
         threading.Thread.__init__(self)
         self.sim_dir = sim_dir
         self.eradication_command = eradication_command
-        self.job_id = None
         self.sim_id = os.path.basename(self.sim_dir) if sim_dir else None
+        self.queue = queue
+        self._job_id= None
 
     def run(self):
         with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
             with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
                 p = subprocess.Popen(self.eradication_command.Commandline.split(),
                                      cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
-                self.job_id = p.pid
+                self._job_id = p.pid
+                p.wait()
+                self.queue.get()
+
+    @property
+    def job_id(self):
+        timeout = 10
+        while not self._job_id and timeout > 0:
+            sleep(0.01)
+            timeout-=1
+        return self._job_id
 
 
-class CompsSimulationCommissioner(SimulationCommissioner):
+class CompsSimulationCommissioner(threading.Thread):
 
     '''
     A class to commission COMPS experiments and simulations.
