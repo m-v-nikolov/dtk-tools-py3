@@ -70,38 +70,40 @@ def configure_sugungum(cb):
 
 #Matsari, Garki, Jigawa, Nigeria: EIR = 68 (2 from funestus)
 def configure_matsari(cb):
-    set_larval_habitat( cb, {"arabiensis" : [2.2e9, 1.25e7],
-                             "funestus"   : [2.5e7],
-                             "gambiae"    : [2.2e9, 1.25e7]})
+    set_larval_habitat( cb, {"arabiensis" : [2.2e9, 1.25e7]
+                             #"funestus"   : [2.5e7],
+                             #"gambiae"    : [2.2e9, 1.25e7]
+                             })
 
 #Rafin Marke, Garki, Jigawa, Nigeria: EIR = 18
 def configure_rafin_marke(cb):
-    set_larval_habitat( cb, {"arabiensis" : [5e8, 8e6],
-                             "gambiae"    : [5e8, 8e6]})
+    set_larval_habitat( cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 5e8, 'CONSTANT': 8e6},
+                             "gambiae"    : {'TEMPORARY_RAINFALL': 5e8, 'CONSTANT': 8e6}
+                             })
 
 #Dielmo, Senegal: EIR = 200
 def configure_dielmo(cb):
-    set_larval_habitat(cb, {"arabiensis" : [4e9, 1e7],
-                            "funestus"   : [5e8],
-                            "gambiae"    : [4e9, 1e7]})
+    set_larval_habitat(cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 4e9, 'CONSTANT': 1e7},
+                            "funestus"   : {'WATER_VEGETATION':5e8},
+                            "gambiae"    : {'TEMPORARY_RAINFALL': 4e9, 'CONSTANT': 1e7}})
 
 #Ndiop, Senegal: EIR = 20
 def configure_ndiop(cb):
-    set_larval_habitat(cb, {"arabiensis" : [4e8, 5e6],
-                            "gambiae"    : [4e8, 5e6]})
+    set_larval_habitat(cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 4e8, 'CONSTANT': 5e6},
+                            "gambiae"    : {'TEMPORARY_RAINFALL': 4e8, 'CONSTANT': 5e6}})
 
 #Thies, Senegal
 def configure_thies(cb):
-    set_larval_habitat(cb, {"arabiensis" : [4e7, 1.5e6],
-                            "gambiae"    : [4e7, 1.5e6]})
+    set_larval_habitat(cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 4e7, 'CONSTANT': 1.5e6},
+                            "gambiae"    : {'TEMPORARY_RAINFALL': 4e7, 'CONSTANT': 1.5e6}})
 
 # Burkina sites from A L Ouedraogo
 def configure_dapelogo(cb) :
-    set_larval_habitat(cb, {"funestus" : [5e8],
-                            "gambiae"  : [3e10, 1e8]})
+    set_larval_habitat(cb, {"funestus" : {'WATER_VEGETATION':5e8},
+                            "gambiae"  : {'TEMPORARY_RAINFALL': 3e10, 'CONSTANT': 1e8}})
 def configure_laye(cb) :
-    set_larval_habitat(cb, {"funestus" : [5e7],
-                            "gambiae"  : [3e9, 1e7]})
+    set_larval_habitat(cb, {"funestus" : {'WATER_VEGETATION':5e7},
+                            "gambiae"  : {'TEMPORARY_RAINFALL': 3e9, 'CONSTANT': 1e7}})
 
 # Sinazongwe, Southern, Zambia: EIR ~= 20
 def configure_sinazongwe(cb):
@@ -120,77 +122,85 @@ def configure_sinazongweconstant(cb):
 
 # Gwembe, Southern, Zambia: EIR ~= 0.1-20
 def configure_gwembe2node(cb):
-    set_larval_habitat(cb, {"arabiensis":[2e9, 8e7]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 8e7}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.8)
 
 # Gwembe + Sinazongwe, Southern, Zambia: EIR ~= 0.1-20
 def configure_gwembesinazongwehealthfacility(cb):
-    set_larval_habitat(cb, {"arabiensis":[2e9, 8e7]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 8e7}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.8)
 
 def configure_gwembesinazongwepopcluster(cb):
     #set_larval_habitat(cb, {"arabiensis":[2e9, 8e7]})
     #set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.8)
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
 
 def configure_sinamalima_1_node(cb):
     set_geography(cb, "Sinamalima_1_node")
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
     
 def configure_gwembe_1_node(cb):
     set_geography(cb, "Gwembe_1_node")
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
     
 def configure_lukonde_1_node(cb):
     set_geography(cb, "Lukonde_1_node")
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
     
 def configure_munumbwe_1_node(cb):
     set_geography(cb, "Munumbwe_1_node")
-    set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 2e9, 'CONSTANT': 2e8}})
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
 
 # Mocuba, Zambezia, Mozambique: EIR = 70
 def configure_mocuba(cb):
-    set_larval_habitat(cb, {"arabiensis"  : [1e8, 5e6],
-                            "funestus"    : [8e8]})
+    set_larval_habitat(cb, {"arabiensis"  : {'TEMPORARY_RAINFALL': 1e8, 'CONSTANT': 5e6},
+                            "funestus"    : {'WATER_VEGETATION':8e8}})
 
 # West Kenya: EIR ~ 100
 def configure_west_kenya(cb):
-    set_larval_habitat(cb, {"arabiensis" : [2.2e9, 1e7],
-                            "funestus"   : [7e8],
-                            "gambiae"    : [5.5e9, 1e7]})
+    set_larval_habitat(cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 2.2e9, 'CONSTANT': 1e7},
+                            "funestus"   : {'WATER_VEGETATION':7e8},
+                            "gambiae"    : {'TEMPORARY_RAINFALL': 5.5e9, 'CONSTANT': 1e7}})
 
 # Solomon_Islands
 def configure_solomon_islands(cb):
-    set_larval_habitat(cb, {"farauti" : [6e9]})
+    set_larval_habitat(cb, {"farauti" : {"BRACKISH_SWAMP",6e9}})
 
 def configure_solomon_islands_2node(cb):
-    set_larval_habitat(cb, {"farauti" : [6e9]})
+    set_larval_habitat(cb, {"farauti" : {"BRACKISH_SWAMP",6e9}})
     
 
 # Nabang on Chinese-Burmese border
 def configure_nabang(cb):
-    set_larval_habitat(cb, {"maculatus" : [1e8],
-                            "minimus": [1e8]})
+    set_larval_habitat(cb, {"maculatus" : {"WATER_VEGETATION":1e8},
+                            "minimus": {"WATER_VEGETATION":1e8}})
     
     
 def configure_gwembe_sinazongwe_115_nodes(cb):
     set_geography(cb, "Gwembe_Sinazongwe_115_nodes")
-    #set_larval_habitat(cb, {"arabiensis":[2e9, 8e7]})
-    #set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.8)
-    #set_larval_habitat(cb, {"arabiensis":[2e9, 2e8]})
-    set_larval_habitat(cb, {"arabiensis":[1e8,  2e6],
-                            "funestus":[ 1e8, 2e7 ]})    
+
+    '''
+    once PIECEWISE_MONTHLY habitat is introduced we can configure it;
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 1e8, 'CONSTANT': 2e6},
+                            "funestus":[ 1e8, 2e7 ]})
+    '''
+    
+    '''
+    for now we only configure water vegitation
+    '''
+    set_larval_habitat(cb, {"arabiensis":{'TEMPORARY_RAINFALL': 1e8, 'CONSTANT': 2e6},
+                            "funestus": {"WATER_VEGETATION":2e7}})
+        
     set_species_param(cb,"arabiensis","Indoor_Feeding_Fraction",0.5)
     
 
 # Thailand: same habitat for two species, 
 # but maculatus more zoophilic --> fewer human bites
 def configure_tha_song_yang(cb):
-    set_larval_habitat(cb, {"minimus" : [1e8 ],
-                            "maculatus": [1e8]})
+    set_larval_habitat(cb, {"minimus" : {"WATER_VEGETATION":1e8},
+                            "maculatus": {"WATER_VEGETATION":1e8}})

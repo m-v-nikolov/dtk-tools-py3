@@ -3,6 +3,13 @@ var events = {
 				"click":"click"
 			 }
 
+/*
+ *  an array of strings that are prevented from parsing and emitting comm messages;
+ *  perhaps needs to be accessed/changed with accessors/mutators; for now it's naked 
+ */
+var comm_blacklist = [] 
+
+
 function emit(comm_msg)
 {	
 	
@@ -46,9 +53,9 @@ function emit(comm_msg)
 	}
 	else // use select by attribute value
 	{
-		alert("in emit");
-		alert(selector_type);
-		alert(selector);
+		//alert("in emit");
+		//alert(selector_type);
+		//alert(selector);
 		emit_candidates = document.querySelectorAll('['+selector_type+'='+ selector+ ']');
 		
 		for(var i = 0; i < emit_candidates.length; i++)
@@ -123,7 +130,7 @@ function trigger_emit(element, comm_msg)
 		return; // if the selector attribute is not set, do nothing.
 
 	var selector = Object.keys(comm_msg["selector"])[0];
-
+	
 	if(d3.select(element).attr("emitted") == "false") // if the element has not emitted this message yet, emit the message
 	{
 		if (selector != "function") // if entity type is not "function" call emit to dispatch a javascript event to the matching elements   
@@ -163,7 +170,7 @@ function trigger_emit(element, comm_msg)
  * data: json;
  */
 function parse_comm_msg(comm_msg, data)
-{
+{	
 	if (comm_msg["selector"].hasOwnProperty("function"))
 	{
 		func = comm_msg["selector"]["function"]["func"];

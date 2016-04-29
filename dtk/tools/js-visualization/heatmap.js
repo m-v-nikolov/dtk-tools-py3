@@ -43,8 +43,8 @@
 
 function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z, target_container, comm_msg)
 {
+
 	target_container = typeof target_container !== 'undefined' ? target_container : "body";
-	comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
 	
 	axis_margin = 75; // margin left on the left and bottom of the heatmap, allowing for the display of y anx x -axis respectively 
 	color_bar_margin = 50;
@@ -93,17 +93,19 @@ function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z, targe
 			.attr("x", function(d){ return axis_margin + tile_size*d.x_idx; })
 			.attr("emitted", false)
 			.attr("param", function(d) { return attr_2_x + "_" + d[attr_2_x] + "_" + attr_2_y + "_" + d[attr_2_y]; })
+			.attr("class", function(d) { return attr_2_x + "_" + d[attr_2_x] + "_" + attr_2_y + "_" + d[attr_2_y]; })
 			//.attr("param", function(d) { return attr_2_x + "_" + x_idx + "_" + attr_2_y + "_" + y_idx; })
 			.attr("data-toggle", "tooltip")
 			.attr("data-placement", "top")
 			.attr("html", true) // tooltip style can be further improved via bootstrap css options
 			.attr("title", function(d){ return "(" + d[attr_2_x] + ", " + d[attr_2_y] + ", " + d[attr_2_z]+")"; })
 			.attr("fill", function(d) {	return color_scale(dynamic_scale(d[attr_2_z])); })
-			.on("mouseover",function(d) {
+			.on("click",function(d) {
 											pointer.pointTo(dynamic_scale(d[attr_2_z]));
 											
 											// if this element has not emitted a message for this mouseover event, then emit
-											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+											comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
+											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false && comm_blacklist.indexOf(d3.select(this).attr("id")) == -1)
 											{
 												// parse comm_msg and, if requested, bind data attributes from d to comm_msg
 												comm_msg = parse_comm_msg(comm_msg, d);
@@ -112,6 +114,16 @@ function load_heatmap(hm_id, color_scale, h, attr_2_x, attr_2_y, attr_2_z, targe
 												trigger_emit(this, comm_msg);
 											}
 			})
+			.on("mouseover", function(d){
+								
+								pointer.pointTo(dynamic_scale(d[attr_2_z]));
+								var selected_class = d3.select(this).attr("class");
+								d3.selectAll("."+selected_class).attr("fill-opacity", 0.5).attr('rx',"5").attr('ry',"5");
+								
+								
+									
+			})
+			
 			.attr("id", function(d) { return d[attr_2_x] + "_" + d[attr_2_y]} )
 			.style("stroke", function(d) { return color_scale(dynamic_scale(d[attr_2_z])); /*return color_scale(d.zi);*/ });
 		

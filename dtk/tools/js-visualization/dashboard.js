@@ -1,6 +1,7 @@
 var gazeteer_select_model = "unselect";
 var gazeteer_select = "unselect";
-var node_select = "80202_5";
+//var node_select = "80202_5";
+var node_select = "unselect";
 var time_idx_select = 6*365 + 160;
 
 function load_dashboard(gazetteer_file, gazetteer_header_file, map_data_file)
@@ -15,12 +16,12 @@ function load_dashboard(gazetteer_file, gazetteer_header_file, map_data_file)
 	svg_timeseries.html("") // clear any existing content 
 	
 	d3.json(gazetteer_header_file, function(error, gazetteer_header){
-		load_gazeteer(gazetteer_file, map_data_file, gazetteer_header);
+		load_gazeteer(gazetteer_file, gazetteer_header, map_data_file);
 	});
 }
 
 
-function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
+function load_gazeteer(gazetteer_file, gazetteer_header, map_data_file)
 {
 	
 	d3.select(".resourcecontainer.buttons").selectAll(".gazeteer").remove(); // clean up content
@@ -64,12 +65,18 @@ function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
             .data(function(d) { return d.select; })
             .enter().append("option")
             	.attr("value", function(d){ return d.value })
+            	.attr("id", function(d){ return "model_"+d.value; })
             	.text(function(d){ return d.name})
             	.attr("selected", function(d){ if (d.value == gazeteer_select) return true;})
 				.on("click", function (d) {
+					
+						d3.select("#model_"+gazeteer_select).attr("class","gazeteer_model");
+						d3.select("#model_"+d.value).attr("class","gazeteer_model_selected");
+						
 			            gazeteer_select = d.value;
 			            load_maps(map_data_file);
-			            load_node_charts({})
+			            if(node_select != "unselect")
+			               load_node_charts({});
 				}) 	
 		});
 	
@@ -85,41 +92,116 @@ function load_gazeteer(gazetteer_file, map_data_file, gazetteer_header)
 	time_idxs_selection.selectAll("li")
 		.data(time_idxs)
 		.enter().append("li")
+		 .attr("id", function(d){ return "time_idx_" + d; })
 		 .attr("value", function (d) { return d; })
 		 .text(function (d, i) { return "Round " + (i + 1); })
 		 .attr("class", function(d){ if (d == time_idx_select) return "time_idx_selected"; else return "time_idx_option"; }) // set the selected time idx class for style
 		 .on("click", function (d) {
-            time_idx_select = d;
+			 
+			d3.select("#time_idx_" + time_idx_select).attr("class", "time_idx_option"); 
+			d3.select("#time_idx_" + d).attr("class", "time_idx_selected");
+            time_idx_select = d;            
             load_maps(map_data_file); // load widgets with data state at the given time idx
-            load_node_charts({})
+            if(node_select != "unselect")
+	               load_node_charts({});
         });
 }
 
 function load_node_charts(params)
 {
+	selected_nodes = document.getElementsByClassName(node_select);
+	for (var i = 0; i < selected_nodes.length; i++)
+	{
+		var node = selected_nodes[i];
+		node.style.stroke = "gray";
+	}
+
 	if (params.hasOwnProperty("NodeLabel"))		
 		node_select = params["NodeLabel"];
 	
-	heatmap(node_select);
-	timeseries(node_select);
+	selected_nodes = document.getElementsByClassName(node_select);
+	
+	for (var i = 0; i < selected_nodes.length; i++)
+	{
+		var node = selected_nodes[i];
+		node.style.stroke = "black";
+		node.style.strokeWidth = "2px";
+		
+		// blacklist communication from this node, to avoid infinite "message" loops 
+		comm_blacklist.push(node.id);
+		
+		// so many things can go wrong here that for now we'd foolishly ignore the complexity
+		// then, we'll have to remove it
+		trigger_event(node, "mouseover");
+		
+		comm_blacklist.pop(node.id);
+	}
+
+	
+	// only create a new chart if the existing one is not the same
+	if (d3.select("#hm_" + node_select).empty())
+	{
+		// clear the existing heatmap
+		d3.select(".hm_container").remove()
+		
+		// draw the new heatmap
+		heatmap(node_select);
+	}
+	
+
+	if (d3.select("#ts_" + node_select).empty())
+		// clear the existing ts
+		d3.select(".ts_container").remove()
+		
+		// draw the new timeseries
+		timeseries(node_select);
 }
 
 
 // this function can be made more generic but for no sufficies
 // the user-programmed dashboard "knows" about the specific parameters the user is designing it for
-function emit_param_key(params)
+function emit_param_key_by_params(params)
 {
+	var event = "click"
 	if (params.hasOwnProperty("funestus_sc"))
-		funestus_sc = params["funestus_sc"]
+		funestus_sc = params["funestus_sc"];
+	else
+		return;
 	if (params.hasOwnProperty("arabiensis_sc"))
-		arabiensis_sc = params["arabiensis_sc"]
+		arabiensis_sc = params["arabiensis_sc"];
+	else
+		return;
+	if (params.hasOwnProperty("event"))
+		event = params["event"];
 	
 	// generic emit is implemented in comms.js
 	//emit("click", {"param":"funestus_sc" + "_" + funestus_sc + "_arabiensis_sc_" + arabiensis_sc});
 	emit(
 			{
-				"event":"click",
+				"event":event,
 				"selector":{"param":"funestus_sc_30_arabiensis_sc_117"}
+			}
+	);
+}
+
+function emit_param_key_by_header(params)
+{
+	var event = "click"
+	if (params.hasOwnProperty("name"))
+		header = params["name"];
+	else
+		return;
+	
+	if (params.hasOwnProperty("event"))
+		event = params["event"];
+	
+	header = header.replace(" ", "").replace("/", "");
+	// generic emit is implemented in comms.js
+	//emit("click", {"param":"funestus_sc" + "_" + funestus_sc + "_arabiensis_sc_" + arabiensis_sc});
+	emit(
+			{
+				"event":event,
+				"selector":{"param":header}
 			}
 	);
 }
@@ -131,7 +213,7 @@ function heatmap(node_label)
     var color_scale = d3.scale.sqrt()
    					.domain(d3.range(0, 1, 1.0 / (15)))
    					.range(colors);
-   
+    
 	load_heatmap(
 		   			node_label,
 		   			//d3.scale.quantize().domain([0, 1]).range(colorbrewer.PuRd[9]),
@@ -142,7 +224,7 @@ function heatmap(node_label)
 					'zi', // what attribute of the heatmap json objects corresponds to colors (i.e. z axis values)
 					'.resourcecontainer.charts', // where to load the heatmap; default is <body>
 		   			{
-   			   			"selector":{"function": {"func":emit_param_key, "params":{}}},
+   			   			"selector":{"function": {"func":emit_param_key_by_params, "params":{"event":"click"}}},
    			   			"attributes_req":["funestus_sc", "arabiensis_sc"]
 					}
 	);
@@ -163,9 +245,15 @@ function timeseries(node_label)
 			".resourcecontainer.timeseries",
 			//trigger_emit(this, "mouseover", {"param": d.name.replace(" ", "").replace("/", "")});
 			{
+	   			"selector":{"function": {"func":emit_param_key_by_header, "params":{"event":"mouseover"}}},
+	   			"attributes_req":["name"] // request the header name
+			}
+			/*
+			{
 	 			"event":"mouseover",
 	 			"selector":{"param": "funestus_sc_30_arabiensis_sc_117"}
 			}
+			*/
 	);		
 
 }
@@ -194,12 +282,12 @@ function load_maps(map_data_file)
 											maxZoom: 20,
 											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 										}),
-			   		   node_opacity : 0.6,
-			   		   comm_msg: {
-   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
-   			   			"attributes_req":["NodeLabel"]
-			   		   }
-			   	}
+			   		   node_opacity : 0.6
+			   	},
+			   	{
+			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+			   			"attributes_req":["NodeLabel"]
+		   		 }
 	);
 	
 	
@@ -209,7 +297,7 @@ function load_maps(map_data_file)
 			   gazetteer_map,
 			   ".resourcecontainer.maps" //target container
 	);
-	
+
 	style_map(
 		    'rdt_sim', 
 		    gazetteer_map,
@@ -220,16 +308,16 @@ function load_maps(map_data_file)
 									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 								}),
 			   node_attr_2_color : ["RDT_sn_sim", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-	   		   node_opacity : 0.6,
-	   		   comm_msg: {
-	   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
-	   			   			"attributes_req":["NodeLabel"]
-	   		   }
-		    }	   
+	   		   node_opacity : 0.6
+		    },
+	   		{
+			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+			   			"attributes_req":["NodeLabel"]
+		    }
 	);
-	
-	
 
+	
+	
    load_map(
 			   'funestus', 
 			   gazetteer_map,
@@ -245,12 +333,12 @@ function load_maps(map_data_file)
 									attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 							   	  }),
 	   		   node_opacity : 0.6,
-	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])],
-		       comm_msg: {
+	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
+		    },
+		    {
 		   			"selector":{"function": {"func":load_node_charts, "params":{}}},
 		   			"attributes_req":["NodeLabel"]
-		       }
-		    }	   
+		    }
 	);
    
    
@@ -263,13 +351,13 @@ function load_maps(map_data_file)
 		   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
 		   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])],
 		   		   node_attr_2_x : "funestus_sc",
-		   		   node_attr_2_y : "arabiensis_sc",
-		   		   comm_msg: {
-		   			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
-   		   						"attributes_req":["NodeLabel"]
-		   		   }
+		   		   node_attr_2_y : "arabiensis_sc"
 		   		
    		    },
-   		    ".resourcecontainer.charts"
+   		    ".resourcecontainer.charts",
+   		    {
+	   			"selector":{"function": {"func":load_node_charts, "params":{}}},
+					"attributes_req":["NodeLabel"]
+   		 	}
 	);
 }

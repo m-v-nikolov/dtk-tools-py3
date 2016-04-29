@@ -10,7 +10,6 @@
 function load_timeseries(ts_id, ts_type, colors, special, target_container, comm_msg)
 {
 	target_container = typeof target_container !== 'undefined' ? target_container : "body";
-	comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
 	
 	var margin = {top: 20, right: 350, bottom: 100, left: 50},
     margin2 = { top: 430, right: 150, bottom: 20, left: 40 },
@@ -107,7 +106,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		    	isVisible = false; 
 		      
 		    return {
-		      name: name, // "name": the tsv headers except date
+		      name: name, // "name": the tsv headers except date; might change 'name' to 'header'
 		      values: data.map(function(d) { // "values": which has an array of the times and values
 		        return {
 		          date: d.date, 
@@ -263,22 +262,23 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		        	 }
 		        		 
 		          })
-		
-		        category.select("rect")
+
+		        category.select("circle")
 		          .transition()
 		          .attr("fill", function(d) {
 		          return d.visible ? color(d.name) : "#F1F1F2";
 		        });
 		        
-		        alert("clicked " + d.name);
-		        if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+		    	comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
+		        if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false && comm_blacklist.indexOf(d3.select(this).attr("id")) == -1)
 				{
 					// parse comm_msg and, if requested, bind data attributes from d to comm_msg
 					comm_msg = parse_comm_msg(comm_msg, d);
-					
+					//alert(Object.keys(comm_msg["selector"]["function"]["params"]));
 					// emit comm_msg
 					trigger_emit(this, comm_msg);
 				}
+				
 		        
 		      })
 		

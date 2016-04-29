@@ -133,7 +133,8 @@ function load_map(map_id, map_json, target_container)
 function style_map(
 						map_id,
 						map_json,
-						map_properties // object
+						map_properties, // object
+						comm_msg // see comms.js for documentation on communication message
 				   )
 {
 	/*
@@ -200,13 +201,6 @@ function style_map(
 		var node_opacity = 0.6;
 	else
 		var node_opacity = map_properties.node_opacity;
-	
-	
-	//check if comm_msg is passed
-	if(!map_properties.hasOwnProperty('comm_msg'))
-		var comm_msg = false;
-	else
-		var comm_msg = map_properties.comm_msg;
 	
 	/*
 	//behavior of node marker's on mouse over is function onmouseover
@@ -331,19 +325,21 @@ function style_map(
 				return  d.node.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
 			
-			.style("stroke", "black")
+			.style("stroke", "gray")
 			.on("mouseover",function(d) { 
 											pointer.pointTo(get_entity_value(d.node[node_attr_color], time));
-											
-											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+											comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
+
+											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false && comm_blacklist.indexOf(d3.select(this).attr("id")) == -1)
 											{
 												// parse comm_msg and, if requested, bind data attributes from d to comm_msg
-												comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+												//comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+												comm_msg = parse_comm_msg(comm_msg, d.node);
 												
 												// emit comm_msg
 												trigger_emit(this, comm_msg);
 											}
-			});
+			});	
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
             //.each(function(d){if(d.node.NodeLabel == selected_entities.node){onmouseover()}})
@@ -355,7 +351,8 @@ function load_2d_scatter(
 							scatter_id,
 							scatter_json,
 							scatter_properties, // object
-							target_container
+							target_container, 
+							comm_msg
 						 )
 {
 	
@@ -416,12 +413,6 @@ function load_2d_scatter(
 		var node_opacity = 0.6;
 	else
 		var node_opacity = scatter_properties.node_opacity;
-	
-	//check if comm_msg is passed
-	if(!scatter_properties.hasOwnProperty('comm_msg'))
-		var comm_msg = false;
-	else
-		var comm_msg = scatter_properties.comm_msg;
 	
 	// behavior of node marker's on mouse out is function onmouseout
 	if(!scatter_properties.hasOwnProperty('onmouseout'))
@@ -547,17 +538,20 @@ function load_2d_scatter(
 				
 				return  d.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
-			.style("stroke", "black")
+			.style("stroke", "gray")
 			.on("mouseover", function(d) { 
 								// if value is greater than the maximum colorbar domain point to the maximum of the colorbar domain
 								pointer.pointTo(d3.min([d3.max(color_scale.domain()),get_entity_value(d[node_attr_color], time)]));
 								
+								comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
 								// if this element has not emitted a message for this mouseover event, then emit
-								if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false)
+								
+								if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false && comm_blacklist.indexOf(d3.select(this).attr("id")) == -1)
 								{
 									// parse comm_msg and, if requested, bind data attributes from d to comm_msg
 									// use {"NodeLabel":"80202_5"} as a test substitute for d; will remove when the rest of nodes ' data is generated 
-									comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+									//comm_msg = parse_comm_msg(comm_msg, {"NodeLabel":"80202_5"});
+									comm_msg = parse_comm_msg(comm_msg, d);
 									
 									// emit comm_msg
 									trigger_emit(this, comm_msg);

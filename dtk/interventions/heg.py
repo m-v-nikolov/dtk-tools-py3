@@ -1,4 +1,4 @@
-def heg_release(cb):
+def heg_release(cb, released_number, num_repetitions = 13, timesteps_between_reps = 14):
     """
     Homing endonucleouse genetic intervention.
 
@@ -21,14 +21,14 @@ def heg_release(cb):
                          "HEG": "NotMated"
                      },
                      "Released_HEGs": ["FULL", "NotMated"],
-                     "Released_Number": 500, 
+                     "Released_Number": released_number, 
                      "Released_Species": "arabiensis", 
                      "Cost_To_Consumer": 200,
                      "Cost_To_Consumer_Citation" : "Alphey et al Vector Borne Zoonotic Dis 2010 10 295 by projecting 1979 An albimanus cost in El Salvador to 2008 dollars",
                      "class": "MosquitoRelease"
                 }, 
-                "Number_Repetitions": 52, 
-                "Timesteps_Between_Repetitions": 7,
+                "Number_Repetitions": num_repetitions, 
+                "Timesteps_Between_Repetitions": timesteps_between_reps,
                 "class": "StandardInterventionDistributionEventCoordinator"
            }, 
            "Event_Name": "MosquitoRelease", 
@@ -41,3 +41,7 @@ def heg_release(cb):
       }
 
     cb.add_event(heg_release_event)
+    
+    return {'num_released':released_number,
+            'num_repetitions':num_repetitions,
+            'timesteps_btw_reps':timesteps_between_reps}
