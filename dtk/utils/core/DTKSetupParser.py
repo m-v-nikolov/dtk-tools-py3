@@ -1,5 +1,4 @@
 import os
-import pwd
 import sys
 from ConfigParser import ConfigParser
 
@@ -22,7 +21,11 @@ def DTKSetupParser(setup_file=''):
     dtk_setup = ConfigParser({'password':''})
     dtk_setup.read(setup_file)
 
-    user = os.environ['USERNAME'] if sys.platform == 'win32' else pwd.getpwuid(os.geteuid())[0]
+    if sys.platform == 'win32':
+        user = os.environ['USERNAME']
+    else:
+        import pwd
+        user = pwd.getpwuid(os.geteuid())[0]
 
     setup = SetupParser()
     for section in dtk_setup.sections():
