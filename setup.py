@@ -12,7 +12,7 @@ setup(name='simtools',
           'pandas',
           'psutil>=3.1.1'
       ],
-      package_data = { '': ['simtools_setup.cfg'] },
+      package_data = { '': ['simtools.cfg'] },
       zip_safe=False)
 
 setup(name='dtk',
