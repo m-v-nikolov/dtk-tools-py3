@@ -26,6 +26,7 @@ def update_calib_args(args, calib_args):
     if args.node_group:
         calib_args['node_group'] = args.node_group
 
+    print calib_args
 
 def run(args):
     manager, calib_args = get_calib_manager_args(args)
