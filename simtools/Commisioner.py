@@ -49,7 +49,7 @@ class CompsSimulationCommissioner(threading.Thread):
     '''
 
     def __init__(self, exp_id, maxThreadSemaphore):
-        SimulationCommissioner.__init__(self)
+        threading.Thread.__init__(self)
         self.exp_id = exp_id
         self.maxThreadSemaphore = maxThreadSemaphore
         self.sims = []
