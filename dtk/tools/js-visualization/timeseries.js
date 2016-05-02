@@ -9,7 +9,8 @@
 
 function load_timeseries(ts_id, ts_type, colors, special, target_container, comm_msg)
 {
-	target_container = typeof target_container !== 'undefined' ? target_container : "body";
+	var target_container = typeof target_container !== 'undefined' ? target_container : "body";
+	var special = typeof special !== 'undefined' ? special : "unspecified";
 	
 	var margin = {top: 20, right: 350, bottom: 100, left: 50},
     margin2 = { top: 430, right: 150, bottom: 20, left: 40 },
@@ -104,7 +105,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		      
 		    if(name !== "Special")
 		    	isVisible = false; 
-		      
+		   
 		    return {
 		      name: name, // "name": the tsv headers except date; might change 'name' to 'header'
 		      ts_color: color(name),
