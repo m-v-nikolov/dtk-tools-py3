@@ -67,10 +67,9 @@ function load_map(map_id, map_json, target_container, params)
 		
 		mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>'; 
 		 
-		tile_layer = L.tileLayer(
-					'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-					maxZoom: 18,
-					}).addTo(map);
+		tile_layer = L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+	   	  }).addTo(map);
 		
 		
 		/* Initialize the SVG layer */
@@ -171,7 +170,7 @@ function style_map(
 	 
 	// base layer is always the first one in the layers array
 	if(!map_properties.hasOwnProperty('base_tile_layer'))
-		var base_tile_layer = maps[map_id]["layers"][0];
+		var base_tile_layer = false;
 	else
 		var base_tile_layer = map_properties.base_tile_layer;
 	
@@ -288,9 +287,12 @@ function style_map(
 	var map_layers = maps[map_id]["layers"];
 
 	// use a new base layer for the map; (by default use same base layer)
-	map.removeLayer(map_layers[0]); 
-	map_layers.unshift(base_tile_layer);
-	base_tile_layer.addTo(map);	
+	if (base_tile_layer)
+	{
+		map.removeLayer(map_layers[0]); 
+		map_layers.unshift(base_tile_layer);
+		base_tile_layer.addTo(map);
+	}
 	
 	
 	// add additional layers to the map (useful to add roads, etc.); by default no new additional layers are provided
@@ -315,7 +317,7 @@ function style_map(
 	
 	var color_bar_orientation = "vertical";
 	
-	if(node_attr_2_color)
+	if(node_attr_2_color && d3.select("#colorbar_container_"+map_id).empty())
 	{
 		var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
 			    .origin([35,-5])

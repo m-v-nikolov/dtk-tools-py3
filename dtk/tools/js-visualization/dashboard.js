@@ -354,8 +354,6 @@ function load_maps(map_data_file)
 					   */
 			   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
 			   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
-					   //node_attr_2_stroke : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
-					   //node_attr_2_opacity : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])]
 			   	},
 			   	{
 			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
