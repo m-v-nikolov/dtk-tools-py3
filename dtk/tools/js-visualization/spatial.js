@@ -42,10 +42,17 @@ var global_time_idx = 0;
 
 
 
-function load_map(map_id, map_json, target_container)
-{
-	    
+function load_map(map_id, map_json, target_container, params)
+{	
 		target_container = typeof target_container !== 'undefined' ? target_container : "body";
+		
+		var height = 400;
+		var width = 500;
+		
+		if(params.hasOwnProperty("height"))
+			height = params["height"];
+		if(params.hasOwnProperty("width"))
+			width = params["width"];
 	
 		var map_decorations_container = d3.select(target_container).append("div")
 										.attr("id","map_decorations_container_"+map_id)
@@ -53,7 +60,7 @@ function load_map(map_id, map_json, target_container)
 	
 		var map_container = d3.select("#map_decorations_container_" + map_id).append("div")
 							.attr("id","map_container_"+map_id)
-							.style({height:"400px", width:"500px", float:"left"}); // expose width/height as parameters?
+							.style({height:height + "px", width:width + "px", float:"left"}); // expose width/height as parameters?
 	
 		var map = L.map("map_container_"+map_id, { attributionControl:false }).setView([47.5826601,-122.1533733], 13);
 	    
@@ -113,7 +120,8 @@ function load_map(map_id, map_json, target_container)
 			
 			map.on("viewreset", update);
 			update();
-		
+			
+			
 			function update() {
 				node.attr("transform", 
 				function(d) { 
@@ -124,6 +132,7 @@ function load_map(map_id, map_json, target_container)
 			}
 			
 			map.fitBounds(bounds);
+			
 		});// end d3.json(...)
 
 	return
@@ -186,21 +195,80 @@ function style_map(
 	
 	// map the value of entity node's specific attribute to node marker color
 	if(!map_properties.hasOwnProperty('node_attr_2_color'))
-		var node_attr_2_color = ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])];
+	{
+		var node_color = "gray";
+		var node_attr_2_color = false;
+	}
 	else
+	{
 		var node_attr_2_color = map_properties.node_attr_2_color;
+		var node_attr_color = node_attr_2_color[0];
+		var color_scale = node_attr_2_color[1];
+		
+		// add attribute node_attr_2_color to map object
+		maps[map_id]["node_attr_2_color"] = node_attr_2_color
+	}
 	
 	// map the value of entity node's specific attribute to node marker radius
 	if(!map_properties.hasOwnProperty('node_attr_2_radius'))
-		var node_attr_2_radius = ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])];
+	{
+		var node_radius = 500;
+		var node_attr_2_radius = false;
+	}
 	else
+	{
 		var node_attr_2_radius = map_properties.node_attr_2_radius;
+		var node_attr_radius = node_attr_2_radius[0];
+		var radius_scale = node_attr_2_radius[1];
+		
+		// add attribute node_attr_2_radius to map object
+		maps[map_id]["node_attr_2_radius"] = node_attr_2_radius
+	}
+	
+	if(!map_properties.hasOwnProperty('node_attr_2_stroke'))
+	{
+		var node_stroke = "gray";
+		var node_attr_2_stroke = false;
+	}
+	else
+	{
+		var node_attr_2_stroke = map_properties.node_attr_2_stroke;
+		var node_attr_stroke = node_attr_2_stroke[0];
+		var stroke_scale = node_attr_2_stroke[1];
+		
+		// add attribute node_attr_2_radius to map object
+		maps[map_id]["node_attr_2_stroke"] = node_attr_2_stroke
+	}
 	
 	// node marker's opacity on map
-	if(!map_properties.hasOwnProperty('node_opacity'))
+	if(!map_properties.hasOwnProperty('node_attr_2_opacity'))
+	{
 		var node_opacity = 0.6;
+		var node_attr_2_opacity = false;
+	}
 	else
-		var node_opacity = map_properties.node_opacity;
+	{
+		var node_attr_2_opacity = map_properties.node_attr_2_opacity;
+		
+		var node_attr_opacity = node_attr_2_opacity[0];
+		var opacity_scale = node_attr_2_opacity[1];
+		
+		// add attribute node_attr_2_color to map object
+		maps[map_id]["node_opacity"] = node_attr_opacity
+	}
+	
+	// if node attribute has a temporal dimension, pick how to fill in missing values
+	// currently available options are
+	// "closest_time": pick the value for the closest available time to the missing one (default)
+	// "zero": fill in the missing values with zeros
+	if(!map_properties.hasOwnProperty('missing_values'))
+	{
+		var missing_values = "closest_time";
+	}
+	else
+	{
+		var missing_values = map_properties.missing_values;
+	}
 	
 	/*
 	//behavior of node marker's on mouse over is function onmouseover
@@ -236,22 +304,7 @@ function style_map(
 	else
 		time = global_time_idx;
 	
-	var node_attr_color = node_attr_2_color[0];
-	var color_scale = node_attr_2_color[1];
 
-	var node_attr_radius = node_attr_2_radius[0];
-	var radius_scale = node_attr_2_radius[1];
-	
-	
-	// add attribute node_attr_2_radius to map object
-	maps[map_id]["node_attr_2_radius"] = node_attr_2_radius
-	
-	// add attribute node_attr_2_color to map object
-	maps[map_id]["node_attr_2_color"] = node_attr_2_color
-	
-	// add attribute node_attr_2_color to map object
-	maps[map_id]["node_opacity"] = node_opacity
-	
 	// add attribute time to map object
 	maps[map_id]["time"] = time
 
@@ -262,26 +315,29 @@ function style_map(
 	
 	var color_bar_orientation = "vertical";
 	
-	var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
-		    .origin([35,-5])
-		    .thickness(100)
-		    .scale(color_scale).barlength(map_height).thickness(20)
-		    .orient(color_bar_orientation)
-		    .margin({top:20, left:30, right:55, bottom:10});
-	
-	var bar_container =  d3.select("#map_decorations_container_"+map_id)
-						.append("div")
-						.attr("id", "colorbar_container_"+map_id)
-						.attr("class", "colorbar_container");
-	
-	var bar = d3.select("#colorbar_container_"+map_id)
-						.append("svg")
-						.attr("width", 100)
-						.attr("height", map_height + 10)
-						.append("g")
-						.attr("id","colorbar_"+map_id);
-	
-	var pointer = d3.selectAll("#colorbar_" + map_id).call(colorbar)
+	if(node_attr_2_color)
+	{
+		var colorbar = Colorbar() // expose colorbar parameters? probably not needed...
+			    .origin([35,-5])
+			    .thickness(100)
+			    .scale(color_scale).barlength(map_height).thickness(20)
+			    .orient(color_bar_orientation)
+			    .margin({top:20, left:30, right:55, bottom:10});
+		
+		var bar_container =  d3.select("#map_decorations_container_"+map_id)
+							.append("div")
+							.attr("id", "colorbar_container_"+map_id)
+							.attr("class", "colorbar_container");
+		
+		var bar = d3.select("#colorbar_container_"+map_id)
+							.append("svg")
+							.attr("width", 100)
+							.attr("height", map_height + 10)
+							.append("g")
+							.attr("id","colorbar_"+map_id);
+		
+		var pointer = d3.selectAll("#colorbar_" + map_id).call(colorbar)
+	}
 	
 	
 	// traverse nodes and set respective map markers style
@@ -299,35 +355,65 @@ function style_map(
 			d3.select("#" + node_key)
 			.attr("fill", function (d) {
                 var c = 'white';
-                var val = get_entity_value(d.node[node_attr_color], time);
-
+                if(node_attr_2_color)
+                	var val = fill_missing_values(d.node[node_attr_color], time, missing_values);
+                else
+                	return node_color;
             	if (val >= 0) { c = color_scale(val); }
             	else { c = 'gray'; }
             	
             	return c;
 			})
+			.attr("stroke", function (d) {
+                var c = 'white';
+                if(node_attr_2_stroke)
+                	var val = fill_missing_values(d.node[node_attr_stroke], time, missing_values);
+                else
+                	return node_stroke;
+
+            	if (val >= 0) { c = stroke_scale(val); }
+            	else { c = 'gray'; }
+            	
+            	return c;
+			})
 			.attr("r", function (d) { 
-				var val = get_entity_value(d.node[node_attr_radius], time);
+				if(node_attr_2_radius)
+					var val = fill_missing_values(d.node[node_attr_radius], time, missing_values);
+				else
+					radius_scale(node_radius);
 				return radius_scale(val);
 			})
-			.attr("opacity", node_opacity)
+			.attr("opacity", function(d){
+				if(node_attr_2_opacity)
+					var val = fill_missing_values(d.node[node_attr_opacity], time, missing_values);
+				else
+					return node_opacity;
+					
+				return opacity_scale(val);
+			})
 			//all of the below options (e.g. tooltip attributes) can be exposed on per map basis as map styling properties)
 			.attr("data-toggle", "tooltip")
 			.attr("data-placement", "top")
 			.attr("emitted", false)
 			.attr("html", true) // tooltip style can be further improved via bootstrap css options
+			/*
 			.attr("title", function(d){
 				
 				var val = get_entity_value(d.node[node_attr_color], time);
+				
 				if (val < 0) { val = 'N/A'; }
 			    else { val = val } // keep else as place holder; might want to expose formatting options as function arguments to get something along the lines of d3.format('%')(val);
 				
 				return  d.node.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
+			*/
 			
 			.style("stroke", "gray")
 			.on("mouseover",function(d) { 
-											pointer.pointTo(get_entity_value(d.node[node_attr_color], time));
+											if(node_attr_2_color)
+											{
+												pointer.pointTo(get_entity_value(d.node[node_attr_color], time));
+											}
 											comm_msg = typeof comm_msg !== 'undefined' ? comm_msg : false;
 
 											if (typeof(trigger_emit) == "function" && typeof(parse_comm_msg) == "function" && comm_msg !== false && comm_blacklist.indexOf(d3.select(this).attr("id")) == -1)
@@ -591,6 +677,22 @@ function load_2d_scatter(
 }
 
 	
+// helper function resolving missing values method
+function fill_missing_values(entity, time, missing_values)
+{
+	if(missing_values == "closest_time")
+		return get_entity_value(entity, time);
+	else
+		return default_missing_values(0.0);
+}
+
+
+//helper function setting missing values to provided default value
+function default_missing_values(default_val)
+{
+	return default_val;
+}
+
 // helper function: given an entity check if it has temporal dimension and extract the proper value at
 // the specified time (or just get the spatial scalar if the entity does not have temporal dimension)
 function get_entity_value(entity, time)
@@ -619,7 +721,7 @@ function get_entity_value(entity, time)
     }
     else
     	val = entity;
-    
+    //alert(val);
     return val;
 }
 	

@@ -3,6 +3,7 @@ var gazeteer_select = "unselect";
 //var node_select = "80202_5";
 var node_select = "unselect";
 var time_idx_select = 6*365 + 160;
+var params_select = []; //{className : "unselect", fill : [], "toggled":false};
 
 function load_dashboard(gazetteer_file, gazetteer_header_file, map_data_file)
 {
@@ -107,18 +108,93 @@ function load_gazeteer(gazetteer_file, gazetteer_header, map_data_file)
         });
 }
 
+
+// this all can be done in a more generic, configurable, better styled way; 
+// for now opt for proof of concept; this is an example of more complicated behavior than
+// most people would likely want from a dashboard.
+function style_selected_hm_param(params)
+{	
+	
+	var selected_hm_param = ""
+	if (params.hasOwnProperty("name"))
+		selected_hm_param = params["name"];
+	else
+		return;
+	
+	var ts_color = ""
+	if (params.hasOwnProperty("ts_color"))
+	{
+		ts_color = params["ts_color"];
+	}
+	
+	
+	// get array of param class names that have been selected
+	var selected_params_class_names = params_select.map(function(s){ return s.className; });
+	
+	// if the newly selected param class name has not been selected before, add it to selection
+	var selected_idx = selected_params_class_names.indexOf(selected_hm_param);
+	
+	if(selected_idx == -1)
+	{
+		// store the original fill color/style of the elements matching the selected param className so that it could be restored later when not selected
+		var selected_param_elements = document.getElementsByClassName(selected_hm_param);
+		
+		var fill = [];
+		for(var i = 0; i < selected_param_elements.length; i++)
+			fill.push(selected_param_elements[i].style.fill);
+		
+		params_select.push({className : selected_hm_param, fill : fill, "toggled":true});
+		selected_idx = params_select.length - 1; // update selected index to point to the index of the newly selected param class
+	}
+	else // toggle the corresponding selected param 
+		params_select[selected_idx].toggled = !params_select[selected_idx].toggled; 
+	
+	// get the selected param 
+	var param_select = params_select[selected_idx];
+	
+	// get all elements matching className
+	var selected_param_elements = document.getElementsByClassName(param_select.className);
+	
+	// change the style of the elements matching the selected param className depending on whether param was toggled on or off
+	if (param_select.toggled)
+	{
+		// if the selected param is toggled on, change style of all elements matching the selected parameter className to the toggled on style
+		// here, we use the colors passed to the timeseries widget, and return by the callback but we do not need to
+		for(var i = 0; i < selected_param_elements.length; i++)
+			selected_param_elements[i].style.fill = ts_color;
+	}
+	else
+	{
+		// if the selected parameter is toggled off; restore the original style of all elements matching the selected parameter className
+		for(var i = 0; i < param_select.fill.length; i++)
+			selected_param_elements[i].style.fill = param_select.fill[i];
+	}
+}
+
+
+
+
 function load_node_charts(params)
 {
+	
+	// only need to do anything if selection changed
+	if (params.hasOwnProperty("NodeLabel") && node_select == params["NodeLabel"])
+		return;
+	
+	// restore style of nodes
 	selected_nodes = document.getElementsByClassName(node_select);
 	for (var i = 0; i < selected_nodes.length; i++)
 	{
 		var node = selected_nodes[i];
 		node.style.stroke = "gray";
 	}
-
-	if (params.hasOwnProperty("NodeLabel"))		
-		node_select = params["NodeLabel"];
 	
+	node_select = params["NodeLabel"];
+	
+	// re-initialize parameters to be selected relevant for this node
+	params_select = []
+
+
 	selected_nodes = document.getElementsByClassName(node_select);
 	
 	for (var i = 0; i < selected_nodes.length; i++)
@@ -138,27 +214,22 @@ function load_node_charts(params)
 	}
 
 	
-	// only create a new chart if the existing one is not the same
-	if (d3.select("#hm_" + node_select).empty())
-	{
-		// clear the existing heatmap
-		d3.select(".hm_container").remove()
-		
-		// draw the new heatmap
-		heatmap(node_select);
-	}
+	//alert(" drawing heatmap for #hm_" + node_select)
+	// clear the existing heatmap
+	d3.select(".hm_container").remove()
 	
+	// draw the new heatmap
+	heatmap(node_select);
 
-	if (d3.select("#ts_" + node_select).empty())
-		// clear the existing ts
-		d3.select(".ts_container").remove()
-		
-		// draw the new timeseries
-		timeseries(node_select);
+	// clear the existing ts
+	d3.select(".ts_container").remove()
+	
+	// draw the new timeseries
+	timeseries(node_select);
 }
 
 
-// this function can be made more generic but for no sufficies
+// this function can be made more generic but for now suffices
 // the user-programmed dashboard "knows" about the specific parameters the user is designing it for
 function emit_param_key_by_params(params)
 {
@@ -175,7 +246,6 @@ function emit_param_key_by_params(params)
 		event = params["event"];
 	
 	// generic emit is implemented in comms.js
-	//emit("click", {"param":"funestus_sc" + "_" + funestus_sc + "_arabiensis_sc_" + arabiensis_sc});
 	emit(
 			{
 				"event":event,
@@ -196,8 +266,8 @@ function emit_param_key_by_header(params)
 		event = params["event"];
 	
 	header = header.replace(" ", "").replace("/", "");
+	
 	// generic emit is implemented in comms.js
-	//emit("click", {"param":"funestus_sc" + "_" + funestus_sc + "_arabiensis_sc_" + arabiensis_sc});
 	emit(
 			{
 				"event":event,
@@ -243,17 +313,11 @@ function timeseries(node_label)
 			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
 			'observed',
 			".resourcecontainer.timeseries",
-			//trigger_emit(this, "mouseover", {"param": d.name.replace(" ", "").replace("/", "")});
 			{
-	   			"selector":{"function": {"func":emit_param_key_by_header, "params":{"event":"mouseover"}}},
-	   			"attributes_req":["name"] // request the header name
+	   			//"selector":{"function": {"func":emit_param_key_by_header, "params":{"event":"mouseover"}}},
+				"selector":{"function": {"func":style_selected_hm_param, "params":{}}},
+	   			"attributes_req":["name", "ts_color"] // request the header name
 			}
-			/*
-			{
-	 			"event":"mouseover",
-	 			"selector":{"param": "funestus_sc_30_arabiensis_sc_117"}
-			}
-			*/
 	);		
 
 }
@@ -270,7 +334,8 @@ function load_maps(map_data_file)
 	load_map(
 	 		   'rdt_obs', // map id 
 	 		   gazetteer_map, 
-	 		   ".resourcecontainer.maps" //target container
+	 		   ".resourcecontainer.maps", //target container
+	 		   {}
 	);
 
 	style_map(
@@ -278,16 +343,24 @@ function load_maps(map_data_file)
 	 		   gazetteer_map,
 	 		   {
 					   time_idx : time_idx_select,
+					   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+							attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+					   	  }),
+					   /*
 					   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
 											maxZoom: 20,
 											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 										}),
-			   		   node_opacity : 0.6
+					   */
+			   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
+			   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
+					   //node_attr_2_stroke : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
+					   //node_attr_2_opacity : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])]
 			   	},
 			   	{
 			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
 			   			"attributes_req":["NodeLabel"]
-		   		 }
+		   		}
 	);
 	
 	
@@ -295,7 +368,8 @@ function load_maps(map_data_file)
 	load_map(
 			   'rdt_sim', 
 			   gazetteer_map,
-			   ".resourcecontainer.maps" //target container
+			   ".resourcecontainer.maps", //target container
+			   {}
 	);
 
 	style_map(
@@ -303,12 +377,17 @@ function load_maps(map_data_file)
 		    gazetteer_map,
 		    {
 			   time_idx : time_idx_select,
+			   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+					attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			   	  }),
+			   /*
 			   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
 									maxZoom: 20,
 									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 								}),
+			   */
 			   node_attr_2_color : ["RDT_sn_sim", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-	   		   node_opacity : 0.6
+			   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
 		    },
 	   		{
 			   			"selector":{"function": {"func":load_node_charts, "params":{}}},
@@ -321,7 +400,8 @@ function load_maps(map_data_file)
    load_map(
 			   'funestus', 
 			   gazetteer_map,
-			   ".resourcecontainer.maps" //target container
+			   ".resourcecontainer.maps", //target container
+			   {}
    );
 	
    style_map(
@@ -332,8 +412,8 @@ function load_maps(map_data_file)
 			   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
 									attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 							   	  }),
-	   		   node_opacity : 0.6,
-	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])]
+	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])],
+		       node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
 		    },
 		    {
 		   			"selector":{"function": {"func":load_node_charts, "params":{}}},

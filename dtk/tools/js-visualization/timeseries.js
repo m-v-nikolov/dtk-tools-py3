@@ -54,7 +54,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 	var maxY;
 	
 	var ts_container = d3.select(target_container).append("div")
-							.attr("id","ts_container_" + ts_id)
+							.attr("id","ts_" + ts_id)
 							.attr("class", "ts_container");
 	
 	var svg = ts_container.append("svg")
@@ -107,6 +107,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		      
 		    return {
 		      name: name, // "name": the tsv headers except date; might change 'name' to 'header'
+		      ts_color: color(name),
 		      values: data.map(function(d) { // "values": which has an array of the times and values
 		        return {
 		          date: d.date, 
