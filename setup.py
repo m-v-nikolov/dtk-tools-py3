@@ -10,9 +10,12 @@ setup(name='simtools',
       install_requires=[
           'matplotlib',
           'pandas',
-          'psutil>=3.1.1'
+          'psutil>=3.1.1',
+          'seaborn',
+          'statsmodels',
+          'npyscreen'
       ],
-      package_data = { '': ['simtools.cfg'] },
+      package_data={'': ['simtools.cfg']},
       zip_safe=False)
 
 setup(name='dtk',
@@ -24,11 +27,12 @@ setup(name='dtk',
       packages=find_packages(),
       install_requires=[
           'simtools'
+
       ],
-      entry_points = {
-        'console_scripts': ['dtk = dtk.commands:main']
+      entry_points={
+          'console_scripts': ['dtk = dtk.commands:main']
       },
-      package_data = { '': ['dtk_setup.cfg'] },
+      package_data={'': ['dtk_setup.cfg']},
       zip_safe=False)
 
 setup(name='calibtool',
@@ -42,7 +46,7 @@ setup(name='calibtool',
           'scipy',
           'simtools'
       ],
-      entry_points = {
-        'console_scripts': ['calibtool = calibtool.commands:main']
+      entry_points={
+          'console_scripts': ['calibtool = calibtool.commands:main']
       },
       zip_safe=False)
