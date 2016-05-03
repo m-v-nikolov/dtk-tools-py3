@@ -94,7 +94,7 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     def cast_value(self,value):
         """
-        Try to cas a value to float or int or string
+        Try to cast a value to float or int or string
         :param value:
         :return:
         """
