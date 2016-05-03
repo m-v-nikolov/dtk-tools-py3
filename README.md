@@ -8,11 +8,20 @@ Modules contained in this package are intended to:
 
 #### Installation
 
-On Windows, from an administrator command-prompt, run the following from the current directory: `python setup.py develop`.
+To install the dtk-tools, first clone the repository:
+```
+git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+```
+
+Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
+
+From a command-prompt, run the following from the current directory:
+```
+python -m pip install --upgrade pip
+pip install -e . --find-links=./install
+```
 
 Also on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example: `C:\github\dtk-tools\dtk`.
-
-Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, we have included the win_amd64 version 1.9.2+mkl of the numpy wheel locally.  On other platforms, it is required to have installed that package first, e.g. `pip install numpy`
 
 #### Setup
 
