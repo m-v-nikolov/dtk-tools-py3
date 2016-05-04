@@ -18,10 +18,12 @@ Make sure you have Python 2.7 installed (available [here](https://www.python.org
 From a command-prompt, run the following from the current directory:
 ```
 python -m pip install --upgrade pip
-pip install -e . --find-links=./install
+pip install -e . 
 ```
 
 Also on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example: `C:\github\dtk-tools\dtk`.
+
+If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Setup
 
