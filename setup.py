@@ -13,7 +13,8 @@ setup(name='simtools',
           'psutil>=3.1.1',
           'seaborn',
           'statsmodels',
-          'npyscreen'
+          'npyscreen',
+          'curses'
       ],
       package_data={'': ['simtools.cfg']},
       zip_safe=False)
