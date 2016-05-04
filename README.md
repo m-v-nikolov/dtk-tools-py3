@@ -23,6 +23,8 @@ pip install -e . --find-links=./install
 
 Also on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example: `C:\github\dtk-tools\dtk`.
 
+If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
+
 #### Setup
 
 To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `dtk_setup.cfg`.
