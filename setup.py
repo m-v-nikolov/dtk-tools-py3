@@ -19,7 +19,9 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     install_package(os.path.join(install,'seaborn-0.7.0-py2.py3-none-any.whl'))
     install_package(os.path.join(install,'statsmodels-0.6.1-cp27-none-win_amd64.whl'))
     install_package(os.path.join(install,'npyscreen-4.10.5.tar.gz'))
+    install_package(os.path.join(install,'curses-2.2-cp27-none-win_amd64.whl'))
     install_package(os.path.join('psutil'))
+
 
 
 setup(name='simtools',
