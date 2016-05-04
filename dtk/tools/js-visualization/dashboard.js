@@ -103,8 +103,9 @@ function load_gazeteer(gazetteer_file, gazetteer_header, map_data_file)
 			d3.select("#time_idx_" + d).attr("class", "time_idx_selected");
             time_idx_select = d;            
             load_maps(map_data_file); // load widgets with data state at the given time idx
+            
             if(node_select != "unselect")
-	               load_node_charts({});
+            	load_node_charts({});
         });
 }
 

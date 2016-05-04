@@ -48,11 +48,14 @@ function load_map(map_id, map_json, target_container, params)
 		
 		var height = 400;
 		var width = 500;
+		var node_attrs_img = false
 		
 		if(params.hasOwnProperty("height"))
 			height = params["height"];
 		if(params.hasOwnProperty("width"))
 			width = params["width"];
+		if(params.hasOwnProperty("node_attrs_img"))
+			node_attrs_img = params["node_attrs_img"];
 	
 		var map_decorations_container = d3.select(target_container).append("div")
 										.attr("id","map_decorations_container_"+map_id)
@@ -87,14 +90,48 @@ function load_map(map_id, map_json, target_container, params)
 		
 			var markers = []
 			var nodes = []
+			
+			// for now have a limit of three attribtues to image (i.e. three arrays of nodes) due to geometry limitations; might be able to go to up to 6 with current layout?
+			var nodes_2_imgs = {}
+			var nodes_2_img = []
+						
 			map_nodes.forEach(function(d) {
 				
 				markers.push(new L.LatLng(d.Latitude, d.Longitude))
 				nodes.push({
 								coor:new L.LatLng(d.Latitude, d.Longitude), 
 								node:d
-								}); 	
+								});
+				
+				/*
+				 * 
+				 * node_attrs_img sample format:
+				 * 
+				 * var node_attrs_img = [
+                      {
+                    	  'node_attr_img':"Received_ITN",
+                    	  'img_scale':d3.scale.threshold().domain([0, 10]).range([0, 1, 2, 3]),
+                    	  'img_src':['imgs/net.png', 'imgs/net.png', 'imgs/net.png', 'imgs/net.png']
+                      },
+				 * 
+				 */
+				if(node_attrs_img)
+				{
+					nodes_2_img.push({
+						coor:new L.LatLng(d.Latitude, d.Longitude), 
+						node:d
+					});
+				}
 			})
+			
+			for (var i = 0; i < node_attrs_img.length; i ++)
+			{		
+				nodes_2_imgs[node_attrs_img[i]['node_attr_img']] = {};
+				nodes_2_imgs[node_attrs_img[i]['node_attr_img']]['nodes'] = nodes_2_img;
+			}	
+			
+			
+			maps[map_id]["nodes_2_imgs"] = nodes_2_imgs;
 			
 			var bounds = new L.LatLngBounds(markers);
 			
@@ -117,6 +154,23 @@ function load_map(map_id, map_json, target_container, params)
 			.attr("id", function(d) {return get_node_key(d.node.NodeLabel, map_id)})
 			.attr("class", function(d) {return d.node.NodeLabel})
 			
+			for (var i = 0; i < node_attrs_img.length; i ++)
+			{	
+				var node_attr_img = node_attrs_img[i]['node_attr_img'];
+				var nodes = nodes_2_imgs[node_attr_img]['nodes'];
+				
+				nodes_2_imgs[node_attr_img]['markers'] = g.selectAll("." + node_attr_img)
+				.data(nodes)
+				.enter().append("circle")
+				.attr("r", 8.5)  // might expose that as a parameter
+				.attr("id", function(d) {return node_attr_img  + "_" + get_node_key(d.node.NodeLabel, map_id)})
+				.attr("class", function(d) {return node_attr_img  })
+				//.attr("opacity", 1.0)
+				//.attr("fill", "red")
+				.attr("opacity", 0.0)
+				.attr("ttl", 0);
+			}
+				
 			map.on("viewreset", update);
 			update();
 			
@@ -128,6 +182,43 @@ function load_map(map_id, map_json, target_container, params)
 						map.latLngToLayerPoint(d.coor).x +","+ 
 						map.latLngToLayerPoint(d.coor).y +")";
 				})	
+				
+				for (var i = 0; i < node_attrs_img.length; i ++)
+				{
+					var node_attr_img = node_attrs_img[i]['node_attr_img'];
+					var node_2_img = nodes_2_imgs[node_attr_img]['markers']
+					
+					// again, currently only up to three attributes would be displayed due to geometry
+					var offset_x = 0;
+					var offset_y = 0;
+					
+					if(i == 0)
+					{
+						offset_x = -8;
+						offset_y = -8;
+					}
+					else
+					if(i == 1)
+					{
+						offset_x = 8;
+						offset_y = -8;
+					}
+					else
+					if(i == 2)
+					{
+						offset_x = 0;
+						offset_y = -8;
+					}
+					else
+						continue;
+					
+					node_2_img.attr("transform", 
+						function(d) { 
+							return "translate("+ 
+								(map.latLngToLayerPoint(d.coor).x + offset_x) +","+ 
+								(map.latLngToLayerPoint(d.coor).y + offset_y) +")";
+						})	
+				}
 			}
 			
 			map.fitBounds(bounds);
@@ -257,41 +348,16 @@ function style_map(
 	}
 
 	// node marker's background image
-	if(!map_properties.hasOwnProperty('node_attr_2_img'))
+	if(!map_properties.hasOwnProperty('node_attrs_2_img'))
 	{
-		var node_attr_2_img = false;
+		var node_attrs_img = false;
 	}
 	else
 	{
-		var node_attr_2_img = map_properties.node_attr_2_img;
-		
-		var node_attr_img = node_attr_2_img[0];
-		var img_scale = node_attr_2_img[1];
-		var img_src = node_attr_2_img[2];
-		
-		// setup an image pattern if node attribute to image map has been specified and patterns have not been created before
-		if(node_attr_2_img && d3.select("#pattern_" + node_attr_img).empty())
-		{	
-			var pattern_svg = d3.select("body").append("svg").attr("id", "pattern_" + node_attr_img);
-			var pattern_defs = pattern_svg.append("defs").attr("id", "defs_" + node_attr_img);
-			pattern_defs.selectAll("pattern")
-			.data(img_scale.range())
-			.enter().append("pattern")
-				.attr("id", function(d) { return node_attr_img + "_" + d; })
-				.attr("x", 0)
-				.attr("y", 0)
-				.attr("height", 40)
-				.attr("width", 40)
-				.insert("image")
-				  .attr("x", 0)
-				  .attr("y", 0)
-				  .attr("width", 40)
-				  .attr("height", 40)
-				  .attr("xlink:href", function(d) { return img_src[d]; });
-		}
-		
+		var node_attrs_img = map_properties.node_attrs_2_img;
+
 		// add attribute node_attr_2_img to map object
-		maps[map_id]["node_attr_2_img"] = node_attr_2_img;
+		maps[map_id]["node_attrs_2_img"] = node_attrs_img;
 	}
 	
 	// if node attribute has a temporal dimension, pick how to fill in missing values
@@ -386,6 +452,8 @@ function style_map(
 		// if the attributes of any nodes on this map will be changed select the relevant nodes
 		// for loops are more efficient than forEach... could switch later if optimization is premature
 		
+		// may want to check if the nodes_2_img array is actually there...
+		//var map_img_nodes = maps[map_id]["nodes_2_img"];
 		for(j = 0; j < map_nodes.length; j ++)
 		{
 			
@@ -393,41 +461,27 @@ function style_map(
 			
 			var node_key = get_node_key(node.NodeLabel, map_id);
 			
-			if(node_attr_2_img)
+			if(node_attrs_img)
 			{
-				var node_attr_img_marker = d3.select("#" + node_attr_img + "_" + node_key);
 				
-				if(node_attr_img_marker.empty())
+				for (var i = 0; i < node_attrs_img.length; i ++)
 				{
-					var node_marker = d3.select("#" + node_key);
-					var node_marker_w = node_marker.attr("width");
-					var node_marker_h = node_marker.attr("height");
-					var node_marker_x = node_marker.attr("x");
-					var node_marker_y = node_marker.attr("y");
-					var node_marker_data = node_marker.datum();
-					
-					
-					if(node_marker_data.node.hasOwnProperty(node_attr_img))
-					{
-						
-						d3.select(node_marker.node().parentNode)
-							.data(node_marker_data)
-							.enter()
-							.append("rect")
-							.attr("x", node_marker_x - node_marker_w/2)
-							.attr("y", node_marker_y - node_marker_h/2)
-							.attr("height", 40)
-							.attr("width", 40)
-							.attr("ttl", 10)
-							.attr("fill", function (d) {
+					var node_attr_img = node_attrs_img[i]['node_attr_img'];
+					var img_scale = node_attrs_img[i]['img_scale'];
+					var img_src = node_attrs_img[i]['img_src'];
+				
+					var node_attr_img_marker = d3.select("#" + node_attr_img + "_" + node_key)
+						.attr("fill", function (d) {
+							if(d.node.hasOwnProperty(node_attr_img))
+							{
 								var val = fill_missing_values(d.node[node_attr_img], time, false);
-			            	
-								if (val) // if no value is returned (i.e. val is false) use attribute to color if provided
+	
+								if (val) // if a val is provided reset ttl
 								{
 									d3.select(this).attr("ttl", 10);
 									return "url(#" + node_attr_img + "_" + img_scale(val) +")";
 								}
-								else
+								else // if no value is returned (i.e. val is false) decrement ttl
 								{
 									var ttl = d3.select(this).attr("ttl");
 									
@@ -435,20 +489,21 @@ function style_map(
 										d3.select(this).attr("ttl", ttl - 1);
 									return d3.select(this).attr("fill");
 								}
-							})
-							.attr("opacity", 1.0);
-					}
-					else
-					{
-						node_attr_img_marker
+							}
+							else
+							{
+								// if the node does not have the requested image attribute; set its ttl to 0; this would render it infvisible )opacity woul dbe 0.0_
+								d3.select(this).attr("ttl", 0);
+								
+							}
+						})
 						.attr("opacity", function(){
+								
+								var ttl = d3.select(this).attr("ttl");
+								
+								return ttl/10.0; // might want to expose decay function
 							
-							var ttl = d3.select(this).attr("ttl");
-							
-							return ttl/10.0;
-						
 						});
-					}		
 				}
 			}
 			
@@ -566,7 +621,8 @@ function style_map(
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
             //.each(function(d){if(d.node.NodeLabel == selected_entities.node){onmouseover()}})
-		}	
+		} // end looping over nodes	
+		
 	}); // end d3.json(...)
 }
 
