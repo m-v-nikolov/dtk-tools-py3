@@ -15,7 +15,7 @@ function load_dashboard(map_data_file)
 	 		   }
 	);
 	
-	/*
+	
 	load_map(
 	 		   'anim_pop', // map id 
 	 		   map, 
@@ -25,15 +25,15 @@ function load_dashboard(map_data_file)
 	 			   height:400
 	 		   }
 	);	
-	*/
+	
 	
 	load_timeseries(
 			'hhs', 
 			'prevalence', 
 			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
 			'avg_itn_hh',
-			".resourcecontainer.maps" //target container,
-			//".resourcecontainer.timeseries"
+			//".resourcecontainer.maps" //target container,
+			".resourcecontainer.timeseries"
 			
 			/*{
 	   			//"selector":{"function": {"func":emit_param_key_by_header, "params":{"event":"mouseover"}}},
@@ -45,7 +45,7 @@ function load_dashboard(map_data_file)
 	
 	
 	time = 0;
-	int_id = setInterval(load_snapshot, 250);
+	int_id = setInterval(load_snapshot, 125);
 }
 
 
@@ -66,7 +66,7 @@ function load_snapshot()
 				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
 			    }
 		);
-		/*
+		
 		style_map(
 			    'anim_pop', 
 			    map,
@@ -79,7 +79,7 @@ function load_snapshot()
 			       node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
 			    }
 		);	
-		*/
+		
 		time ++;
 		
 	}

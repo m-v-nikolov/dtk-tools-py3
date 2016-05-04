@@ -10,12 +10,13 @@ function load_dashboard(map_data_file)
 	 		   map, 
 	 		   ".resourcecontainer.maps", //target container,
 	 		   {
-	 			   width:window.innerWidth,
+	 			   width:window.innerWidth-170,
 	 			   height:window.innerHeight
 	 		   }
 	);	
-	time = 0;
-	int_id = setInterval(load_snapshot, 250);
+	time = 0
+	//load_snapshot();
+	int_id = setInterval(load_snapshot, 125);
 }
 
 function load_snapshot()
@@ -30,8 +31,9 @@ function load_snapshot()
 			    {
 				   time_idx : timesteps[time],
 				   node_attr_2_color : ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-				   //node_attr_2_stroke : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
-				   //node_attr_2_opacity : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])],
+				   //node_attr_2_stroke : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
+				   node_attr_2_img : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range([0, 1, 2, 3]), ['imgs/net1.png', 'imgs/net3.png', 'imgs/net6.png', 'imgs/net9.png']],
+				   //node_attr_2_opacity : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])],
 				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
 			    }
 		);	
@@ -41,6 +43,6 @@ function load_snapshot()
 	}
 	else
 	{
-		clearInterval(intId); 
+		clearInterval(int_id); 
 	}
 }

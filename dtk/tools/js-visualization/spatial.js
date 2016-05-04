@@ -252,8 +252,46 @@ function style_map(
 		var node_attr_opacity = node_attr_2_opacity[0];
 		var opacity_scale = node_attr_2_opacity[1];
 		
-		// add attribute node_attr_2_color to map object
-		maps[map_id]["node_opacity"] = node_attr_opacity
+		// add attribute node_attr_2_opacity to map object
+		maps[map_id]["node_attr_2_opacity"] = node_attr_2_opacity
+	}
+
+	// node marker's background image
+	if(!map_properties.hasOwnProperty('node_attr_2_img'))
+	{
+		var node_attr_2_img = false;
+	}
+	else
+	{
+		var node_attr_2_img = map_properties.node_attr_2_img;
+		
+		var node_attr_img = node_attr_2_img[0];
+		var img_scale = node_attr_2_img[1];
+		var img_src = node_attr_2_img[2];
+		
+		// setup an image pattern if node attribute to image map has been specified and patterns have not been created before
+		if(node_attr_2_img && d3.select("#pattern_" + node_attr_img).empty())
+		{	
+			var pattern_svg = d3.select("body").append("svg").attr("id", "pattern_" + node_attr_img);
+			var pattern_defs = pattern_svg.append("defs").attr("id", "defs_" + node_attr_img);
+			pattern_defs.selectAll("pattern")
+			.data(img_scale.range())
+			.enter().append("pattern")
+				.attr("id", function(d) { return node_attr_img + "_" + d; })
+				.attr("x", 0)
+				.attr("y", 0)
+				.attr("height", 40)
+				.attr("width", 40)
+				.insert("image")
+				  .attr("x", 0)
+				  .attr("y", 0)
+				  .attr("width", 40)
+				  .attr("height", 40)
+				  .attr("xlink:href", function(d) { return img_src[d]; });
+		}
+		
+		// add attribute node_attr_2_img to map object
+		maps[map_id]["node_attr_2_img"] = node_attr_2_img;
 	}
 	
 	// if node attribute has a temporal dimension, pick how to fill in missing values
@@ -344,23 +382,109 @@ function style_map(
 	
 	// traverse nodes and set respective map markers style
 	d3.json(map_json, function(map_nodes){
-		
-		
+
 		// if the attributes of any nodes on this map will be changed select the relevant nodes
 		// for loops are more efficient than forEach... could switch later if optimization is premature
+		
 		for(j = 0; j < map_nodes.length; j ++)
 		{
 			
 			var node = map_nodes[j];
 			
 			var node_key = get_node_key(node.NodeLabel, map_id);
+			
+			if(node_attr_2_img)
+			{
+				var node_attr_img_marker = d3.select("#" + node_attr_img + "_" + node_key);
+				
+				if(node_attr_img_marker.empty())
+				{
+					var node_marker = d3.select("#" + node_key);
+					var node_marker_w = node_marker.attr("width");
+					var node_marker_h = node_marker.attr("height");
+					var node_marker_x = node_marker.attr("x");
+					var node_marker_y = node_marker.attr("y");
+					var node_marker_data = node_marker.datum();
+					
+					
+					if(node_marker_data.node.hasOwnProperty(node_attr_img))
+					{
+						
+						d3.select(node_marker.node().parentNode)
+							.data(node_marker_data)
+							.enter()
+							.append("rect")
+							.attr("x", node_marker_x - node_marker_w/2)
+							.attr("y", node_marker_y - node_marker_h/2)
+							.attr("height", 40)
+							.attr("width", 40)
+							.attr("ttl", 10)
+							.attr("fill", function (d) {
+								var val = fill_missing_values(d.node[node_attr_img], time, false);
+			            	
+								if (val) // if no value is returned (i.e. val is false) use attribute to color if provided
+								{
+									d3.select(this).attr("ttl", 10);
+									return "url(#" + node_attr_img + "_" + img_scale(val) +")";
+								}
+								else
+								{
+									var ttl = d3.select(this).attr("ttl");
+									
+									if(ttl > 0)
+										d3.select(this).attr("ttl", ttl - 1);
+									return d3.select(this).attr("fill");
+								}
+							})
+							.attr("opacity", 1.0);
+					}
+					else
+					{
+						node_attr_img_marker
+						.attr("opacity", function(){
+							
+							var ttl = d3.select(this).attr("ttl");
+							
+							return ttl/10.0;
+						
+						});
+					}		
+				}
+			}
+			
+			
 			d3.select("#" + node_key)
 			.attr("fill", function (d) {
-                var c = 'white';
+                var c = 'white';    
+                
+                /* if an attribtue to image has been specified, it takes precedence over color and it is applied
+                if(node_attr_2_img && d.node.hasOwnProperty(node_attr_img))
+                {
+                	var val = fill_missing_values(d.node[node_attr_img], time, false);
+                	
+                	if (val) // if no value is returned (i.e. val is false) use attribute to color if provided
+                		return "url(#" + node_attr_img + "_" + img_scale(val) +")";
+                	else
+                		return d3.select(this).attr("fill"); 
+                }
+                */
+                
+               // if an attribute to image has not been specified assign fill to color, given attribute to color has been specified
                 if(node_attr_2_color)
-                	var val = fill_missing_values(d.node[node_attr_color], time, missing_values);
+                {
+                	if(d.node.hasOwnProperty(node_attr_color))
+                	{
+                		var val = fill_missing_values(d.node[node_attr_color], time, missing_values);
+                		
+                	}
+                	else
+                		return d3.select(this).attr("fill"); // keep the current attribute value if no new one is available
+                }
                 else
+                {
                 	return node_color;
+                }
+                
             	if (val >= 0) { c = color_scale(val); }
             	else { c = 'gray'; }
             	
@@ -369,7 +493,10 @@ function style_map(
 			.attr("stroke", function (d) {
                 var c = 'white';
                 if(node_attr_2_stroke)
-                	var val = fill_missing_values(d.node[node_attr_stroke], time, missing_values);
+                	if(d.node.hasOwnProperty(node_attr_stroke))
+                		var val = fill_missing_values(d.node[node_attr_stroke], time, missing_values);
+                	else
+                		return d3.select(this).attr("stroke"); // keep the current attribute value if no new one is available
                 else
                 	return node_stroke;
 
@@ -380,16 +507,24 @@ function style_map(
 			})
 			.attr("r", function (d) { 
 				if(node_attr_2_radius)
-					var val = fill_missing_values(d.node[node_attr_radius], time, missing_values);
+					if(d.node.hasOwnProperty(node_attr_radius))
+						var val = fill_missing_values(d.node[node_attr_radius], time, missing_values);
+					else
+						return d3.select(this).attr("r"); // keep the current attribute value if no new one is available
 				else
 					radius_scale(node_radius);
 				return radius_scale(val);
 			})
 			.attr("opacity", function(d){
 				if(node_attr_2_opacity)
-					var val = fill_missing_values(d.node[node_attr_opacity], time, missing_values);
+					if (d.node.hasOwnProperty(node_attr_opacity))
+						var val = fill_missing_values(d.node[node_attr_opacity], time, missing_values);
+					else
+						return d3.select(this).attr("opacity"); // keep the current attribute value if no new one is available
 				else
+				{
 					return node_opacity;
+				}
 					
 				return opacity_scale(val);
 			})
@@ -408,9 +543,8 @@ function style_map(
 				
 				return  d.node.NodeLabel + ": " + node_attr_color + ": " + val;
 			})
-			*/
-			
 			.style("stroke", "gray")
+			*/
 			.on("mouseover",function(d) { 
 											if(node_attr_2_color)
 											{
@@ -427,7 +561,8 @@ function style_map(
 												// emit comm_msg
 												trigger_emit(this, comm_msg);
 											}
-			});	
+			});
+				
 			//.on("mouseover", onmouseover())
             //.on("mouseout", onmouseout())
             //.each(function(d){if(d.node.NodeLabel == selected_entities.node){onmouseover()}})
@@ -680,12 +815,9 @@ function load_2d_scatter(
 
 	
 // helper function resolving missing values method
-function fill_missing_values(entity, time, missing_values)
+function fill_missing_values(entity, time, interp_type)
 {
-	if(missing_values == "closest_time")
-		return get_entity_value(entity, time);
-	else
-		return default_missing_values(0.0);
+		return get_entity_value(entity, time, interp_type);
 }
 
 
@@ -697,37 +829,71 @@ function default_missing_values(default_val)
 
 // helper function: given an entity check if it has temporal dimension and extract the proper value at
 // the specified time (or just get the spatial scalar if the entity does not have temporal dimension)
-function get_entity_value(entity, time)
+// if the entity does not have associated value at the specified time, interpolate as specified by interp_type
+function get_entity_value(entity, time, interp_type)
 {
 	var val = 0;
+	
 	// check if entity has a temporal dimension; this approach to time handling might need to be re-thought
     if(entity.hasOwnProperty("time"))
     {
-    	
-    	// if the entity has a temporal dimension but does not have a state for the given time
-    	// find the closest time for which the entity has a state
-    	// note that this can and must be optimized if dealing with large time arrays
-    	var closest_time = time;
-
     	if(!entity.hasOwnProperty(time+""))
     	{
-    		times = [];
-    		for(var key in entity)
-    			if (Object.prototype.hasOwnProperty.call(entity, key) && key != "time") // avoiding screwiness in older IE versions 
-    		        times.push(parseInt(key));
-    		
-    		closest_time = get_closest(times, time);
+    		if(interp_type != false)
+    		{
+    	
+    			times = [];
+	    		for(var key in entity)
+	    			if (Object.prototype.hasOwnProperty.call(entity, key) && key != "time") // avoiding screwiness in older IE versions 
+	    		        times.push(parseInt(key));
+	        	
+	    		// if the entity has a temporal dimension but does not have a state for the given time
+	        	// find the closest time for which the entity has a state, where "closest" is determined by the interp_type attribute 
+	        	// note that this can and must be optimized if dealing with large time arrays
+	        	var closest_time = time;
+	    		if(interp_type == "closest_time")
+	    		{
+		    		closest_time = get_closest(times, time);
+		    		val = entity[closest_time + ""];
+	    		}
+	    		else
+	    		if(interp_type == "closest_time_lower")
+	    		{
+	    			closest_time = get_closest_lower(times, time);
+	    			val = entity[closest_time + ""];
+	    		}
+	    		if(interp_type == "from_window")
+	    		{
+	    			val = get_window_avg(entity, time);
+	    		}
+	    		else
+	    		if(interp_type == "default")
+	    			val = 0.0;
+    		}
+    		else // if interp_type is false; do not interpolate, and return false
+    			val = false;
     	}
-
-    	val = entity[closest_time + ""];
+    	else
+    	{
+    		val = entity[time]; // if entity has value at the given time, do not interpolate and just return the value
+    	}
     }
     else
     	val = entity;
-    //alert(val);
+
     return val;
 }
 	
-	
+
+// helper function: given an key,value map find the average of the values within a window key-neighborhood/window from the provided key x
+
+function get_window_avg(entity, time)
+{
+	var time_window = [];
+
+}
+
+
 // helper function: given 1D array a of numbers, find the element in a closest in abs value to x
 // assuming the array is unsorted...
 function get_closest(a, x)
@@ -743,6 +909,23 @@ function get_closest(a, x)
         }
     }
     return closest;
+}
+
+//helper function: given 1D array a of numbers, find the element y in a closest in value to x such that y < x
+//assuming the array is unsorted...
+function get_closest_lower(a, x)
+{
+ var closest = a[0];
+ var diff = Math.abs(x - closest);
+ for (i = 0; i < a.length; i++) 
+ {
+     if (Math.abs(x - a[i]) < diff && x - a[i] >= 0) 
+     {
+         diff = (Math.abs (x - a[i]));
+         closest = a[i];
+     }
+ }
+ return closest;
 }
 
 // helper function: get node id 	
