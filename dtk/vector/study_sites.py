@@ -74,7 +74,13 @@ def configure_matsari(cb):
                              #"funestus"   : [2.5e7],
                              #"gambiae"    : [2.2e9, 1.25e7]
                              })
-
+# Bandundu DRC
+def configure_bandundu(cb):
+    set_larval_habitat( cb, {"gambiae" : [1e8, 5e6]
+                             #"funestus"   : [2.5e7],
+                             #"gambiae"    : [2.2e9, 1.25e7]
+                             })
+            
 #Rafin Marke, Garki, Jigawa, Nigeria: EIR = 18
 def configure_rafin_marke(cb):
     set_larval_habitat( cb, {"arabiensis" : {'TEMPORARY_RAINFALL': 5e8, 'CONSTANT': 8e6},
@@ -101,6 +107,9 @@ def configure_thies(cb):
 def configure_dapelogo(cb) :
     set_larval_habitat(cb, {"funestus" : {'WATER_VEGETATION':5e8},
                             "gambiae"  : {'TEMPORARY_RAINFALL': 3e10, 'CONSTANT': 1e8}})
+
+
+
 def configure_laye(cb) :
     set_larval_habitat(cb, {"funestus" : {'WATER_VEGETATION':5e7},
                             "gambiae"  : {'TEMPORARY_RAINFALL': 3e9, 'CONSTANT': 1e7}})

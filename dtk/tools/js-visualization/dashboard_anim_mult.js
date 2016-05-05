@@ -2,6 +2,7 @@ var timesteps = ["14235", "14236", "14237", "14238", "14239", "14240", "14241", 
 var int_id;
 var time;
 var map;
+
 function load_dashboard(map_data_file)
 {	
 	map = map_data_file;
@@ -16,31 +17,12 @@ function load_dashboard(map_data_file)
 	);
 	
 	
-	load_map(
-	 		   'anim_pop', // map id 
-	 		   map, 
-	 		   ".resourcecontainer.maps", //target container,
-	 		   {
-	 			   width:500,
-	 			   height:400
-	 		   }
-	);	
-	
-	
 	load_timeseries(
 			'hhs', 
 			'prevalence', 
 			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
 			'avg_itn_hh',
-			//".resourcecontainer.maps" //target container,
 			".resourcecontainer.timeseries"
-			
-			/*{
-	   			//"selector":{"function": {"func":emit_param_key_by_header, "params":{"event":"mouseover"}}},
-				"selector":{"function": {"func":style_selected_hm_param, "params":{}}},
-	   			"attributes_req":["name", "ts_color"] // request the header name
-			}
-			*/
 	);
 	
 	
@@ -54,32 +36,16 @@ function load_snapshot()
 	
 	if(time < timesteps.length - 1)
 	{
-		//alert(timesteps[time["idx"]]);
 		style_map(
 			    'anim_drugs', 
 			    map,
 			    {
 				   time_idx : timesteps[time],
 				   node_attr_2_color : ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-				   //node_attr_2_stroke : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
-				   //node_attr_2_opacity : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])],
 				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
 			    }
 		);
-		
-		style_map(
-			    'anim_pop', 
-			    map,
-			    {
-				   time_idx : timesteps[time],
-				   //node_attr_2_color : ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-				   //node_attr_2_stroke : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
-				   //node_attr_2_opacity : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])],
-				   node_attr_2_color : ["Population", d3.scale.quantize().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a'])],
-			       node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
-			    }
-		);	
-		
+
 		time ++;
 		
 	}

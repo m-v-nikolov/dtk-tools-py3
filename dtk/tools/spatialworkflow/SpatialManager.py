@@ -42,6 +42,9 @@ class SpatialManager():
                  nodes_params_input_file = None,\
                  update_demographics = None,\
                  generate_climate = False,
+                 generate_load_balancing = False,
+                 generate_migration = False,
+                 generate_immune_overlays = False,
                  existing_migration_file_path = None,\
                  existing_load_balancing_file_path = None,\
                  existing_demographics_file_path = None,\
@@ -127,7 +130,16 @@ class SpatialManager():
         self.update_demographics = update_demographics
         
         # generate climate; if True execute COMPS climate generation; otherwise (default) assume climate files already exist and do nothing
-        self.generate_climate = generate_climate   
+        self.generate_climate = generate_climate
+        
+        # generate a load balancing file; if false assume no load balancing is used or the load balancing file is already placed in the proper input directory 
+        self.generate_load_balancing = generate_load_balancing
+        
+        # generate migration files; if false assume no migration is used or the migration files are already placed in the proper input directory 
+        self.generate_migration = generate_migration  
+        
+        # generate immune overlay files; if false assume no immune overlays is used or the immune files are already placed in the proper input directory 
+        self.generate_immune_overlays = generate_immune_overlays  
             
         # simulation number of cores (e.g. for load balancing purposes)
         self.num_cores = num_cores
@@ -184,110 +196,116 @@ class SpatialManager():
         om("", style = 'bold')
 
         # generate loadbalancing if load balance file is not provided;
-        if not self.existing_load_balancing_file_path:
-            
-            om("generating cluster cores load balance file...", style = 'bold')
-            
-            # instantiate a load balancer; default is kmeans
-            lb = LoadBalanceGenerator(self.num_cores, os.path.join(self.sim_data_input, demographics_output_file))
-            
-            # generate load balance across the num_cores
-            lb.generate_load_balance()
-            
-            # save load balance binary to remote/local directory
-            load_balance_filename = self.cb.get_param('Load_Balance_Filename')
-            lb.save_load_balance_binary_file(os.path.join(self.sim_data_input, load_balance_filename))
-            
-            om("Load balance file saved to " + os.path.join(self.sim_data_input, load_balance_filename))
-            
-        else: # if existing file is provided copy it to the reight location
-            om("Looking for existing cluster load balance file...", style = 'bold')
-            
-            shutil.copy(self.existing_load_balancing_file_path, os.path.join(self.sim_data_input, load_balance_filename))
-            
-            om("Existing cluster cores load balance file found at: " + self.existing_load_balancing_file_path)
-            om("Successfully copied to: " + os.path.join(self.sim_data_input, load_balance_filename))
+        
+        if self.generate_load_balancing:
+            if not self.existing_load_balancing_file_path:
+                
+                om("generating cluster cores load balance file...", style = 'bold')
+                
+                # instantiate a load balancer; default is kmeans
+                lb = LoadBalanceGenerator(self.num_cores, os.path.join(self.sim_data_input, demographics_output_file))
+                
+                # generate load balance across the num_cores
+                lb.generate_load_balance()
+                
+                # save load balance binary to remote/local directory
+                load_balance_filename = self.cb.get_param('Load_Balance_Filename')
+                lb.save_load_balance_binary_file(os.path.join(self.sim_data_input, load_balance_filename))
+                
+                om("Load balance file saved to " + os.path.join(self.sim_data_input, load_balance_filename))
+                
+            else: # if existing file is provided copy it to the reight location
+                om("Looking for existing cluster load balance file...", style = 'bold')
+                
+                shutil.copy(self.existing_load_balancing_file_path, os.path.join(self.sim_data_input, load_balance_filename))
+                
+                om("Existing cluster cores load balance file found at: " + self.existing_load_balancing_file_path)
+                om("Successfully copied to: " + os.path.join(self.sim_data_input, load_balance_filename))
+                
             
         om("", style = 'bold')
         
         
             
         # generate migration file if existing migration file is not provided and migration generation is requested
-        if not self.existing_migration_file_path and self.migration_matrix_file_path:
-            
-            # instantiate a migration generator; default is geo-graph topology w/ gravity link rates model
-            # todo: expose link rates/topology parameters to user
-            
-            om("generating migration graph and link rates...", style = 'bold') 
-            
-            mg = MigrationGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.migration_matrix_file_path, graph_topo_type = 'geo-graph', link_rates_model_type = 'gravity')
-            mg.generate_link_rates()
-            mg.save_link_rates_to_txt(os.path.join(self.log_path, 'rates.txt'))
-            
-            om("Link rates log saved to: " + os.path.join(self.log_path, 'rates.txt'))
-
-
-            om("generating migration binary...", style = 'bold') 
-            migration_filename = self.cb.get_param('Local_Migration_Filename')
-            MigrationGenerator.link_rates_txt_2_bin(os.path.join(self.log_path, 'rates.txt'), os.path.join(self.sim_data_input, migration_filename))
-            
-            om("Migration binary saved to: " + os.path.join(self.sim_data_input, migration_filename))
-            
-            
-            om("generating migration json header...", style = 'bold') 
-            MigrationGenerator.save_migration_header(os.path.join(self.sim_data_input, demographics_output_file))
-            
-            om("Migration header saved to: " + os.path.join(self.sim_data_input, demographics_output_file))
-            
-        else: #if existing migration files are provided, copy them to the right places
-            
-            om("Looking for existing migration binary and header...", style = 'bold')
-            
-            shutil.copy(self.existing_migration_file_path, os.path.join(self.sim_data_input, migration_filename))
-            om("Existing binary found at : " + self.existing_load_balancing_file_path)
-            om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
-            
-            shutil.copy(self.existing_migration_file_path + '.json', os.path.join(self.sim_data_input, migration_filename + '.json'))
-            om("Existing header found at : " + self.existing_load_balancing_file_path)
-            om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
+        if self.generate_migration:
+            if not self.existing_migration_file_path and self.migration_matrix_file_path:
+                
+                # instantiate a migration generator; default is geo-graph topology w/ gravity link rates model
+                # todo: expose link rates/topology parameters to user
+                
+                om("generating migration graph and link rates...", style = 'bold') 
+                
+                mg = MigrationGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.migration_matrix_file_path, graph_topo_type = 'geo-graph', link_rates_model_type = 'gravity')
+                mg.generate_link_rates()
+                mg.save_link_rates_to_txt(os.path.join(self.log_path, 'rates.txt'))
+                
+                om("Link rates log saved to: " + os.path.join(self.log_path, 'rates.txt'))
+    
+    
+                om("generating migration binary...", style = 'bold') 
+                migration_filename = self.cb.get_param('Local_Migration_Filename')
+                MigrationGenerator.link_rates_txt_2_bin(os.path.join(self.log_path, 'rates.txt'), os.path.join(self.sim_data_input, migration_filename))
+                
+                om("Migration binary saved to: " + os.path.join(self.sim_data_input, migration_filename))
+                
+                
+                om("generating migration json header...", style = 'bold') 
+                MigrationGenerator.save_migration_header(os.path.join(self.sim_data_input, demographics_output_file))
+                
+                om("Migration header saved to: " + os.path.join(self.sim_data_input, demographics_output_file))
+                
+            else: #if existing migration files are provided, copy them to the right places
+                
+                om("Looking for existing migration binary and header...", style = 'bold')
+                
+                shutil.copy(self.existing_migration_file_path, os.path.join(self.sim_data_input, migration_filename))
+                om("Existing binary found at : " + self.existing_load_balancing_file_path)
+                om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
+                
+                shutil.copy(self.existing_migration_file_path + '.json', os.path.join(self.sim_data_input, migration_filename + '.json'))
+                om("Existing header found at : " + self.existing_load_balancing_file_path)
+                om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
             
 
         om("", style = 'bold') 
         
         
         # generate immune initialization overlays if existing ones are not provided and immune overlays are requested along with the provided required parameters
-        overlay_file_names = [] # immune overlay filenames to be used in spatial simulation
         
-        if not self.existing_immunity_files_paths and self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
+        if self.generate_immune_overlays:
+            overlay_file_names = [] # immune overlay filenames to be used in spatial simulation
             
-            om("generating immunity initialization overlays...", style = 'bold')
-
-            # generate overlays at remote/local location    
-            ig = ImmunityOverlaysGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.immunity_burnin_meta_file_path, os.path.join(self.sim_data_input, self.geography), self.nodes_params_input_file_path)
+            if not self.existing_immunity_files_paths and self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
                 
-            # generate overlays
-            overlay_file_names = ig.generate_immune_overlays()
+                om("generating immunity initialization overlays...", style = 'bold')
+    
+                # generate overlays at remote/local location    
+                ig = ImmunityOverlaysGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.immunity_burnin_meta_file_path, os.path.join(self.sim_data_input, self.geography), self.nodes_params_input_file_path)
+                    
+                # generate overlays
+                overlay_file_names = ig.generate_immune_overlays()
+                
+            else: # if existing immune initialization overlays are provided use them to configure the demographics file
+                
+                om("copying existing immunity initialization overlays...", style = 'bold')
+                
+                #copy all provided files to the right directory
+                for immune_overlay_file_path in self.existing_immunity_files_paths:
+                    shutil.copy(immune_overlay_file_path, os.path.join(self.sim_data_input, self.geography))
+                    overlay_file_names.append(os.path.basename(immune_overlay_file_path)) # assuming file name does not end with a slash, in which case the basename would be empty
+                    om("Existing immune overlay " + immune_overlay_file_path)  
+                    om("Successfully copied to " + os.path.join(self.sim_data_input, self.geography))
             
-        else: # if existing immune initialization overlays are provided use them to configure the demographics file
-            
-            om("copying existing immunity initialization overlays...", style = 'bold')
-            
-            #copy all provided files to the right directory
-            for immune_overlay_file_path in self.existing_immunity_files_paths:
-                shutil.copy(immune_overlay_file_path, os.path.join(self.sim_data_input, self.geography))
-                overlay_file_names.append(os.path.basename(immune_overlay_file_path)) # assuming file name does not end with a slash, in which case the basename would be empty
-                om("Existing immune overlay " + immune_overlay_file_path)  
-                om("Successfully copied to " + os.path.join(self.sim_data_input, self.geography))
-        
-        #update demographics files
-        demographics_files = self.cb.get_param('Demographics_Filenames')
-        for immune_overlay_file in overlay_file_names:
-            demographics_files.append(os.path.join(self.geography, immune_overlay_file))
-         
-        self.cb.update_params({
-                               'Enable_Immunity_Initialization_Distribution':1,
-                               'Demographics_Filenames':demographics_files
-                               })
+            #update demographics files
+            demographics_files = self.cb.get_param('Demographics_Filenames')
+            for immune_overlay_file in overlay_file_names:
+                demographics_files.append(os.path.join(self.geography, immune_overlay_file))
+             
+            self.cb.update_params({
+                                   'Enable_Immunity_Initialization_Distribution':1,
+                                   'Demographics_Filenames':demographics_files
+                                   })
             
         om("", style = 'bold')
         
@@ -322,33 +340,38 @@ class SpatialManager():
             
             om("LOG: demogrpahics file stored at " + os.path.join(self.log_path, self.name + '_demographics_log.json' ))
             
-            # save load balance visualization in log dir
-            lb.save_load_balance_figure(os.path.join(self.log_path, self.name + '_loadbalance.png'))
             
-            om("LOG: load balance visualization stored at " + os.path.join(self.log_path, self.name + '_loadbalance.png'))
+            if self.generate_load_balancing:
+                # save load balance visualization in log dir
+                lb.save_load_balance_figure(os.path.join(self.log_path, self.name + '_loadbalance.png'))
+                
+                om("LOG: load balance visualization stored at " + os.path.join(self.log_path, self.name + '_loadbalance.png'))
             
-            if self.migration_matrix_file_path:
-                # if migration file was provided save migration binary, header and routes visualization in log directory
-                migration_filename = self.cb.get_param('Local_Migration_Filename')
+            if self.generate_migration:
+                if self.migration_matrix_file_path:
+                    # if migration file was provided save migration binary, header and routes visualization in log directory
+                    migration_filename = self.cb.get_param('Local_Migration_Filename')
 
             
-            shutil.copy(os.path.join(self.sim_data_input, migration_filename), os.path.join(self.log_path, self.name + '_migration.bin'))
-            om("LOG: migration binary stored at " + os.path.join(self.log_path, self.name + '_migration.bin'))
+                shutil.copy(os.path.join(self.sim_data_input, migration_filename), os.path.join(self.log_path, self.name + '_migration.bin'))
+                om("LOG: migration binary stored at " + os.path.join(self.log_path, self.name + '_migration.bin'))
+                
+                 
+                shutil.copy(os.path.join(self.sim_data_input, migration_filename + '.json'), os.path.join(self.log_path, self.name + '_migration.bin.json'))
+                om("LOG: migration binary stored at " + os.path.join(self.log_path, self.name + '_migration.bin.json'))
             
-             
-            shutil.copy(os.path.join(self.sim_data_input, migration_filename + '.json'), os.path.join(self.log_path, self.name + '_migration.bin.json'))
-            om("LOG: migration binary stored at " + os.path.join(self.log_path, self.name + '_migration.bin.json'))
-        
-            MigrationGenerator.save_migration_visualization(os.path.join(self.log_path, self.name + '_demographics_log.json' ), os.path.join(self.log_path, self.name + '_migration.bin'), os.path.join(self.log_path))
-            om("LOG: migration network stored in " + os.path.join(self.log_path))    
+                MigrationGenerator.save_migration_visualization(os.path.join(self.log_path, self.name + '_demographics_log.json' ), os.path.join(self.log_path, self.name + '_migration.bin'), os.path.join(self.log_path))
+                om("LOG: migration network stored in " + os.path.join(self.log_path))    
             
-            
-            om("LOG: climate work order stored in " + os.path.join(self.log_path))
+    
+            if self.generate_climate:        
+                om("LOG: climate work order stored in " + os.path.join(self.log_path))
                
-            if self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
-                # what would be a good immunity log? One could store the immune overlays in the log directory...
-                # for now nothing is logged
-                pass
+            if self.generate_immune_overlays:
+                if self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
+                    # what would be a good immunity log? One could store the immune overlays in the log directory...
+                    # for now nothing is logged
+                    pass
             
         
         om("", style = 'bold')  
@@ -365,6 +388,7 @@ class SpatialManager():
         """
         Create the directories
         """
+        
         # Current path
         if (not os.path.exists(self.current_path)):
             os.mkdir(self.current_path)
@@ -372,6 +396,10 @@ class SpatialManager():
         # Output path
         if (not os.path.exists(self.output_path)):
             os.mkdir(self.output_path)
+
+        # Data files input directory
+        if (not os.path.exists(os.path.join(self.sim_data_input, self.geography))):
+            os.makedirs(os.path.join(self.sim_data_input, self.geography))
 
         # Logging
         if (self.log and not os.path.exists(self.log_path)):

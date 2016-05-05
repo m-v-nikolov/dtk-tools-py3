@@ -31,10 +31,16 @@ function load_dashboard(map_data_file)
 										
 					if(!playing)
 					{
-						int_id = setInterval(load_snapshot, 125); 
-						time = last_paused_time;
-						d3.select(this).html("Pause")
+						if(last_paused_time < timesteps.length)
+							time = last_paused_time;
+						else
+							time = 0;
+
+						d3.select(this).html("Pause")						
+						
 						playing = true;
+						
+						int_id = setInterval(load_snapshot, 125);
 					}
 					else
 					{

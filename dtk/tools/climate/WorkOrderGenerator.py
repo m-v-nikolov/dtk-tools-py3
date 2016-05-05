@@ -2,7 +2,7 @@ import json
 
 class WorkOrderGenerator():
     
-    def __init__(self, demographics_file_path, wo_output_path, project_info = "IDM-Zambia", include_non_pop = True, shape_id = "", resolution = "30", parameters = ['tmean', 'humid', 'rain'], start_year = '2005', num_years = "9", nan_check = True):
+    def __init__(self, demographics_file_path, wo_output_path, project_info = "IDM-Democratic_Republic_of_the_Congo", include_non_pop = True, shape_id = "", resolution = "30", parameters = ['tmean', 'humid', 'rain'], start_year = '2008', num_years = "5", nan_check = True):
         
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
