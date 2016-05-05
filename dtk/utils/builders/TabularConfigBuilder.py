@@ -1,5 +1,7 @@
+import os
 from simtools.SimConfigBuilder import SimConfigBuilder
 from dtk.interventions.empty_campaign import empty_campaign
+from dtk.utils.parsers.JSON import json2dict
 
 # TODO: Can the config file be selected dynamically?
 
@@ -55,38 +57,89 @@ class TabularConfigBuilder(SimConfigBuilder):
     }
     '''
 
-
-    staged_dlls = {}  # caching to avoid repeat md5 and os calls
+    config_template_key = 'CONFIG_TEMPLATE'    # handled differently from other template files
 
     def __init__(self, plugin_info_json, plugin_files_json, plugin_files_dir, **kwargs):
-        self.config_templates = {}
-        self.campaign_templates = {}
-        self.demographic_files = {}
+
+        self.plugin_info_json = json2dict(plugin_info_json)
+        self.plugin_files_json = json2dict(plugin_files_json)
+        self.plugin_files_dir = plugin_files_dir
+
+        self.templates = {}
 
         self.load_templates()
 
-        # Need to know if Campaign_Filename is in the static config parameters
-        for f in self.config_templates:
-            self.update_params(static_params, validate=False)
-            self.update_params(kwargs, validate=True)
+        static_params = self.plugin_info_json['Static_Parameters']
+        print static_params
+        self.static_param_map = self.build_static_param_map(static_params)
+        # DJK TODO: handle kwargs
+        #self.static_param_map = self.build_static_param_map(static_params + **kwargs)
 
-    @classmethod
-    def from_files(cls, config_name, campaign_name=None):
-        '''
-        Build up a simulation configuration from the path to an existing
-        config.json and optionally a campaign.json file on disk.
-        '''
+        self.update_all_params( self.static_param_map )
 
-        config = json2dict(config_name)
-        campaign = json2dict(campaign_name) if campaign_name else empty_campaign
+    def build_static_param_map(self, params):
+        static_param_map = {}
+        for param in params:
+            print "Splitting %s" % param
+            split = param.split('.')
+            if len(split) == 1:
+                raise RuntimeError('Parameter \'' + param + '\' does not contain a period. Parameter names should be CONFIG.something, CAMPAIGN.something, or DEMOGRAPHICS.something.')
+            param_type = split[0]
+            param_address = '.'.join(split[1:])
 
-        return cls(config, campaign)
+            if param_type in static_param_map:
+                static_param_map[param_type].append(param_address)
+            else:
+                static_param_map[param_type] = param_address
+
+        return static_param_map
+
+    def load_templates(self):
+        for k in self.plugin_files_json.keys():
+            for plugin_filename in self.plugin_files_json[k]:
+                fn = os.path.join( self.plugin_files_dir, plugin_filename)
+                self.Log('Loading %s as %s' % (fn, k))
+                plugin_file = json2dict(fn)
+                self.add_template_file( k, plugin_file)
+
+    def add_template_file(self, type, filecontents):
+        if type not in self.templates:
+            self.templates[type] = [filecontents]
+        else:
+            self.templates[type].append(filecontents)
+
+    def update_all_params(self, static_params):
+        for template_type in self.templates.keys():
+            for template in self.templates[template_type]:
+                self.update_params(template, template_type, validate=False)
+
+    def Log(self, msg):
+        print(msg)
 
     @property
     def params(self):
-        return self.config['parameters']
+        return self.templates
+
+    def update_params(self, params, template_type, validate=False):
+        # DJK EDITING HERE!!!
+        #if template_type == self.config_template_key:
+        #    for config_template in self.templates[template_type]:
+
+
+
+
+        if not validate:
+            self.params.update(params)
+        else:
+            for k, v in params.items():
+                self.validate_param(k)
+                logger.debug('Overriding: %s = %s' % (k, v))
+                self.set_param(k, v)
+        return params  # for ModBuilder metadata
 
     def set_param(self, param, value):
+        print "-----------------------------------------------"
+
         """
         Set parameter in the config/campaign.
 
