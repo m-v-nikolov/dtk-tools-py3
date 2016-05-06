@@ -2,6 +2,7 @@ import os
 from simtools.SimConfigBuilder import SimConfigBuilder
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.utils.parsers.JSON import json2dict
+from dtk.utils.builders.TabularTemplate import Template
 
 # TODO: Can the config file be selected dynamically?
 
@@ -70,7 +71,6 @@ class TabularConfigBuilder(SimConfigBuilder):
         self.load_templates()
 
         static_params = self.plugin_info_json['Static_Parameters']
-        print static_params
         self.static_param_map = self.build_static_param_map(static_params)
         # DJK TODO: handle kwargs
         #self.static_param_map = self.build_static_param_map(static_params + **kwargs)
@@ -79,8 +79,7 @@ class TabularConfigBuilder(SimConfigBuilder):
 
     def build_static_param_map(self, params):
         static_param_map = {}
-        for param in params:
-            print "Splitting %s" % param
+        for param,value in params.items():
             split = param.split('.')
             if len(split) == 1:
                 raise RuntimeError('Parameter \'' + param + '\' does not contain a period. Parameter names should be CONFIG.something, CAMPAIGN.something, or DEMOGRAPHICS.something.')
@@ -88,30 +87,29 @@ class TabularConfigBuilder(SimConfigBuilder):
             param_address = '.'.join(split[1:])
 
             if param_type in static_param_map:
-                static_param_map[param_type].append(param_address)
+                static_param_map[param_type].update( {param_address:value} )
             else:
-                static_param_map[param_type] = param_address
+                static_param_map[param_type] = {param_address:value}
 
         return static_param_map
 
     def load_templates(self):
-        for k in self.plugin_files_json.keys():
-            for plugin_filename in self.plugin_files_json[k]:
+        for template_type in self.plugin_files_json.keys():
+            use_KP = template_type != self.config_template_key
+            for plugin_filename in self.plugin_files_json[template_type]:
                 fn = os.path.join( self.plugin_files_dir, plugin_filename)
-                self.Log('Loading %s as %s' % (fn, k))
-                plugin_file = json2dict(fn)
-                self.add_template_file( k, plugin_file)
+                self.Log('Loading %s as %s' % (fn, template_type))
+                new_template = Template(fn, template_type, use_KP)
+                if template_type not in self.templates:
+                    self.templates[template_type] = [new_template]
+                else:
+                    self.templates[template_type].append( new_template )
 
-    def add_template_file(self, type, filecontents):
-        if type not in self.templates:
-            self.templates[type] = [filecontents]
-        else:
-            self.templates[type].append(filecontents)
-
-    def update_all_params(self, static_params):
+    def update_all_params(self, params):
+        print "UPDATING:",params
         for template_type in self.templates.keys():
             for template in self.templates[template_type]:
-                self.update_params(template, template_type, validate=False)
+                template.update_params(params)
 
     def Log(self, msg):
         print(msg)
@@ -119,148 +117,6 @@ class TabularConfigBuilder(SimConfigBuilder):
     @property
     def params(self):
         return self.templates
-
-    def update_params(self, params, template_type, validate=False):
-        # DJK EDITING HERE!!!
-        #if template_type == self.config_template_key:
-        #    for config_template in self.templates[template_type]:
-
-
-
-
-        if not validate:
-            self.params.update(params)
-        else:
-            for k, v in params.items():
-                self.validate_param(k)
-                logger.debug('Overriding: %s = %s' % (k, v))
-                self.set_param(k, v)
-        return params  # for ModBuilder metadata
-
-    def set_param(self, param, value):
-        print "-----------------------------------------------"
-
-        """
-        Set parameter in the config/campaign.
-
-        The current supported syntax for the param argument is the following:
-        - parameter
-            A simple parameter. Will assume it is a parameter in the config["parameters"]. For example: Rainfall_Scale_Factor
-
-        - CONFIG.path.parameter
-            A parameter accessible in the CONFIG file at path. For example: CONFIG.Vector_Species_Params.arabiensis.Acquire_Modifier
-
-        - CAMPAIGN.event_name.path.parameter / CAMPAIGN.event_index.path.parameter
-            A parameter accessible in the CAMPAIGN file at path. The event needs to either have a name or an index
-            For example: CAMPAIGN.ART for all females in 2025.Event_Coordinator_Config.Demographic_Coverage
-            CAMPAIGN.3.Event_Coordinator_Config.Intervention_Config.Incubation_Period_Override
-
-        - DRUG.drug.parameter
-            A drug parameter for a given drug. For example: DRUG.Primaquine.Bodyweight_Exponent
-
-        - VECTOR.vector.path.parameter
-            Parameter for a given vector.
-            Note that if Required_Habitat_factor is in the path, it is possible to specify which habitat by using: VECTOR.arabiensis.Required_Habitat_Factor.TEMPORARY_RAINFALL
-
-        :param param:
-        :param value:
-        :return:
-        """
-        file="CONFIG"
-        tag=False
-        cleaned_param = ""
-
-        if "CONFIG" in param:
-            # e.g. CONFIG.Vector_Species_Params.arabiensis.Acquire_Modifier
-            # Removes the CONFIG. part
-            cleaned_param = param.replace("CONFIG.","")
-
-
-        elif "VECTOR" in param:
-            # e.g. VECTOR.arabiensis.Required_Habitat_Factor.TEMPORARY_RAINFALL
-            # Find the index of the current selected habitat and pass the correct path to the cb
-            cleaned_param = param.replace("VECTOR.","Vector_Species_Params.")
-            if "Required_Habitat_Factor" in param:
-                habitat = cleaned_param.split('.')[-1]
-                vector_species = cleaned_param.split('.')[1]
-                if not habitat.isdigit():
-                    # The habitat is a string and not an index, replace it by the index
-                    habitat_index = self.config["parameters"]["Vector_Species_Params"][vector_species]["Habitat_Type"].index(habitat)
-                    cleaned_param = cleaned_param.replace(habitat,str(habitat_index))
-
-
-        elif "DRUG" in param:
-            # e.g. DRUG.Artemether.Drug_Adherence_Rate
-            cleaned_param = param.replace("DRUG","Malaria_Drug_Params")
-
-
-        elif "CAMPAIGN" in param and ".DRUG." in param:
-            # particular case for drug campaigns generated by add_drug_campaign => just tag
-            tag = True
-
-        elif "CAMPAIGN" in param:
-            file = "CAMPAIGN"
-            event = param.split('.')[1]
-
-            # In the case of the event being specified by ID instead of name
-            if not event.isdigit():
-                # Find the event index
-                event_index = 0
-                for event_data in self.campaign["Events"]:
-                    if "Event_Name" in event_data.keys() and event_data["Event_Name"] == event:
-                        break
-                    event_index+=1
-
-                # If the index doesnt exist => just consider as a tag
-                if event_index >= len(self.campaign["Events"]):
-                    file = "CONFIG"
-                    tag = True
-                else:
-                    # Replace the name by the index
-                    cleaned_param = param.replace(".%s." % event, ".%s." % event_index)
-                    cleaned_param = cleaned_param.replace("CAMPAIGN.","")
-            else:
-                # The event was already a digit -> just remove the CAMPAIGN.
-                cleaned_param = param.replace("CAMPAIGN.","")
-
-        elif "HABSCALE" in param:
-            # HABSCALE will already be set by another function. We only need to take care of tagging it in the config
-            tag=True
-
-        else:
-            # Just set the param if no shortcut used
-            cleaned_param = param
-
-        # First get the correct file
-        if file == "CONFIG":
-            current_file = self.config["parameters"]
-        else:
-            current_file = self.campaign["Events"]
-
-        # If it is consider a tag -> just add it to the config without any other treatment
-        if tag:
-            current_file[param] = value
-            return {param:value}
-
-        # Go through the path if there is a path
-        if "." in cleaned_param:
-            current_parameter = current_file
-            # The path is everything except the last item of the split which represent the parameter
-            for path_step in cleaned_param.split('.')[:-1]:
-                # If the step is a number, we are in a list, we need to cast the step to int
-                current_parameter = current_parameter[self.cast_value(path_step)]
-
-            # Assign the casted value to the parameter but same as for the path_step we need to cast to int if
-            # its a list index and not a dictionary key
-            last_step = cleaned_param.split('.')[-1]
-            current_parameter[self.cast_value(last_step)] = self.cast_value(value)
-
-        else:
-            # No path => simply assign
-            current_file[cleaned_param] = self.cast_value(value)
-
-        # For the tags return the non cleaned parameters so the parser can find it
-        return {param:value}
 
     def file_writer(self, write_fn):
         # DJK Note: want to maintain user's filenames

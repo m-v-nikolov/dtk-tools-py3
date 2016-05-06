@@ -14,7 +14,7 @@ from COMPS_Worker_Plugin.COMPS_Entities import *
 # TODO: Be more careful about using findKeyPaths.  Should precipitate from the above mapping of paramters to files
 
 class TabularModBuilder(ModBuilder):
-    def __init__(self, plugin_info_json, plugin_files_json, plugin_files_dir):
+    def __init__(self, plugin_info_json):
         '''
         plugin_info_json:
         plugin_files_json:
