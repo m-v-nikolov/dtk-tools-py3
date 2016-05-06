@@ -12,7 +12,15 @@ function load_dashboard(map_data_file)
 	 		   ".resourcecontainer.maps", //target container,
 	 		   {
 	 			   width:500,
-	 			   height:400
+	 			   height:400,
+	 			   additional_layers:[ L.tileLayer.wms('http://idmdvsmt01.internal.idm.ctr:8080/cgi-bin/mapserv.exe?map=c:/ms4w/apps/idm/malaria/zambia.map&', {
+						layers: 'Households_1_6_w_clusts,HFcatchments,Admin2,Admin1,Countries', 
+						format: 'image/png', 
+						transparent: false, 							
+					})],
+					base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+						attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+				   	  })
 	 		   }
 	);
 	
@@ -42,7 +50,7 @@ function load_snapshot()
 			    {
 				   time_idx : timesteps[time],
 				   node_attr_2_color : ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
-				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])]
+				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])],
 			    }
 		);
 

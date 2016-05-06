@@ -89,7 +89,12 @@ function load_dashboard(map_data_file)
 	 			   width:window.innerWidth-170,
 	 			   height:window.innerHeight - 110,
 	 			   node_attrs_img:node_attrs_img,
-				   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+	 			   additional_layers:[ L.tileLayer.wms('http://idmdvsmt01.internal.idm.ctr:8080/cgi-bin/mapserv.exe?map=c:/ms4w/apps/idm/malaria/zambia.map&', {
+						layers: 'Households_1_6_w_clusts,HFcatchments,Admin2,Admin1,Countries', 
+						format: 'image/png', 
+						transparent: false, 							
+					})],
+					base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
 						attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 				   	  })
 	 		   }

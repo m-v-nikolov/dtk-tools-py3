@@ -336,23 +336,22 @@ function load_maps(map_data_file)
 	 		   'rdt_obs', // map id 
 	 		   gazetteer_map, 
 	 		   ".resourcecontainer.maps", //target container
-	 		   {}
+	 		   {additional_layers:[ L.tileLayer.wms('http://idmdvsmt01.internal.idm.ctr:8080/cgi-bin/mapserv.exe?map=c:/ms4w/apps/idm/malaria/zambia.map&', {
+					layers: 'Households_1_6_w_clusts,HFcatchments,Admin2,Admin1,Countries', 
+					format: 'image/png', 
+					transparent: false, 							
+				})],
+				base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+					attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			   	  })
+	 		   }
 	);
-
+	
 	style_map(
 	 		   'rdt_obs', 
 	 		   gazetteer_map,
 	 		   {
 					   time_idx : time_idx_select,
-					   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
-							attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-					   	  }),
-					   /*
-					   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
-											maxZoom: 20,
-											attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-										}),
-					   */
 			   		   node_attr_2_color : ["RDT_obs", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
 			   		   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
 			   	},
@@ -364,11 +363,26 @@ function load_maps(map_data_file)
 	
 	
 	
+	
 	load_map(
 			   'rdt_sim', 
 			   gazetteer_map,
 			   ".resourcecontainer.maps", //target container
-			   {}
+			   {additional_layers:[ L.tileLayer.wms('http://idmdvsmt01.internal.idm.ctr:8080/cgi-bin/mapserv.exe?map=c:/ms4w/apps/idm/malaria/zambia.map&', {
+					layers: 'Households_1_6_w_clusts,HFcatchments,Admin2,Admin1,Countries', 
+					format: 'image/png', 
+					transparent: false, 							
+				})],
+				base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+					attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			   	  })
+			    /*
+			    base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
+									maxZoom: 20,
+									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+								}),
+			    */
+			   }
 	);
 
 	style_map(
@@ -376,15 +390,6 @@ function load_maps(map_data_file)
 		    gazetteer_map,
 		    {
 			   time_idx : time_idx_select,
-			   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
-					attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-			   	  }),
-			   /*
-			   base_tile_layer : L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
-									maxZoom: 20,
-									attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-								}),
-			   */
 			   node_attr_2_color : ["RDT_sn_sim", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
 			   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
 		    },
@@ -400,7 +405,11 @@ function load_maps(map_data_file)
 			   'funestus', 
 			   gazetteer_map,
 			   ".resourcecontainer.maps", //target container
-			   {}
+			   {
+				   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+						attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+				   	  })
+			   }
    );
 	
    style_map(
@@ -408,9 +417,6 @@ function load_maps(map_data_file)
 		    gazetteer_map,
 		    {
 			   time_idx : time_idx_select,
-			   base_tile_layer : L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
-									attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-							   	  }),
 	   		   node_attr_2_color : ["funestus_sc", d3.scale.quantize().domain([0.01, 120]).range(colorbrewer.RdPu[9])],
 		       node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 1e3]).range([0, 8])]
 		    },

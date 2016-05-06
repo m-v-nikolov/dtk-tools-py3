@@ -48,7 +48,9 @@ function load_map(map_id, map_json, target_container, params)
 		
 		var height = 400;
 		var width = 500;
-		var node_attrs_img = false
+		var node_attrs_img = false;
+		var additional_layers = false;
+		var base_tile_layer = false;
 		
 		if(params.hasOwnProperty("height"))
 			height = params["height"];
@@ -56,6 +58,12 @@ function load_map(map_id, map_json, target_container, params)
 			width = params["width"];
 		if(params.hasOwnProperty("node_attrs_img"))
 			node_attrs_img = params["node_attrs_img"];
+		if(params.hasOwnProperty("additional_layers"))
+			additional_layers = params["additional_layers"];
+		
+		// base layer is always the first one in the layers array
+		if(params.hasOwnProperty('base_tile_layer'))
+			base_tile_layer = params.base_tile_layer;
 	
 		var map_decorations_container = d3.select(target_container).append("div")
 										.attr("id","map_decorations_container_"+map_id)
@@ -65,15 +73,30 @@ function load_map(map_id, map_json, target_container, params)
 							.attr("id","map_container_"+map_id)
 							.style({height:height + "px", width:width + "px", float:"left"}); // expose width/height as parameters?
 	
-		var map = L.map("map_container_"+map_id, { attributionControl:false }).setView([47.5826601,-122.1533733], 13);
+		var map = L.map("map_container_"+map_id, { attributionControl:false, crs: L.CRS.EPSG4326 }).setView([47.5826601,-122.1533733], 13);
 	    
 		
 		mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>'; 
-		 
+		
+
+
+
+		/*
 		tile_layer = L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
 			attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 	   	  }).addTo(map);
+	   	  */
+		var tile_layer;
+		if(base_tile_layer)
+			tile_layer = base_tile_layer;
+		else
+		{
+			tile_layer = L.tileLayer('http://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		   	  })
+		}
 		
+		tile_layer.addTo(map);
 		
 		/* Initialize the SVG layer */
 		map._initPathRoot();
@@ -85,6 +108,17 @@ function load_map(map_id, map_json, target_container, params)
 				"map":map,
 				"layers":[tile_layer]
 				}
+		
+		// add any additional layers specified (e.g. server side wms QGIS)
+		if(additional_layers)
+		{
+			for(var i = 0; i < additional_layers.length; i++)
+			{
+				maps[map_id]["layers"].push(additional_layers[i]);
+				additional_layers[i].addTo(map)
+			}
+		}
+		
 		
 		d3.json(map_json, function(map_nodes){ 
 		
@@ -259,11 +293,13 @@ function style_map(
 	else
 		var time_idx = map_properties.time_idx;
 	 
+	/* for now do not allow swapping the base layer; if not transparent it would cover any pther layers added before it upon map load
 	// base layer is always the first one in the layers array
 	if(!map_properties.hasOwnProperty('base_tile_layer'))
 		var base_tile_layer = false;
 	else
 		var base_tile_layer = map_properties.base_tile_layer;
+		*/
 	
 	//map width
 	if(!map_properties.hasOwnProperty('map_width'))
@@ -279,7 +315,7 @@ function style_map(
 	
 	// layers to add to map
 	if(!map_properties.hasOwnProperty('additional_layers'))
-		var additional_layers = [];
+		var additional_layers = false;
 	else
 		var additional_layers = map_properties.additional_layers;
 	
@@ -389,19 +425,18 @@ function style_map(
 	
 	var map = maps[map_id]["map"];
 	var map_layers = maps[map_id]["layers"];
-
-	// use a new base layer for the map; (by default use same base layer)
-	if (base_tile_layer)
-	{
-		map.removeLayer(map_layers[0]); 
-		map_layers.unshift(base_tile_layer);
-		base_tile_layer.addTo(map);
-	}
 	
 	
 	// add additional layers to the map (useful to add roads, etc.); by default no new additional layers are provided
-	for(i = 0; i < additional_layers.length; i++)
-		additional_layers[i].addTo(map);
+	if(additional_layers)
+	{
+		for(i = 0; i < additional_layers.length; i++)
+		{
+			additional_layers[i].addTo(map);
+			map_layers.push(additional_layers[i]);
+		}
+	}
+	
 	
 	// set local map time if provided
 	var time = 0;
