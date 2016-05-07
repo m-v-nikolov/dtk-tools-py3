@@ -2,7 +2,8 @@ import os
 from simtools.SimConfigBuilder import SimConfigBuilder
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.utils.parsers.JSON import json2dict
-from dtk.utils.builders.TabularTemplate import Template
+from dtk.utils.builders.TemplateContainer import TemplateContainer
+from dtk.interventions.empty_campaign import empty_campaign
 
 # TODO: Can the config file be selected dynamically?
 
@@ -59,16 +60,42 @@ class TabularConfigBuilder(SimConfigBuilder):
     '''
 
     config_template_key = 'CONFIG_TEMPLATE'    # handled differently from other template files
+    campaign_template_key = 'CONFIG_TEMPLATE'    # handled differently from other template files
+    demographics_template_key = 'DEMOGRAPHICS_TEMPLATE'    # handled differently from other template files
 
     def __init__(self, plugin_info_json, plugin_files_json, plugin_files_dir, **kwargs):
 
+        self.templates = TemplateContainer(plugin_files_json, plugin_files_dir)
+
         self.plugin_info_json = json2dict(plugin_info_json)
-        self.plugin_files_json = json2dict(plugin_files_json)
-        self.plugin_files_dir = plugin_files_dir
 
-        self.templates = {}
+        configs = self.templates.get_by_type(self.config_template_key)
+        assert( len(configs) == 1 ) # one and only one config for now
+        config = configs[0]
+        if config is None:
+            # TODO
+            print "ERROR ----------------------------------"
 
-        self.load_templates()
+        self.config = config
+
+        self.campaign = empty_campaign
+        cfn = config.get_param('Campaign_Filename')
+        campaign = self.templates.get_by_name( cfn, self.campaign_template_key)
+        if campaign is not None:
+            self.campaign = campaign
+
+        self.demog = []
+        dfns = self.config.get_param('Demographics_Filenames')
+        for dfn in dfns:
+            self.demog.append(
+                self.templates.get_by_name( dfn, self.demographics_template_key)
+            )
+
+        try:
+            self.config.get('Simulation_Type')
+        except:
+            print "ADDING SIMULATION_TYPE to CONFIG"
+            self.config.set_param('Simulation_Type','None') # Simulation_Type is a required parameter of simtools
 
         static_params = self.plugin_info_json['Static_Parameters']
         self.static_param_map = self.build_param_map(static_params)
@@ -76,6 +103,12 @@ class TabularConfigBuilder(SimConfigBuilder):
         #self.static_param_map = self.build_static_param_map(static_params + **kwargs)
 
         self.update_params_for_all_templates( self.static_param_map )
+
+    def set_campaign_filename(self, new_campaign_filename):
+        print "TODO"
+
+    def set_demographics_filenames(self, new_demographics_filenames):
+        print "TODO"
 
     def build_param_map(self, params):
         param_map = {}
@@ -93,24 +126,12 @@ class TabularConfigBuilder(SimConfigBuilder):
 
         return param_map
 
-    def load_templates(self):
-        for template_type in self.plugin_files_json.keys():
-            use_KP = template_type != self.config_template_key
-            for plugin_filename in self.plugin_files_json[template_type]:
-                fn = os.path.join( self.plugin_files_dir, plugin_filename)
-                self.Log('Loading %s as %s' % (fn, template_type))
-                new_template = Template(fn, template_type, use_KP)
-                if template_type not in self.templates:
-                    self.templates[template_type] = [new_template]
-                else:
-                    self.templates[template_type].append( new_template )
-
     def update_params_for_all_templates(self, param_map):
         print "UPDATING:", param_map, self.templates
         for template_type in self.templates.keys():
             print (template_type, self.templates[template_type])
             for template in self.templates[template_type]:
-                template.update_params(param_map)
+                template.set_params(param_map)
 
     def map_and_update_params_for_all_templates(self, params):
         '''
@@ -131,7 +152,7 @@ class TabularConfigBuilder(SimConfigBuilder):
 
     def set_param(self, param, value):
         if "." not in param:
-            param_map = {'CONFIG_TEMPLATE':value}
+            param_map = {self.config_template_key:value}
         else:
             param_map = build_param_map(self, params)
         self.update_params_for_all_templates(param_map)
@@ -140,16 +161,14 @@ class TabularConfigBuilder(SimConfigBuilder):
         return {param: value}  # for ModBuilder metadata
 
     def get_param(self, param, default=None):
-        print "____________________BADDDDDDDDDDDDDDD_____________"
-        return self.params.get(param, default)
-
+        return self.config.get(param)
 
     def file_writer(self, write_fn):
         # DJK Note: want to maintain user's filenames
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        self.set_param('Campaign_Filename','campaign.json')
+        campaign_filename = self.config.get('Campaign_Filename')
         write_fn('campaign', dump(self.campaign))
 
         if self.custom_reports:
@@ -160,6 +179,6 @@ class TabularConfigBuilder(SimConfigBuilder):
             self.append_overlay('%s.json' % name)
             write_fn(name, dump(content))
 
-        write_fn('config', dump(self.config))
+        write_fn('config', dump(self.config.data))
 
         write_fn('emodules_map', dump(self.emodules_map))
