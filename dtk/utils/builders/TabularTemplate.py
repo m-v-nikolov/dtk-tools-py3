@@ -45,11 +45,13 @@ class Template(object):
         print "Setting",param,"=",value,"in",self.filename
         cleaned_param = param
         if "CONFIG" in param:
+            print "CLEANING CONFIG."
             # e.g. CONFIG.Vector_Species_Params.arabiensis.Acquire_Modifier
             # Removes the CONFIG. part
             cleaned_param = param.replace("CONFIG.","")
 
         self.data[cleaned_param] = value
+        print "NEW DATA",self.data
 
         return {param:value}
 

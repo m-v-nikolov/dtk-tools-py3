@@ -71,14 +71,14 @@ class TabularConfigBuilder(SimConfigBuilder):
         self.load_templates()
 
         static_params = self.plugin_info_json['Static_Parameters']
-        self.static_param_map = self.build_static_param_map(static_params)
+        self.static_param_map = self.build_param_map(static_params)
         # DJK TODO: handle kwargs
         #self.static_param_map = self.build_static_param_map(static_params + **kwargs)
 
-        self.update_all_params( self.static_param_map )
+        self.update_params_for_all_templates( self.static_param_map )
 
-    def build_static_param_map(self, params):
-        static_param_map = {}
+    def build_param_map(self, params):
+        param_map = {}
         for param,value in params.items():
             split = param.split('.')
             if len(split) == 1:
@@ -86,12 +86,12 @@ class TabularConfigBuilder(SimConfigBuilder):
             param_type = split[0]
             param_address = '.'.join(split[1:])
 
-            if param_type in static_param_map:
-                static_param_map[param_type].update( {param_address:value} )
+            if param_type in param_map:
+                param_map[param_type].update( {param_address:value} )
             else:
-                static_param_map[param_type] = {param_address:value}
+                param_map[param_type] = {param_address:value}
 
-        return static_param_map
+        return param_map
 
     def load_templates(self):
         for template_type in self.plugin_files_json.keys():
@@ -105,18 +105,44 @@ class TabularConfigBuilder(SimConfigBuilder):
                 else:
                     self.templates[template_type].append( new_template )
 
-    def update_all_params(self, params):
-        print "UPDATING:",params
+    def update_params_for_all_templates(self, param_map):
+        print "UPDATING:", param_map, self.templates
         for template_type in self.templates.keys():
+            print (template_type, self.templates[template_type])
             for template in self.templates[template_type]:
-                template.update_params(params)
+                template.update_params(param_map)
+
+    def map_and_update_params_for_all_templates(self, params):
+        '''
+        ew
+        '''
+
+        print "PARAMS",params
+        param_map = self.build_param_map(params)
+        print "PARAM_MAP",param_map
+        self.update_params_for_all_templates(param_map)
 
     def Log(self, msg):
         print(msg)
 
-    @property
-    def params(self):
-        return self.templates
+    #@property
+    #def params(self):
+    #    return self.templates
+
+    def set_param(self, param, value):
+        if "." not in param:
+            param_map = {'CONFIG_TEMPLATE':value}
+        else:
+            param_map = build_param_map(self, params)
+        self.update_params_for_all_templates(param_map)
+
+        #self.params[param] = value
+        return {param: value}  # for ModBuilder metadata
+
+    def get_param(self, param, default=None):
+        print "____________________BADDDDDDDDDDDDDDD_____________"
+        return self.params.get(param, default)
+
 
     def file_writer(self, write_fn):
         # DJK Note: want to maintain user's filenames
