@@ -30,11 +30,28 @@ class TabularModBuilder(ModBuilder):
         self.table = self.dynamic_parameters['Table']
 
         print "Found a table with",len(self.table),"rows of dynamic parameters."
-        self.mod_generator = (
-            self.set_mods(
-                [
-                    self.ModFn( TabularConfigBuilder.map_and_update_params_for_all_templates, dict(zip(self.header, row)) )
-                ]
-            ) for row in self.table
-        )
 
+        self.campaign_file_in_header = False
+        if 'CONFIG.Campaign_Filename' in self.header:
+            print "The campaign file will be selected per-simulation based on dynamic parameters"
+            self.campaign_file_in_header = True
+
+        # UGLY: Need to make the list more elegantly and include demographics the same way as campaign
+        if self.campaign_file_in_header:
+            cfn_idx = self.header.index('CONFIG.Campaign_Filename')
+            self.mod_generator = (
+                self.set_mods(
+                    [
+                        self.ModFn( TabularConfigBuilder.set_campaign, row[cfn_idx] ),
+                        self.ModFn( TabularConfigBuilder.map_and_update_params_for_all_templates, dict(zip(self.header, row)) )
+                    ]
+                ) for row in self.table
+            )
+        else:
+            self.mod_generator = (
+                self.set_mods(
+                    [
+                        self.ModFn( TabularConfigBuilder.map_and_update_params_for_all_templates, dict(zip(self.header, row)) )
+                    ]
+                ) for row in self.table
+            )

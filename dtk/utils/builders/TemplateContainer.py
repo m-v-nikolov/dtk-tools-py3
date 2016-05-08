@@ -24,6 +24,12 @@ class TemplateContainer(SimConfigBuilder):
         # TODO: Ensure unique filenames
         self.load_templates()
 
+    def __iter__(self):
+        return iter(self.templates)
+
+    def next(self):
+        return self.templates.next()
+
     def load_templates(self):
         for template_type in self.plugin_files_json.keys():
             is_config = template_type == self.config_template_key
@@ -37,24 +43,33 @@ class TemplateContainer(SimConfigBuilder):
                 else:
                     new_template = KPTaggedJson(contents, plugin_filename)
 
-                if template_type not in self.templates:
-                    self.templates[template_type] = [new_template]
-                else:
-                    self.templates[template_type].append( new_template )
+                self.templates[plugin_filename] = new_template
 
-    def get_by_name(self, filename, template_type):
-        if template_type not in self.templates:
+    def get(self, filename):
+        if filename not in self.templates:
             return None
 
-        for template in self.templates[template_type]:
-            if template.filename == filename:
-                return template
-
-        return None
-
+        return self.templates[filename]
 
     def get_by_type(self, template_type):
-        if template_type not in self.templates:
-            return None
+        ret = []
+        if template_type not in self.plugin_files_json.keys():
+            print 'ERROR, no templates of type %s were listed in plugin files' % template_type
 
-        return self.templates[template_type]
+        for fn in self.plugin_files_json[template_type]:
+            ret.append(self.get(fn))
+
+        return ret
+
+    def update_params(self, params):
+        # SHOULD MAP FIRST!
+        for param_name,val in params.items():
+            param_split = param_name.split('.')
+            param_type = param_split[0]
+            param_name = '.'.join(param_split[1:])
+            print param_type
+            print param_name
+            template_type = param_type + '_TEMPLATE'
+            for fn in  self.plugin_files_json[template_type]:
+                print '[%s]: setting params:'%fn,params
+                self.get(fn).update_params(params)

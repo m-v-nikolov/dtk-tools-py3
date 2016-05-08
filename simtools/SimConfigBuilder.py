@@ -32,7 +32,7 @@ class SimConfigBuilder(object):
 
     def update_params(self, params, validate=False):
         if not validate:
-            self.params.update(params)
+            self.params.update(params)  # DJK NOTE: ModBuilder metadata only when validate=True
         else:
             for k, v in params.items():
                 self.validate_param(k)
