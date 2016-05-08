@@ -26,7 +26,7 @@ class MigrationGenerator(object):
     only supply the input relevant for migration; currently done in process_input(self)
     '''
 
-    def __init__(self, demographics_file_path, migration_network_file_path, graph_topo_type = 'geo-graph', link_rates_model_type = 'gravity'):
+    def __init__(self, demographics_file_path, migration_network_file_path, graph_topo_type = 'rhumba', link_rates_model_type = 'tango'):
         
         self.demographics_file_path = demographics_file_path
         self.migration_network_file_path = migration_network_file_path # network structure provided in json adjacency list format or csv format 
@@ -36,13 +36,26 @@ class MigrationGenerator(object):
         self.node_properties = None # node properties relevant for migration graph topology generation  
         
         self.graph_topo_type = graph_topo_type
+        
         self.link_rates_model_type = link_rates_model_type
         
         self.graph_topo = None
         self.link_rates = None
         
+        # graph topology instance
+        self.gt = None
         
         
+        # link rates model instance
+        self.lrm = None
+        
+        
+    def set_graph_topo_type(self, graph_topo_type):
+        self.graph_topo_type = graph_topo_type
+        
+        
+    def set_link_rates_model_type(self, link_rates_model_type):
+        self.link_rates_model_type = link_rates_model_type
         
     def process_input(self):
         
@@ -128,36 +141,47 @@ class MigrationGenerator(object):
                 
         
     def generate_graph_topology(self):
+
+        self.process_input()
         
         if self.graph_topo_type == 'geo-graph':
-            
-            self.process_input()
-
-            gg = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5) 
-            
-            self.graph_topo = gg.generate_graph()
-            
+            # generate geo graph with default link radius (in km)
+            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
         else:
             raise ValueError('Unsupported topology type!')
-            
+        
+        if(self.gt):
+            self.graph_topo = self.gt.generate_graph() # assume all graphs types implement the generate_graph() method
             
     
     def generate_link_rates(self):
+    
+        self.process_input() # refactor so that gnereate_graph_topology and generate_link_rates call process_input only once
+        
+        if self.graph_topo_type == 'geo-graph':
+            # generate geo graph with default link radius (in km)
+            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
+            print self.gt
+        else:
+            raise ValueError('Unsupported topology type!')
+        
+        if(self.gt):
+            self.graph_topo = self.gt.generate_graph() # assume all graphs types implement the generate_graph() method
+
         
         if self.link_rates_model_type == 'gravity':
-            
-            self.process_input()
-            
-            gg = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
-            mig_graph = gg.generate_graph()
-
-            gravity_rg = GravityModelRatesGenerator(gg.get_shortest_paths(), mig_graph, coeff = 1e-4) 
-            
-            self.link_rates = gravity_rg.generate_migration_links_rates()
-        
+            # generate link rates following the graivty link rates model with default parameters
+            self.lrm = GravityModelRatesGenerator(
+                                                  self.gt.get_shortest_paths(), # assume all graph topologies implement the get_shortest_paths() method 
+                                                  self.graph_topo, 
+                                                  coeff = 1e-4
+                                                  )
         else:
             raise ValueError('Unsupported link rates mode type!')
         
+        if self.lrm:
+            self.link_rates = self.lrm.generate_migration_links_rates() # assume all link rates models implement generate_migration_links_re
+
     
     '''
     save link rates to a human readable file;

@@ -47,6 +47,17 @@ class DemographicsGenerator():
         self.default_pop = None
         
     
+                                        
+    def set_demographics_type(self, demographics_type):
+        self.demographics_type = demographics_type
+        
+    def set_update_demographics(self, update_demographics):
+        self.update_demographics = update_demographics # callback function
+        
+    def set_res_in_arcsec(self, res_in_arcsec):
+        self.res_in_arcsec = res_in_arcsec
+    
+    
     '''
     generate a list of dtk nodes from input csv
     '''

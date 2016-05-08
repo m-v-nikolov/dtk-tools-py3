@@ -10,7 +10,7 @@ class LoadBalanceGenerator(object):
     Generate multi-core simulation load balancing depending 
     on number of nodes, population size per node, etc..
     '''
-    def __init__(self, num_cores, demographics_file_path, load_balanace_algo = 'kmeans'):
+    def __init__(self, num_cores, demographics_file_path, load_balanace_algo = 'rhumba'):
         
         self.num_cores = num_cores # number of cores to load balance nodes' populations
         self.demographics_file_path = demographics_file_path # contains population size per node
@@ -22,26 +22,34 @@ class LoadBalanceGenerator(object):
         # load balance visualization figure; returned by algo
         self.load_balance_fig = None
         
+        # load balancer instance
+        self.lb = None
+        
+
+    def set_load_balance_algo(self, load_balance_algo):
+        self.load_balanace_algo = load_balance_algo
+        
     
     def generate_load_balance(self):
         
         if self.load_balanace_algo == 'kmeans':
-            self.generate_kmeans_load_balance()
+            
+            #default kmeans load balance parameters
+            niterations = 50 
+            cluster_max_over_avg_threshold = 1.6
+            max_equal_clusters_iterations = 5000
+            
+            self.lb = KMeansLoadBalancer(
+                                         self.demographics_file_path, 
+                                         self.num_cores, 
+                                         niterations, 
+                                         max_equal_clusters_iterations, 
+                                         cluster_max_over_avg_threshold
+                                         )
         else:
             raise ValueError("The " + str(self.load_balanace_algo) + " is not implemented yet.")
-            
-    
-    def generate_kmeans_load_balance(self):
         
-        
-        #kmeans load balance parameters
-        niterations = 50 
-        cluster_max_over_avg_threshold = 1.6
-        max_equal_clusters_iterations = 5000
-        
-        lb = KMeansLoadBalancer(self.demographics_file_path, self.num_cores, niterations, max_equal_clusters_iterations, cluster_max_over_avg_threshold)
-        
-        load_balance = lb.balance_load()
+        load_balance = self.lb.balance_load() # assume all load balancers implement the method balance_load()
         
         self.num_nodes = load_balance['num_nodes']
         self.load_balance_nodes_list = load_balance['node_ids']

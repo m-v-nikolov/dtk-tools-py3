@@ -144,7 +144,88 @@ class SpatialManager():
         # simulation number of cores (e.g. for load balancing purposes)
         self.num_cores = num_cores
         self.geography = geography
+        
+        # demographics output file name used across various generators (ie migration, load balance, immunity as instantiated below below)
+        self.demographics_output_file = None;
+        
+        # determine path to the demographics output file
+        demog_filenames = self.cb.get_param('Demographics_Filenames')
+        
+        if len(demog_filenames) != 1:
+            raise Exception('Expecting only one demographics filename.')
+        self.demographics_output_file = demog_filenames[0]
+        self.demographics_output_file_path = os.path.join(self.sim_data_input, self.demographics_output_file)
+        
+        
+        # demographics generator instance
+        self.dg = DemographicsGenerator(
+                                        self.cb, 
+                                        self.population_input_file_path, 
+                                        #demographics_type = 'static',
+                                        #update_demographics = self.update_demographics
+                                        );
+        
+        self.lb = None
+        if self.generate_load_balancing:
+            # instantiate a load balancer; default is kmeans                 
+            self.lb = LoadBalanceGenerator(self.num_cores, os.path.join(self.sim_data_input, self.demographics_output_file));
+        
+        
+        self.mg = None
+        if self.generate_migration:
+            # instantiate a migration generator with default migration graph topology type and link rates models
+            self.mg = MigrationGenerator(
+                                         os.path.join(self.sim_data_input, self.demographics_output_file), 
+                                         self.migration_matrix_file_path, 
+                                         #graph_topo_type = 'geo-graph', 
+                                         #link_rates_model_type = 'gravity'
+                                         )
+        
+        self.ig = None
+        if self.generate_immune_overlays:
+            # generate overlays at remote/local location
+            self.ig =  ImmunityOverlaysGenerator(
+                                                 os.path.join(self.sim_data_input, self.demographics_output_file), 
+                                                 self.immunity_burnin_meta_file_path, 
+                                                 os.path.join(self.sim_data_input, self.geography), 
+                                                 self.nodes_params_input_file_path
+                                                 );
+        
+        self.cg = None
+        
+        if self.generate_climate:
+            # climate generator instance w/ default climate generation work order parameters; climate_project name is mandatory
+            # consult IDM large data for complete project lists
+            self.cg = ClimateGenerator(
+                                       self.demographics_output_file_path, 
+                                       os.path.join(self.log_path, 'climate_wo.json'), 
+                                       os.path.join(self.sim_data_input, self.geography),  
+                                       ); 
+        
+        
 
+    def set_demographics_type(self, demographics_type):
+        self.dg.set_demographics_type(demographics_type)
+        
+    # set a callback update_demographics function
+    def set_update_demographics(self, update_demographics):
+        self.dg.set_update_demographics(update_demographics)
+        
+    def set_res_in_arcsec(self, res_in_arcsec):
+        self.dg.set_res_in_arcsec(res_in_arcsec)
+        
+    def set_climate_project_info(self, project_info):
+        self.cg.set_climate_project_info(project_info)
+        
+    def set_graph_topo_type(self, graph_topo_type):
+        self.mg.set_graph_topo_type(graph_topo_type)
+    
+    def set_link_rates_model_type(self, link_rates_model_type):
+        self.mg.set_link_rates_model_type(link_rates_model_type)
+        
+    def set_load_balance_algo_type(self, load_balance_algo_type):
+        self.lb.set_load_balance_algo(load_balance_algo_type)      
+        
 
     def run(self):
         # Verify that our inputs exists
@@ -162,14 +243,7 @@ class SpatialManager():
             
             om("generating demographics file...", style = 'bold')
             
-            dg = DemographicsGenerator(
-                                        self.cb, 
-                                        self.population_input_file_path, 
-                                        demographics_type = 'static',
-                                        update_demographics = self.update_demographics
-                                        )
-            
-            demographics = dg.generate_demographics()
+            demographics = self.dg.generate_demographics()
             
             
         else: # if existing file is provided load its content
@@ -178,39 +252,26 @@ class SpatialManager():
             with open(self.existing_demographics_file_path, 'r') as demo_f:
                 demographics = json.load(demo_f)
             om("Successfully loaded.")
-            
         
-        demog_filenames = self.cb.get_param('Demographics_Filenames')
-        
-        if len(demog_filenames) != 1:
-            raise Exception('Expecting only one demographics filename.')
-        demographics_output_file = demog_filenames[0]
-        
-        demographics_output_file_path = os.path.join(self.sim_data_input, demographics_output_file)
-        
-        with open(demographics_output_file_path,'w') as demo_f:
+        with open(self.demographics_output_file_path,'w') as demo_f:
             json.dump(demographics, demo_f, indent = 4)
         
-        om("Demographics file saved to " + demographics_output_file_path)
+        om("Demographics file saved to " + self.demographics_output_file_path)
         
         om("", style = 'bold')
 
         # generate loadbalancing if load balance file is not provided;
-        
-        if self.generate_load_balancing:
+        if self.lb:
             if not self.existing_load_balancing_file_path:
                 
                 om("generating cluster cores load balance file...", style = 'bold')
-                
-                # instantiate a load balancer; default is kmeans
-                lb = LoadBalanceGenerator(self.num_cores, os.path.join(self.sim_data_input, demographics_output_file))
-                
+                                
                 # generate load balance across the num_cores
-                lb.generate_load_balance()
+                self.lb.generate_load_balance()
                 
                 # save load balance binary to remote/local directory
                 load_balance_filename = self.cb.get_param('Load_Balance_Filename')
-                lb.save_load_balance_binary_file(os.path.join(self.sim_data_input, load_balance_filename))
+                self.lb.save_load_balance_binary_file(os.path.join(self.sim_data_input, load_balance_filename))
                 
                 om("Load balance file saved to " + os.path.join(self.sim_data_input, load_balance_filename))
                 
@@ -228,7 +289,7 @@ class SpatialManager():
         
             
         # generate migration file if existing migration file is not provided and migration generation is requested
-        if self.generate_migration:
+        if self.mg:
             if not self.existing_migration_file_path and self.migration_matrix_file_path:
                 
                 # instantiate a migration generator; default is geo-graph topology w/ gravity link rates model
@@ -236,9 +297,8 @@ class SpatialManager():
                 
                 om("generating migration graph and link rates...", style = 'bold') 
                 
-                mg = MigrationGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.migration_matrix_file_path, graph_topo_type = 'geo-graph', link_rates_model_type = 'gravity')
-                mg.generate_link_rates()
-                mg.save_link_rates_to_txt(os.path.join(self.log_path, 'rates.txt'))
+                self.mg.generate_link_rates()
+                self.mg.save_link_rates_to_txt(os.path.join(self.log_path, 'rates.txt'))
                 
                 om("Link rates log saved to: " + os.path.join(self.log_path, 'rates.txt'))
     
@@ -251,9 +311,9 @@ class SpatialManager():
                 
                 
                 om("generating migration json header...", style = 'bold') 
-                MigrationGenerator.save_migration_header(os.path.join(self.sim_data_input, demographics_output_file))
+                MigrationGenerator.save_migration_header(os.path.join(self.sim_data_input, self.demographics_output_file))
                 
-                om("Migration header saved to: " + os.path.join(self.sim_data_input, demographics_output_file))
+                om("Migration header saved to: " + os.path.join(self.sim_data_input, self.demographics_output_file))
                 
             else: #if existing migration files are provided, copy them to the right places
                 
@@ -273,18 +333,15 @@ class SpatialManager():
         
         # generate immune initialization overlays if existing ones are not provided and immune overlays are requested along with the provided required parameters
         
-        if self.generate_immune_overlays:
+        if self.ig:
             overlay_file_names = [] # immune overlay filenames to be used in spatial simulation
             
             if not self.existing_immunity_files_paths and self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
                 
                 om("generating immunity initialization overlays...", style = 'bold')
-    
-                # generate overlays at remote/local location    
-                ig = ImmunityOverlaysGenerator(os.path.join(self.sim_data_input, demographics_output_file), self.immunity_burnin_meta_file_path, os.path.join(self.sim_data_input, self.geography), self.nodes_params_input_file_path)
                     
                 # generate overlays
-                overlay_file_names = ig.generate_immune_overlays()
+                overlay_file_names = self.ig.generate_immune_overlays()
                 
             else: # if existing immune initialization overlays are provided use them to configure the demographics file
                 
@@ -310,11 +367,10 @@ class SpatialManager():
         om("", style = 'bold')
         
         
-        if self.generate_climate:
+        if self.cg:
             om("generating climate files.", style = 'bold')
-            
-            cg = ClimateGenerator(demographics_output_file_path, os.path.join(self.log_path, 'climate_wo.json'), os.path.join(self.sim_data_input, self.geography), )
-            climate_file_names = cg.generate_climate_files()
+             
+            climate_file_names = self.cg.generate_climate_files()
             
             rain_file_path = os.path.join(self.geography, climate_file_names['rain'])
             humidity_file_path = os.path.join(self.geography, climate_file_names['humidity'])
@@ -341,13 +397,13 @@ class SpatialManager():
             om("LOG: demogrpahics file stored at " + os.path.join(self.log_path, self.name + '_demographics_log.json' ))
             
             
-            if self.generate_load_balancing:
+            if self.lb:
                 # save load balance visualization in log dir
-                lb.save_load_balance_figure(os.path.join(self.log_path, self.name + '_loadbalance.png'))
+                self.lb.save_load_balance_figure(os.path.join(self.log_path, self.name + '_loadbalance.png'))
                 
                 om("LOG: load balance visualization stored at " + os.path.join(self.log_path, self.name + '_loadbalance.png'))
             
-            if self.generate_migration:
+            if self.mg:
                 if self.migration_matrix_file_path:
                     # if migration file was provided save migration binary, header and routes visualization in log directory
                     migration_filename = self.cb.get_param('Local_Migration_Filename')
@@ -364,10 +420,10 @@ class SpatialManager():
                 om("LOG: migration network stored in " + os.path.join(self.log_path))    
             
     
-            if self.generate_climate:        
+            if self.cg:        
                 om("LOG: climate work order stored in " + os.path.join(self.log_path))
                
-            if self.generate_immune_overlays:
+            if self.ig:
                 if self.immunity_burnin_meta_file_path and self.nodes_params_input_file_path:
                     # what would be a good immunity log? One could store the immune overlays in the log directory...
                     # for now nothing is logged

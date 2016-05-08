@@ -2,7 +2,7 @@ import json
 
 class WorkOrderGenerator():
     
-    def __init__(self, demographics_file_path, wo_output_path, project_info = "IDM-Democratic_Republic_of_the_Congo", include_non_pop = True, shape_id = "", resolution = "30", parameters = ['tmean', 'humid', 'rain'], start_year = '2008', num_years = "5", nan_check = True):
+    def __init__(self, demographics_file_path, wo_output_path, project_info = "IDM-Democratic_Republic_of_the_Congo", include_non_pop = True, shape_id = "", resolution = "30", parameters = ['tmean', 'humid', 'rain'], start_year = '2009', num_years = "4", nan_check = True):
         
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
@@ -52,6 +52,31 @@ class WorkOrderGenerator():
         return wo
         
     
+    def set_project_info(self, project_info):
+        self.project_info = project_info
+        
+    def set_include_non_pop(self, include_non_pop):
+        self.include_non_pop = include_non_pop
+        
+    def set_shape_id(self, shape_id):
+        self.shape_id = shape_id
+    
+    def set_resolution(self, resolution):
+        self.resolution = resolution
+        
+    def set_parameters(self, parameters):
+        self.parameters = parameters
+    
+    def set_start_year(self, start_year):
+        self.start_year = start_year 
+    
+    def set_num_years(self, num_years): 
+        self.num_years = num_years
+    
+    def set_nan_check(self, nan_check): 
+        self.nan_check = nan_check
+        
+
     def wo_2_json(self):
         with open(self.wo_output_path,'w') as wo_f:
             json.dump(self.wo_2_dict(), wo_f, indent = 3)

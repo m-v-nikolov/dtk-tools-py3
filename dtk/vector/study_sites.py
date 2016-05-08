@@ -80,6 +80,13 @@ def configure_bandundu(cb):
                              #"funestus"   : [2.5e7],
                              #"gambiae"    : [2.2e9, 1.25e7]
                              })
+    
+# Bandundu DRC
+def configure_kinshasa(cb):
+    set_larval_habitat( cb, {"gambiae" : [1e8, 5e6]
+                             #"funestus"   : [2.5e7],
+                             #"gambiae"    : [2.2e9, 1.25e7]
+                             })
             
 #Rafin Marke, Garki, Jigawa, Nigeria: EIR = 18
 def configure_rafin_marke(cb):

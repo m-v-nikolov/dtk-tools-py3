@@ -19,18 +19,22 @@ from WorkOrderGenerator import WorkOrderGenerator
 class ClimateGenerator():
     
     
-    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path):
+    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path, climate_project = "IDM-Zambia"):
         
         
         self.work_order_path = work_order_path 
         self.demographics_file_path = demographics_file_path
         self.climate_files_output_path = climate_files_output_path
+        self.climate_project = climate_project
         
         
         # see WorkOrderGenerator for other work options
-        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path)
+        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project)
         self.wo.wo_2_json()
         
+    
+    def set_climate_project_info(self, climate_project):
+        self.wo.set_project_info(climate_project)
     
     def generate_climate_files(self):
                 
