@@ -1,251 +1,127 @@
-import csv
-import json
-import subprocess
-import sys
-import re
+import sys, os, json, numpy, struct, array
+import getopt
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
-from struct import pack
-from sys import argv
-
-import dtk.tools.demographics.compiledemog as compiledemog
-import createmigrationheader
-import visualize_routes
+from scipy.cluster.vq import *
+import warnings
 
 
-from GravityModelRatesGenerator import GravityModelRatesGenerator
-from GeoGraphGenerator import GeoGraphGenerator 
-
-
-class MigrationGenerator(object):
-    
+class KMeansLoadBalancer(object):
     
     '''
-    Generate migration headers and binary files for DTK input;
-    
-    In a follow up refactor perhaps we should go further and decouple from demographics file;
-    only supply the input relevant for migration; currently done in process_input(self)
+    this class implements one type of load balancing based on kmeans clustering;
+    if we decide to add different load balance algorithms we could have a common interface 
+    implemented by all; in this case this class would need to be refactored to reflect that
     '''
-
-    def __init__(self, demographics_file_path, migration_network_file_path, graph_topo_type = 'geo-graph', link_rates_model_type = 'gravity'):
+    
+    def __init__(self, demographics_file_path, nclusters = 32, niterations = 50, max_equal_clusters_iterations = 5000, cluster_max_over_avg_threshold = 1.6): 
         
+        self.nclusters = nclusters
+        self.niterations = niterations
+        self.max_equal_clusters_iterations = max_equal_clusters_iterations
+        self.cluster_max_over_avg_threshold = cluster_max_over_avg_threshold
         self.demographics_file_path = demographics_file_path
-        self.migration_network_file_path = migration_network_file_path # network structure provided in json adjacency list format or csv format 
         
-        self.adjacency_list = None # migration adjacency list; supplied as an input file and compiled in the required format by process_input(self)
-        
-        self.node_properties = None # node properties relevant for migration graph topology generation  
-        
-        self.graph_topo_type = graph_topo_type
-        self.link_rates_model_type = link_rates_model_type
-        
-        self.graph_topo = None
-        self.link_rates = None
-        
-        
-        
-        
-    def process_input(self):
-        
-        '''
-        output an adjacency list here given as  a dictionary with format;
-        adj. list could be directed
-        {
-            node_label1: {
-                            #key         # weight
-                            node_label2: 0.5,
-                            node_label4: 0.4,
-                            node_label3: 0.4,
-                            node_label5: 1,
-                            ... 
-                          },
-                          
-            node_label2: {
-                            #key         # weight
-                            node_label1: 0.4,
-                            node_label3: 0.4,
-                            node_label10: 1,
-                            ... 
-                          },
-            ...
-        }
-        '''
+        # plotting related attributes
+        self.max_marker_size = 500
 
-        with open(self.migration_network_file_path,'r') as mig_f:
-            
-            if 'csv' in self.migration_network_file_path:
-                
-                '''        
-                if input file is a csv adjacency matrix of the form
-                
-                node_label 1,  2,  3,  4,  5
-                    1     w11 w12  w13 w14 w15
-                    2     w21       ...    
-                    3     w31       ...
-                    4     w41       ...
-                    5     w51       ...
-                    
-                process to adjacency list in the format above
-                '''
-                
-                
-                reader = csv.DictReader(mig_f)
-    
-                # assume a node is not connected to itself
-                
-                for row in reader:
-                    node = row['node_label']
-                    self.adjacency_list[node] = {}
-                    node_connections = row.keys()[1:]
-                    
-                    # if graph is undirected; csv matrix should be symmetric and this should work
-                    for node_connection in node_connections:
-                        self.adjacency_list[node][node_connection] = row[node_connection]
-            
-            elif 'json' in self.migration_network_file_path:
-                '''
-                if input file is json, assume it contains the adjacency list in the required form above 
-                '''
-                self.adjacency_list = json.load(mig_f)
-                
-            with open(self.demographics_file_path, 'r') as demo_f:
-                demographics = json.load(demo_f)
-                node_label_2_id = {}
-                nodes = demographics['Nodes']
-                self.node_properties = {}
-                for node in nodes:
-                    node_attributes = node['NodeAttributes']
-                    self.node_properties[int(node['NodeID'])] = [float(node_attributes['Longitude']), float(node_attributes['Latitude']), int(node_attributes['InitialPopulation']), node_attributes['FacilityName']]     
-                    node_label_2_id[node_attributes['FacilityName']] = int(node['NodeID'])
-                    
-                # convert the adjacency list node labels to the corresponding dtk ids from the demographics file, so that the adjacency list can be consumed downstream (e.g. see class GeoGraphGenerator)
-                adjacency_list_node_ids = {}
-                for node_label, node_links in self.adjacency_list.iteritems():
-                    adjacency_list_node_ids[node_label_2_id[node_label]] = {}
-                    for node_link_label,w in node_links.iteritems():
-                        adjacency_list_node_ids[node_label_2_id[node_label]] = {node_label_2_id[node_link_label]:w}
-                
-                self.adjacency_list = adjacency_list_node_ids
-                
+    def balance_load(self):
         
-    def generate_graph_topology(self):
-        
-        if self.graph_topo_type == 'geo-graph':
-            
-            self.process_input()
+        print(' Generating load balancing using KMeansLoadBalancer')
+              
+        with open(self.demographics_file_path, 'r') as file:
+            demogjson = json.load(file) #TODO: object_pairs_hook??
 
-            gg = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5) 
-            
-            self.graph_topo = gg.generate_graph()
-            
-        else:
-            raise ValueError('Unsupported topology type!')
-            
-            
-    
-    def generate_link_rates(self):
-        
-        if self.link_rates_model_type == 'gravity':
-            
-            self.process_input()
-            
-            gg = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
-            mig_graph = gg.generate_graph()
+            numnodes = 0
+            if 'Metadata' in demogjson:
+                if 'NodeCount' in demogjson['Metadata']:
+                    numnodes = demogjson['Metadata']['NodeCount']
+                else:
+                    print("Demographics file has no property ['Metadata']['NodeCount']")
+            else:
+                print("Demographics file has no property ['Metadata']")
 
-            gravity_rg = GravityModelRatesGenerator(gg.get_shortest_paths(), mig_graph, coeff = 1e-4) 
+            default_population = 0
+            if 'Defaults' in demogjson:
+                if 'NodeAttributes' in demogjson['Defaults']:
+                    if 'InitialPopulation' in demogjson['Defaults']['NodeAttributes']:
+                        default_population = demogjson['Defaults']['NodeAttributes']['InitialPopulation']
+                    else:
+                        print("Demographics file has no property ['Defaults']['NodeAttributes']['InitialPopulation']")
+                else:
+                    print("Demographics file has no property ['Defaults']['NodeAttributes']")
+            else:
+                print("Demographics file has no property ['Defaults']")
+
+            print('There are ' + str(numnodes) + ' nodes in this demographics file')
+
+            lats  = []
+            longs = []
+            node_ids = []
+            node_pops = []
             
-            self.link_rates = gravity_rg.generate_migration_links_rates()
+            for node in demogjson['Nodes']:
+            #    print( 'Node ID: ' + str(node['NodeID']) + 
+            #           '\tLat: ' + str(node['NodeAttributes']['Latitude']) + 
+            #           '\tLong: ' + str(node['NodeAttributes']['Longitude']) )
         
-        else:
-            raise ValueError('Unsupported link rates mode type!')
-        
-    
-    '''
-    save link rates to a human readable file;
-    the txt file is consumable by link_rates_txt_2_bin(self) like function to generate DTK migration binary
-    '''
-    def save_link_rates_to_txt(self, rates_txt_file_path):
-        with open(rates_txt_file_path,'w') as fout:
-            for src,v in self.link_rates.items():
-                for dest,mig in v.items():
-                    fout.write('%d %d %0.1g\n' % (int(src),int(dest),mig))
-                    
-    
-    
-    '''
-    convert a txt links rates file (e.g. as generated by save_link_rates_to_txt(self...)) to DTK binary migration file 
-    '''
-    
-    @staticmethod
-    def link_rates_txt_2_bin(rates_txt_file_path, rates_bin_file_path, route = "local"):
-   
-        fopen=open(rates_txt_file_path)
-        fout=open(rates_bin_file_path,'wb')
-        
-        net={}
-        net_rate={}
-        
-        MAX_DESTINATIONS_BY_ROUTE = {'local': 8,
-                                     'regional': 30,
-                                     'sea': 5,
-                                     'air': 60}
-        
-        for line in fopen:
-            s=line.strip().split()
-            ID1=int(float(s[0]))
-            ID2=int(float(s[1]))
-            rate=float(s[2])
-            #print(ID1,ID2,rate)
-            if ID1 not in net:
-                net[ID1]=[]
-                net_rate[ID1]=[]
-            net[ID1].append(ID2)
-            net_rate[ID1].append(rate)
-        
-        for ID in sorted(net.keys()):
+                lats.append(float(node['NodeAttributes']['Latitude']))
+                longs.append(float(node['NodeAttributes']['Longitude']))
+                node_ids.append(node['NodeID'])
+                if 'InitialPopulation' in node['NodeAttributes']:
+                    node_pops.append(float(node['NodeAttributes']['InitialPopulation']))
+                else:
+                    node_pops.append(float(default_population))
             
-            ID_write=[]
-            ID_rate_write=[]
-            
-            if len(net[ID]) > MAX_DESTINATIONS_BY_ROUTE[route]:
-                print('There are %d destinations from ID=%d.  Trimming to %d (%s migration max) with largest rates.' % (len(net[ID]), ID, MAX_DESTINATIONS_BY_ROUTE[route], route))
-                dest_rates = zip(net[ID], net_rate[ID])
-                dest_rates.sort(key=lambda tup: tup[1], reverse=True)
-                trimmed_rates = dest_rates[:MAX_DESTINATIONS_BY_ROUTE[route]]
-                #print(len(trimmed_rates))
-                (net[ID], net_rate[ID]) = zip(*trimmed_rates)
-                #print(net[ID], net_rate[ID])
-        
-            for i in xrange(MAX_DESTINATIONS_BY_ROUTE[route]):
-                ID_write.append(0)
-                ID_rate_write.append(0)
-            for i in xrange(len(net[ID])):
-                ID_write[i]=net[ID][i]
-                ID_rate_write[i]=net_rate[ID][i]
-            s_write=pack('L'*len(ID_write), *ID_write)
-            s_rate_write=pack('d'*len(ID_rate_write),*ID_rate_write)
-            fout.write(s_write)
-            fout.write(s_rate_write)
-        
-        fopen.close()
-        fout.close()
+        # cluster node IDs by lat/long
+        # TODO: post-processing to require equal number of nodes in each cluster??
+        #       find few nearest neighbors of most populous cluster; give least populous neighbor closest node; iterate??
+        # OR:   use centroids as seeds for next kmeans??  or is that what iterations is already doing??
+        # FOR NOW: brute force repeat of kmeans until equality threshold is passed
+        iterations = 0
+        while(True):
+            warnings.filterwarnings("ignore")
+            res, idx = kmeans2(numpy.array(zip(longs,lats)), self.nclusters, self.niterations, 1e-05, 'points')
     
+            #print('kmeans centroids: ' + str(res))
+            #print('kmeans indices: ', idx)
+            #print('unique indices: ' + str(numpy.unique(idx)))
     
-    @ staticmethod
-    def save_migration_header(demographics_file_path):
-        
-        # generate migration header for DTK consumption
-        # todo: the script below needs to be refactored/rewritten
-        # in its current form it requires compiled demographisc file (that's not the only problem with its design)
-        # to compile the demographics file need to know about compiledemog file here, which is unnecessary
-        # compiledemog.py too could be refactored towards object-orientedness
-        # the demographics_file_path supplied here may be different from self.demographics_file_path)
-        compiledemog.main(demographics_file_path)
-        createmigrationheader.main('dtk-tools', re.sub('\.json$', '.compiled.json', demographics_file_path), 'local')
-        
-        
-    @staticmethod
-    def save_migration_visualization(demographics_file_path, migration_header_binary_path, output_dir):
-        # visualize nodes and migration routes and save the figure
-        # todo: the script below needs to be refactored
-        
-        visualize_routes.main(demographics_file_path, migration_header_binary_path, output_dir)
+            counts, binedges = numpy.histogram(idx, bins=self.nclusters, weights=node_pops)
+            #print('Population per node-cluster: ' + str(counts))
+            biggest_over_avg = float(self.nclusters)*max(counts)/sum(node_pops)
+            #print('Population of largest cluster (' + str(max(counts)) + ') is ' + str(int(100*(biggest_over_avg-1))) + '% bigger than average (' + str(int(sum(node_pops)/float(nclusters))) + ')')
+            iterations = iterations + 1
+            if biggest_over_avg < self.cluster_max_over_avg_threshold:
+                break
+            if iterations > self.max_equal_clusters_iterations:
+                #print(' Generating load balancing using KMeansLoadBalancer: Did not find a clustering solution satisfying threshold :(')
+                break
+    
+        # get a colormap for cluster coloring
+        # TODO: is there a better way to avoid adjacent colors being nearly indistinguishable?
+        #colors = ( [ cm.get_cmap('jet', i*256/self.nclusters) for i in idx ] )
+        colors = ( [ cm.jet(i*256/self.nclusters) for i in idx ] )
+    
+        max_node_pop = max(node_pops)
+        sizes = ( [self.max_marker_size*node_pop/float(max_node_pop) for node_pop in node_pops] )
+    
+        # get node IDs in order of cluster ID in preparation for writing load-balancing file
+        node_ids_by_index = zip(idx, node_ids, lats, longs)
+        node_ids_by_index.sort()
+        #for node_id_index_pair in node_ids_by_index:
+        #    print('Cluster idx = ' + str(node_id_index_pair[0]) + '\t Node ID = ' + str(node_id_index_pair[1]))
+    
+        # TODO: order clusters according to some simple lat/long grouping
+        #       this way, a 32 cluster file will be still pretty good for an 8 core simulation, etc.
+    
+        # prepare arrays for writing binary file
+        sorted_node_ids = [ int(x[1]) for x in node_ids_by_index ]
+        cum_load_list = list( numpy.arange(0,1,1.0/numnodes) )
+        plt.scatter(longs, lats, s=sizes, c=colors)
+        plt.title('Lat/Long scatter of nodes')
+        plt.axis('equal')
+                 
+        # may need to break that function up in a refactor so that the return is not bag of apples, oranges and potatoes  
+        return {'num_nodes':numnodes, 'node_ids':sorted_node_ids, 'cum_loads':cum_load_list, 'lb_fig': plt}
