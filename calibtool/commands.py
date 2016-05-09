@@ -19,8 +19,8 @@ def get_calib_manager_args(args):
 
 
 def update_calib_args(args, calib_args):
-    location = 'HPC' if (args and args.hpc) else 'LOCAL'
-    calib_args['location'] = location
+    if args.hpc:
+        calib_args['location'] = 'HPC'
     if args.priority:
         calib_args['priority'] = args.priority
     if args.node_group:
@@ -28,7 +28,6 @@ def update_calib_args(args, calib_args):
 
 
 def run(args):
-
     manager, calib_args = get_calib_manager_args(args)
     manager.run_calibration(**calib_args)
 
@@ -44,6 +43,16 @@ def reanalyze(args):
     manager = mod.calib_manager
     manager.reanalyze()
 
+def cleanup(args):
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    manager.cleanup()
+
+def kill(args):
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    manager.kill()
+
 def main():
 
     parser = argparse.ArgumentParser(prog='calibtool')
@@ -52,7 +61,7 @@ def main():
     # 'calibtool run' options
     parser_run = subparsers.add_parser('run', help='Run a calibration configured by run-options')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_run.add_argument('--hpc', action='store_true', help='Run calibration simulations on HPC using COMPS (default is local simulation).')
+    parser_run.add_argument('--hpc', action='store_true', default=None, help='Run calibration simulations on HPC using COMPS (default is local simulation).')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_run.set_defaults(func=run)
@@ -62,14 +71,27 @@ def main():
     parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
     parser_resume.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')
     parser_resume.add_argument('--iter_step', default=None, help="Resume calibration on specified iteration step ['commission', 'analyze', 'next_point'].")
-    parser_resume.add_argument('--hpc', action='store_true', help='Resume calibration simulations on HPC using COMPS (default is local simulation).')
+    parser_resume.add_argument('--hpc', action='store_true', default=None, help='Resume calibration simulations on HPC using COMPS (default is local simulation).')
     parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
 
     # 'calibtool reanalyze' options
-    parser_resume = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
-    parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_resume.set_defaults(func=reanalyze)
+    parser_reanalyze = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
+    parser_reanalyze.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
+    parser_reanalyze.set_defaults(func=reanalyze)
+
+    # 'calibtool cleanup' options
+    parser_cleanup = subparsers.add_parser('cleanup', help='Cleanup a calibration')
+    parser_cleanup.add_argument(dest='config_name', default=None,
+                               help='Name of configuration python script for custom running of calibration.')
+    parser_cleanup.set_defaults(func=cleanup)
+
+    # 'calibtool kill' options
+    parser_cleanup = subparsers.add_parser('kill', help='Kill a calibration')
+    parser_cleanup.add_argument(dest='config_name', default=None,
+                               help='Name of configuration python script.')
+    parser_cleanup.set_defaults(func=kill)
+
 
     # run specified function passing in function-specific arguments
     args = parser.parse_args()

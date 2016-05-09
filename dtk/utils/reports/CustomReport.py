@@ -16,6 +16,7 @@ class BaseReport(object):
             'ReportVectorStats': 'libvectorstats.dll',
             'ReportVectorMigration': 'libvectormigration.dll',
             'ReportHumanMigrationTracking' : 'libhumanmigrationtracking.dll',
+            'ReportEventCounter' : 'libreporteventcounter.dll',
             'ReportMalariaFiltered' : 'libReportMalariaFiltered.dll'}
 
     def __init__(self, type = ""):

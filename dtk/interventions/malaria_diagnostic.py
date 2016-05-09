@@ -1,5 +1,10 @@
+positive_broadcast = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": "TestedPositive"
+        }
+
 def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target='Everyone', start_day=0, diagnostic_type='NewDetectionTech', diagnostic_threshold=40,
-                          nodes={"class": "NodeSetAll"}, positive_diagnosis_config={}):
+                          nodes={"class": "NodeSetAll"}, positive_diagnosis_configs=[]):
     """
     Function to add recurring prevalence surveys with configurable diagnostic
 
@@ -24,12 +29,15 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
                         "class": "MalariaDiagnostic"                                          
                         }
 
-    if not positive_diagnosis_config :
+    if not positive_diagnosis_configs :
         intervention_cfg["Event_Or_Config"] = "Event"
         intervention_cfg["Positive_Diagnosis_Event"] = "TestedPositive"    
     else :
         intervention_cfg["Event_Or_Config"] = "Config"
-        intervention_cfg["Positive_Diagnosis_Config"] = positive_diagnosis_config   
+        intervention_cfg["Positive_Diagnosis_Config"] = { 
+            "Intervention_List" : positive_diagnosis_configs + [positive_broadcast] ,
+            "class" : "MultiInterventionDistributor" 
+            }
 
     survey_event = { "class" : "CampaignEvent",
                                  "Start_Day": start_day,
@@ -40,7 +48,10 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
                                      "Number_Repetitions": repetitions,
                                      "Timesteps_Between_Repetitions": tsteps_btwn,
                                      "Demographic_Coverage": coverage,
-                                     "Intervention_Config": intervention_cfg
+                                     "Intervention_Config": {  "Intervention_List" : [  { "class": "BroadcastEvent",
+                                                                                          "Broadcast_Event": "Received_Test" },
+                                                                                        intervention_cfg ] ,
+                                                               "class" : "MultiInterventionDistributor" }
                                      },
                                  "Nodeset_Config": nodes
                                  }
@@ -59,7 +70,7 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
 
 def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0, diagnostic_type='NewDetectionTech', diagnostic_threshold=40,
                          nodes={"class": "NodeSetAll"}, trigger_string='Diagnostic_Survey', event_name='Diagnostic Survey',
-                         positive_diagnosis_config={}) :
+                         positive_diagnosis_configs=[]) :
 
     intervention_cfg = {
                     "Diagnostic_Type": diagnostic_type, 
@@ -67,12 +78,15 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0, diagnos
                     "class": "MalariaDiagnostic"                                          
                     }
 
-    if not positive_diagnosis_config :
+    if not positive_diagnosis_configs :
         intervention_cfg["Event_Or_Config"] = "Event"
         intervention_cfg["Positive_Diagnosis_Event"] = "TestedPositive"    
     else :
         intervention_cfg["Event_Or_Config"] = "Config"
-        intervention_cfg["Positive_Diagnosis_Config"] = positive_diagnosis_config   
+        intervention_cfg["Positive_Diagnosis_Config"] = { 
+            "Intervention_List" : positive_diagnosis_configs + [positive_broadcast] ,
+            "class" : "MultiInterventionDistributor" 
+            }                                                           
 
     survey_event = {   "Event_Name": event_name, 
                         "class": "CampaignEvent",
@@ -80,12 +94,15 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0, diagnos
                         "Event_Coordinator_Config": 
                         {
                             "class": "StandardInterventionDistributionEventCoordinator",
-                            "Demographic_Coverage": coverage,
                             "Intervention_Config" : { 
                                 "class": "NodeLevelHealthTriggeredIV",
+                                "Demographic_Coverage": coverage,
                                 "Trigger_Condition": "TriggerString",
                                 "Trigger_Condition_String": trigger_string,
-                                "Actual_IndividualIntervention_Config" : intervention_cfg                                                                        
+                                "Actual_IndividualIntervention_Config" : {  "Intervention_List" : [  { "class": "BroadcastEvent",
+                                                                                                       "Broadcast_Event": "Received_Test" },
+                                                                                                      intervention_cfg ] ,
+                                                                            "class" : "MultiInterventionDistributor" }
                             }
                         },
                         "Nodeset_Config": nodes}

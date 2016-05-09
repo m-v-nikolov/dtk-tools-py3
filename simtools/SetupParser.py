@@ -20,7 +20,12 @@ def SetupParser(setup_file=''):
     setup = ConfigParser({'password':''})
     setup.read(setup_file)
 
-    user = os.environ['USERNAME'] if sys.platform == 'win32' else os.getlogin()
+    if sys.platform == 'win32':
+        user = os.environ['USERNAME']
+    else:
+        import pwd
+        user = pwd.getpwuid(os.geteuid())[0]
+
     setup.set('HPC', 'user', user)
     setup.set('LOCAL', 'user', user)
 

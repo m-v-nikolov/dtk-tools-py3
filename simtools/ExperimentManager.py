@@ -8,7 +8,6 @@ import re
 import signal
 import threading
 import time
-import warnings
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -223,8 +222,8 @@ class LocalExperimentManager(object):
                 continue
 
             if self.maxThreadSemaphore:
-                logger.info('Thread-%d: sim_id=%s', i, str(sim_id))
                 self.maxThreadSemaphore.acquire()
+                logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
 
             parser = self.get_output_parser(sim_id, filtered_analyses)   # execute filtered analyzers on parser thread
             parser.start()
@@ -267,57 +266,25 @@ class LocalExperimentManager(object):
     def complete_sim_creation(self, commisioners=[]):
         return  # no batching in LOCAL
 
-    def commission_simulations(self):
-        doLocalBatching = False
 
-        commissioners = []
+    def commission_simulations(self):
         exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
         sim_ids = self.exp_data['sims'].keys()
 
         max_local_sims = int(self.get_property('max_local_sims'))
-        if len(commissioners) > max_local_sims:
-            warnings.warn("Trying to submit more than %d concurrent local simulations." % max_local_sims, Warning)
-            choice = raw_input('Do you want to continue?  Yes [Y], Batch [B], No [N]...')
-            if choice.lower() == 'y':
-                logger.info('Continuing all in parallel...')
-            elif choice.lower() == 'b':
-                logger.info('Batching...')
-                doLocalBatching = True
-            else:
-                logger.info('Truncating...')
-                return False
 
-        if doLocalBatching:
-            for sim_id in sim_ids[:max_local_sims]:
-                c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                commissioners.append(c)
-                c.start()
+        from multiprocessing import Queue
 
-            num_commissioners_started = max_local_sims
+        self.thread_queue = Queue(maxsize=max_local_sims)  # A queue to multithread when running 'All' in a given step
 
-            while num_commissioners_started < len(commissioners):
-                for c in commissioners[:num_commissioners_started]:
-                    c.join()
-                states, msgs = self.get_simulation_status()
-                running_ids = [id for (id, state) in states.iteritems() if state in ['Running']]
-                if len(running_ids) >= max_local_sims:
-                    logger.info(dict(Counter(states.values())))
-                    time.sleep(10)
-                else:
-                    for sim_id in sim_ids[num_commissioners_started:num_commissioners_started + (max_local_sims - len(running_ids))] :
-                        c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                        commissioners.append(c)
-                        c.start()
-                    num_commissioners_started += max_local_sims - len(running_ids)
-        else:
-            for sim_id in sim_ids:
-                c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                commissioners.append(c)
-                c.start()
+        for sim_id in sim_ids:
+            self.thread_queue.put('run1')
+            c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline, self.thread_queue)
+            c.start()
+            self.exp_data['sims'][sim_id]['jobId'] = c.job_id
+            states, msgs = self.get_simulation_status()
+            logger.info(dict(Counter(states.values())))
 
-        for c in commissioners:
-            c.join()
-            self.exp_data['sims'][c.sim_id]['jobId'] = c.job_id
 
         return True
 
@@ -361,7 +328,10 @@ class LocalExperimentManager(object):
                     long_states[jobid] += " (" + str(100*steps_complete[0]/steps_complete[1]) + "% complete)"
 
         logger.info('Job states:')
-        logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+        if len(long_states) < 20:
+            # We have less than 20 simulations, display the simulations details
+            logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+        # Display the counter no matter the number of simulations
         logger.info(dict(Counter(states.values())))
 
     @staticmethod
@@ -458,7 +428,7 @@ class CompsExperimentManager(LocalExperimentManager):
     def collect_sim_metadata(self):
         self.exp_data['sims'] = CompsSimulationCommissioner.get_sim_metadata_for_exp(self.exp_data['exp_id'])
 
-    def cancel_all_simulations(self, states):
+    def cancel_all_simulations(self, states=None):
         from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 

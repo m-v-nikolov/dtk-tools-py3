@@ -1,28 +1,31 @@
 import copy
 
+
 param_block = {
 
-    "Habitat_Type": [ "TEMPORARY_RAINFALL", "CONSTANT" ], ##
-    "Required_Habitat_Factor": [ 8e8, 8e7 ], ##
+    "Larval_Habitat_Types":{
+                            "TEMPORARY_RAINFALL": 8e8,
+                            "CONSTANT": 8e7
+                            },
 
-    "Aquatic_Arrhenius_1": 84200000000, 
-    "Aquatic_Arrhenius_2": 8328, 
-    "Aquatic_Mortality_Rate": 0.1, 
+    "Aquatic_Arrhenius_1": 84200000000,
+    "Aquatic_Arrhenius_2": 8328,
+    "Aquatic_Mortality_Rate": 0.1,
 
-    "Immature_Duration": 2, 
+    "Immature_Duration": 2,
 
     "Adult_Life_Expectancy": 10,
-    "Days_Between_Feeds": 3, 
+    "Days_Between_Feeds": 3,
     "Anthropophily": 0.95,           ## species- and site-specific feeding parameters
     "Indoor_Feeding_Fraction": 0.5,  ##
-    "Egg_Batch_Size": 100, 
+    "Egg_Batch_Size": 100,
 
     "Acquire_Modifier": 0.2, ## VECTOR_SIM uses a factor here for human-to-mosquito infectiousness, while MALARIA_SIM explicitly models gametocytes
-    "Infected_Arrhenius_1": 117000000000, 
-    "Infected_Arrhenius_2": 8336, 
+    "Infected_Arrhenius_1": 117000000000,
+    "Infected_Arrhenius_2": 8336,
     "Infected_Egg_Batch_Factor": 0.8,
 
-    "Infectious_Human_Feed_Mortality_Factor": 1.5, 
+    "Infectious_Human_Feed_Mortality_Factor": 1.5,
     "Transmission_Rate": 0.9 ## Based on late-2013 calibration of PfPR vs EIR favoring 1.0 to 0.5
 }
 
@@ -34,9 +37,10 @@ arabiensis_param_block = copy.deepcopy(param_block)
 # original setting
 funestus_param_block = copy.deepcopy(param_block)
 mod_funestus_params = {
+    "Larval_Habitat_Types":{
+        "WATER_VEGETATION": 2e7
+        },
     "Indoor_Feeding_Fraction": 0.95,
-    "Habitat_Type": [ "WATER_VEGETATION" ],
-    "Required_Habitat_Factor": [ 2e7 ]
 }
 funestus_param_block.update(mod_funestus_params)
 '''
@@ -49,6 +53,7 @@ mod_funestus_params = {
 }
 funestus_param_block.update(mod_funestus_params)
 
+
 # An. gambiae
 gambiae_param_block = copy.deepcopy(param_block)
 gambiae_param_block["Indoor_Feeding_Fraction"] = 0.95
@@ -56,14 +61,16 @@ gambiae_param_block["Indoor_Feeding_Fraction"] = 0.95
 # An. farauti
 farauti_param_block = copy.deepcopy(param_block)
 mod_farauti_params = {
-    "Habitat_Type": [ "BRACKISH_SWAMP" ], 
-    "Required_Habitat_Factor": [ 10000000000 ], 
-    "Adult_Life_Expectancy": 5.9, 
-    "Days_Between_Feeds": 2, 
-    "Anthropophily": 0.97, 
-    "Indoor_Feeding_Fraction": 0.05, 
-    "Egg_Batch_Size": 70, 
-    "Acquire_Modifier": 0.05, 
+
+    "Larval_Habitat_Types":{
+                        "BRACKISH_SWAMP": 10000000000
+                        },
+    "Adult_Life_Expectancy": 5.9,
+    "Days_Between_Feeds": 2,
+    "Anthropophily": 0.97,
+    "Indoor_Feeding_Fraction": 0.05,
+    "Egg_Batch_Size": 70,
+    "Acquire_Modifier": 0.05,
     "Transmission_Rate": 0.8
 }
 farauti_param_block.update(mod_farauti_params)
@@ -74,14 +81,16 @@ farauti_param_block.update(mod_farauti_params)
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-maculatus/
 maculatus_param_block = copy.deepcopy(param_block)
 mod_maculatus_params = {
-    "Habitat_Type": [ "WATER_VEGETATION" ], 
-    "Required_Habitat_Factor": [ 1e7 ], 
-    "Adult_Life_Expectancy": 7, 
-    "Days_Between_Feeds": 3, 
-    "Anthropophily": 0.3, 
-    "Indoor_Feeding_Fraction": 0.4, 
-    "Egg_Batch_Size": 70, 
-    "Acquire_Modifier": 0.2, 
+
+    "Larval_Habitat_Types":{
+                        "WATER_VEGETATION": 1e7
+                        },
+    "Adult_Life_Expectancy": 7,
+    "Days_Between_Feeds": 3,
+    "Anthropophily": 0.3,
+    "Indoor_Feeding_Fraction": 0.4,
+    "Egg_Batch_Size": 70,
+    "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
 }
 maculatus_param_block.update(mod_maculatus_params)
@@ -91,14 +100,16 @@ maculatus_param_block.update(mod_maculatus_params)
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-minimus/
 minimus_param_block = copy.deepcopy(param_block)
 mod_minimus_params = {
-    "Habitat_Type": [ "WATER_VEGETATION" ], 
-    "Required_Habitat_Factor": [ 1e7 ], 
-    "Adult_Life_Expectancy": 7, 
-    "Days_Between_Feeds": 3, 
-    "Anthropophily": 0.93, 
-    "Indoor_Feeding_Fraction": 0.95, 
-    "Egg_Batch_Size": 70, 
-    "Acquire_Modifier": 0.2, 
+
+    "Larval_Habitat_Types":{
+                        "WATER_VEGETATION": 1e7
+                        },
+    "Adult_Life_Expectancy": 7,
+    "Days_Between_Feeds": 3,
+    "Anthropophily": 0.93,
+    "Indoor_Feeding_Fraction": 0.95,
+    "Egg_Batch_Size": 70,
+    "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
 }
 minimus_param_block.update(mod_minimus_params)
@@ -154,11 +165,15 @@ def set_larval_habitat(cb, habitats):
     """
     Set vector species and habitat parameters of config argument and return
     Example:
-    habitats = { "arabiensis" : [1.7e9, 1e7], "funestus" : [2e7] }
     habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
     """
-    cb.set_param('Vector_Species_Names', habitats.keys())
 
+    for species, habitat in habitats.iteritems():
+        cb.config["parameters"]["Vector_Species_Params"][species]["Larval_Habitat_Types"] = habitat
+
+
+    #cb.set_param('Vector_Species_Names', habitats.keys())
+    '''
     for (species, habitat) in habitats.items():
         s = cb.config["parameters"]["Vector_Species_Params"][species]
         if isinstance(habitat, dict):
@@ -170,3 +185,5 @@ def set_larval_habitat(cb, habitats):
                 raise Exception("Required_Habitat_Factor argument does not match size of Habitat_Type list")
         else:
             raise Exception("Don't recognize formatting of %s, which must be a dict or list",habitat)
+    '''
+    return
