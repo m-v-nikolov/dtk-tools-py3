@@ -33,23 +33,12 @@ param_block = {
 arabiensis_param_block = copy.deepcopy(param_block)
 
 # An. funestus
-'''
-# original setting
 funestus_param_block = copy.deepcopy(param_block)
 mod_funestus_params = {
     "Larval_Habitat_Types":{
         "WATER_VEGETATION": 2e7
         },
     "Indoor_Feeding_Fraction": 0.95,
-}
-funestus_param_block.update(mod_funestus_params)
-'''
-# need this modification to run sims w/ piecewise_monthly hab; that will need to change as related code is consolidated in the DTK
-funestus_param_block = copy.deepcopy(param_block)
-mod_funestus_params = {
-    "Indoor_Feeding_Fraction": 0.95,
-    "Habitat_Type": [ "PIECEWISE_MONTHLY",  "WATER_VEGETATION"],
-    "Required_Habitat_Factor": [ 1e8, 2e7 ]
 }
 funestus_param_block.update(mod_funestus_params)
 
