@@ -23,6 +23,18 @@
       "label":"DLL staging root",
       "help":"Folder used to store the libraries used for the simulations.",
       "type":"directory"
+    },
+    {
+      "name":"bin_path",
+      "label":"Model executable path",
+      "help":"Path to the model executable.",
+      "type":"file"
+    },
+    {
+      "name":"lib_path",
+      "label":"Model libraries path",
+      "help":"Path to the folder containing the libraries used for the simulations.",
+      "type":"directory"
     }
   ],
 
