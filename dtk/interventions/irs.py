@@ -89,3 +89,4 @@ def add_IRS(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
             IRS_event["Event_Coordinator_Config"].pop("Demographic_Coverage")
 
         config_builder.add_event(IRS_event)
+

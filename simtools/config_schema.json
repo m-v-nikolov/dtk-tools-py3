@@ -1,0 +1,97 @@
+{
+  "COMMON":[
+    {
+      "name":"sim_root",
+      "label":"Simulation root",
+      "help":"Folder where the simulation runs will be stored.",
+      "type":"directory"
+    },
+    {
+      "name":"input_root",
+      "label":"Input root",
+      "help":"Folder where all the input file sets (climate, demographics, etc.) are stored.",
+      "type":"directory"
+    },
+    {
+      "name":"bin_staging_root",
+      "label":"Binaries staging root",
+      "help":"Folder used to store the executable used for the simulations.",
+      "type":"directory"
+    },
+    {
+      "name":"lib_staging_root",
+      "label":"DLL staging root",
+      "help":"Folder used to store the libraries used for the simulations.",
+      "type":"directory"
+    }
+  ],
+
+  "LOCAL":[
+    {
+      "name":"max_local_sims",
+      "label":"Maximum local simulations",
+      "help":"Maximum number of parallel simulations when ran locally.",
+      "type":"int",
+      "default":8,
+      "min":1,
+      "max":32
+    }
+  ],
+
+  "HPC":[
+    {
+      "name": "server_endpoint",
+      "label": "Server endpoint",
+      "help": "Endpoint of the HPC server. Needs to be an URL.",
+      "type": "url",
+      "default": "https://comps.idmod.org"
+    },
+    {
+      "name":"node_group",
+      "label":"Node group",
+      "help":"Nodegroup to use.",
+      "type":"string",
+      "default":"emod_abcd"
+    },
+    {
+      "name":"priority",
+      "label":"Priority",
+      "help":"Priority to use",
+      "type":"radio",
+      "choices": ["lowest","BelowNormal","Normal","AboveNormal","Highest"],
+      "default":"Lowest"
+    },
+    {
+      "name":"num_retries",
+      "label":"Number of retries",
+      "help":"How many times a failed simulation will be retried.",
+      "type":"int",
+      "default":"0",
+      "min":0,
+      "max":10
+    },
+    {
+      "name":"sims_per_thread",
+      "label":"Simulations per thread",
+      "help":"Number of simulation per analysis thread.",
+      "type":"int",
+      "default":"20",
+      "min":1,
+      "max":100
+    },
+    {
+      "name":"use_comps_asset_svc",
+      "label":"COMPS asset service",
+      "help":"Use the COMPS asset service.",
+      "type":"bool",
+      "default":"0"
+    },
+    {
+      "name":"compress_assets",
+      "label":"Compress assets",
+      "help":"Use compression while using the COMPS asset service.",
+      "type":"bool",
+      "default":"0"
+    }
+  ]
+}
