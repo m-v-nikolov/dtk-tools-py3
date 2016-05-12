@@ -62,14 +62,12 @@ class TemplateContainer(SimConfigBuilder):
         return ret
 
     def update_params(self, params):
-        # SHOULD MAP FIRST!
+        # TODO: More efficient
         for param_name,val in params.items():
             param_split = param_name.split('.')
             param_type = param_split[0]
             param_name = '.'.join(param_split[1:])
-            print param_type
-            print param_name
             template_type = param_type + '_TEMPLATE'
             for fn in  self.plugin_files_json[template_type]:
-                print '[%s]: setting params:'%fn,params
-                self.get(fn).update_params(params)
+                print '[%s]: setting param %s = %s' % (fn, param_name, val)
+                self.get(fn).update_params({param_name:val})

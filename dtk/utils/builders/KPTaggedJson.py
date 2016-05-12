@@ -19,8 +19,8 @@ class KPTaggedJson(ConfigurationJson):
     def __init__(self, contents={}, filename='campaign', **kwargs):
         self.contents = contents
         self._filename = filename
-        self.update_params(kwargs, validate=True)
-
+        if kwargs:
+            self.update_params(kwargs, validate=True)
 
     def update_params(self, params, validate=False):
         print "[",self.filename,"] UPDATE_PARAMS with params:", params

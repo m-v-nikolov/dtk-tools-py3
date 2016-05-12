@@ -55,3 +55,6 @@ class ConfigurationJson(object):
 
     def append_demographics_overlay(self, filename):
         self.contents['Demographics_Filenames'].append(filename)
+
+    def reset_demographic_overlays(self):
+        self.contents['Demographics_Filenames'] = []

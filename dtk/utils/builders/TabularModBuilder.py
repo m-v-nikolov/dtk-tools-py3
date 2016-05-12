@@ -51,7 +51,7 @@ class TabularModBuilder(ModBuilder):
             self.mod_generator = (
                 self.set_mods(
                     [
-                        self.ModFn( TabularConfigBuilder.map_and_update_params_for_all_templates, dict(zip(self.header, row)) )
+                        self.ModFn( TabularConfigBuilder.update_params_for_all_templates, dict(zip(self.header, row)) )
                     ]
                 ) for row in self.table
             )

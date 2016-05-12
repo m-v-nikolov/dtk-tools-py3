@@ -1,12 +1,10 @@
-import sys # temp
-
+import utils
 import os
 import json
 from simtools.SimConfigBuilder import SimConfigBuilder
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.builders.TemplateContainer import TemplateContainer
-from dtk.interventions.empty_campaign import empty_campaign
 
 # TODO: Can the config file be selected dynamically?
 
@@ -63,49 +61,47 @@ class TabularConfigBuilder(SimConfigBuilder):
     '''
 
     config_template_key = 'CONFIG_TEMPLATE'    # handled differently from other template files
-    campaign_template_key = 'CAMPAIGN_TEMPLATE'    # handled differently from other template files
-    demographics_template_key = 'DEMOGRAPHICS_TEMPLATE'    # handled differently from other template files
+    #campaign_template_key = 'CAMPAIGN_TEMPLATE'    # handled differently from other template files
+    #demographics_template_key = 'DEMOGRAPHICS_TEMPLATE'    # handled differently from other template files
 
     def __init__(self, plugin_info_json, plugin_files_json, plugin_files_dir, **kwargs):
 
         self.template_container = TemplateContainer(plugin_files_json, plugin_files_dir)
-
         self.plugin_info_json = json2dict(plugin_info_json)
 
         configs = self.template_container.get_by_type(self.config_template_key)
         assert( len(configs) == 1 ) # one and only one config for now
-        config = configs[0]
-        if config is None:
+        self.config = configs[0]
+        if self.config is None:
             print "ERROR ----------------------------------" # TODO
 
-        self.config = config
         try:
             self.config.get_param('Simulation_Type')
         except:
             print "ADDING SIMULATION_TYPE to CONFIG"
             self.config.set_param('Simulation_Type','None') # Simulation_Type is a required parameter of simtools
 
-        self.campaign = empty_campaign
         cfn = self.config.get_param('Campaign_Filename')
+        self.campaign = {'Filename':cfn, 'Template':None}
         self.set_campaign(cfn)
 
         self.demog = []
         dfns = self.config.get_param('Demographics_Filenames')
         self.add_demographics(dfns)
 
-        static_params = self.plugin_info_json['Static_Parameters']
-        self.static_param_map = self.build_param_map(static_params)
+        self.static_params = self.plugin_info_json['Static_Parameters']
+        #self.static_param_map = self.build_param_map(static_params)
         # DJK TODO: handle kwargs
         #self.static_param_map = self.build_static_param_map(static_params + **kwargs)
 
-        self.update_params_for_all_templates( self.static_param_map )
+        self.update_params_for_all_templates( self.static_params )
 
     def set_campaign(self, new_campaign_filename):
         print "Setting campaign filename to %s" % new_campaign_filename
         campaign = self.template_container.get( new_campaign_filename )
         if campaign is not None:
             print "--> Found in template_container"
-            self.campaign = campaign
+            self.campaign = {'Filename':cfn, 'Template':campaign}
 
     def reset_demographics(self):
         self.demog = [] # Need to delete old demographic templates?
@@ -121,34 +117,34 @@ class TabularConfigBuilder(SimConfigBuilder):
                 print "--> %s: not in template_container" % dfn
                 self.demog.append({'Filename':dfn, 'Template':None}) # Append demographics filename
 
-    def build_param_map(self, params):
-        param_map = {}
-        for param,value in params.items():
-            split = param.split('.')
-            if len(split) == 1:
-                raise RuntimeError('Parameter \'' + param + '\' does not contain a period. Parameter names should be CONFIG.something, CAMPAIGN.something, or DEMOGRAPHICS.something.')
-            param_type = split[0]
-            param_address = '.'.join(split[1:])
+#   def build_param_map(self, params):
+#       param_map = {}
+#       for param,value in params.items():
+#           split = param.split('.')
+#           if len(split) == 1:
+#               raise RuntimeError('Parameter \'' + param + '\' does not contain a period. Parameter names should be CONFIG.something, CAMPAIGN.something, or DEMOGRAPHICS.something.')
+#           param_type = split[0]
+#           param_address = '.'.join(split[1:])
 
-            if param_type in param_map:
-                param_map[param_type].update( {param_address:value} )
-            else:
-                param_map[param_type] = {param_address:value}
+#           if param_type in param_map:
+#               param_map[param_type].update( {param_address:value} )
+#           else:
+#               param_map[param_type] = {param_address:value}
 
-        return param_map
+#       return param_map
 
     def update_params_for_all_templates(self, param_map):
         self.template_container.update_params(param_map)
 
-    def map_and_update_params_for_all_templates(self, params):
-        '''
-        ew
-        '''
+#   def map_and_update_params_for_all_templates(self, params):
+#       '''
+#       ew
+#       '''
 
-        print "PARAMS",params
-        param_map = self.build_param_map(params)
-        print "PARAM_MAP",param_map
-        self.update_params_for_all_templates(param_map)
+#       print "PARAMS",params
+#       #param_map = self.build_param_map(params)
+#       #print "PARAM_MAP",param_map
+#       self.update_params_for_all_templates(params)
 
     def Log(self, msg):
         print(msg)
@@ -159,11 +155,12 @@ class TabularConfigBuilder(SimConfigBuilder):
 
     def set_param(self, param, value):
         if "." not in param:
-            param_map = { self.config_template_key.replace('_TEMPLATE', '') + '.' + param : value}
-        else:
-            param_map = build_param_map(self, {param,value})
-        print "TEMP", param_map
-        self.update_params_for_all_templates(param_map)
+           param = self.config_template_key.replace('_TEMPLATE', '') + '.' + param
+#           param_map = { self.config_template_key.replace('_TEMPLATE', '') + '.' + param : value}
+#       else:
+#           param_map = build_param_map(self, {param,value})
+#       print "TEMP", param_map
+        self.update_params_for_all_templates({param:value})
 
         #self.params[param] = value
         return {param: value}  # for ModBuilder metadata
@@ -176,14 +173,14 @@ class TabularConfigBuilder(SimConfigBuilder):
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        campaign_filename = self.config.get_param('Campaign_Filename')
-        write_fn('campaign', dump(self.campaign.contents))  # TODO:Functional access or contained in template
+        if self.campaign['Template']:
+            write_fn(self.campaign['Filename'], dump(self.campaign['Template'].get_contents()))
 
         #if self.custom_reports:
         #    self.set_param('Custom_Reports_Filename', 'custom_reports.json')
         #    write_fn('custom_reports', dump(format_reports(self.custom_reports)))
 
-
+        self.config.reset_demographic_overlays()
         for demog in self.demog:
             print "DEMOG",demog
             filename = demog['Filename']
@@ -197,3 +194,7 @@ class TabularConfigBuilder(SimConfigBuilder):
         write_fn('config', dump(self.config.get_contents()))
 
         #write_fn('emodules_map', dump(self.emodules_map))
+
+    def get_commandline(self, exe_path, paths):
+        eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
+        return utils.CommandlineGenerator(exe_path, eradication_options, [])
