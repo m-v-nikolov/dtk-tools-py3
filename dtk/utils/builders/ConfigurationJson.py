@@ -50,22 +50,8 @@ class ConfigurationJson(object):
             raise Exception('No parameter named %s' % param)
         return True
 
-    def dump_files(self, working_directory):
-        if not os.path.exists(working_directory):
-            os.makedirs(working_directory)
-        def write_file(name, content):
-            filename = os.path.join(working_directory, '%s.json' % name)
-            with open(filename, 'w') as f:
-                f.write(content)
-        self.file_writer(write_file)
+    def get_contents(self):
+        return {'parameters': self.contents}
 
-    def dump_files_to_string(self):
-        files={}
-        def update_strings(name, content):
-            files[name] = content
-        self.file_writer(update_strings)
-        return files
-
-    def file_writer(self, write_fn):
-        dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
-        write_fn( self.filename.replace(".json",""), dump(self.contents))
+    def append_demographics_overlay(self, filename):
+        self.contents['Demographics_Filenames'].append(filename)

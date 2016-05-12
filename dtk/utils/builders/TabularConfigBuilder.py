@@ -1,3 +1,5 @@
+import sys # temp
+
 import os
 import json
 from simtools.SimConfigBuilder import SimConfigBuilder
@@ -78,7 +80,7 @@ class TabularConfigBuilder(SimConfigBuilder):
 
         self.config = config
         try:
-            self.config.get('Simulation_Type')
+            self.config.get_param('Simulation_Type')
         except:
             print "ADDING SIMULATION_TYPE to CONFIG"
             self.config.set_param('Simulation_Type','None') # Simulation_Type is a required parameter of simtools
@@ -89,7 +91,7 @@ class TabularConfigBuilder(SimConfigBuilder):
 
         self.demog = []
         dfns = self.config.get_param('Demographics_Filenames')
-        self.set_demographics(dfns)
+        self.add_demographics(dfns)
 
         static_params = self.plugin_info_json['Static_Parameters']
         self.static_param_map = self.build_param_map(static_params)
@@ -105,16 +107,19 @@ class TabularConfigBuilder(SimConfigBuilder):
             print "--> Found in template_container"
             self.campaign = campaign
 
-    def set_demographics(self, new_demographics_filenames):
+    def reset_demographics(self):
+        self.demog = [] # Need to delete old demographic templates?
+
+    def add_demographics(self, new_demographics_filenames):
         print "Setting demographics filenames to", new_demographics_filenames
         for dfn in new_demographics_filenames:
             demog_template = self.template_container.get( dfn )
             if demog_template is not None:
                 print "--> %s: from template" % dfn
-                self.demog.append(demog_template) # Append template
+                self.demog.append({'Filename':dfn, 'Template':demog_template}) # Append template
             else:
                 print "--> %s: not in template_container" % dfn
-                self.demog.append(dfn) # Append demographics filename
+                self.demog.append({'Filename':dfn, 'Template':None}) # Append demographics filename
 
     def build_param_map(self, params):
         param_map = {}
@@ -174,14 +179,21 @@ class TabularConfigBuilder(SimConfigBuilder):
         campaign_filename = self.config.get_param('Campaign_Filename')
         write_fn('campaign', dump(self.campaign.contents))  # TODO:Functional access or contained in template
 
-        if self.custom_reports:
-            self.set_param('Custom_Reports_Filename', 'custom_reports.json')
-            write_fn('custom_reports', dump(format_reports(self.custom_reports)))
+        #if self.custom_reports:
+        #    self.set_param('Custom_Reports_Filename', 'custom_reports.json')
+        #    write_fn('custom_reports', dump(format_reports(self.custom_reports)))
 
-        for name, content in self.demog_overlays.items():
-            self.append_overlay('%s.json' % name)
-            write_fn(name, dump(content))
 
-        write_fn('config', dump(self.config.data))
+        for demog in self.demog:
+            print "DEMOG",demog
+            filename = demog['Filename']
+            template = demog['Template']
 
-        write_fn('emodules_map', dump(self.emodules_map))
+            self.config.append_demographics_overlay( filename )
+
+            if template is not None:
+                write_fn(filename.replace('.json', ''), dump(template.get_contents()))
+
+        write_fn('config', dump(self.config.get_contents()))
+
+        #write_fn('emodules_map', dump(self.emodules_map))

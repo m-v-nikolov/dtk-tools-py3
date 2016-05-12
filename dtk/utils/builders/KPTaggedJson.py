@@ -48,3 +48,6 @@ class KPTaggedJson(ConfigurationJson):
         #if param not in self.params:
         #    raise Exception('No parameter named %s' % param)
         return True
+
+    def get_contents(self):
+        return self.contents
