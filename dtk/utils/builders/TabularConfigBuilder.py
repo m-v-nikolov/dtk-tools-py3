@@ -1,4 +1,4 @@
-import utils
+from simtools.utils import CommandlineGenerator
 import os
 import json
 from simtools.SimConfigBuilder import SimConfigBuilder
@@ -101,7 +101,7 @@ class TabularConfigBuilder(SimConfigBuilder):
         campaign = self.template_container.get( new_campaign_filename )
         if campaign is not None:
             print "--> Found in template_container"
-            self.campaign = {'Filename':cfn, 'Template':campaign}
+            self.campaign = {'Filename':new_campaign_filename, 'Template':campaign}
 
     def reset_demographics(self):
         self.demog = [] # Need to delete old demographic templates?
@@ -174,7 +174,7 @@ class TabularConfigBuilder(SimConfigBuilder):
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
         if self.campaign['Template']:
-            write_fn(self.campaign['Filename'], dump(self.campaign['Template'].get_contents()))
+            write_fn(self.campaign['Filename'].replace('.json',''), dump(self.campaign['Template'].get_contents()))
 
         #if self.custom_reports:
         #    self.set_param('Custom_Reports_Filename', 'custom_reports.json')
@@ -197,4 +197,4 @@ class TabularConfigBuilder(SimConfigBuilder):
 
     def get_commandline(self, exe_path, paths):
         eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
-        return utils.CommandlineGenerator(exe_path, eradication_options, [])
+        return CommandlineGenerator(exe_path, eradication_options, [])

@@ -2,8 +2,6 @@ import json
 import logging
 import os
 
-import utils
-
 from dtk.utils.builders.ConfigurationJson import ConfigurationJson
 
 logger = logging.getLogger(__name__)

@@ -2,8 +2,6 @@ import json
 import logging
 import os
 
-import utils
-
 logger = logging.getLogger(__name__)
 
 class ConfigurationJson(object):
