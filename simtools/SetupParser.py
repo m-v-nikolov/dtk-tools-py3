@@ -61,6 +61,9 @@ class SetupParser():
     def items(self, category):
         return self.setup.items(category)
 
+    def getboolean(self,category, param):
+        return self.setup.getboolean(category, param)
+
     def load_schema(self):
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         self.schema = json_schema
