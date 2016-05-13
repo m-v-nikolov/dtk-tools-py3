@@ -21,20 +21,19 @@ class KPTaggedJson(ConfigurationJson):
             self.update_params(kwargs, validate=True)
 
     def update_params(self, params, validate=False):
-        print "[",self.filename,"] UPDATE_PARAMS with params:", params
-        #if not validate:
-        #    self.params.update(params)
-        #else:
-        #    for k, v in params.items():
-        #        self.validate_param(k)
-        #        logger.debug('Overriding: %s = %s' % (k, v))
-        #        self.set_param(k, v)
-        #return params  # for ModBuilder metadata
+        if not validate:
+            self.params.update(params)  # DJK NOTE: ModBuilder metadata only when validate=True
+        else:
+            for k, v in params.items():
+                self.validate_param(k)
+                logger.debug('Overriding: %s = %s' % (k, v))
+                self.set_param(k, v)
+        return params  # for ModBuilder metadata
+
 
     def set_param(self, param, value):
-        print "[",self.filename,"] SET_PARAM with params:", param
-        #self.params[param] = value
-        return {param: value}  # for ModBuilder metadata
+        print "[",self.filename,"] SET_PARAM %s=%f:" % (param, value)
+        return zip(*params)  # for ModBuilder metadata
 
     def get_param(self, param, default=None):
         print "[",self.filename,"] GET_PARAM with params:", param

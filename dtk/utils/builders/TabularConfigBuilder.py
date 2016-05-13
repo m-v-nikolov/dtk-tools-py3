@@ -61,8 +61,6 @@ class TabularConfigBuilder(SimConfigBuilder):
     '''
 
     config_template_key = 'CONFIG_TEMPLATE'    # handled differently from other template files
-    #campaign_template_key = 'CAMPAIGN_TEMPLATE'    # handled differently from other template files
-    #demographics_template_key = 'DEMOGRAPHICS_TEMPLATE'    # handled differently from other template files
 
     def __init__(self, plugin_info_json, plugin_files_json, plugin_files_dir, **kwargs):
 
@@ -117,49 +115,15 @@ class TabularConfigBuilder(SimConfigBuilder):
                 print "--> %s: not in template_container" % dfn
                 self.demog.append({'Filename':dfn, 'Template':None}) # Append demographics filename
 
-#   def build_param_map(self, params):
-#       param_map = {}
-#       for param,value in params.items():
-#           split = param.split('.')
-#           if len(split) == 1:
-#               raise RuntimeError('Parameter \'' + param + '\' does not contain a period. Parameter names should be CONFIG.something, CAMPAIGN.something, or DEMOGRAPHICS.something.')
-#           param_type = split[0]
-#           param_address = '.'.join(split[1:])
-
-#           if param_type in param_map:
-#               param_map[param_type].update( {param_address:value} )
-#           else:
-#               param_map[param_type] = {param_address:value}
-
-#       return param_map
-
     def update_params_for_all_templates(self, param_map):
         self.template_container.update_params(param_map)
-
-#   def map_and_update_params_for_all_templates(self, params):
-#       '''
-#       ew
-#       '''
-
-#       print "PARAMS",params
-#       #param_map = self.build_param_map(params)
-#       #print "PARAM_MAP",param_map
-#       self.update_params_for_all_templates(params)
 
     def Log(self, msg):
         print(msg)
 
-    #@property
-    #def params(self):
-    #    return self.templates
-
     def set_param(self, param, value):
         if "." not in param:
            param = self.config_template_key.replace('_TEMPLATE', '') + '.' + param
-#           param_map = { self.config_template_key.replace('_TEMPLATE', '') + '.' + param : value}
-#       else:
-#           param_map = build_param_map(self, {param,value})
-#       print "TEMP", param_map
         self.update_params_for_all_templates({param:value})
 
         #self.params[param] = value
@@ -170,7 +134,6 @@ class TabularConfigBuilder(SimConfigBuilder):
 
     def file_writer(self, write_fn):
         # DJK Note: want to maintain user's filenames
-
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
         if self.campaign['Template']:
