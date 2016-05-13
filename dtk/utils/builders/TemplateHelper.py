@@ -1,6 +1,6 @@
 from simtools.ModBuilder import ModBuilder
 from dtk.utils.parsers.JSON import json2dict
-from dtk.utils.builders.KPTaggedJson import KPTaggedJson
+from dtk.utils.builders.KPTaggedTemplate import KPTaggedTemplate
 
 class TemplateHelper():
     def __init__(self):
@@ -10,7 +10,8 @@ class TemplateHelper():
         # Also need KP_read_dir
 
         print "Reading template from file:", template_filename
-        template = KPTaggedJson(template_filename)
+        template_json = json2dict(template_filename)
+        template = KPTaggedTemplate(template_filename, template_json)
 
         print "Overriding static params:", static_params
         template.update_params(static_params)
