@@ -3,9 +3,9 @@ import os
 import npyscreen
 import sys
 
-from utils.setupui.ConfigSelectionForm import ConfigSelectionForm
-from utils.setupui.ConfigEditionForm import ConfigEditionForm
-from utils.setupui.DefaultBlockSelectionForm import DefaultBlockSelectionForm
+from ConfigSelectionForm import ConfigSelectionForm
+from ConfigEditionForm import ConfigEditionForm
+from DefaultBlockSelectionForm import DefaultBlockSelectionForm
 
 
 class SetupApplication(npyscreen.NPSAppManaged):

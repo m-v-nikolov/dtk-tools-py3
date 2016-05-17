@@ -1,8 +1,8 @@
 import npyscreen
 
-from utils.setupui.BlockSelectionPopup import BlockSelectionPopup
-from utils.setupui.ConfigTypePopup import ConfigTypePopup
-from utils.setupui.MenuForm import MenuForm
+from BlockSelectionPopup import BlockSelectionPopup
+from ConfigTypePopup import ConfigTypePopup
+from MenuForm import MenuForm
 
 
 class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
