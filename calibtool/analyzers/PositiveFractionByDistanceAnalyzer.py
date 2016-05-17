@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from calibration import LL_calculators
+from dtk.calibration import LL_calculators
 from calibtool.CalibAnalyzer import CalibAnalyzer
 from calibtool.analyzers.Helpers import get_spatial_report_data_at_date, get_risk_by_distance
 
