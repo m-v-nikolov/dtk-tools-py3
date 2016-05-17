@@ -9,6 +9,13 @@ from utils.setupui.DefaultBlockSelectionForm import DefaultBlockSelectionForm
 
 
 class SetupApplication(npyscreen.NPSAppManaged):
+    """
+    Main application for the dtk setup command.
+    Forms available:
+    - MAIN: Display the menu
+    - DEFAULT_SELECTION: Form to select the default blocks
+    - EDIT: Form to edit/create a block
+    """
 
     def onStart(self):
         self.addForm('MAIN', ConfigSelectionForm, name='dtk-tools v0.3.5')
