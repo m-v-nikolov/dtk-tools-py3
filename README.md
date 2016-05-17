@@ -21,14 +21,17 @@ python -m pip install --upgrade pip
 pip install -e . 
 ```
 
+To test if dtk-tools is correctly installed on your machine issue a:
+```
+dtk -h
+```
+If the command succeed and present you with the details of the dtk command you are all set!
+
 **Note:** If you run into issues updating numpy on Windows, under the dtk-tools\install folder try:
 
 ```
 pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
 ```
-
-
-Also on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example: `C:\github\dtk-tools\dtk`.
 
 If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 

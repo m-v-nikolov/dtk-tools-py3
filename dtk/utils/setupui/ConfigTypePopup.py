@@ -1,6 +1,6 @@
 import npyscreen
 
-from utils.setupui.MenuForm import MenuForm
+from MenuForm import MenuForm
 
 
 class ConfigTypePopup(npyscreen.ActionFormMinimal, MenuForm):
