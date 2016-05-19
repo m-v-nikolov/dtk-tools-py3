@@ -75,10 +75,10 @@ class CalibManager(object):
         if 'location' in kwargs:
             self.location = kwargs.pop('location')
 
-        self.create_calibration(self.location)
+        self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
-    def create_calibration(self, location):
+    def create_calibration(self, location, **kwargs):
         """
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
@@ -106,7 +106,7 @@ class CalibManager(object):
                 self.cleanup()
                 self.create_calibration(location)
             elif var == "R":
-                self.resume_from_iteration(location=location)
+                self.resume_from_iteration(location=location, **kwargs)
 
     @staticmethod
     def retrieve_iteration_state(iter_directory):
