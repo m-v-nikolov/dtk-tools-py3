@@ -11,6 +11,7 @@ from simtools.ExperimentManager import ExperimentManagerFactory
 
 from dtk.utils.core.DTKSetupParser import DTKSetupParser
 
+logger = logging.getLogger(__name__)
 
 def load_config_module(config_name):
     sys.path.append(os.getcwd())
@@ -37,14 +38,20 @@ def run(args):
 
 
 def status(args):
-    # reload the experiment
+    if args.active:
+        sms = reload_active_experiments()
+        for sm in sms:
+            states, msgs = sm.get_simulation_status()
+            sm.print_status(states, msgs)
+        return
+
     sm = reload_experiment(args)
 
     # monitor the status of the simulation
     while True:
         states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
-        if not args.repeat or sm.status_finished(states):
+        if not args.repeat or sm.finished():
             break
         else:
             time.sleep(20)
@@ -64,16 +71,19 @@ def resubmit(args):
 
 
 def kill(args):
-    sm = reload_experiment(args)
+
+    if args.simIds:
+        params = { 'ids': args.simIds }
+    else:
+        params = { 'killall': True }
 
     if args.all:
-        logging.debug('Killing all jobs in experiment')
-        sm.cancel_simulations(killall=True)
-    elif args.ids:
-        logging.info('Killing job(s) with ids: ' + str(args.ids))
-        sm.cancel_simulations(ids=args.ids)
+        sms = reload_experiments(args)
+        for sm in sms:
+            sm.cancel_simulations(**params)
     else:
-        logging.info("No job IDs were specified.  Run 'dtk kill -h' to see options.")
+        sm = reload_experiment(args)
+        sm.cancel_simulations(**params)
 
 
 def analyze(args):
@@ -123,11 +133,21 @@ def analyze_from_script(args, sim_manager):
 
 
 def reload_experiment(args=None):
-    if args.expId:
-        filepath = utils.exp_file_from_id(args.expId)
+    if args:
+        id = args.expId
     else:
-        filepath = utils.most_recent_exp_file()
-    return ExperimentManagerFactory.from_file(filepath)
+        id = None
+    return ExperimentManagerFactory.from_file(utils.exp_file(id))
+
+def reload_experiments(args=None):
+    if args:
+        id = args.expId
+    else:
+        id = None
+    return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+
+def reload_active_experiments(args=None):
+    return [sm for sm in reload_experiments(args) if not sm.finished()]
 
 
 def main():
@@ -144,26 +164,29 @@ def main():
     parser_run.set_defaults(func=run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID')
-    parser_status.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_status.add_argument('-r', '--repeat', action='store_true', help='Repeat status check until job is done processing')
+    parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID.')
+    parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID identifying JSON file to load back simulation manager.')
+    parser_status.add_argument('-r', '--repeat', action='store_true', help='Repeat status check until job is done processing.')
+    parser_status.add_argument('-a', '--active', action='store_true', help='Get the status of all active experiments.')
     parser_status.set_defaults(func=status)
 
     # 'dtk resubmit' options
+    # TODO: Edit this command as well?
     parser_resubmit = subparsers.add_parser('resubmit', help='Resubmit failed or canceled simulations specified by ID')
     parser_resubmit.add_argument(dest='ids', default=None, nargs='*', type=int, help='Process or job IDs of simulations to resubmit.')
     parser_resubmit.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_resubmit.add_argument('--all', action='store_true', help='Resubmit all failed or canceled simulations in experiment')
+    parser_resubmit.add_argument('-a', '--all', action='store_true', help='Resubmit all failed or canceled simulations in experiment')
     parser_resubmit.set_defaults(func=resubmit)
 
     # 'dtk kill' options
     parser_kill = subparsers.add_parser('kill', help='Kill running simulations specified by ID')
-    parser_kill.add_argument(dest='ids', default=None, nargs='*', help='Process or job IDs of simulations to kill.')
-    parser_kill.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_kill.add_argument('--all', action='store_true', help='Kill all simulations in experiment')
+    parser_kill.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
+    parser_kill.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to kill.')
+    parser_kill.add_argument('-a', '--all', action='store_true', help='Kill all simulations in experiment')
     parser_kill.set_defaults(func=kill)
 
     # 'dtk analyze' options
+    # TODO: Edit this command as well?
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers')
     parser_analyze.add_argument(dest='config_name', default=None, nargs='?', help='Name of configuration python script for custom analysis of simulations.')
     parser_analyze.add_argument('--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')

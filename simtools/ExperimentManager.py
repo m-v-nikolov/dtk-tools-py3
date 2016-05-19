@@ -8,6 +8,7 @@ import re
 import signal
 import threading
 import time
+from COMPSJavaInterop import COMPS
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +19,6 @@ from ModBuilder import SingleSimulationBuilder
 from Commisioner import SimulationCommissioner, CompsSimulationCommissioner
 from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
-
 
 class ExperimentManagerFactory(object):
 
@@ -48,8 +48,9 @@ class ExperimentManagerFactory(object):
         return cls.factory(exp_data['location'])('', exp_data)
 
     @classmethod
-    def from_file(cls, exp_data_path):
-        logger.info('Reloading ExperimentManager from: %s', exp_data_path)
+    def from_file(cls, exp_data_path, suppressLogging = False):
+        if not suppressLogging:
+            logger.info('Reloading ExperimentManager from: %s', exp_data_path)
         with open(exp_data_path) as exp_data_file:
             exp_data = json.loads(exp_data_file.read())
         return cls.factory(exp_data['location'])('', exp_data)
@@ -159,10 +160,10 @@ class LocalExperimentManager(object):
         for id in ids:
             if type(id) is str :
                 id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
-
+            
             state = states.get(id)
             if not state:
-                logger.warning('No job in current experiment with ID = %s' % id)
+                logger.warning('No job in experiment with ID = %s' % id)
                 continue
 
             if state not in ['Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown']:
@@ -189,7 +190,7 @@ class LocalExperimentManager(object):
         for id in ids:
             state = states.get(id)
             if not state:
-                logger.warning('No job in current experiment with ID = %s' % id)
+                logger.warning('No job in experiment with ID = %s' % id)
                 continue
 
             if state in ['Failed', 'Canceled']:
@@ -288,7 +289,11 @@ class LocalExperimentManager(object):
 
         return True
 
-    def cancel_all_simulations(self, states):
+    def cancel_all_simulations(self, states = None):
+
+        if not states:
+            states = self.get_simulation_status()[0]
+
         ids = states.keys()
         logger.info('Killing all simulations in experiment: ' + str(ids))
         self.cancel_simulations(ids)
@@ -338,9 +343,15 @@ class LocalExperimentManager(object):
     def status_finished(states):
         return all(v in ['Finished', 'Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
 
+    def finished(self):
+        return self.status_finished(self.get_simulation_status()[0])
+
     @staticmethod
     def status_succeeded(states):
         return all(v in ['Finished', 'Succeeded'] for v in states.itervalues())
+
+    def succeeded(self):
+        return self.status_succeeded(self.get_simulation_status()[0])
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
