@@ -8,7 +8,6 @@ import re
 import signal
 import threading
 import time
-from COMPSJavaInterop import COMPS
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
