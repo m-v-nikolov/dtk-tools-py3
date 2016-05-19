@@ -1,6 +1,7 @@
 import os
 from dtk.utils.builders.TemplateHelper import TemplateHelper
-from dtk.utils.core import DTKConfigBuilder
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
+from simtools.ModBuilder import ModBuilder
 
 plugin_files_dir = 'Templates'
 
@@ -8,15 +9,15 @@ plugin_files_dir = 'Templates'
 templates = TemplateHelper()
 
 # Build static params
-campaign_static_params = {
-    'Demographic_Coverage__KP_Seeding_15_24': 0.01,
-    'Demographic_Coverage__KP_Seeding_25_49': 0.02
+static_params = {
+    'CAMPAIGN.Demographic_Coverage__KP_Seeding_15_24': 0.01,
+    'CAMPAIGN.Demographic_Coverage__KP_Seeding_25_49': 0.02,
+    'DEMOGRAPHICS.Society__KP_Harare.TRANSITORY.Pair_Formation_Parameters.Formation_Rate_Constant': 1/365.0,
+    'DEMOGRAPHICS.Society__KP_Manicaland.INFORMAL.Relationship_Parameters.Condom_Usage_Probability.Max': 1,
+    'CONFIG.Campaign_Filename': 'campaign.json'
 }
 
-demographic_static_params = {
-    'DEMOGRAPHICS.Society__KP_Harare.TRANSITORY.Pair_Formation_Parameters.Formation_Rate_Constant': 1/365.0,
-    'DEMOGRAPHICS.Society__KP_Manicaland.INFORMAL.Relationship_Parameters.Condom_Usage_Probability.Max': 1
-}
+templates.set_static_params(static_params)
 
 # Build and set the dynamic header and table
 header = [  'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.TRANSACTIONAL.Relationship_Parameters.Coital_Act_Rate' ]
@@ -26,13 +27,16 @@ table = [
         ]
 templates.set_dynamic_header_table( header, table )
 
+templates.add_template( os.path.join(plugin_files_dir, 'campaign.json') )
 
-# Add templates
-templates.add_template( os.path.join(plugin_files_dir, 'campaign.json'), campaign_static_params )
-templates.add_template( os.path.join(plugin_files_dir, 'PFA_Overlay.json'), demographic_static_params )
+templates.add_template( os.path.join(plugin_files_dir, 'Demographics.json') )
+templates.add_template( os.path.join(plugin_files_dir, 'PFA_Overlay.json') )
+templates.add_template( os.path.join(plugin_files_dir, 'Accessibility_and_Risk_IP_Overlay.json') )
+templates.add_template( os.path.join(plugin_files_dir, 'Risk_Assortivity_Overlay.json') )
 
-config_builder = DTKConfgBuilder.from_files( os.path.join(plugin_files_dir, 'config.json') )
-experiment_builder = templates.experiment_builder()
+config_builder = DTKConfigBuilder.from_files( os.path.join(plugin_files_dir, 'config.json') )
+
+experiment_builder = ModBuilder( templates.experiment_builder() )
 
 run_sim_args =  {'config_builder': config_builder,
                  'exp_builder': experiment_builder,

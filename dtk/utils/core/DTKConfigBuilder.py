@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from collections import OrderedDict
+from warnings import warn
 
 from simtools import utils
 from simtools.SimConfigBuilder import SimConfigBuilder
@@ -25,6 +27,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.config = config
         self.campaign = campaign
         self.demog_overlays = {}
+        self.input_files = OrderedDict()
         self.custom_reports = []
         self.dlls = set()
         self.emodules_map = {'interventions': [],
@@ -257,6 +260,11 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.custom_reports.append(r)
             self.dlls.add(r.get_dll_path())
 
+    def add_input_file(self, name, content):
+        if name in self.input_files:
+            warn('Already have input file named %s, replacing previous input file.' % name)
+        self.input_files[name] = content
+
     def append_overlay(self, demog_file):
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
@@ -291,6 +299,9 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         for name, content in self.demog_overlays.items():
             self.append_overlay('%s.json' % name)
+            write_fn(name, dump(content))
+
+        for name, content in self.input_files.items():
             write_fn(name, dump(content))
 
         write_fn('config', dump(self.config))
