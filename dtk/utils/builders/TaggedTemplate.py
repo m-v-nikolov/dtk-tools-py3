@@ -62,7 +62,7 @@ class TaggedTemplate():
 
         return paths_found
 
-    def expand_tag(self, tagged_param):
+    def expand_tags(self, tagged_param):
         # Surely a better way to do this!
         prefix = []
         postfix = []
@@ -84,3 +84,52 @@ class TaggedTemplate():
             return []
 
         return [prefix + p + postfix for p in self.tag_dict[tag]]
+
+
+    def set_param(self, param, value):
+        tags = []
+        for param in self.expand_tags(param):
+            tag = self.set_expanded_param(param, value)
+            tags.append(tag)
+
+        return tags
+
+    def set_expanded_param(self, param, value):
+        param_name = '.'.join( str(p) for p in param)
+        print "[%s] Setting parameter %s = %s." % (self.filename, param_name, str(value))
+
+        current_parameter = self.contents
+
+        for path_step in param[1:-1]:
+            # If the step is a number, we are in a list, we need to cast the step to int
+            current_parameter = current_parameter[self.cast_value(path_step)]
+
+        # Assign the casted value to the parameter but same as for the path_step we need to cast to int if
+        # its a list index and not a dictionary key
+        last_step = param[-1]
+        current_parameter[self.cast_value(last_step)] = self.cast_value(value)
+
+        # For the tags return the non cleaned parameters so the parser can find it
+        return {param_name:value}
+
+
+    def cast_value(self,value):
+        """
+        Try to cas a value to float or int or string
+        :param value:
+        :return:
+        """
+        # The value is already casted
+        if not isinstance(value, str) and not isinstance(value, unicode):
+            return value
+
+        # We have a string so test if only digit
+        if value.isdigit():
+            casted_value =  int(value)
+        else:
+            try:
+                casted_value = float(value)
+            except:
+                casted_value = value
+
+        return casted_value

@@ -53,26 +53,37 @@ class TemplateHelper():
                 address = address + '.'+p
         return address[1:]
 
+
     def mod_dynamic_parameters(self, cb, dynamic_params):
         print '-----------------------------------------'
         all_params = copy.deepcopy( self.static_params )
         all_params.update(dynamic_params)
+        active_template_files = []
 
         # Set campaign filename in config
         if 'CONFIG.Campaign_Filename' in all_params:
             campaign_filename = all_params['CONFIG.Campaign_Filename']
             print "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename
-            #cb.config['parameters']['Campaign_Filename'] = campaign_filename
             cb.set_param('CONFIG.Campaign_Filename', campaign_filename)
             del all_params['CONFIG.Campaign_Filename']
+
+        campaign_filename = cb.config['parameters']['Campaign_Filename']
+        if campaign_filename in self.templates:
+            print "--> Found campaign template with filename %s, using template" % campaign_filename
+            active_template_files.append(campaign_filename)
 
         # Set demographics filenames in config
         if 'CONFIG.Demographics_Filenames' in all_params:
             demographics_filenames = all_params['CONFIG.Demographics_Filenames']
             print "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames
-            #cb.config['parameters']['Demographics_Filenames'] = demographics_filenames
             cb.set_param('CONFIG.Demographics_Filenames', demographics_filenames)
             del all_params['CONFIG.Demographics_Filenames']
+
+        demographics_filenames = copy.deepcopy(cb.config['parameters']['Demographics_Filenames'])
+        for demographics_filename in demographics_filenames:
+            if demographics_filename in self.templates:
+                print "--> Found demographics template with filename %s, using template" % demographics_filename
+                active_template_files.append(demographics_filename)
 
         # CONFIG parameters
         config_params = {p:v for p,v in all_params.iteritems() if 'CONFIG' in p}
@@ -81,39 +92,24 @@ class TemplateHelper():
             cb.set_param(param,value)
             del all_params[param]
 
-        active_template_files = []
+        templates_mod = { template_filename : copy.deepcopy(self.templates[template_filename]) 
+            for template_filename in active_template_files }
+
+        # Modify static and dynamic parameters in active templates
+        for template_filename in active_template_files:
+            template = templates_mod[template_filename]
+
+            for key, value in all_params.iteritems():
+                template.set_param(key,value)
 
         # Set campaign file in cb
-        campaign_filename = cb.config['parameters']['Campaign_Filename']
         if campaign_filename in self.templates:
-            print "--> Found campaign template with filename %s, using template" % campaign_filename
-            cb.campaign = self.templates[campaign_filename].contents
-            active_template_files.append(campaign_filename)
-        else:
-            print "--> Do not have template for campaign file %s" % demographics_filename
+            cb.campaign = templates_mod[campaign_filename].contents
 
         # Set demographics files in cb
-        demographics_filenames = copy.deepcopy(cb.config['parameters']['Demographics_Filenames'])
         for demographics_filename in demographics_filenames:
             if demographics_filename in self.templates:
-                print "--> Found demographics template with filename %s, using template" % demographics_filename
-                cb.add_input_file(demographics_filename.replace(".json",""), self.templates[demographics_filename].contents)
-                active_template_files.append(demographics_filename)
-            else:
-                print "--> Do not have template for demographics file %s" % demographics_filename
-
-        # Modify static and dynamic parameters in _all_ template files
-        for template_filename in active_template_files:
-            template = self.templates[template_filename]
-
-            for key, val in all_params.iteritems():
-                expanded_param_names = template.expand_tag(key)
-                for path in expanded_param_names:
-                    address = TemplateHelper.path_to_address(path) # Won't need this if doing myself
-                    print "Setting %s = " % address, val
-                    param = address.replace("CAMPAIGN.Events","CAMPAIGN")    # DTKConfigBuilder indexes into Events
-                    # NOTE: I have the template here, whereas cb doesn't know which file to look in
-                    cb.set_param(address, val)
+                cb.add_input_file(demographics_filename.replace(".json",""), templates_mod[demographics_filename].contents)
 
 
     def experiment_builder(self):
