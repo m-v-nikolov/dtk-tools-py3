@@ -23,7 +23,7 @@ class DTKCalibFactory(object):
     @staticmethod
     def get_site(name, analyzers):
         try:
-            mod = importlib.import_module('dtk.calibration.study_sites.site_%s' % name)
+            mod = importlib.import_module('calibtool.study_sites.site_%s' % name)
             return CalibSite.from_setup_functions(
                        name=name,
                        setup_functions=mod.setup_functions,
