@@ -1,33 +1,85 @@
 import copy
-import warnings
 import os
+import logging
 
 from simtools.ModBuilder import ModBuilder
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.builders.TaggedTemplate import TaggedTemplate
 
+logger = logging.getLogger(__name__)
+
 class TemplateHelper():
-    def __init__(self):
+
+    static_params = []
+
+    def __init__(self, _static_params):
         self.templates = {}
-        self.static_params = []
+        self.static_params = _static_params
 
     def add_template(self, template_filepath, tag = '__KP'):
-        # Need KP_read_dir for COMPS
+        """
+        Add a template to the template helper.
 
-        print "Reading template from file:", template_filepath
+        :param template_filepath: The path to the file on disk.
+        :param tag: The tag prefix that has been added at desired locations in the template file.  Tags are added adjacent to the desired location, and have a matching prefix.  For example, consider this Example.json:
+
+        Example.json:
+        {
+            "Example":
+            [
+                {
+                    "Parameter": 1
+                },
+                {
+                    "Parameter__KP_Set_This_Parameter": "<-- MARKER (This value does not matter, but is needed to maintain valid JSON format)",
+                    "Parameter": 2
+                },
+                {
+                    "Parameter__KP_Set_This_Parameter": "<-- MARKER (This value does not matter, but is needed to maintain valid JSON format)",
+                    "Parameter": 3
+                }
+            ]
+        }
+
+        To set the second and third instances "Parameter" in the array, use tagged parameter Parameter__KP_Set_This_Parameter.  This tagged parameter will be expanded to two separate addresses:
+        1. Example[1]['Parameter']
+        2. Example[2]['Parameter']
+        The value you provide will be set at all matching addresses.
+        """
+
+        # Read in template
+        logger.info( "Reading template from file:", template_filepath )
         template_json = json2dict(template_filepath)
 
+        # Get the filename and create a TaggedTemplate
         template_filename = os.path.basename(template_filepath)
         template = TaggedTemplate(template_filename, template_json, tag)
 
         if template_filename in self.templates:
-            warnings.warn("Already had template named " + template_filename + ".  Replacing previous template.")
+            logger.warning("Already had template named " + template_filename + ".  Replacing previous template.")
+
+        # Set static tag parameters
+        for param,value in self.static_params.iteritems():
+            if tag in param:
+                tags = template.set_param(param, value)
+
+        # Store the template in a dictionary
         self.templates[template_filename] = template
 
-    def set_static_params(self, static_params):
-        self.static_params = static_params
-
     def set_dynamic_header_table(self, header, table):
+        """
+        Set the header and table for dynamic (per-simulation) configuration.
+
+        :param header: Containes the parameter addresses, using the special tags (e.g. __KP).  Here is an example:
+            header = [  'CONFIG.Campaign_Filename', 'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
+
+        :param table: Containes the parameter values.  One simulation will be created for each row, e.g.:
+            table = [
+                [ 'campaign_outbreak_only.json', 1990, 2],
+                [ 'campaign.json', 1980, 1 ]
+            ]
+        """
+
         self.header = header
         self.table = table
 
@@ -38,59 +90,48 @@ class TemplateHelper():
         for row in table:
             assert( nParm == len(row) )
 
-        print "Table with %d configurations of %d parameters." % (nRow, nParm)
+        logger.info( "Table with %d configurations of %d parameters." % (nRow, nParm) )
 
-    def get_static_params(self):
-        return self.static_params
-
-    @staticmethod
-    def path_to_address(path):
-        address = ''
-        for p in path:
-            if isinstance(p, int):
-                address = address + '.'+str(p)
-            else:
-                address = address + '.'+p
-        return address[1:]
-
-
-    def mod_dynamic_parameters(self, cb, dynamic_params):
-        print '-----------------------------------------'
-        all_params = copy.deepcopy( self.static_params )
-        all_params.update(dynamic_params)
+    def __mod_dynamic_parameters(self, cb, dynamic_params):
+        logger.info( '-----------------------------------------' )
+        #all_params = copy.deepcopy( self.static_params )
+        #all_params.update(dynamic_params)
+        all_params = copy.deepcopy(dynamic_params)
         active_template_files = []
 
         # Set campaign filename in config
         if 'CONFIG.Campaign_Filename' in all_params:
             campaign_filename = all_params['CONFIG.Campaign_Filename']
-            print "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename
+            logger.info( "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename )
             cb.set_param('CONFIG.Campaign_Filename', campaign_filename)
             del all_params['CONFIG.Campaign_Filename']
 
         campaign_filename = cb.config['parameters']['Campaign_Filename']
         if campaign_filename in self.templates:
-            print "--> Found campaign template with filename %s, using template" % campaign_filename
+            logger.info( "--> Found campaign template with filename %s, using template" % campaign_filename )
             active_template_files.append(campaign_filename)
 
         # Set demographics filenames in config
         if 'CONFIG.Demographics_Filenames' in all_params:
             demographics_filenames = all_params['CONFIG.Demographics_Filenames']
-            print "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames
+            logger.info( "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames )
             cb.set_param('CONFIG.Demographics_Filenames', demographics_filenames)
             del all_params['CONFIG.Demographics_Filenames']
 
         demographics_filenames = copy.deepcopy(cb.config['parameters']['Demographics_Filenames'])
         for demographics_filename in demographics_filenames:
             if demographics_filename in self.templates:
-                print "--> Found demographics template with filename %s, using template" % demographics_filename
+                logger.info( "--> Found demographics template with filename %s, using template" % demographics_filename )
                 active_template_files.append(demographics_filename)
 
         # CONFIG parameters
-        config_params = {p:v for p,v in all_params.iteritems() if 'CONFIG' in p}
+        config_params = {p:v for p,v in self.static_params.iteritems() if 'CONFIG' in p}
+        config_params.update( {p:v for p,v in all_params.iteritems() if 'CONFIG' in p} )
         for param, value in config_params.iteritems():
-            print "Setting %s = " % param, value
+            logger.info( "Setting " + param + " = " + str(value) )
             cb.set_param(param,value)
-            del all_params[param]
+            if param in all_params:
+                del all_params[param]
 
         templates_mod = { template_filename : copy.deepcopy(self.templates[template_filename]) 
             for template_filename in active_template_files }
@@ -98,7 +139,6 @@ class TemplateHelper():
         # Modify static and dynamic parameters in active templates
         for template_filename in active_template_files:
             template = templates_mod[template_filename]
-
             for key, value in all_params.iteritems():
                 template.set_param(key,value)
 
@@ -113,18 +153,10 @@ class TemplateHelper():
 
 
     def experiment_builder(self):
-
-       return [
-           ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
-           for row in self.table
-       ]
-
-        # Note from_combos to include run_number
-#       return (
-#               ModBuilder.set_mods(
-#                   [
-#                       ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
-#                   ]
-#               )
-#               for row in self.table
-#           )
+        """
+        Returns a ModBuilder ModFn that sets file contents and values in config builder according to the dynamic parameters.
+        """
+        return [
+            ModBuilder.ModFn(self.__mod_dynamic_parameters, dict(zip(self.header, row)))
+            for row in self.table
+        ]
