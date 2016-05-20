@@ -21,7 +21,7 @@ class TemplateHelper():
         Add a template to the template helper.
 
         :param template_filepath: The path to the file on disk.
-        :param tag: The tag prefix that has been added at desired locations in the template file.  Tags are added adjacent to the desired location, and have a matching prefix.  For example, consider this Example.json:
+        :param tag: The tag prefix that has been added at desired locations in the template file.  Tags are added adjacent to the desired location, and have a matching prefix.  Tags must begin with two underscores.  For example, consider this Example.json:
 
         Example.json:
         {
@@ -47,6 +47,8 @@ class TemplateHelper():
         The value you provide will be set at all matching addresses.
         """
 
+        assert( tag[:2] == '__' )
+
         # Read in template
         logger.info( "Reading template from file:", template_filepath )
         template_json = json2dict(template_filepath)
@@ -71,7 +73,7 @@ class TemplateHelper():
         Set the header and table for dynamic (per-simulation) configuration.
 
         :param header: Containes the parameter addresses, using the special tags (e.g. __KP).  Here is an example:
-            header = [  'CONFIG.Campaign_Filename', 'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
+            header = [  'Campaign_Filename', 'Start_Year__KP_Seeding_Year', 'Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
 
         :param table: Containes the parameter values.  One simulation will be created for each row, e.g.:
             table = [
@@ -100,11 +102,11 @@ class TemplateHelper():
         active_template_files = []
 
         # Set campaign filename in config
-        if 'CONFIG.Campaign_Filename' in all_params:
-            campaign_filename = all_params['CONFIG.Campaign_Filename']
+        if 'Campaign_Filename' in all_params:
+            campaign_filename = all_params['Campaign_Filename']
             logger.info( "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename )
-            cb.set_param('CONFIG.Campaign_Filename', campaign_filename)
-            del all_params['CONFIG.Campaign_Filename']
+            cb.set_param('Campaign_Filename', campaign_filename)
+            del all_params['Campaign_Filename']
 
         campaign_filename = cb.config['parameters']['Campaign_Filename']
         if campaign_filename in self.templates:
@@ -112,11 +114,11 @@ class TemplateHelper():
             active_template_files.append(campaign_filename)
 
         # Set demographics filenames in config
-        if 'CONFIG.Demographics_Filenames' in all_params:
-            demographics_filenames = all_params['CONFIG.Demographics_Filenames']
+        if 'Demographics_Filenames' in all_params:
+            demographics_filenames = all_params['Demographics_Filenames']
             logger.info( "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames )
-            cb.set_param('CONFIG.Demographics_Filenames', demographics_filenames)
-            del all_params['CONFIG.Demographics_Filenames']
+            cb.set_param('Demographics_Filenames', demographics_filenames)
+            del all_params['Demographics_Filenames']
 
         demographics_filenames = copy.deepcopy(cb.config['parameters']['Demographics_Filenames'])
         for demographics_filename in demographics_filenames:
@@ -124,9 +126,11 @@ class TemplateHelper():
                 logger.info( "--> Found demographics template with filename %s, using template" % demographics_filename )
                 active_template_files.append(demographics_filename)
 
-        # CONFIG parameters
-        config_params = {p:v for p,v in self.static_params.iteritems() if 'CONFIG' in p}
-        config_params.update( {p:v for p,v in all_params.iteritems() if 'CONFIG' in p} )
+        # CONFIG parameters - not too happy about this.  The only I can tell they're confi parameters
+        # is if the parameter name DOES NOT contain two underscores, which started the tag, e.g. __KP.
+        # Any thoughts of how to do this better?  E.g. what if config parameter has __ in it?
+        config_params = {p:v for p,v in self.static_params.iteritems() if '__' not in p}
+        config_params.update( {p:v for p,v in all_params.iteritems() if '__' not in p} )
         for param, value in config_params.iteritems():
             logger.info( "Setting " + param + " = " + str(value) )
             cb.set_param(param,value)

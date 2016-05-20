@@ -8,11 +8,11 @@ plugin_files_dir = 'Templates'
 
 # The following "static" parameters will be applied for every simulation.
 static_params = {
-    'CONFIG.Base_Population_Scale_Factor': 0.005,
-    'CAMPAIGN.Demographic_Coverage__KP_Seeding_15_24': 0.01,
-    'CAMPAIGN.Demographic_Coverage__KP_Seeding_25_49': 0.02,
-    'DEMOGRAPHICS.Society__KP_Harare.TRANSITORY.Pair_Formation_Parameters.Formation_Rate_Constant': 1/365.0,
-    'DEMOGRAPHICS.Society__KP_Manicaland.INFORMAL.Relationship_Parameters.Condom_Usage_Probability.Max': 1
+    'Base_Population_Scale_Factor': 0.002,
+    'Demographic_Coverage__KP_Seeding_15_24': 0.10,
+    'Demographic_Coverage__KP_Seeding_25_49': 0.05,
+    'Society__KP_Harare.TRANSITORY.Pair_Formation_Parameters.Formation_Rate_Constant': 1/365.0,
+    'Society__KP_Manicaland.INFORMAL.Relationship_Parameters.Condom_Usage_Probability.Max': 1
 }
 
 # Create an instance of the TemplateHelper helper class with the static parameters.
@@ -21,7 +21,7 @@ templates = TemplateHelper(static_params)
 # The following "dynamic" parameters will be set on a per-simulation basis.
 # The header containes the parameter names.
 # The table containes the parameter values.  One simulation will be created for each row.
-header = [  'CONFIG.Campaign_Filename', 'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
+header = [  'Campaign_Filename', 'Start_Year__KP_Seeding_Year', 'Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
 table = [
             [ 'campaign_outbreak_only.json', 1990, 2],
             [ 'campaign.json', 1980, 1 ]
@@ -42,7 +42,7 @@ templates.set_dynamic_header_table( header, table )
 # A particular can exist can be repeated in several locations in a file, and even
 # across several files.
 #
-# Note that you can set CONFIG.Campaign_Filename and CONFIG.Demographics_Filenames
+# Note that you can set Campaign_Filename and Demographics_Filenames
 # statically or dynamically above, and the corresponding templates will be activated.
 #
 # Active templates will be written to the working directly.
@@ -61,7 +61,7 @@ config_builder = DTKConfigBuilder.from_files( os.path.join(plugin_files_dir, 'co
 # each of the configurations for two separate run numbers.
 experiment_builder = ModBuilder.from_combos(
     templates.experiment_builder(),
-    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'CONFIG.Run_Number', rn) for rn in range(2,4)]
+    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)]
 )
 
 run_sim_args =  {'config_builder': config_builder,

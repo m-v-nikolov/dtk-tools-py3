@@ -62,32 +62,19 @@ class TaggedTemplate():
 
         return paths_found
 
+
     def __expand_tags(self, tagged_param):
         """
         Takes a tagged_param in string format and converts it to a list of parameter addresses by expanding tags from the tag dictionary.
         """
 
-        # Surely a more efficient way to do this!
-        prefix = []
-        postfix = []
-
         tokens = tagged_param.split('.')
 
-        found = False
-        for tok in tokens:
-            if not found:
-                if self.tag in tok:
-                    tag = tok
-                    found = True
-                else:
-                    prefix.append(tok)
-            else:
-                postfix.append(tok)
+        tagged_param = tokens[0]
+        if tagged_param in self.tag_dict:
+            return [ expanded_tag + tokens[1:] for expanded_tag in self.tag_dict[tagged_param] ]
 
-        if not found or tag not in self.tag_dict:
-            return []
-
-        return [prefix + p + postfix for p in self.tag_dict[tag]]
+        return []
 
 
     def set_param(self, param, value):
@@ -119,7 +106,7 @@ class TaggedTemplate():
 
         current_parameter = self.contents
 
-        for path_step in param[1:-1]:
+        for path_step in param[:-1]:
             # If the step is a number, we are in a list, we need to cast the step to int
             current_parameter = current_parameter[self.__cast_value(path_step)]
 
