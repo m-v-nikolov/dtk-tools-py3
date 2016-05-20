@@ -47,7 +47,8 @@ class TemplateHelper():
         The value you provide will be set at all matching addresses.
         """
 
-        assert( tag[:2] == '__' )
+        if tag[:2] != '__':
+            logger.error('Tags must start with two underscores, __.  The tag you supplied (' + tag + ') did not meet this criteria.')
 
         # Read in template
         logger.info( "Reading template from file:", template_filepath )
