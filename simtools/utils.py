@@ -72,7 +72,7 @@ def stage_file(from_path, to_directory):
 
 def override_HPC_settings(setup, **kwargs):
 
-    overrides_by_variable = dict(priority=['Lowest', 'Below Normal', 'Normal', 'Above Normal', 'Highest'],
+    overrides_by_variable = dict(priority=['Lowest', 'BelowNormal', 'Normal', 'AboveNormal', 'Highest'],
                                  node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab', 'emod_cd', 'emod_abcd'],
                                  use_comps_asset_svc=['0', '1'])
 

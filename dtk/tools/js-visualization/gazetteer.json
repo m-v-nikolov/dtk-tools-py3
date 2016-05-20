@@ -1,0 +1,16 @@
+[
+    {
+        "model": "test", 
+        "params": "{lowest,ext_low,low,very_low}<br />[0.01, 122]<br />{0.7,0.55,0.35}<br />[0.01, 122]<br />test<br />", 
+        "select": [
+            {
+                "name": "", 
+                "value": "unselect"
+            }, 
+            {
+                "name": "test_map", 
+                "value": "test"
+            }
+        ]
+    }
+]
