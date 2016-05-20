@@ -87,7 +87,7 @@ class TaggedTemplate():
             #if tag not in self.tag_dict:
             #    raise RuntimeWarning('['+tag+']: Could not find corresponding tag in file ' + self.filename)
 
-            if tag in self.tag_dict:
+            if found and tag in self.tag_dict:
                 full_param_path = [prefix + p + postfix for p in self.tag_dict[tag]]
                 #print tag,'-->', self.tag_dict[tag],'-->',full_param_path
                 expanded_tags.append( full_param_path )

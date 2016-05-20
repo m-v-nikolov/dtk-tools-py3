@@ -1,0 +1,105 @@
+{
+    "Campaign_Name": "Baseline campaign for Zimbabwe", 
+    "Default_Campaign_Path": "Templates\\Campaigns\\campaign_VMMC_Constant_Rate.json", 
+    "Use_Defaults": 1,
+    "Events":
+    [
+        {
+            "class": "CampaignEventByYear",
+            "Event_Name": "Epidemic seeding for 15-24",
+			"Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1987,
+            "Nodeset_Config":
+            {
+                "class": "NodeSetAll"
+            },
+            "Event_Coordinator_Config":
+            {
+                "class": "StandardInterventionDistributionEventCoordinator",
+				
+				"Property_Restrictions": [ "Risk:HIGH" ],
+
+                "Target_Demographic": "ExplicitAgeRanges",
+                "Target_Age_Min": 15,
+                "Target_Age_Max": 24,
+				"Demographic_Coverage__KP_Seeding_15_24": "<-- MARKER",
+                "Demographic_Coverage": 0.005,
+                "Travel_Linked": 0,
+				
+                "Intervention_Config":
+                {
+                    "class": "OutbreakIndividual",
+                    "Event_Name": "Outbreak (not used)",
+                    "Outbreak_Source": "PrevalenceIncrease",
+                    "Incubation_Period_Override": 1,
+                    "Antigen": 0,
+                    "Genome": 0
+                }
+            }
+        },
+        {
+            "class": "CampaignEventByYear",
+            "Event_Name": "Epidemic seeding for 25-49",
+			"Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1987,
+            "Nodeset_Config":
+            {
+                "class": "NodeSetAll"
+            },
+            "Event_Coordinator_Config":
+            {
+                "class": "StandardInterventionDistributionEventCoordinator",
+
+				"Property_Restrictions": [ "Risk:HIGH" ],
+
+                "Target_Demographic": "ExplicitAgeRanges",
+                "Target_Age_Min": 25,
+                "Target_Age_Max": 49,
+				"Demographic_Coverage__KP_Seeding_25_49": "<-- MARKER",
+                "Demographic_Coverage": 0.005,
+                "Travel_Linked": 0,
+                "Intervention_Config":
+                {
+                    "class": "OutbreakIndividual",
+                    "Event_Name": "Outbreak (not used)",
+                    "Outbreak_Source": "PrevalenceIncrease",
+                    "Incubation_Period_Override": 1,
+                    "Antigen": 0,
+                    "Genome": 0
+                }
+            }
+        },
+        {
+            "class": "CampaignEventByYear",
+            "Event_Name": "Epidemic seeding for 50-65",
+			"Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1987,
+            "Nodeset_Config":
+            {
+                "class": "NodeSetAll"
+            },
+            "Event_Coordinator_Config":
+            {
+                "class": "StandardInterventionDistributionEventCoordinator",
+
+				"Property_Restrictions": [ "Risk:HIGH" ],
+
+                "Target_Demographic": "ExplicitAgeRanges",
+                "Target_Age_Min": 50,
+                "Target_Age_Max": 65,
+				"Demographic_Coverage__KP_Seeding_50_65": "<-- MARKER",
+                "Demographic_Coverage": 0.005,
+                "Travel_Linked": 0,
+                "Intervention_Config":
+                {
+                    "class": "OutbreakIndividual",
+                    "Event_Name": "Outbreak (not used)",
+                    "Outbreak_Source": "PrevalenceIncrease",
+                    "Incubation_Period_Override": 1,
+                    "Antigen": 0,
+                    "Genome": 0
+                }
+            }
+        }
+    ]
+}

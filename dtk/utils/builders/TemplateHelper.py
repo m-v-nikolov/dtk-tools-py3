@@ -61,14 +61,16 @@ class TemplateHelper():
         if 'CONFIG.Campaign_Filename' in all_params:
             campaign_filename = all_params['CONFIG.Campaign_Filename']
             print "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename
-            cb.config['parameters']['Campaign_Filename'] = campaign_filename
+            #cb.config['parameters']['Campaign_Filename'] = campaign_filename
+            cb.set_param('CONFIG.Campaign_Filename', campaign_filename)
             del all_params['CONFIG.Campaign_Filename']
 
         # Set demographics filenames in config
         if 'CONFIG.Demographics_Filenames' in all_params:
             demographics_filenames = all_params['CONFIG.Demographics_Filenames']
             print "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames
-            cb.config['parameters']['Demographics_Filenames'] = demographics_filenames
+            #cb.config['parameters']['Demographics_Filenames'] = demographics_filenames
+            cb.set_param('CONFIG.Demographics_Filenames', demographics_filenames)
             del all_params['CONFIG.Demographics_Filenames']
 
         expanded_params = []
