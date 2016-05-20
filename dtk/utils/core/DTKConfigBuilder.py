@@ -102,7 +102,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         :return:
         """
         # The value is already casted
-        if not isinstance(value, str):
+        if not isinstance(value, str) and not isinstance(value, unicode):
             return value
 
         # We have a string so test if only digit
@@ -200,6 +200,10 @@ class DTKConfigBuilder(SimConfigBuilder):
                 # The event was already a digit -> just remove the CAMPAIGN.
                 cleaned_param = param.replace("CAMPAIGN.","")
 
+        elif "DEMOGRAPHICS" in param:
+            file = "DEMOGRAPHICS"
+            cleaned_param = param.replace("DEMOGRAPHICS.","")
+
         elif "HABSCALE" in param:
             # HABSCALE will already be set by another function. We only need to take care of tagging it in the config
             tag=True
@@ -210,31 +214,40 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         # First get the correct file
         if file == "CONFIG":
-            current_file = self.config["parameters"]
+            current_files = [self.config["parameters"]]
+        elif file == "CAMPAIGN":
+            current_files = [self.campaign["Events"]]
         else:
-            current_file = self.campaign["Events"]
+            current_files = self.input_files.values()
 
-        # If it is consider a tag -> just add it to the config without any other treatment
-        if tag:
-            current_file[param] = value
-            return {param:value}
+        for current_file in current_files:
+            try:
+                # If it is consider a tag -> just add it to the config without any other treatment
+                if tag:
+                    current_file[param] = value
+                    return {param:value}
 
-        # Go through the path if there is a path
-        if "." in cleaned_param:
-            current_parameter = current_file
-            # The path is everything except the last item of the split which represent the parameter
-            for path_step in cleaned_param.split('.')[:-1]:
-                # If the step is a number, we are in a list, we need to cast the step to int
-                current_parameter = current_parameter[self.cast_value(path_step)]
+                # Go through the path if there is a path
+                if "." in cleaned_param:
+                    current_parameter = current_file
 
-            # Assign the casted value to the parameter but same as for the path_step we need to cast to int if
-            # its a list index and not a dictionary key
-            last_step = cleaned_param.split('.')[-1]
-            current_parameter[self.cast_value(last_step)] = self.cast_value(value)
+                    # The path is everything except the last item of the split which represent the parameter
+                    for path_step in cleaned_param.split('.')[:-1]:
+                        # If the step is a number, we are in a list, we need to cast the step to int
+                        current_parameter = current_parameter[self.cast_value(path_step)]
 
-        else:
-            # No path => simply assign
-            current_file[cleaned_param] = self.cast_value(value)
+                    # Assign the casted value to the parameter but same as for the path_step we need to cast to int if
+                    # its a list index and not a dictionary key
+                    last_step = cleaned_param.split('.')[-1]
+                    current_parameter[self.cast_value(last_step)] = self.cast_value(value)
+
+                else:
+                    # No path => simply assign
+                    current_file[cleaned_param] = self.cast_value(value)
+            except:
+                # Not all files, e.g. DEMOGRAPHICS files, will contain all parameters
+                # Could thrown an error if this is a CONFIG file
+                continue
 
         # For the tags return the non cleaned parameters so the parser can find it
         return {param:value}
@@ -290,8 +303,7 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        self.set_param('Campaign_Filename','campaign.json')
-        write_fn('campaign', dump(self.campaign))
+        write_fn(self.config['parameters']['Campaign_Filename'].replace('.json', ''), dump(self.campaign))
 
         if self.custom_reports:
             self.set_param('Custom_Reports_Filename', 'custom_reports.json')

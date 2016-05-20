@@ -1,6 +1,6 @@
 {
     "Campaign_Name": "Baseline campaign for Zimbabwe", 
-    "Default_Campaign_Path": "Templates\\Campaigns\\campaign_VMMC_Constant_Rate.json", 
+    "Default_Campaign_Path": "Templates\\campaign_outbreak_only.json", 
     "Use_Defaults": 1,
     "Events":
     [

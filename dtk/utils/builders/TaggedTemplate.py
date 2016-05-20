@@ -62,34 +62,24 @@ class TaggedTemplate():
 
         return paths_found
 
-    def expand_tags(self, tagged_params):
-        expanded_tags = []
-        for tagged_param in tagged_params:
-            prefix = []
-            postfix = []
+    def expand_tag(self, tagged_param):
+        prefix = []
+        postfix = []
 
-            tokens = tagged_param.split('.')
+        tokens = tagged_param.split('.')
 
-            found = False
-            for tok in tokens:
-                if not found:
-                    if self.tag in tok:
-                        tag = tok
-                        found = True
-                    else:
-                        prefix.append(tok)
+        found = False
+        for tok in tokens:
+            if not found:
+                if self.tag in tok:
+                    tag = tok
+                    found = True
                 else:
-                    postfix.append(tok)
+                    prefix.append(tok)
+            else:
+                postfix.append(tok)
 
-            #if not found:
-            #    raise RuntimeWarning('['+tagged_param+']: Could not find tag ' + self.tag)
+        if not found or tag not in self.tag_dict:
+            return []
 
-            #if tag not in self.tag_dict:
-            #    raise RuntimeWarning('['+tag+']: Could not find corresponding tag in file ' + self.filename)
-
-            if found and tag in self.tag_dict:
-                full_param_path = [prefix + p + postfix for p in self.tag_dict[tag]]
-                #print tag,'-->', self.tag_dict[tag],'-->',full_param_path
-                expanded_tags.append( full_param_path )
-
-        return expanded_tags
+        return [prefix + p + postfix for p in self.tag_dict[tag]]

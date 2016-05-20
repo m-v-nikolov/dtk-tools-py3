@@ -22,17 +22,17 @@ templates.set_static_params(static_params)
 # The following "dynamic" parameters will be set on a per-simulation basis.
 # The header containes the parameter names
 # The table containes the parameter values.  One simulation will be created for each row.
-header = [  'CONFIG.Campaign_Filename', 'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.TRANSACTIONAL.Relationship_Parameters.Coital_Act_Rate' ]
+header = [  'CONFIG.Campaign_Filename', 'CAMPAIGN.Start_Year__KP_Seeding_Year', 'DEMOGRAPHICS.Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
 table = [
-            [ 'campaign.json', 1980, 1 ],
-            [ 'campaign_outbreak_only.json', 1990, 2]
+            [ 'campaign_outbreak_only.json', 1990, 2],
+            [ 'campaign.json', 1980, 1 ]
         ]
 templates.set_dynamic_header_table( header, table )
 
-
-# Now we add templates.  Templates can replace the campaign or demographics files.
-# When you use a template, you can 
+# Now we add templates.  Templates can be used as campaign or demographics files.
+# TODO: Explain template activation
 templates.add_template( os.path.join(plugin_files_dir, 'campaign.json') )
+templates.add_template( os.path.join(plugin_files_dir, 'campaign_outbreak_only.json') )
 
 templates.add_template( os.path.join(plugin_files_dir, 'Demographics.json') )
 templates.add_template( os.path.join(plugin_files_dir, 'PFA_Overlay.json') )
