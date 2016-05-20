@@ -109,7 +109,7 @@ class TemplateHelper():
             for key, val in all_params.iteritems():
                 expanded_param_names = template.expand_tag(key)
                 for path in expanded_param_names:
-                    address = TemplateHelper.path_to_address(path)
+                    address = TemplateHelper.path_to_address(path) # Won't need this if doing myself
                     print "Setting %s = " % address, val
                     param = address.replace("CAMPAIGN.Events","CAMPAIGN")    # DTKConfigBuilder indexes into Events
                     # NOTE: I have the template here, whereas cb doesn't know which file to look in
@@ -117,12 +117,18 @@ class TemplateHelper():
 
 
     def experiment_builder(self):
+
+       return [
+           ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
+           for row in self.table
+       ]
+
         # Note from_combos to include run_number
-        return (
-                ModBuilder.set_mods(
-                    [
-                        ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
-                    ]
-                )
-                for row in self.table
-            )
+#       return (
+#               ModBuilder.set_mods(
+#                   [
+#                       ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
+#                   ]
+#               )
+#               for row in self.table
+#           )

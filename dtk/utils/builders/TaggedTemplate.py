@@ -63,6 +63,7 @@ class TaggedTemplate():
         return paths_found
 
     def expand_tag(self, tagged_param):
+        # Surely a better way to do this!
         prefix = []
         postfix = []
 

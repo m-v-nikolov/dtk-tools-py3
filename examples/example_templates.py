@@ -41,7 +41,15 @@ templates.add_template( os.path.join(plugin_files_dir, 'Risk_Assortivity_Overlay
 
 config_builder = DTKConfigBuilder.from_files( os.path.join(plugin_files_dir, 'config.json') )
 
-experiment_builder = ModBuilder( templates.experiment_builder() )
+print templates.experiment_builder()
+print [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'CONFIG.Run_Number', rn) for rn in range(2,4)]
+
+experiment_builder = ModBuilder.from_combos(
+    templates.experiment_builder(),
+    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'CONFIG.Run_Number', rn) for rn in range(2,4)]
+)
+
+#experiment_builder = ModBuilder( templates.experiment_builder() )
 
 run_sim_args =  {'config_builder': config_builder,
                  'exp_builder': experiment_builder,
