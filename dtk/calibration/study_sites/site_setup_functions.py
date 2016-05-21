@@ -1,14 +1,11 @@
 from dtk.malaria.immunity import add_immune_overlays
 from dtk.vector.input_EIR_by_site import configure_site_EIR
 from dtk.interventions.input_EIR import add_InputEIR
-from dtk.vector.species import set_larval_habitat, set_species_param
 from dtk.interventions.health_seeking import add_health_seeking
 from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report,add_filtered_report
-from dtk.interventions.malaria_challenge import add_challenge_trial
 from dtk.vector.species import set_larval_habitat, set_species_param
 from dtk.interventions.outbreak import recurring_outbreak
 from dtk.interventions.itn import add_ITN
-from dtk.interventions.irs import add_node_IRS
 from dtk.interventions.migrate_to import add_migration_event
 from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
 import pandas as pd
@@ -91,20 +88,6 @@ def add_itn_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') 
                     add_ITN(cb, itn_date, [coverage], nodeIDs=itncov['nodes'])
     return fn
 
-# IRS from nodeid-coverage specified in csv
-def add_node_level_irs_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') :
-    def fn(cb) :
-        irs_distr = zip(irs_dates, irs_fracs)
-        with open(reffname) as fin :
-            cov = json.loads(fin.read())
-        for irscov in cov[channel] :
-            if irscov['coverage'] > 0 :
-                for i, (irs_date, irs_frac) in enumerate(irs_distr) :
-                    c = irscov['coverage']*irs_frac
-                    if i < len(irs_fracs)-1 :
-                        c /= np.prod([1 - x*irscov['coverage'] for x in irs_fracs[i+1:]])
-                    add_node_IRS(cb, irs_date, c, nodeIDs=irscov['nodes'])
-    return fn
 
 
 # migration

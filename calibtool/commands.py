@@ -74,6 +74,7 @@ def main():
     parser_resume.add_argument('--hpc', action='store_true', default=None, help='Resume calibration simulations on HPC using COMPS (default is local simulation).')
     parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
+    parser_resume.set_defaults(func=resume)
 
     # 'calibtool reanalyze' options
     parser_reanalyze = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')

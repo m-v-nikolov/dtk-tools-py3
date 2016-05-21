@@ -144,6 +144,9 @@ def set_demog_distributions(filename, distributions):
         output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
 
 
+
+# the following two methods need a refactor
+# we can have a single demographics file object and adjust attribute depending on usage
 def set_static_demographics(cb, use_existing=False):
     """
     Create a static demographics based on the demographics file specified in the config file
