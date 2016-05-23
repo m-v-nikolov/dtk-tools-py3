@@ -3,7 +3,7 @@ import json
 import getpass
 import datetime
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 
 
 def set_property(property, values, initial):
@@ -36,7 +36,7 @@ def init_access(**kwargs):
     return set_property('Accessibility', kwargs.keys(), kwargs.values())
 
 
-def add_properties_overlay(cb, properties, directory=DTKSetupParser().get('LOCAL','input_root'), tag=''):
+def add_properties_overlay(cb, properties, directory=SetupParser().get('LOCAL','input_root'), tag=''):
     """
     Creates a property overlay with the given properties.
 

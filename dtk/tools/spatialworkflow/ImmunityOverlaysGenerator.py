@@ -153,14 +153,14 @@ class ImmunityOverlaysGenerator(object):
                     # do we have a helper function that determines the output directory of a simulation given simulation and experiment IDs (working both for COMPs and local)?
                     sim_dir_map = None
                     if exp_location_type == 'HPC':
-                        
-                        from dtk.utils.core.DTKSetupParser import DTKSetupParser
+
+                        from simtools.SetupParser import SetupParser
                         from COMPS import Client
 
                         om("Pulling immunization data from COMPs.")
                         om("This requires a login.")
                         
-                        setup = DTKSetupParser()
+                        setup = SetupParser()
                         Client.Login(setup.get('HPC','server_endpoint'))
                         
                         om("Login success!")

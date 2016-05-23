@@ -6,7 +6,7 @@ import sys
 import json
 import numpy as np
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.vector.study_sites import configure_site
@@ -23,7 +23,7 @@ import dtk.generic.demographics as demographics
 from dtk.utils.parsers.json2dict import json2dict
 
 campaign_days = [365*year + 160 for year in range(6,10)]
-setup = DTKSetupParser()
+setup = SetupParser()
 nyears = 12 # simulation duration; starting on  1/1/2005
 dll_root = setup.get('BINARIES', 'dll_path')
 location = 'HPC' # 'LOCAL'

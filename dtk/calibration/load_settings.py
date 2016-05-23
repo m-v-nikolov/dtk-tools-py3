@@ -18,7 +18,7 @@ import os
 import sys
 import json
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 
 def load_settings(ofname) :
     # the calibration defaults are in a JSON file in the same folder as this script
@@ -56,7 +56,7 @@ def load_settings(ofname) :
         settings['curr_iteration_dir'] = os.path.join(settings['exp_dir'],'iter0')
         
         loc = 'HPC' if 'HPC' in settings['run_location'].upper() else 'LOCAL'
-        cfg = DTKSetupParser()
+        cfg = SetupParser()
         settings['simulation_dir'] = cfg.get(loc, 'sim_root')
         settings[loc.lower() + '_sim_root'] = cfg.get(loc, 'sim_root')
         settings[loc.lower() + '_input_root'] = cfg.get(loc, 'input_root')

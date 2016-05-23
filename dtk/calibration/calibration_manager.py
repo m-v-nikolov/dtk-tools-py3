@@ -9,7 +9,7 @@ from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.vector.species import set_species_param, set_larval_habitat
 from dtk.interventions.habitat_scale import scale_larval_habitats
 from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
@@ -140,7 +140,7 @@ def run_one_iteration(settings, iteration=0) :
     location = 'HPC' if 'hpc' in settings['run_location'].lower() else 'LOCAL'
 
     # Run the simulation
-    sm = ExperimentManagerFactory.from_setup(DTKSetupParser(), location)
+    sm = ExperimentManagerFactory.from_setup(SetupParser(), location)
     sm.run_simulations(config_builder=cb, exp_name=settings['expname'], exp_builder=builder)
 
     # Get the latest experiment json of the folder simulations to find what is the current running experiment

@@ -5,7 +5,7 @@ import functools as fun
 
 from dtk.generic.migration import single_roundtrip_params
 from dtk.vector.study_sites import configure_site
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.tools.spatialworkflow.SpatialManager import SpatialManager
 from dtk.utils.builders.sweep import GenericSweepBuilder
@@ -41,7 +41,7 @@ def apply_pop_scale_larval_habitats(nodes_params_input_file_path, demographics =
     
     
 
-setup = DTKSetupParser()
+setup = SetupParser()
 location = 'HPC' #'LOCAL' 
 geography = 'Zambia/Gwembe_Sinazongwe_115_nodes'
 sites = ['Gwembe_Sinazongwe_115_nodes']

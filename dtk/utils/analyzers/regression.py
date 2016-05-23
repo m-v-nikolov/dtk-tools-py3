@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from ..core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from timeseries import TimeseriesAnalyzer
 from group import group_by_name
 from plot import plot_by_channel, plot_lines
@@ -30,7 +30,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
 
         self.onlyPlotFailed=onlyPlotFailed
         self.results = defaultdict(list)
-        setup = DTKSetupParser()
+        setup = SetupParser()
         self.regression_path = os.path.join(setup.get('BINARIES','dll_path'),
                                             '..', '..', 'Regression')
 
