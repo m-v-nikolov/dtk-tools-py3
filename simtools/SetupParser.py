@@ -31,6 +31,15 @@ class SetupParser():
             import pwd
             user = pwd.getpwuid(os.geteuid())[0]
 
+# Diff copied from DTKSetupParser. Needs validation to see if it is still applicable.
+        for section in setup.sections():
+            setup.set(section, 'user', user)
+            if not setup.has_section(section):
+                setup.add_section(section)
+            for param, value in setup.items(section):
+                setup.set(section, param, value)
+# End diff
+
         setup.set('HPC', 'user', user)
         setup.set('LOCAL', 'user', user)
 
