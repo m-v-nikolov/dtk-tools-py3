@@ -9,7 +9,7 @@ import time
 import simtools.utils as utils
 from simtools.ExperimentManager import ExperimentManagerFactory
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 
 
 def load_config_module(config_name):
@@ -25,7 +25,7 @@ def run(args):
 
     # run the simulation
     location = 'HPC' if (args and args.hpc) else 'LOCAL'
-    setup = DTKSetupParser()
+    setup = SetupParser()
     additional_args = {}
     if location == 'HPC':
         if args.priority:
