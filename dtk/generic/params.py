@@ -17,6 +17,10 @@ params = {
     "Listed_Events": [],
     "Minimum_Adult_Age_Years" : 15,
 
+    "Vector_Migration_Base_Rate": 0.5,
+    "Default_Geography_Initial_Node_Population": 1000,
+    "Default_Geography_Torus_Size": 10,
+
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###
     "Default_Geography_Initial_Node_Population": 100,

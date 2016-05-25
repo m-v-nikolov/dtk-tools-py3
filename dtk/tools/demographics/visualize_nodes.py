@@ -159,18 +159,22 @@ def OverlayMigration(demogfile, migfile):
         DrawMigrationRoute(*r, max_rate=max_rate[2])
 
     #plt.figtext(0.15, 0.14, os.path.basename(migfile), ha='left', va='top', fontsize=10)
+    
+def main(args):
+    demogfile = args[0]
+    VisualizeNodes(demogfile)
+    
+    if len(args) == 3:
+        migfile = args[1]
+        OverlayMigration(demogfile, migfile)
+
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         ShowUsage()
         exit(0)
-
-    demogfile = sys.argv[1]
-    VisualizeNodes(demogfile)
-
-    if len(sys.argv) == 3:
-        migfile = sys.argv[2]
-        OverlayMigration(demogfile, migfile)
-
-    plt.tight_layout()
-    plt.show()
+        
+    main(sys.argv[1:])
+    

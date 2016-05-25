@@ -8,11 +8,32 @@ Modules contained in this package are intended to:
 
 #### Installation
 
-On Windows, from an administrator command-prompt, run the following from the current directory: `pip install --find-links=.\install dtk==0.3`, or to do active development on the package, `python setup.py develop`.
+To install the dtk-tools, first clone the repository:
+```
+git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+```
 
-Because a cross-platform solution for automatic installation of the [`numpy`](https://pypi.python.org/pypi/numpy) dependency is challenging, we have included the win_amd64 version 1.9.2+mkl of the numpy wheel locally.  On other platforms, it is required to have installed that package first, e.g. `pip install numpy`
+Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
 
-On Windows, one may need to add the `Scripts` subdirectory of your local Python installation to the `%PATH%` [environment variable](https://www.java.com/en/download/help/path.xml) to have access to the `dtk` commandline utility.
+From a command-prompt (as admin), run the following from the **dtk-tools** directory:
+```
+python -m pip install --upgrade pip
+pip install -e . 
+```
+
+To test if dtk-tools is correctly installed on your machine issue a:
+```
+dtk -h
+```
+If the command succeed and present you with the details of the dtk command you are all set!
+
+**Note:** If you run into issues updating numpy on Windows, under the dtk-tools\install folder try:
+
+```
+pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
+```
+
+If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Setup
 

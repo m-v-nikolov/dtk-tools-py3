@@ -1,15 +1,3 @@
-# Bednet parameters
-""" OLD
-itn_bednet = { "class": "SimpleBednet",
-               "Bednet_Type": "ITN", 
-               "Blocking_Rate": 0.9,
-               "Killing_Rate": 0.6, 
-               "Durability_Time_Profile": "DECAYDURABILITY", 
-               "Primary_Decay_Time_Constant":   4 * 365,   # killing
-               "Secondary_Decay_Time_Constant": 2 * 365,   # blocking
-               "Cost_To_Consumer": 3.75
-}
-"""
 # new campaign format : need to fix some add_itn() functionalities
 itn_bednet = { "class": "SimpleBednet",
                "Bednet_Type": "ITN", 
@@ -29,7 +17,6 @@ itn_bednet = { "class": "SimpleBednet",
 def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], perfect=False):
     """
     Add an ITN intervention to the config_builder passed.
-
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bednet distribution
     :param coverage_by_ages: a list of dictionaries defining the coverage per age group
@@ -89,11 +76,13 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
         if 'birth' in coverage_by_age.keys() and coverage_by_age['birth']:
             birth_triggered_intervention = {
                 "class": "BirthTriggeredIV",
-                "Duration": -1, # forever.  could expire and redistribute every year with different coverage values
+                "Duration": coverage_by_age.get('duration', -1), # default to forever if  duration not specified
                 "Demographic_Coverage": coverage_by_age["coverage"],
                 "Actual_IndividualIntervention_Config": itn_bednet_w_event #itn_bednet
             }
+
             ITN_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention
             ITN_event["Event_Coordinator_Config"].pop("Demographic_Coverage")
+            ITN_event["Event_Coordinator_Config"].pop("Target_Residents_Only")
 
         config_builder.add_event(ITN_event)

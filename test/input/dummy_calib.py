@@ -7,22 +7,24 @@ from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
 from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
+from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 analyzer = DTKCalibFactory.get_analyzer(
     'ClinicalIncidenceByAgeCohortAnalyzer', weight=1)
 
-sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer]),
-         DTKCalibFactory.get_site('Ndiop', analyzers=[analyzer])]
+sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer])]
 
 prior = MultiVariatePrior.by_param(
     MSP1_Merozoite_Kill_Fraction=uniform(loc=0.4, scale=0.3),  # from 0.4 to 0.7
     Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
 
+plotters = [LikelihoodPlotter(True), SiteDataPlotter(True)]
 
 def sample_point_fn(cb, param_values):
     '''
@@ -36,19 +38,20 @@ def sample_point_fn(cb, param_values):
     return cb.update_params(params_dict)
 
 
-next_point_kwargs = dict(initial_samples=4,
+next_point_kwargs = dict(initial_samples=3,
                          samples_per_iteration=3,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='ExampleCalibration',
-                             setup=DTKSetupParser(),
+                             setup=SetupParser(),
                              config_builder=cb,
                              sample_point_fn=sample_point_fn,
                              sites=sites,
                              next_point=IMIS(prior, **next_point_kwargs),
-                             sim_runs_per_param_set=2,
+                             sim_runs_per_param_set=1,
                              max_iterations=2,
-                             num_to_plot=5)
+                             num_to_plot=5,
+                             plotters=plotters)
 
 run_calib_args = {}
 

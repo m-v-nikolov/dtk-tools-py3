@@ -4,7 +4,7 @@ import math
 class Node:
 
     default_density=200   # people/km^2
-    res_in_degrees=2.5/60 # 2.5 arcmin
+    res_in_degrees = 2.5/60
 
     def __init__(self, lat, lon, pop, name='', area=None):
         self.name=name
@@ -20,16 +20,16 @@ class Node:
         return '%s: (%0.3f,%0.2f), pop=%s, per km^2=%d' % (self.name, self.lat, self.lon, "{:,}".format(self.pop), self.density)
 
     def toDict(self):
-        d={ 'Latitude':self.lat,
-            'Longitude':self.lon,
-            'InitialPopulation':self.pop }
+        d={ 'Latitude':float(self.lat),
+            'Longitude':float(self.lon),
+            'InitialPopulation':int(self.pop) }
         if self.name:
-            d.update({'Name':self.name})
+            d.update({'FacilityName':self.name}) # might want to change 'FacilityName' to something more generic like 'NodeLabel'
         return d
 
     def toTuple(self):
         return self.lat,self.lon,self.pop
-
+    
     @property
     def id(self):
         return nodeid_from_lat_lon(self.lat,self.lon,self.res_in_degrees)

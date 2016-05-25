@@ -8,7 +8,6 @@ import re
 import signal
 import threading
 import time
-import warnings
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -269,45 +268,25 @@ class LocalExperimentManager(object):
     def complete_sim_creation(self, commisioners=[]):
         return  # no batching in LOCAL
 
+
     def commission_simulations(self):
-        commissioners = []
         exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
         sim_ids = self.exp_data['sims'].keys()
 
         max_local_sims = int(self.get_property('max_local_sims'))
 
-        if len(sim_ids) > max_local_sims:
-            # If we exceed the number of max_local_sims -> batch
-            for sim_id in sim_ids[:max_local_sims]:
-                c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                commissioners.append(c)
-                c.start()
+        from multiprocessing import Queue
 
-            num_commissioners_started = max_local_sims
+        self.thread_queue = Queue(maxsize=max_local_sims)  # A queue to multithread when running 'All' in a given step
 
-            while num_commissioners_started < len(commissioners):
-                for c in commissioners[:num_commissioners_started]:
-                    c.join()
-                states, msgs = self.get_simulation_status()
-                running_ids = [id for (id, state) in states.iteritems() if state in ['Running']]
-                if len(running_ids) >= max_local_sims:
-                    logger.info(dict(Counter(states.values())))
-                    time.sleep(10)
-                else:
-                    for sim_id in sim_ids[num_commissioners_started:num_commissioners_started + (max_local_sims - len(running_ids))] :
-                        c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                        commissioners.append(c)
-                        c.start()
-                    num_commissioners_started += max_local_sims - len(running_ids)
-        else:
-            for sim_id in sim_ids:
-                c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline)
-                commissioners.append(c)
-                c.start()
+        for sim_id in sim_ids:
+            self.thread_queue.put('run1')
+            c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline, self.thread_queue)
+            c.start()
+            self.exp_data['sims'][sim_id]['jobId'] = c.job_id
+            states, msgs = self.get_simulation_status()
+            logger.info(dict(Counter(states.values())))
 
-        for c in commissioners:
-            c.join()
-            self.exp_data['sims'][c.sim_id]['jobId'] = c.job_id
 
         return True
 

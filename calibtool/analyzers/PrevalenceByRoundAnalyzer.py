@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from calibration import LL_calculators
+from calibtool import LL_calculators
 from calibtool.CalibAnalyzer import CalibAnalyzer
 
 logger = logging.getLogger(__name__)
