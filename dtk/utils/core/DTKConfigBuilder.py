@@ -80,7 +80,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         return cls(config, empty_campaign, **kwargs)
 
     @classmethod
-    def from_files(cls, config_name, campaign_name=None):
+    def from_files(cls, config_name, campaign_name=None, **kwargs):
         '''
         Build up a simulation configuration from the path to an existing
         config.json and optionally a campaign.json file on disk.
@@ -89,7 +89,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         config = json2dict(config_name)
         campaign = json2dict(campaign_name) if campaign_name else empty_campaign
 
-        return cls(config, campaign)
+        return cls(config, campaign, **kwargs)
 
     @property
     def params(self):

@@ -5,13 +5,13 @@ import functools as fun
 
 from dtk.generic.migration import single_roundtrip_params
 from dtk.vector.study_sites import configure_site
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.tools.spatialworkflow.SpatialManager import SpatialManager
 from dtk.utils.builders.sweep import GenericSweepBuilder
 
 
-setup = DTKSetupParser()
+setup = SetupParser()
 location = 'HPC' #'LOCAL' 
 geography = 'DRC/Bandundu'
 sites = ['Bandundu']
