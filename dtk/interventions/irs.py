@@ -79,12 +79,22 @@ def add_IRS(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
             IRS_event["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
         if 'birth' in coverage_by_age.keys() and coverage_by_age['birth']:
-            birth_triggered_intervention = {
-                "class": "BirthTriggeredIV",
-                "Duration": -1,  # forever.  could expire and redistribute every year with different coverage values
-                "Demographic_Coverage": coverage_by_age["coverage"],
-                "Actual_IndividualIntervention_Config": irs_housingmod
-            }
+
+            if 'duration' in coverage_by_age.keys():
+                birth_triggered_intervention = {
+                    "class": "BirthTriggeredIV",
+                    "Duration": coverage_by_age["duration"],
+                    "Demographic_Coverage": coverage_by_age["coverage"],
+                    "Actual_IndividualIntervention_Config": irs_housingmod
+                }
+            else:
+                birth_triggered_intervention = {
+                    "class": "BirthTriggeredIV",
+                    "Duration": coverage_by_age["duration"],  # forever.  could expire and redistribute every year with different coverage values
+                    "Demographic_Coverage": -1,
+                    "Actual_IndividualIntervention_Config": irs_housingmod
+                }
+
             IRS_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention
             IRS_event["Event_Coordinator_Config"].pop("Demographic_Coverage")
 
