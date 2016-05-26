@@ -20,7 +20,7 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     install_package(os.path.join(install,'npyscreen-4.10.5.tar.gz'))
     install_package(os.path.join(install,'curses-2.2-cp27-none-win_amd64.whl'))
     install_package('psutil')
-
+    install_package('validators')
 
 
 setup(name='dtk-tools',
@@ -38,7 +38,8 @@ setup(name='dtk-tools',
           'statsmodels',
           'npyscreen',
           'curses',
-          'scipy'
+          'scipy',
+          'validators'
       ],
       entry_points={
           'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
