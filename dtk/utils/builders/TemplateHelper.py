@@ -1,86 +1,32 @@
 import copy
-import os
 import logging
 
 from simtools.ModBuilder import ModBuilder
-from dtk.utils.parsers.JSON import json2dict
-from dtk.utils.builders.TaggedTemplate import TaggedTemplate
 
 logger = logging.getLogger(__name__)
 
 class TemplateHelper():
+    # A helper class for templates.
 
-    static_params = []
-
-    def __init__(self, _static_params):
-        self.templates = {}
-        self.static_params = _static_params
-
-    def add_template(self, template_filepath, tag = '__KP'):
-        """
-        Add a template to the template helper.
-
-        :param template_filepath: The path to the file on disk.
-        :param tag: The tag prefix that has been added at desired locations in the template file.  Tags are added adjacent to the desired location, and have a matching prefix.  Tags must begin with two underscores.  For example, consider this Example.json:
-
-        Example.json:
-        {
-            "Example":
-            [
-                {
-                    "Parameter": 1
-                },
-                {
-                    "Parameter__KP_Set_This_Parameter": "<-- MARKER (This value does not matter, but is needed to maintain valid JSON format)",
-                    "Parameter": 2
-                },
-                {
-                    "Parameter__KP_Set_This_Parameter": "<-- MARKER (This value does not matter, but is needed to maintain valid JSON format)",
-                    "Parameter": 3
-                }
-            ]
-        }
-
-        To set the second and third instances "Parameter" in the array, use tagged parameter Parameter__KP_Set_This_Parameter.  This tagged parameter will be expanded to two separate addresses:
-        1. Example[1]['Parameter']
-        2. Example[2]['Parameter']
-        The value you provide will be set at all matching addresses.
-        """
-
-        if tag[:2] != '__':
-            logger.error('Tags must start with two underscores, __.  The tag you supplied (' + tag + ') did not meet this criteria.')
-
-        # Read in template
-        logger.info( "Reading template from file:", template_filepath )
-        template_json = json2dict(template_filepath)
-
-        # Get the filename and create a TaggedTemplate
-        template_filename = os.path.basename(template_filepath)
-        template = TaggedTemplate(template_filename, template_json, tag)
-
-        if template_filename in self.templates:
-            logger.warning("Already had template named " + template_filename + ".  Replacing previous template.")
-
-        # Set static tag parameters
-        for param,value in self.static_params.iteritems():
-            if tag in param:
-                tags = template.set_param(param, value)
-
-        # Store the template in a dictionary
-        self.templates[template_filename] = template
+    def __init__(self):
+        self.config_template = None
+        self.campaign_template = None
+        self.demographic_templates = None
 
     def set_dynamic_header_table(self, header, table):
         """
         Set the header and table for dynamic (per-simulation) configuration.
+        The header has three special values: CONFIG_TEMPLATE, CAMPAIGN_TEMPLATE, and DEMOGRAPHICS_TEMPLATES.  These keywords allow the config, campaign, and demographics files to be set and likely modified using tags on a per-simulation basis.  Values in the table corresponding to these header keywords are TaggedTemplate instanes for CONFIG_TEMPLATE and CAMPAIGN_TEMPLATE, and a list of TaggedTempalte for DEMOGRAPHICS_TEMPLATES.  The CONFIG_TEMPLATE and CAMPAIGN_TEMPLATE will be set to the corresponding config and campaign files in the config builder.  DEMOGRAPHICS_TEMPLATES will get added as additional simulation input files, and thus appear in the simulation working directory.  There is a check to make sure that, at the end of configuration, each demographic template file name has an entry in config builder's Demographics_Filenames parameter.
 
         :param header: Containes the parameter addresses, using the special tags (e.g. __KP).  Here is an example:
-            header = [  'Campaign_Filename', 'Start_Year__KP_Seeding_Year', 'Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
+            header = [  'CAMPAIGN_TEMPLATE', 'Start_Year__KP_Seeding_Year', 'Society__KP_Bulawayo.INFORMAL.Relationship_Parameters.Coital_Act_Rate' ]
 
         :param table: Containes the parameter values.  One simulation will be created for each row, e.g.:
             table = [
-                [ 'campaign_outbreak_only.json', 1990, 2],
-                [ 'campaign.json', 1980, 1 ]
+                [ campaign, 1980, 1 ],
+                [ campaign_outbreak_only, 1990, 2]
             ]
+        In this example, campaign and campaign_outbreak_only are instances of TaggedTemplate.
         """
 
         self.header = header
@@ -96,68 +42,79 @@ class TemplateHelper():
         logger.info( "Table with %d configurations of %d parameters." % (nRow, nParm) )
 
     def __mod_dynamic_parameters(self, cb, dynamic_params):
+        # Modify the config builder according to the dynamic_parameters
+
         logger.info( '-----------------------------------------' )
-        #all_params = copy.deepcopy( self.static_params )
-        #all_params.update(dynamic_params)
         all_params = copy.deepcopy(dynamic_params)
-        active_template_files = []
 
-        # Set campaign filename in config
-        if 'Campaign_Filename' in all_params:
-            campaign_filename = all_params['Campaign_Filename']
-            logger.info( "Found campaign filename in header, setting Campaign_Filename to %s" % campaign_filename )
-            cb.set_param('Campaign_Filename', campaign_filename)
-            del all_params['Campaign_Filename']
+        # Handle dynamic config template
+        if 'CONFIG_TEMPLATE' in all_params:
+            conifg_template = all_params.pop('CONFIG_TEMPLATE')
+            self.config_template = config_template
+            logger.info( "Using config template: %s" % config_template.filename )
 
-        campaign_filename = cb.config['parameters']['Campaign_Filename']
-        if campaign_filename in self.templates:
-            logger.info( "--> Found campaign template with filename %s, using template" % campaign_filename )
-            active_template_files.append(campaign_filename)
+        # Handle dynamic campaign template
+        if 'CAMPAIGN_TEMPLATE' in all_params:
+            campaign_template = all_params.pop('CAMPAIGN_TEMPLATE')
+            self.campaign_template = campaign_template
+            logger.info( "Using campaign template: %s" % campaign_template.filename )
 
-        # Set demographics filenames in config
-        if 'Demographics_Filenames' in all_params:
-            demographics_filenames = all_params['Demographics_Filenames']
-            logger.info( "Found demographics filenames in header, setting Demographics_Filenames to %s" % demographics_filenames )
-            cb.set_param('Demographics_Filenames', demographics_filenames)
-            del all_params['Demographics_Filenames']
+        # Handle dynamic demographics templates
+        if 'DEMOGRAPHICS_TEMPLATES' in all_params:
+            demographics_templates = all_params.pop('DEMOGRAPHICS_TEMPLATES')
+            self.demographic_templates = demographics_templates
+            logger.info( "Using demographics templates: %s" % [d.filename for d in demographics_templates] )
 
-        demographics_filenames = copy.deepcopy(cb.config['parameters']['Demographics_Filenames'])
-        for demographics_filename in demographics_filenames:
-            if demographics_filename in self.templates:
-                logger.info( "--> Found demographics template with filename %s, using template" % demographics_filename )
-                active_template_files.append(demographics_filename)
+        # For error checking, union all tags and active template filenames
+        # TODO: Better.  map or function asking each active template if it has a key?
+        tag_list = set()
+        active_template_filenames = []
+        if self.config_template is not None:
+            [tag_list.add(k) for k in self.config_template.tag_dict.keys() ]
+            active_template_filenames.append( self.config_template.filename )
+        if self.campaign_template is not None:
+            [tag_list.add(k) for k in self.campaign_template.tag_dict.keys() ]
+            active_template_filenames.append( self.campaign_template.filename )
+        if self.demographic_templates is not None:
+            for d in self.demographic_templates:
+                [tag_list.add(k) for k in d.tag_dict.keys() ]
+                active_template_filenames.append( d.filename )
 
-        # CONFIG parameters - not too happy about this.  The only I can tell they're confi parameters
-        # is if the parameter name DOES NOT contain two underscores, which started the tag, e.g. __KP.
-        # Any thoughts of how to do this better?  E.g. what if config parameter has __ in it?
-        config_params = {p:v for p,v in self.static_params.iteritems() if '__' not in p}
-        config_params.update( {p:v for p,v in all_params.iteritems() if '__' not in p} )
-        for param, value in config_params.iteritems():
-            logger.info( "Setting " + param + " = " + str(value) )
-            cb.set_param(param,value)
-            if param in all_params:
-                del all_params[param]
+        # Error checking.  Make sure all dynamic parameters will be found in at least one place.
+        for param in all_params.keys():
+            tag = param.split('.')[0]
+            if tag not in tag_list:
+                raise Exception("Could not find tag in any active template.\n--> Tag: %s\n--> Available tags: %s.\n--> Active templates: %s." % (tag, tag_list, active_template_filenames) )
 
-        templates_mod = { template_filename : copy.deepcopy(self.templates[template_filename]) 
-            for template_filename in active_template_files }
+        # Modify static and dynamic parameters in templates
+        # --> CONFIG
+        if self.config_template is not None:
+            config_template_mod = copy.deepcopy( self.config_template ) # Deep copy needed?
+            config_template_mod.set_params(all_params)
+            cb.config = self.config_template.contents
 
-        # Modify static and dynamic parameters in active templates
-        for template_filename in active_template_files:
-            template = templates_mod[template_filename]
-            for key, value in all_params.iteritems():
-                template.set_param(key,value)
+        # --> CAMPAIGN
+        if self.campaign_template is not None:
+            campaign_template_mod = copy.deepcopy( self.campaign_template ) # Deep copy needed?
+            campaign_template_mod.set_params(all_params)
 
-        # Set campaign file in cb
-        if campaign_filename in self.templates:
-            cb.campaign = templates_mod[campaign_filename].contents
+            cb.set_param('Campaign_Filename', campaign_template_mod.filename)
+            cb.campaign = campaign_template_mod.contents
 
-        # Set demographics files in cb
-        for demographics_filename in demographics_filenames:
-            if demographics_filename in self.templates:
-                cb.add_input_file(demographics_filename.replace(".json",""), templates_mod[demographics_filename].contents)
+        # --> DEMOGRAPHICS
+        if self.demographic_templates is not None:
+            demographics_filenames = cb.params['Demographics_Filenames']
+            for d in self.demographic_templates:
+                # Make sure the filename is listed in Demographics_Filenames
+                if d.filename not in demographics_filenames:
+                    raise Exception( "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s", d.filename, demographics_filenames)
 
+                demog_template_mod = copy.deepcopy( d ) # Deep copy needed?
+                demog_template_mod.set_params(all_params)
 
-    def experiment_builder(self):
+                cb.add_input_file(demog_template_mod.filename.replace(".json",""), demog_template_mod.contents)
+
+    def get_modifier_functions(self):
         """
         Returns a ModBuilder ModFn that sets file contents and values in config builder according to the dynamic parameters.
         """

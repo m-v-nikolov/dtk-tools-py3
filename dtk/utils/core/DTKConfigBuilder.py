@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from collections import OrderedDict
 
 from simtools import utils
 from simtools.SimConfigBuilder import SimConfigBuilder
@@ -27,7 +26,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.config = config
         self.campaign = campaign
         self.demog_overlays = {}
-        self.input_files = OrderedDict()
+        self.input_files = {}
         self.custom_reports = []
         self.dlls = set()
         self.emodules_map = {'interventions': [],

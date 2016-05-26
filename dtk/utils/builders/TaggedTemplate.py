@@ -1,3 +1,5 @@
+from dtk.utils.parsers.JSON import json2dict
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -5,16 +7,66 @@ logger = logging.getLogger(__name__)
 class TaggedTemplate():
     '''
     A class for building, modifying, and writing
-    input files tagged with tag (e.g. __KP), including campaign
-    and demographics files.
+    input files tagged with tag (e.g. __KP), including campaign,
+    demographics, and potentially even config files.
     '''
 
     def __init__(self, filename, contents, tag='__KP'):
+        '''
+        Initialize a TaggedTemplate.
+
+        The idea here is that if you have a json file with deep nesting or a long array of events, you can plant "tags" within the file to facilitate parameter reference."  Tags are new keys adjacent to existing keys within the document.  The first part of the tagged parameter must exactly match the original parameter you wish to change.  The comes the tag, e.g. __KP.  Any string can follow the tag to uniquely identify it.
+
+        For example, the __KP tag below allows you to set the Demographic_Coverage parameter of the second event only.
+
+        {
+            "Events" : [
+                {
+                    "Name": "First",
+                    "Demographic_Coverage": 0.25,
+                    "Range__KP_First": "<-- MARKER (this string is arbitrary)",
+                    "Range" {
+                        "Min": 0,
+                        "Max": 1,
+                    }
+                },
+                {
+                    "Name": "Second",
+                    "Demographic_Coverage__KP_Second_Coverage": "<-- MARKER (this string is arbitrary)",
+                    "Demographic_Coverage": 0.25
+                }
+            ]
+        }
+
+        You can do some neat things with tags.
+        * You can place a tagged parameter, e.g. Demographic_Coverage__KP_Second_Coverage, in several places.  The value will be set everywhere the tagged parameter is found.  For now, the whole tagged parameter must match, so Something_Else__KP_Second_Coverage would not receive the same value on set_param.
+        * You can reference relateive to the tagged parameters, e.g. Range__KP_First.Min = 3
+        * You don't have to use __KP, just set the tag parameter in the constructor.
+
+        :param filename: The name of the template file.  This is not the full path to the file, just the filename.
+        :param contents: The contents of the template file
+        :param tag: The string that marks parameters in the file.  Note, this must begin with two underscores.
+        '''
+
+        if tag[:2] != '__':
+            logger.error('Tags must start with two underscores, __.  The tag you supplied (' + tag + ') did not meet this criteria.')
+
         self.contents = contents
         self.filename = filename
         self.tag = tag
 
         self.tag_dict = self.__findKeyPaths(self.contents, self.tag)
+
+    @classmethod
+    def from_file(cls, template_filepath, tag='__KP'):
+        # Read in template
+        logger.info( "Reading template from file:", template_filepath )
+        content = json2dict(template_filepath)
+
+        # Get the filename and create a TaggedTemplate
+        template_filename = os.path.basename(template_filepath)
+
+        return cls(template_filename, content, tag)
 
     def __findKeyPaths(self, search_obj, key_fragment, partial_path=[]):
         '''
@@ -24,10 +76,12 @@ class TaggedTemplate():
 
         path_dict = {}
         for path in paths_found:
+            # The last part of the path should contain the key_fragment (__KP)
+            # NOTE: Could change the key to be just the string following the tag here
             key = path[-1]
-            value = path
 
-            # Truncate from key_fragment in k
+            # Truncate from key_fragment in k (lop off __KP_etc)
+            value = path
             value[-1] = value[-1].split(key_fragment)[0]
 
             path_dict.setdefault(key,[]).append(value)
@@ -36,7 +90,7 @@ class TaggedTemplate():
 
     def __recurseKeyPaths(self, search_obj, key_fragment, partial_path=[]):
         '''
-        Locates all occurrences of keys containing key_fragment in json-object 'search_obj'
+        Locates all occurrences of keys containing key_fragment in json-object 'search_obj'.
         '''
         paths_found = []
 
@@ -62,20 +116,20 @@ class TaggedTemplate():
 
         return paths_found
 
-
-    def __expand_tags(self, tagged_param):
+    def set_params(self, params):
         """
-        Takes a tagged_param in string format and converts it to a list of parameter addresses by expanding tags from the tag dictionary.
+        Call set_params to set several parameter in the tagged template file.
+
+        :param params: A dictionary of key value pairs to be passed to set_param.
+        :return: Simulation tags
         """
+        sim_tags = []
+        for param,value in params.iteritems():
+            if self.tag in param:
+                new_sim_tags = self.set_param(param, value)
+                sim_tags.append( new_sim_tags )
 
-        tokens = tagged_param.split('.')
-
-        tagged_param = tokens[0]
-        if tagged_param in self.tag_dict:
-            return [ expanded_tag + tokens[1:] for expanded_tag in self.tag_dict[tagged_param] ]
-
-        return []
-
+        return sim_tags
 
     def set_param(self, param, value):
         """
@@ -85,13 +139,15 @@ class TaggedTemplate():
 
         :param param: The parameter to set, e.g. CAMPAIGN.My_Parameter__KP_Seeding.Max
         :param value: The value to place at expanded parameter loci.
+        :return: Simulation tags
         """
-        tags = []
+        sim_tags = []
         for param in self.__expand_tags(param):
             tag = self.__set_expanded_param(param, value)
-            tags.append(tag)
+            sim_tags.append(tag)
 
-        return tags
+        return sim_tags
+
 
     def __set_expanded_param(self, param, value):
         """
@@ -117,6 +173,20 @@ class TaggedTemplate():
 
         # For the tags return the non cleaned parameters so the parser can find it
         return {param_name:value}
+
+
+    def __expand_tags(self, tagged_param):
+        """
+        Takes a tagged_param in string format and converts it to a list of parameter addresses by expanding tags from the tag dictionary.
+        """
+
+        tokens = tagged_param.split('.')
+
+        tagged_param = tokens[0]
+        if tagged_param in self.tag_dict:
+            return [ expanded_tag + tokens[1:] for expanded_tag in self.tag_dict[tagged_param] ]
+
+        return []
 
 
     def __cast_value(self,value):
