@@ -1,12 +1,15 @@
 import json
 import os
 import sys
+
 from ConfigParser import ConfigParser
+from IniValidator import IniValidator
 
 default_setup = os.path.join(os.path.dirname(__file__),
                              'simtools.cfg')
 
-class SetupParser():
+
+class SetupParser:
     '''
     Parse user settings and directory locations
     from setup configuration file: simtools.cfg
@@ -18,6 +21,8 @@ class SetupParser():
 
         if not setup_file:
             setup_file = default_setup
+
+        self.ini_file = setup_file
 
         if not os.path.exists(setup_file):
             raise Exception('SetupParser requires a setup file (' + setup_file + ') defining e.g. environmental variables.')
@@ -77,3 +82,17 @@ class SetupParser():
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         self.schema = json_schema
         return json_schema
+
+    def file_name(self):
+        return self.ini_file
+
+    def validate(self):
+        local_section = self.get("DEFAULT", "local")
+        local_default = IniValidator(local_section)
+        local_default.validate(self)
+
+        hpc_section = self.get("DEFAULT", "hpc")
+        hpc_default = IniValidator(hpc_section)
+        hpc_default.validate(self)
+
+        # print "Ini file passed schema validation"
