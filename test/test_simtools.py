@@ -145,7 +145,7 @@ class TestLocalExperimentManager(unittest.TestCase):
         self.assertEqual(local_manager.exp_data['exp_name'], 'test')
 
     def test_status(self):
-        local_manager = ExperimentManagerFactory.from_file(utils.most_recent_exp_file())
+        local_manager = ExperimentManagerFactory.from_file(utils.exp_file())
         states, msgs = local_manager.get_simulation_status()
         self.assertListEqual(states.values(), ['Running'] * self.nsims)
 
