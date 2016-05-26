@@ -76,8 +76,14 @@ def kill(args):
         logging.info('KIlling job(s) with ids: ' + str(args.simIds))
         params = { 'ids': args.simIds }
     else:
-        logging.info('No job IDs were specified.  Killing all jobs in experiment.')
+        logging.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
         params = { 'killall': True }
+
+    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+
+    if choice != 'Y':
+        logging.info('No action taken.')
+        return
 
     if args.all:
         sms = reload_experiments(args)
@@ -91,9 +97,6 @@ def analyze(args):
 
     logging.info('Analyzing results...')
 
-    if not args.config_name:
-        logging.warn('No analyzer config passed to "dtk analyse": the results may be trivial.')
-
     sm = reload_experiment(args)
 
     if not args.force:
@@ -104,19 +107,10 @@ def analyze(args):
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
 
-    if args.config_name:
-        analyze_from_script(args, sm)
-    else:
-        logging.info(args.analyzers)
-        for analyzer in args.analyzers:
-            a = analyzer.split('.')
-            if len(a) > 1:
-                analyzer_module = import_module('.'.join(['dtk.utils.analyzers'] + a[:-1]))
-                analyzer = a[-1]
-            else:
-                analyzer_module = import_module('dtk.utils.analyzers.' + analyzer)
-            analyzer_obj = getattr(analyzer_module, analyzer)()
-            sm.add_analyzer(analyzer_obj)
+    if not args.config_name:
+        logging.info('No analyzer script specified: results will be trivial.')
+        
+    analyze_from_script(args, sm)
 
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
@@ -193,8 +187,7 @@ def main():
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_analyze.add_argument('-w', '--with', dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
-    parser_analyze.add_argument('-a', '--analyzer', dest = 'analyzers', nargs = '*', default = [], help = 'Analyzers to use on simulations.')
+    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
     parser_analyze.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func = analyze)
@@ -202,7 +195,6 @@ def main():
     # run specified function passing in function-specific arguments
     args = parser.parse_args()
     args.func(args)
-
 
 if __name__ == '__main__':
     main()
