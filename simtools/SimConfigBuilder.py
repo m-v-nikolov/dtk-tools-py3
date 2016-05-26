@@ -53,7 +53,7 @@ class SimConfigBuilder(object):
         return True
 
     def stage_executable(self, exe_path, paths):
-        staged_bin = utils.stage_file(exe_path, paths['bin_root'])
+        staged_bin = utils.stage_file(exe_path, paths['bin_staging_root'])
         self.set_param('bin_path', staged_bin)
         return staged_bin
 
