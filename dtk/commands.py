@@ -7,6 +7,8 @@ import sys
 import time
 
 import simtools.utils as utils
+
+from dtk.utils.analyzers import StdoutAnalyzer
 from simtools.ExperimentManager import ExperimentManagerFactory
 
 from simtools.SetupParser import SetupParser
@@ -93,22 +95,39 @@ def kill(args):
         sm = reload_experiment(args)
         sm.cancel_simulations(**params)
 
-def analyze(args):
-
-    logging.info('Analyzing results...')
+def stdout(args):
+    logging.info('Getting stdout..')
 
     sm = reload_experiment(args)
+    states, msgs = sm.get_simulation_status()
 
     if not args.force:
-        states, msgs = sm.get_simulation_status()
         if not sm.status_succeeded(states):
             logging.warning('Not all jobs have finished successfully yet...')
             logging.info('Job states:')
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
 
-    if not args.config_name:
-        logging.info('No analyzer script specified: results will be trivial.')
+    sm.add_analyzer(StdoutAnalyzer(args.simIds))
+
+    if args.comps:
+        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+
+    sm.analyze_simulations()
+
+def analyze(args):
+
+    logging.info('Analyzing results...')
+
+    sm = reload_experiment(args)
+    states, msgs = sm.get_simulation_status()
+
+    if not args.force:
+        if not sm.status_succeeded(states):
+            logging.warning('Not all jobs have finished successfully yet...')
+            logging.info('Job states:')
+            logging.info(json.dumps(states, sort_keys=True, indent=4))
+            return
         
     analyze_from_script(args, sm)
 
@@ -181,8 +200,16 @@ def main():
     parser_kill = subparsers.add_parser('kill', help = 'Kill running experiment specified by ID or name.')
     parser_kill.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
     parser_kill.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to kill.')
-    parser_kill.add_argument('-a', '--all', action = 'store_true', help = 'Kill all simulations in selected experiments.')
+    parser_kill.add_argument('-a', '--all', action = 'store_true', help = 'Kill all simulations in (possibly multiple) selected experiments.')
     parser_kill.set_defaults(func = kill)
+
+    # 'dtk stdout' options
+    parser_stdout = subparsers.add_parser('stdout', help = 'Print stdout from simulation.')
+    parser_stdout.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_stdout.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
+    parser_stdout.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
+    parser_stdout.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
+    parser_stdout.set_defaults(func = stdout)
 
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')

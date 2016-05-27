@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -20,7 +22,7 @@ class VectorSpeciesAnalyzer(TimeseriesAnalyzer):
     output_file = 'vector.csv'
 
     def __init__(self,
-                 filename ='VectorSpeciesReport.json',
+                 filename = os.path.join('output', 'VectorSpeciesReport.json'),
                  filter_function = lambda md: True, # no filtering based on metadata
                  select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
                  group_function  = lambda k,v: k,   # group by unique simid-key from parser

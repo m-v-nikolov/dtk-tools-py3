@@ -39,7 +39,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
 
         reference_path = os.path.join(self.regression_path,
                                       parser.sim_data['Config_Name'],
-                                      'output', self.filenames[0])
+                                      self.filenames[0])
         with open(reference_path) as f:
             data_by_channel = json.loads(f.read())['Channels']
         ref_channel_data = self.get_channel_data(data_by_channel)
