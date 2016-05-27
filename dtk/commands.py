@@ -96,7 +96,7 @@ def kill(args):
         sm.cancel_simulations(**params)
 
 def stdout(args):
-    logging.info('Getting stdout..')
+    logging.info('Getting stdout...')
 
     sm = reload_experiment(args)
     states, msgs = sm.get_simulation_status()
