@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import unittest
+from subprocess import Popen, PIPE, STDOUT
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,7 +45,9 @@ class TestCommands(unittest.TestCase):
 
     def test_run_calibration(self):
         os.chdir(self.calibration_dir)
-        os.system('calibtool run dummy_calib.py')
+
+        ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
 
         # Test if files are present
         calibpath = os.path.abspath('ExampleCalibration')
@@ -60,7 +63,9 @@ class TestCommands(unittest.TestCase):
     def test_reanalyze(self):
         # Run the calibration
         os.chdir(self.calibration_dir)
-        os.system('calibtool run dummy_calib.py')
+
+        ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
 
         # Open the CalibManager.json and save the values
         with open('ExampleCalibration/CalibManager.json', 'r') as fp:
@@ -68,7 +73,9 @@ class TestCommands(unittest.TestCase):
             self.totals = cm['results']['total']
 
         # Now reanalyze
-        os.system('calibtool reanalyze dummy_calib.py')
+        ctool = Popen(['calibtool', 'reanalyze', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
+
         # After reanalyze compare the totals
         with open('ExampleCalibration/CalibManager.json', 'r') as fp:
             cm = json.load(fp)
@@ -78,7 +85,9 @@ class TestCommands(unittest.TestCase):
     def test_cleanup(self):
         # Run the calibration
         os.chdir(self.calibration_dir)
-        os.system('calibtool run dummy_calib.py')
+
+        ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
 
         # Get the sim paths
         simulation_dir = os.path.join(self.current_cwd, 'calibration', 'simulations')
@@ -90,7 +99,8 @@ class TestCommands(unittest.TestCase):
             simulation_paths.append(os.path.join(info['sim_root'],"%s_%s" %(info['exp_name'], info['exp_id'])))
 
         # Cleanup
-        os.system('calibtool cleanup dummy_calib.py')
+        ctool = Popen(['calibtool', 'cleanup', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
 
         # Make sure everything disappeared
         self.assertFalse(os.path.exists('ExampleCalibration'))
