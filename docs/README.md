@@ -1,6 +1,7 @@
-Install sphinx to build the docs:
+Install sphinx and the theme to build the docs:
 ```
 pip install sphinx
+pip install guzzle_sphinx_theme
 ```
 
 Build the docs, which should result in a bunch of files in a temporary `_build/html` folder:
