@@ -1,6 +1,4 @@
 import json
-import time
-
 
 class WorkOrderGenerator:
     def __init__(self, demographics_file_path, wo_output_path, project_info="IDM-Democratic_Republic_of_the_Congo",
@@ -22,11 +20,11 @@ class WorkOrderGenerator:
         self.num_years = num_years
         self.nan_check = nan_check
         self.migration = False  # expose as parameter
-        self.id_reference = str(time.time())
+        self.id_reference = 'Gridded world grump30arcsec'  # str(time.time())
+        # self.id_reference = str(time.time())
         self.path = ''
 
     def wo_2_dict(self):
-        # add the work order items
         wo = {'RequestType': self.request_type,
               'DemographicsPath': self.demographics_file_path,
               'WorkItem_Type': self.work_item_type,
@@ -41,9 +39,11 @@ class WorkOrderGenerator:
               'NumYears': self.num_years,
               'NaNCheck': self.nan_check,
               'Migration': self.migration,
-              'Path': self.path,
               'IdReference': self.id_reference
         }
+
+        # add the work order items
+        # wo['Path'] = self.path
 
         # add nodes from demographics file
         with open(self.demographics_file_path, 'r') as demo_f:
@@ -54,6 +54,7 @@ class WorkOrderGenerator:
                 self.node_list.append(node['NodeID'])
 
         # wo['NodeList'] = self.node_list
+
         return wo
 
     def set_project_info(self, project_info):
