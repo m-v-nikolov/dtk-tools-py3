@@ -1,10 +1,10 @@
-.. _dtksetup:
+.. _simtoolsini:
 
 ===================
-dtk_setup.cfg file
+simtools.ini file
 ===================
 
-The ``dtk_setup.cfg`` file allows you to overrides the default configuration options available.
+The ``simtools.ini`` file allows you to overrides the default configuration options available.
 
 GLOBAL section
 ===============
@@ -92,7 +92,7 @@ Folder where all the input files (climate and demographics) are stored.
 
 .. setting:: hpc_bin_root
 
-``bin_root``
+``bin_staging_root``
 --------------------------
 
 Default: ``\\idmppfil01\IDM\home\%(user)s\bin\``
@@ -106,7 +106,7 @@ Folder where the executable will be cached.
 
 .. setting:: hpc_dll_root
 
-``dll_root``
+``lib_staging_root``
 --------------------------
 
 Default: ``\\idmppfil01\IDM\home\%(user)s\emodules\``
@@ -200,7 +200,7 @@ The folder where the simulations input files are stored (demographics, climate).
 
 .. setting:: bin_root
 
-``bin_root``
+``bin_staging_root``
 --------------------------
 
 | Default LOCAL: ``C:\Eradication\bin``
@@ -212,7 +212,7 @@ Folder where the executable will be cached.
 
 .. setting:: dll_root
 
-``dll_root``
+``lib_staging_root``
 --------------------------
 
 | Default LOCAL: ``C:\Eradication\dll``
@@ -260,8 +260,8 @@ Complete example
 
     sim_root            = \\idmppfil01\IDM\home\%(user)s\output\simulations\
     input_root          = \\idmppfil01\IDM\home\%(user)s\input\
-    bin_root            = \\idmppfil01\IDM\home\%(user)s\bin\
-    dll_root            = \\idmppfil01\IDM\home\%(user)s\emodules\
+    bin_staging_root    = \\idmppfil01\IDM\home\%(user)s\bin\
+    lib_staging_root    = \\idmppfil01\IDM\home\%(user)s\emodules\
 
     num_retries         = 0
     sims_per_thread     = 20
@@ -269,17 +269,17 @@ Complete example
     compress_assets     = 0
 
     [LOCAL]
-    max_local_sims = 8
-    sim_root       = C:\Eradication\simulations
-    input_root     = C:\Eradication\EMOD-InputData
-    bin_root       = C:\Eradication\bin
-    dll_root       = C:\Eradication\dll
+    max_local_sims   = 8
+    sim_root         = C:\Eradication\simulations
+    input_root       = C:\Eradication\EMOD-InputData
+    bin_staging_root = C:\Eradication\bin
+    lib_staging_root = C:\Eradication\dll
 
     [POSIX]
-    sim_root       = /Users/%(user)s/simtools/simulations
-    input_root     = /Users/%(user)s/simtools/input
-    bin_root       = /Users/%(user)s/simtools/bin
-    dll_root       = /Users/%(user)s/simtools/emodules
+    sim_root         = /Users/%(user)s/simtools/simulations
+    input_root       = /Users/%(user)s/simtools/input
+    bin_staging_root = /Users/%(user)s/simtools/bin
+    lib_staging_root = /Users/%(user)s/simtools/emodules
 
     [BINARIES]
     exe_path   = C:\Eradication\DtkTrunk\Eradication\x64\Release\Eradication.exe
