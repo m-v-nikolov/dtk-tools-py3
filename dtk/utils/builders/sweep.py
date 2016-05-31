@@ -9,7 +9,11 @@ from dtk.vector.study_sites import configure_site
 
 class RunNumberSweepBuilder(ModBuilder):
     def __init__(self, nsims):
-        self.mod_generator = (self.set_mods([self.ModFn(DTKConfigBuilder.set_param, 'Run_Number', i)]) for i in range(nsims))
+        self.mod_generator = (
+            self.set_mods(
+                [self.ModFn(DTKConfigBuilder.set_param, 'Run_Number', i)]
+            ) for i in range(nsims)
+        )
 
 
 class GenericSweepBuilder(ModBuilder):
