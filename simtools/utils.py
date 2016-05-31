@@ -4,9 +4,7 @@ from hashlib import md5
 import logging
 import shutil
 
-
 logger = logging.getLogger(__name__)
-
 
 def get_md5(filename):
     logger.info('Getting md5 for ' + filename)
@@ -20,30 +18,24 @@ def get_md5(filename):
     md5_value = md5calc.hexdigest()
     return md5_value
 
+def exp_files(idOrName = None):
+    files = None
 
-def most_recent_exp_file():
-    logger.info('Getting most recent experiment in current directory...')
-    expfiles = glob.glob('simulations/*.json')
-    if expfiles:
-        return max(expfiles, key=os.path.getctime)
+    if idOrName:
+        files = glob.glob('simulations/*' + idOrName + '*.json')
     else:
+        files = glob.glob('simulations/*.json')
+
+    if not files or len(files) < 1:
         raise Exception('Unable to find experiment meta-data file in local directory.')
-    return filepath
 
+    return files
 
-def exp_file_from_id(exp_id):
-    expfiles = glob.glob('simulations/*' + exp_id + '.json')
-    if len(expfiles) == 1:
-        return expfiles[0]
-    elif len(expfiles) > 1:
-        raise Exception('Ambiguous experiment-id; multiple matches found.')
-    else:
-        raise Exception('Unable to find experiment-id meta-data file for experiment ' + exp_id + '.')
-
+def exp_file(idOrName = None):
+    return max(exp_files(idOrName), key=os.path.getctime)
 
 def is_remote_path(path):
     return path.startswith('\\\\')
-
 
 def stage_file(from_path, to_directory):
     if is_remote_path(from_path):
@@ -72,7 +64,7 @@ def stage_file(from_path, to_directory):
 
 def override_HPC_settings(setup, **kwargs):
 
-    overrides_by_variable = dict(priority=['Lowest', 'Below Normal', 'Normal', 'Above Normal', 'Highest'],
+    overrides_by_variable = dict(priority=['Lowest', 'BelowNormal', 'Normal', 'AboveNormal', 'Highest'],
                                  node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab', 'emod_cd', 'emod_abcd'],
                                  use_comps_asset_svc=['0', '1'])
 

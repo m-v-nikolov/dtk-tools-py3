@@ -3,13 +3,13 @@ import os
 from simtools.ModBuilder import ModBuilder
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.generic.geography import convert_filepaths
 
 class RegressionSuiteBuilder(ModBuilder):
 
     def __init__(self, names):
-        self.regression_path = os.path.join(DTKSetupParser().get('BINARIES', 'dll_path'),
+        self.regression_path = os.path.join(SetupParser().get('BINARIES', 'dll_path'),
                                             '..', '..', 'Regression')
         self.mod_generator = (self.add_test(n) for n in names)
 

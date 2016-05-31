@@ -9,8 +9,7 @@ import time
 import simtools.utils as utils
 from simtools.ExperimentManager import ExperimentManagerFactory
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
-
+from simtools.SetupParser import SetupParser
 
 def load_config_module(config_name):
     sys.path.append(os.getcwd())
@@ -24,7 +23,7 @@ def run(args):
 
     # run the simulation
     location = 'HPC' if (args and args.hpc) else 'LOCAL'
-    setup = DTKSetupParser()
+    setup = SetupParser()
     additional_args = {}
     if location == 'HPC':
         if args.priority:
@@ -36,44 +35,63 @@ def run(args):
 
 
 def status(args):
-    # reload the experiment
-    sm = reload_experiment(args)
+    if args.active:
+        logging.info('Getting status of all active experiments.')
+        sms = reload_active_experiments()
+        for sm in sms:
+            states, msgs = sm.get_simulation_status()
+            sm.print_status(states, msgs)
+        return
 
-    # monitor the status of the simulation
+    sm = reload_experiment(args)
     while True:
         states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
-        if not args.repeat or sm.status_finished(states):
+        if not args.repeat or sm.finished():
             break
         else:
             time.sleep(20)
 
-
 def resubmit(args):
     sm = reload_experiment(args)
 
-    if args.all:
-        logging.debug('Resubmitting all failed and canceled jobs in experiment')
-        sm.resubmit_simulations(resubmit_all_failed=True)
-    elif args.ids:
-        logging.info('Resubmitting job(s) with ids: ' + str(args.ids))
-        sm.resubmit_simulations(ids=args.ids)
+    if args.simIds:
+        logging.info('Resubmitting job(s) with ids: ' + str(args.simIds))
+        params = { 'ids': args.simIds }
     else:
-        logging.ingo("No job IDs were specified.  Run 'dtk resubmit -h' to see options.")
+        logging.info('No job IDs were specified.  Resubmitting all failed and canceled jobs in experiment.')
+        params = { 'resubmit_all_failed': True }
 
+    if args.all:
+        sms = reload_experiments(args)
+        for sm in sms:
+            sm.resubmit_simulations(**params)
+    else:
+        sm = reload_experiment(args)
+        sm.resubmit_simulations(**params)
 
 def kill(args):
-    sm = reload_experiment(args)
+
+    if args.simIds:
+        logging.info('KIlling job(s) with ids: ' + str(args.simIds))
+        params = { 'ids': args.simIds }
+    else:
+        logging.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
+        params = { 'killall': True }
+
+    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+
+    if choice != 'Y':
+        logging.info('No action taken.')
+        return
 
     if args.all:
-        logging.debug('Killing all jobs in experiment')
-        sm.cancel_simulations(killall=True)
-    elif args.ids:
-        logging.info('Killing job(s) with ids: ' + str(args.ids))
-        sm.cancel_simulations(ids=args.ids)
+        sms = reload_experiments(args)
+        for sm in sms:
+            sm.cancel_simulations(**params)
     else:
-        logging.info("No job IDs were specified.  Run 'dtk kill -h' to see options.")
-
+        sm = reload_experiment(args)
+        sm.cancel_simulations(**params)
 
 def analyze(args):
 
@@ -89,19 +107,10 @@ def analyze(args):
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
 
-    if args.config_name:
-        analyze_from_script(args, sm)
-    else:
-        logging.info(args.analyzers)
-        for analyzer in args.analyzers:
-            a = analyzer.split('.')
-            if len(a) > 1:
-                analyzer_module = import_module('.'.join(['dtk.utils.analyzers'] + a[:-1]))
-                analyzer = a[-1]
-            else:
-                analyzer_module = import_module('dtk.utils.analyzers.' + analyzer)
-            analyzer_obj = getattr(analyzer_module, analyzer)()
-            sm.add_analyzer(analyzer_obj)
+    if not args.config_name:
+        logging.info('No analyzer script specified: results will be trivial.')
+        
+    analyze_from_script(args, sm)
 
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
@@ -122,11 +131,23 @@ def analyze_from_script(args, sim_manager):
 
 
 def reload_experiment(args=None):
-    if args.expId:
-        filepath = utils.exp_file_from_id(args.expId)
+    if args:
+        id = args.expId
     else:
-        filepath = utils.most_recent_exp_file()
-    return ExperimentManagerFactory.from_file(filepath)
+        id = None
+
+    return ExperimentManagerFactory.from_file(utils.exp_file(id))
+
+def reload_experiments(args=None):
+    if args:
+        id = args.expId
+    else:
+        id = None
+
+    return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+
+def reload_active_experiments(args=None):
+    return [sm for sm in reload_experiments(args) if not sm.finished()]
 
 
 def main():
@@ -135,46 +156,45 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options')
-    parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--hpc', action='store_true', help='Run simulation on HPC using COMPS (default is local simulation).')
-    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_run.set_defaults(func=run)
+    parser_run = subparsers.add_parser('run', help = 'Run one or more simulations configured by run-options.')
+    parser_run.add_argument(dest = 'config_name', default = None, help = 'Name of configuration python script for custom running of simulation.')
+    parser_run.add_argument('--hpc', action = 'store_true', help = 'Run simulation on HPC using COMPS (default is local simulation).')
+    parser_run.add_argument('--priority', default = None, help = 'Specify priority of COMPS simulation (only for HPC).')
+    parser_run.add_argument('--node_group', default = None, help = 'Specify node group of COMPS simulation (only for HPC).')
+    parser_run.set_defaults(func = run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID')
-    parser_status.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_status.add_argument('-r', '--repeat', action='store_true', help='Repeat status check until job is done processing')
-    parser_status.set_defaults(func=status)
+    parser_status = subparsers.add_parser('status', help = 'Report status of simulations in experiment specified by ID or name.')
+    parser_status.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
+    parser_status.add_argument('-r', '--repeat', action = 'store_true', help = 'Repeat status check until job is done processing.')
+    parser_status.add_argument('-a', '--active', action = 'store_true', help = 'Get the status of all active experiments (mutually exclusive to all other options).')
+    parser_status.set_defaults(func = status)
 
     # 'dtk resubmit' options
-    parser_resubmit = subparsers.add_parser('resubmit', help='Resubmit failed or canceled simulations specified by ID')
-    parser_resubmit.add_argument(dest='ids', default=None, nargs='*', type=int, help='Process or job IDs of simulations to resubmit.')
-    parser_resubmit.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_resubmit.add_argument('--all', action='store_true', help='Resubmit all failed or canceled simulations in experiment')
-    parser_resubmit.set_defaults(func=resubmit)
+    parser_resubmit = subparsers.add_parser('resubmit', help = 'Resubmit failed or canceled simulations specified by experiment ID or name.')
+    parser_resubmit.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
+    parser_resubmit.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to resubmit.')
+    parser_resubmit.add_argument('-a', '--all', action = 'store_true', help = 'Resubmit all failed or canceled simulations in selected experiments.')
+    parser_resubmit.set_defaults(func = resubmit)
 
     # 'dtk kill' options
-    parser_kill = subparsers.add_parser('kill', help='Kill running simulations specified by ID')
-    parser_kill.add_argument(dest='ids', default=None, nargs='*', help='Process or job IDs of simulations to kill.')
-    parser_kill.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_kill.add_argument('--all', action='store_true', help='Kill all simulations in experiment')
-    parser_kill.set_defaults(func=kill)
+    parser_kill = subparsers.add_parser('kill', help = 'Kill running experiment specified by ID or name.')
+    parser_kill.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_kill.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to kill.')
+    parser_kill.add_argument('-a', '--all', action = 'store_true', help = 'Kill all simulations in selected experiments.')
+    parser_kill.set_defaults(func = kill)
 
     # 'dtk analyze' options
-    parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers')
-    parser_analyze.add_argument(dest='config_name', default=None, nargs='?', help='Name of configuration python script for custom analysis of simulations.')
-    parser_analyze.add_argument('--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
-    parser_analyze.add_argument('-e', '--expId', dest='expId', default=None, help='Experiment ID identifying JSON file to load back simulation manager.')
-    parser_analyze.add_argument('-a', '--analyzer', dest='analyzers', nargs='*', default=[], help='Analyzers to use on simulations.')
-    parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
-    parser_analyze.set_defaults(func=analyze)
+    parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
+    parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
+    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
+    parser_analyze.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
+    parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
+    parser_analyze.set_defaults(func = analyze)
 
     # run specified function passing in function-specific arguments
     args = parser.parse_args()
     args.func(args)
-
 
 if __name__ == '__main__':
     main()

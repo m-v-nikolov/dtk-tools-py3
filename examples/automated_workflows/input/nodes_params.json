@@ -1,0 +1,577 @@
+{
+   "80203_9": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_8": {
+      "arabiensis": 122, 
+      "funestus": 36, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_3": {
+      "arabiensis": 24, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_2": {
+      "arabiensis": 82, 
+      "funestus": 16, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_1": {
+      "arabiensis": 122, 
+      "funestus": 39, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_7": {
+      "arabiensis": 60, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_6": {
+      "arabiensis": 33, 
+      "funestus": 13, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_4": {
+      "arabiensis": 60, 
+      "funestus": 24, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_2": {
+      "arabiensis": 77, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_3": {
+      "arabiensis": 117, 
+      "funestus": 42, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_1": {
+      "arabiensis": 97, 
+      "funestus": 55, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_6": {
+      "arabiensis": 122, 
+      "funestus": 97, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_7": {
+      "arabiensis": 65, 
+      "funestus": 46, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_4": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_5": {
+      "arabiensis": 97, 
+      "funestus": 55, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_8": {
+      "arabiensis": 46, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81102_9": {
+      "arabiensis": 117, 
+      "funestus": 65, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80209_5": {
+      "arabiensis": 32, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80209_4": {
+      "arabiensis": 23, 
+      "funestus": 2.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80209_7": {
+      "arabiensis": 112, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80209_6": {
+      "arabiensis": 122, 
+      "funestus": 18, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80209_1": {
+      "arabiensis": 4.5, 
+      "funestus": 2.5, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80209_3": {
+      "arabiensis": 20, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80209_2": {
+      "arabiensis": 42, 
+      "funestus": 3, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_9": {
+      "arabiensis": 3, 
+      "funestus": 1.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80209_9": {
+      "arabiensis": 18, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80209_8": {
+      "arabiensis": 28, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81111_3": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_8": {
+      "arabiensis": 72, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_3": {
+      "arabiensis": 20, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_1": {
+      "arabiensis": 87, 
+      "funestus": 26, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_6": {
+      "arabiensis": 72, 
+      "funestus": 16, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_7": {
+      "arabiensis": 107, 
+      "funestus": 16, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_4": {
+      "arabiensis": 112, 
+      "funestus": 33, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_5": {
+      "arabiensis": 65, 
+      "funestus": 42, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_1": {
+      "arabiensis": 32, 
+      "funestus": 6, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80202_8": {
+      "arabiensis": 87, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_9": {
+      "arabiensis": 122, 
+      "funestus": 20, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_4": {
+      "arabiensis": 26, 
+      "funestus": 20, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_5": {
+      "arabiensis": 36, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_6": {
+      "arabiensis": 62, 
+      "funestus": 20, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80204_7": {
+      "arabiensis": 65, 
+      "funestus": 39, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80207_10": {
+      "arabiensis": 3.5, 
+      "funestus": 0.15, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "81111_8": {
+      "arabiensis": 117, 
+      "funestus": 87, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80202_10": {
+      "arabiensis": 102, 
+      "funestus": 30, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_8": {
+      "arabiensis": 122, 
+      "funestus": 22, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_9": {
+      "arabiensis": 4, 
+      "funestus": 3, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80208_4": {
+      "arabiensis": 55, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_5": {
+      "arabiensis": 13, 
+      "funestus": 24, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_6": {
+      "arabiensis": 13, 
+      "funestus": 13, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_7": {
+      "arabiensis": 102, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_1": {
+      "arabiensis": 102, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_2": {
+      "arabiensis": 9, 
+      "funestus": 16, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80208_3": {
+      "arabiensis": 122, 
+      "funestus": 22, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80206_6": {
+      "arabiensis": 0.5, 
+      "funestus": 1.25, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_7": {
+      "arabiensis": 0.5, 
+      "funestus": 0.75, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_4": {
+      "arabiensis": 1.25, 
+      "funestus": 0.3, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_5": {
+      "arabiensis": 1.75, 
+      "funestus": 0.05, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_2": {
+      "arabiensis": 1.75, 
+      "funestus": 0.1, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_3": {
+      "arabiensis": 2, 
+      "funestus": 0.02, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80206_1": {
+      "arabiensis": 0.3, 
+      "funestus": 0.02, 
+      "_site_": "Gwembe_1_node"
+   }, 
+   "80202_2": {
+      "arabiensis": 97, 
+      "funestus": 26, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_9": {
+      "arabiensis": 57, 
+      "funestus": 18, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "81111_5": {
+      "arabiensis": 30, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_10": {
+      "arabiensis": 57, 
+      "funestus": 5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_2": {
+      "arabiensis": 2, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80208_10": {
+      "arabiensis": 122, 
+      "funestus": 22, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80210_8": {
+      "arabiensis": 5, 
+      "funestus": 2.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_11": {
+      "arabiensis": 2.5, 
+      "funestus": 2.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_6": {
+      "arabiensis": 7, 
+      "funestus": 3, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_5": {
+      "arabiensis": 10, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_4": {
+      "arabiensis": 9, 
+      "funestus": 18, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80210_3": {
+      "arabiensis": 13, 
+      "funestus": 13, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_2": {
+      "arabiensis": 23, 
+      "funestus": 4.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_1": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80204_3": {
+      "arabiensis": 26, 
+      "funestus": 10, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_9": {
+      "arabiensis": 9, 
+      "funestus": 39, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80210_7": {
+      "arabiensis": 7, 
+      "funestus": 3, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_10": {
+      "arabiensis": 9, 
+      "funestus": 18, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81111_6": {
+      "arabiensis": 65, 
+      "funestus": 22, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81111_7": {
+      "arabiensis": 50, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81111_4": {
+      "arabiensis": 50, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80201_12": {
+      "arabiensis": 9, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "81111_2": {
+      "arabiensis": 92, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80201_8": {
+      "arabiensis": 7, 
+      "funestus": 2, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "81111_1": {
+      "arabiensis": 39, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80201_5": {
+      "arabiensis": 3, 
+      "funestus": 2, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_4": {
+      "arabiensis": 12, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_7": {
+      "arabiensis": 9, 
+      "funestus": 18, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80201_6": {
+      "arabiensis": 1, 
+      "funestus": 3, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_1": {
+      "arabiensis": 8, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_3": {
+      "arabiensis": 7, 
+      "funestus": 1.5, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80201_2": {
+      "arabiensis": 30, 
+      "funestus": 16, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80207_9": {
+      "arabiensis": 4, 
+      "funestus": 0.5, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_8": {
+      "arabiensis": 4.5, 
+      "funestus": 0.75, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_7": {
+      "arabiensis": 1.75, 
+      "funestus": 4, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_6": {
+      "arabiensis": 3, 
+      "funestus": 1.5, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_5": {
+      "arabiensis": 18, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80207_4": {
+      "arabiensis": 1.75, 
+      "funestus": 0.4, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_3": {
+      "arabiensis": 0.75, 
+      "funestus": 0.5, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_2": {
+      "arabiensis": 3, 
+      "funestus": 0.05, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80207_1": {
+      "arabiensis": 2.5, 
+      "funestus": 1.75, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80209_10": {
+      "arabiensis": 6.5, 
+      "funestus": 2, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80211_6": {
+      "arabiensis": 5, 
+      "funestus": 4.5, 
+      "_site_": "Lukonde_1_node"
+   }, 
+   "80211_7": {
+      "arabiensis": 60, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_4": {
+      "arabiensis": 112, 
+      "funestus": 33, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_5": {
+      "arabiensis": 117, 
+      "funestus": 42, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_2": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_3": {
+      "arabiensis": 87, 
+      "funestus": 20, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_1": {
+      "arabiensis": 112, 
+      "funestus": 33, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80211_8": {
+      "arabiensis": 107, 
+      "funestus": 30, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80203_10": {
+      "arabiensis": 42, 
+      "funestus": 9, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80210_12": {
+      "arabiensis": 9, 
+      "funestus": 39, 
+      "_site_": "Sinamalima_1_node"
+   }, 
+   "80210_11": {
+      "arabiensis": 10, 
+      "funestus": 1, 
+      "_site_": "Munumbwe_1_node"
+   }, 
+   "80210_10": {
+      "arabiensis": 7, 
+      "funestus": 3, 
+      "_site_": "Munumbwe_1_node"
+   }
+}

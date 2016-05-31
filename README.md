@@ -15,13 +15,25 @@ git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 
 Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
 
-From a command-prompt, run the following from the current directory:
+From a command-prompt (as admin), run the following from the **dtk-tools** directory:
 ```
 python -m pip install --upgrade pip
-pip install -e . --find-links=./install
+pip install -e . 
 ```
 
-Also on Windows, please add the path to the `dtk` folder to your `PYTHONPATH` System environment variable. For example: `C:\github\dtk-tools\dtk`.
+To test if dtk-tools is correctly installed on your machine issue a:
+```
+dtk -h
+```
+If the command succeed and present you with the details of the dtk command you are all set!
+
+**Note:** If you run into issues updating numpy on Windows, under the dtk-tools\install folder try:
+
+```
+pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
+```
+
+If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Setup
 

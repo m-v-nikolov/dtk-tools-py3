@@ -2,6 +2,7 @@ import logging
 import os
 
 from dtk.generic.demographics import set_static_demographics
+from dtk.utils.ioformat.OutputMessage import OutputMessage
 
 
 def convert_filepaths(params):
@@ -11,6 +12,10 @@ def convert_filepaths(params):
 
     :param params: The config parameters
     :return: Nothing
+
+    .. deprecated:: 0.3.5
+        0.4.0 will stop support of Demographics_Filename. Use Demographics_Filenames instead.
+
     """
     g = params.pop('Geography', None)
     if not g: return
@@ -32,11 +37,23 @@ def get_converted_paths_for_geography(geography):
 
     :param geography: The selected geography
     :return: parameters with the correct path
+
+    .. deprecated:: 0.3.5
+        0.4.0 will stop support of Demographics_Filename. Use Demographics_Filenames instead.
+
     """
     params = geographies.get(geography).copy()
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
+
+    if "Demographics_Filename" in params.keys():
+        OutputMessage("'Demographic_Filename' in geographies will not be supported anymore with the dtk-tools 0.4.0 "
+                      "release.\r\nPlease update the geography to use 'Demographic_Filenames' instead.\r\n"
+                      "See http://idmod.org/emoddoc/#EMOD/ParameterReference/Input%20Files.htm?Highlight=demographics_filenames"
+                      , 'deprecate')
+
     convert_filepaths(params)
+
     return params
 
 
@@ -78,7 +95,6 @@ def set_geography(cb, geography, static=False, pop_scale=1):
         cb.set_param('Base_Population_Scale_Factor', pop_scale*cb.get_param('Base_Population_Scale_Factor'))
         if cb.get_param('Birth_Rate_Dependence') == 'FIXED_BIRTH_RATE':
             cb.set_param('x_Birth', pop_scale*cb.get_param('x_Birth'))
-
 
 geographies = {
 
@@ -146,6 +162,7 @@ geographies = {
                        "Relative_Humidity_Filename": "Zambia_Sinamalima_2_5arcmin_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                      },
+               
     "Sinamalima_1_node" :   { "Geography": "Zambia/Sinamalima_1_node",
                        "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
                        "Demographics_Filename":      "sinamalima_30arcsec_demographics_alt_600.json", 
@@ -154,6 +171,47 @@ geographies = {
                        "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
                        "Enable_Climate_Stochasticity": 0 # daily in raw data series
                      },
+               
+    "Gwembe_1_node" :   { "Geography": "Zambia/Gwembe_1_node",
+                       "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Demographics_Filename":      "gwembe_30arcsec_demographics_alt_1300.json", 
+                       "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin", 
+                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                       "Enable_Climate_Stochasticity": 0 # daily in raw data series
+                     },
+    
+    "Lukonde_1_node" :   { "Geography": "Zambia/Lukonde_1_node",
+                       "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Demographics_Filename":      "lukonde_30arcsec_demographics_alt_1000.json", 
+                       "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin", 
+                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                       "Enable_Climate_Stochasticity": 0 # daily in raw data series
+                     },
+               
+    "Munumbwe_1_node" :   { "Geography": "Zambia/Munumbwe_1_node",
+                       "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Demographics_Filename":      "munumbwe_30arcsec_demographics_alt_800.json", 
+                       "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+                       "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin", 
+                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+                       "Enable_Climate_Stochasticity": 0 # daily in raw data series
+                     },
+               
+    "Gwembe_Sinazongwe_115_nodes" : {
+               "Geography": "Zambia/Gwembe_Sinazongwe_115_nodes",
+               #"Node_Grid_Size": 0.00833,    ## 30arcsec/3600
+               "Air_Temperature_Filename":   "Zambia_30arcsec_air_temperature_daily.bin",
+               #"Demographics_Filename":      "Zambia_30arcsec_demographics.json", 
+               "Land_Temperature_Filename":  "Zambia_30arcsec_air_temperature_daily.bin",
+               "Rainfall_Filename":          "Zambia_30arcsec_rainfall_daily.bin",  
+               "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
+               "Enable_Climate_Stochasticity": 0, # daily in raw data series
+               #"Enable_Local_Migration": 0,
+               #"x_Local_Migration": 0 
+               #"Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_115_nodes_local_migration.bin"
+             },
 
     "GwembeSinazongwePopCluster" : {
                        "Geography": "Zambia/GwembeSinazongwePopCluster",

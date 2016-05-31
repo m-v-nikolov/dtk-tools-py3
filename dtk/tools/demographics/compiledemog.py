@@ -119,11 +119,18 @@ def CompileDemographics(infilename, forceoverwrite = False):
     with open(outfilename, 'w') as file:
         file.write(compiledjsonstr)
 
+def main(demographics_file):
+    
+    if demographics_file:
+        CompileDemographics(demographics_file, True)
+        
+    else:
+        print "compiledemog.main: Incorrect list of arguments provided."
+        
+
 if __name__ == "__main__":
     if len(sys.argv) != 2 and ( len(sys.argv) != 3 or sys.argv[2] != "--forceoverwrite" ):
         ShowUsage()
         exit(0)
-
-    infilename = sys.argv[1]
-    forceoverwrite = len(sys.argv)==3
-    CompileDemographics(infilename, forceoverwrite)
+        
+    main(sys.argv[1:])
