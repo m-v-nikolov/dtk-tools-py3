@@ -5,13 +5,13 @@ import datetime
 
 from simtools.OutputParser import CompsDTKOutputParser
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.tools.demographics import createimmunelayer as imm
 from dtk.vector.study_sites import geography_from_site
 from dtk.generic.geography import get_geography_parameter
 
 from COMPS import Client
-Client.Login(DTKSetupParser().get('HPC', 'server_endpoint'))
+Client.Login(SetupParser().get('HPC', 'server_endpoint'))
 
 with open("simulations/burnin_b63f325d-d9df-e511-93fb-f0921c16b9e3.json") as metadata_file:
     md = json.loads(metadata_file.read())
@@ -25,7 +25,7 @@ for simId, sim in md['sims'].items():
 
     immunity_report_path = os.path.join(sim_map[simId], 'output', 'MalariaImmunityReport_FinalYearAverage.json')
 
-    with open(os.path.join(DTKSetupParser().get('LOCAL', 'input_root'), demog_name)) as f:
+    with open(os.path.join(SetupParser().get('LOCAL', 'input_root'), demog_name)) as f:
         j = json.loads(f.read())
 
     metadata = j['Metadata']

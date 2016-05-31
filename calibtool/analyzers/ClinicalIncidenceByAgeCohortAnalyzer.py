@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from dtk.calibration import LL_calculators
+from calibtool import LL_calculators
 from calibtool.CalibAnalyzer import CalibAnalyzer
 from calibtool.analyzers.Helpers import accumulate_agebins_cohort
 

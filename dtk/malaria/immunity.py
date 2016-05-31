@@ -1,6 +1,6 @@
 import os
 
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 from dtk.utils.parsers.JSON import json2dict
 from dtk.vector.study_sites import StudySite, set_habitat_scale
 
@@ -29,7 +29,7 @@ params = {
     "Erythropoiesis_Anemia_Effect": 3.5
     }
 
-def add_immune_overlays(cb, tags, directory=DTKSetupParser().get('LOCAL','input_root'), site=None):
+def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_root'), site=None):
     """
     Add an immunity overlay.
 

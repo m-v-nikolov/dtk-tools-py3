@@ -11,7 +11,7 @@ from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.core.DTKSetupParser import DTKSetupParser
+from simtools.SetupParser import SetupParser
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
@@ -44,7 +44,7 @@ next_point_kwargs = dict(initial_samples=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='ExampleCalibration',
-                             setup=DTKSetupParser(),
+                             setup=SetupParser(),
                              config_builder=cb,
                              sample_point_fn=sample_point_fn,
                              sites=sites,
