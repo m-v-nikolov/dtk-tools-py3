@@ -21,8 +21,8 @@ run_sim_args =  {'config_builder': cb,
 
 if __name__ == "__main__":
 
-    from dtk.utils.core.DTKSetupParser import DTKSetupParser
+    from simtools.SetupParser import SetupParser
     from simtools.ExperimentManager import ExperimentManagerFactory
 
-    sm = ExperimentManagerFactory.from_model(DTKSetupParser().get('BINARIES', 'exe_path'), 'LOCAL')
+    sm = ExperimentManagerFactory.from_model(SetupParser().get('BINARIES', 'exe_path'), 'LOCAL')
     sm.run_simulations(**run_sim_args)

@@ -12,6 +12,7 @@ from dtk.interventions.empty_campaign import empty_campaign
 from dtk.utils.reports.CustomReport import format as format_reports
 from dtk.utils.parsers.JSON import json2dict, dict2json
 
+logger = logging.getLogger(__name__)
 
 class DTKConfigBuilder(SimConfigBuilder):
     '''
@@ -25,6 +26,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.config = config
         self.campaign = campaign
         self.demog_overlays = {}
+        self.input_files = {}
         self.custom_reports = []
         self.dlls = set()
         self.emodules_map = {'interventions': [],
@@ -77,7 +79,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         return cls(config, empty_campaign, **kwargs)
 
     @classmethod
-    def from_files(cls, config_name, campaign_name=None):
+    def from_files(cls, config_name, campaign_name=None, **kwargs):
         '''
         Build up a simulation configuration from the path to an existing
         config.json and optionally a campaign.json file on disk.
@@ -86,7 +88,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         config = json2dict(config_name)
         campaign = json2dict(campaign_name) if campaign_name else empty_campaign
 
-        return cls(config, campaign)
+        return cls(config, campaign, **kwargs)
 
     @property
     def params(self):
@@ -113,6 +115,11 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.custom_reports.append(r)
             self.dlls.add(r.get_dll_path())
 
+    def add_input_file(self, name, content):
+        if name in self.input_files:
+            logger.warn('Already have input file named %s, replacing previous input file.' % name)
+        self.input_files[name] = content
+
     def append_overlay(self, demog_file):
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
@@ -138,8 +145,7 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        self.set_param('Campaign_Filename','campaign.json')
-        write_fn('campaign', dump(self.campaign))
+        write_fn(self.config['parameters']['Campaign_Filename'].replace('.json', ''), dump(self.campaign))
 
         if self.custom_reports:
             self.set_param('Custom_Reports_Filename', 'custom_reports.json')
@@ -147,6 +153,9 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         for name, content in self.demog_overlays.items():
             self.append_overlay('%s.json' % name)
+            write_fn(name, dump(content))
+
+        for name, content in self.input_files.items():
             write_fn(name, dump(content))
 
         write_fn('config', dump(self.config))

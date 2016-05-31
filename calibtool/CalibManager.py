@@ -299,7 +299,7 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # Prepare the dictionnary for rounding
+        # Prepare the dictionary for rounding
         pnames = self.param_names()
         dictround = {}
         for p in pnames:

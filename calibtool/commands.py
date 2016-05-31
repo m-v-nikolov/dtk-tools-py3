@@ -46,6 +46,10 @@ def reanalyze(args):
 def cleanup(args):
     mod = load_config_module(args.config_name)
     manager = mod.calib_manager
+    # If no result present -> just exit
+    if not os.path.exists(os.path.join(os.getcwd(), manager.name)):
+        print 'No calibration to delete. Exiting...'
+        exit()
     manager.cleanup()
 
 def kill(args):
