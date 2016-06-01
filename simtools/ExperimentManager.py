@@ -1,6 +1,4 @@
-from collections import Counter
 import copy
-from datetime import datetime
 import json
 import logging
 import os
@@ -8,20 +6,20 @@ import re
 import signal
 import threading
 import time
+import utils
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import utils
+from collections import Counter
 from SetupParser import SetupParser
 from ModBuilder import SingleSimulationBuilder
 from Commisioner import SimulationCommissioner, CompsSimulationCommissioner
 from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
-
+from datetime import datetime
 
 class ExperimentManagerFactory(object):
-
     @staticmethod
     def factory(type):
         if type == 'LOCAL':
@@ -48,18 +46,19 @@ class ExperimentManagerFactory(object):
         return cls.factory(exp_data['location'])('', exp_data)
 
     @classmethod
-    def from_file(cls, exp_data_path):
-        logger.info('Reloading ExperimentManager from: %s', exp_data_path)
+    def from_file(cls, exp_data_path, suppressLogging=False):
+        if not suppressLogging:
+            logger.info('Reloading ExperimentManager from: %s', exp_data_path)
         with open(exp_data_path) as exp_data_file:
             exp_data = json.loads(exp_data_file.read())
         return cls.factory(exp_data['location'])('', exp_data)
 
 
 class LocalExperimentManager(object):
-    '''
+    """
     Manages the creation, submission, status, parsing, and analysis
     of local experiments, i.e. collections of related simulations
-    '''
+    """
 
     location = 'LOCAL'
     monitorClass = SimulationMonitor
@@ -68,9 +67,14 @@ class LocalExperimentManager(object):
     def __init__(self, model_file, exp_data, setup=SetupParser()):
         self.model_file = model_file
         self.exp_data = exp_data
-
         self.setup = setup
+
+        self.exp_builder = None
+        self.staged_bin_path = None
+        self.config_builder = None
+        self.commandline = None
         self.analyzers = []
+        self.thread_queue = None
 
         max_threads = int(self.setup.get('GLOBAL', 'max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
@@ -78,10 +82,9 @@ class LocalExperimentManager(object):
     def create_simulations(self, config_builder, exp_name='test',
                            exp_builder=SingleSimulationBuilder(),
                            verbose=True, suite_id=None):
-
-        '''
+        """
         Create an experiment with simulations modified according to the specified experiment builder.
-        '''
+        """
 
         self.config_builder = config_builder
         self.exp_builder = exp_builder
@@ -101,13 +104,14 @@ class LocalExperimentManager(object):
         commissioners = []
 
         for mod_fn_list in self.exp_builder.mod_generator:
+            # reset to base config/campaign
+            self.config_builder = copy.deepcopy(cached_cb)
 
-            self.config_builder = copy.deepcopy(cached_cb)  # reset to base config/campaign
+            # modify next simulation according to experiment builder
+            map(lambda func: func(self.config_builder), mod_fn_list)
 
-            for mod_fn in mod_fn_list:
-                mod_fn(self.config_builder)  # modify next simulation according to experiment builder
-
-            self.config_builder.stage_required_libraries(self.setup.get('BINARIES', 'dll_path'), self.get_setup())  # inside loop if different requirements by sim in sweep
+            # inside loop if different requirements by sim in sweep
+            self.config_builder.stage_required_libraries(self.setup.get('BINARIES', 'dll_path'), self.get_setup())
 
             commissioner = self.create_simulation()
             if commissioner is not None:
@@ -119,36 +123,33 @@ class LocalExperimentManager(object):
     def run_simulations(self, config_builder, exp_name='test',
                         exp_builder=SingleSimulationBuilder(),
                         suite_id=None):
-
-        '''
+        """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
-        '''
+        """
 
         self.create_simulations(config_builder, exp_name, exp_builder, verbose=False, suite_id=suite_id)
         self.commission_simulations()
         self.cache_experiment_data()  # now we have job IDs
 
     def get_simulation_status(self):
-
-        '''
+        """
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
-        '''
+        """
 
         logger.debug("Status of simulations run on '%s':" % self.location)
         states, msgs = self.monitorClass(self.exp_data, self.get_setup()).query()
         return states, msgs
 
     def cancel_simulations(self, ids=[], killall=False):
-
-        '''
+        """
         Cancel currently some or all currently running simulations.
 
         Keyword arguments:
         ids -- a list of job ids to cancel
         killall -- a Boolean flag to kill all running simulations (default: False)
-        '''
+        """
 
         states, msgs = self.get_simulation_status()
 
@@ -157,12 +158,12 @@ class LocalExperimentManager(object):
             return
 
         for id in ids:
-            if type(id) is str :
+            if type(id) is str:
                 id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
 
             state = states.get(id)
             if not state:
-                logger.warning('No job in current experiment with ID = %s' % id)
+                logger.warning('No job in experiment with ID = %s' % id)
                 continue
 
             if state not in ['Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown']:
@@ -171,35 +172,33 @@ class LocalExperimentManager(object):
                 logger.warning("JobID %s is already in a '%s' state." % (str(id), state))
 
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
-
-        '''
+        """
         Resubmit some or all canceled or failed simulations.
 
         Keyword arguments:
         ids -- a list of job ids to resubmit
         resubmit_all_failed -- a Boolean flag to resubmit all canceled/failed simulations (default: False)
-        '''
+        """
 
         states, msgs = self.get_simulation_status()
 
         if resubmit_all_failed:
-            ids = [id for (id, state) in states.iteritems() if state in ['Failed','Canceled']]
+            ids = [id for (id, state) in states.iteritems() if state in ['Failed', 'Canceled']]
             logger.info('Resubmitting all failed simulations in experiment: ' + str(ids))
 
         for id in ids:
             state = states.get(id)
             if not state:
-                logger.warning('No job in current experiment with ID = %s' % id)
+                logger.warning('No job in experiment with ID = %s' % id)
                 continue
 
             if state in ['Failed', 'Canceled']:
                 self.resubmit_job(id)
             else:
-                logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id,state))
+                logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
 
     def analyze_simulations(self):
-
-        '''
+        """
         Apply one or more analyzers to the outputs of simulations.
 
         A parser thread will be spawned for each simulation with filtered analyzers to run,
@@ -210,7 +209,7 @@ class LocalExperimentManager(object):
            * apply -- parse simulation output files and emit a subset of data
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
-        '''
+        """
 
         parsers = {}
 
@@ -225,7 +224,7 @@ class LocalExperimentManager(object):
                 self.maxThreadSemaphore.acquire()
                 logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
 
-            parser = self.get_output_parser(sim_id, filtered_analyses)   # execute filtered analyzers on parser thread
+            parser = self.get_output_parser(sim_id, filtered_analyses)  # execute filtered analyzers on parser thread
             parser.start()
             parsers[parser.sim_id] = parser
 
@@ -258,14 +257,14 @@ class LocalExperimentManager(object):
         time.sleep(0.01)  # to avoid identical datetime
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'], sim_id)
+        sim_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'],
+                               sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
         self.exp_data['sims'][sim_id] = self.exp_builder.metadata
 
     def complete_sim_creation(self, commisioners=[]):
         return  # no batching in LOCAL
-
 
     def commission_simulations(self):
         exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
@@ -285,10 +284,13 @@ class LocalExperimentManager(object):
             states, msgs = self.get_simulation_status()
             logger.info(dict(Counter(states.values())))
 
-
         return True
 
-    def cancel_all_simulations(self, states):
+    def cancel_all_simulations(self, states=None):
+
+        if not states:
+            states = self.get_simulation_status()[0]
+
         ids = states.keys()
         logger.info('Killing all simulations in experiment: ' + str(ids))
         self.cancel_simulations(ids)
@@ -312,7 +314,8 @@ class LocalExperimentManager(object):
         if not os.path.exists(cache_path):
             os.mkdir(cache_path)
 
-        with open(os.path.join(cache_path, self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'), 'w') as exp_file:
+        with open(os.path.join(cache_path, self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'),
+                  'w') as exp_file:
             if verbose:
                 logger.info('Saving meta-data for experiment:')
                 logger.info(json.dumps(self.exp_data, sort_keys=True, indent=4))
@@ -321,11 +324,11 @@ class LocalExperimentManager(object):
     @staticmethod
     def print_status(states, msgs):
         long_states = copy.deepcopy(states)
-        for jobid,state in states.items():
+        for jobid, state in states.items():
             if 'Running' in state:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 if len(steps_complete) == 2:
-                    long_states[jobid] += " (" + str(100*steps_complete[0]/steps_complete[1]) + "% complete)"
+                    long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         logger.info('Job states:')
         if len(long_states) < 20:
@@ -338,9 +341,15 @@ class LocalExperimentManager(object):
     def status_finished(states):
         return all(v in ['Finished', 'Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
 
+    def finished(self):
+        return self.status_finished(self.get_simulation_status()[0])
+
     @staticmethod
     def status_succeeded(states):
         return all(v in ['Finished', 'Succeeded'] for v in states.itervalues())
+
+    def succeeded(self):
+        return self.status_succeeded(self.get_simulation_status()[0])
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
@@ -357,20 +366,20 @@ class LocalExperimentManager(object):
     def get_output_parser(self, sim_id, filtered_analyses):
         return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
                                              self.exp_data.get('exp_name', '') + '_' + self.exp_data.get('exp_id', '')),
-                               sim_id,
-                               self.exp_data['sims'][sim_id],
-                               filtered_analyses,
-                               self.maxThreadSemaphore)
+                                sim_id,
+                                self.exp_data['sims'][sim_id],
+                                filtered_analyses,
+                                self.maxThreadSemaphore)
 
     def add_analyzer(self, analyzer):
         self.analyzers.append(analyzer)
 
 
 class CompsExperimentManager(LocalExperimentManager):
-    '''
+    """
     Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
     e.g. creation of Simulation, Experiment, Suite objects
-    '''
+    """
 
     location = 'HPC'
     monitorClass = CompsSimulationMonitor
@@ -380,21 +389,23 @@ class CompsExperimentManager(LocalExperimentManager):
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
         self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
+        self.commissioner = None
+        self.sims_created = 0
 
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
 
     def create_experiment(self, suite_id=None):
         self.sims_created = 0
-        return CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder, 
-                                                             self.exp_data['exp_name'], self.staged_bin_path, 
+        return CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
+                                                             self.exp_data['exp_name'], self.staged_bin_path,
                                                              self.commandline.Options, suite_id)
 
     def create_simulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
-            self.maxThreadSemaphore.acquire()    # Is this okay outside the thread?  Stops the thread from being created
-                                                 # until it can actually go, but asymmetrical acquire()/release() is not
-                                                 # ideal...
+            self.maxThreadSemaphore.acquire()  # Is this okay outside the thread?  Stops the thread from being created
+            # until it can actually go, but asymmetrical acquire()/release() is not
+            # ideal...
 
             self.commissioner = CompsSimulationCommissioner(self.exp_data['exp_id'], self.maxThreadSemaphore)
             ret = self.commissioner
@@ -406,7 +417,7 @@ class CompsExperimentManager(LocalExperimentManager):
         self.commissioner.create_simulation(self.config_builder.get_param('Config_Name'), files, tags)
 
         self.sims_created += 1
-        
+
         if self.sims_created % self.comps_sims_to_batch == 0:
             self.commissioner.start()
             self.commissioner = None

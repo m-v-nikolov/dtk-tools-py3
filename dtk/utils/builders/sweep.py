@@ -1,10 +1,10 @@
 import itertools
 
+from calibtool.study_sites.set_calibration_site import set_calibration_site
 from simtools.ModBuilder import ModBuilder
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from dtk.calibration.study_sites.set_calibration_site import set_calibration_site
 
 
 class RunNumberSweepBuilder(ModBuilder):

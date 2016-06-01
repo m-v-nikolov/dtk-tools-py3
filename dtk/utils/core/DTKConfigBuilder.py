@@ -137,7 +137,7 @@ class DTKConfigBuilder(SimConfigBuilder):
             staged_dll = self.staged_dlls.get((dll_type, dll_name), None)
             if not staged_dll:
                 staged_dll = utils.stage_file(os.path.join(dll_path, dll_type, dll_name),
-                                                os.path.join(paths['dll_root'], dll_type))
+                                                os.path.join(paths['lib_staging_root'], dll_type))
                 self.staged_dlls[(dll_type, dll_name)] = staged_dll  # caching to avoid repeat md5 and os calls
             self.emodules_map[dll_type].append(staged_dll)
 
