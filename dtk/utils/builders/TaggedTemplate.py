@@ -264,11 +264,10 @@ class CampaignTemplate(TaggedTemplate):
 class DemographicsTemplate(TaggedTemplate):
     def set_params_and_modify_cb(self, params, cb):
         demographics_filenames = cb.params['Demographics_Filenames']
-        for d in self.demographic_templates:
-            # Make sure the filename is listed in Demographics_Filenames
-            if d.filename not in demographics_filenames:
-                raise Exception( "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s", d.filename, demographics_filenames)
+        # Make sure the filename is listed in Demographics_Filenames
+        if self.get_filename() not in demographics_filenames:
+            raise Exception( "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s", self.get_filename(), demographics_filenames)
 
-            self.set_params(params)
-            cb.add_input_file(self.filename.replace(".json",""), self.get_contents())
+        self.set_params(params)
+        cb.add_input_file(self.filename.replace(".json",""), self.get_contents())
 

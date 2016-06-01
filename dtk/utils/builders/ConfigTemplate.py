@@ -65,8 +65,9 @@ class ConfigTemplate(ITemplate.BaseTemplate):
         """
         sim_tags = []
         for param,value in params.iteritems():
-            new_sim_tags = self.__set_param(param, value)
-            sim_tags.append( new_sim_tags )
+            if self.is_consumed_by_template(param):
+                new_sim_tags = self.__set_param(param, value)
+                sim_tags.append( new_sim_tags )
 
         return sim_tags
 
