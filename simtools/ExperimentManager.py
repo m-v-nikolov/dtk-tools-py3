@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import signal
+import subprocess
 import threading
 import time
 import utils
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 from collections import Counter
 from SetupParser import SetupParser
 from ModBuilder import SingleSimulationBuilder
-from Commisioner import SimulationCommissioner, CompsSimulationCommissioner
+from Commisioner import CompsSimulationCommissioner
 from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
 from datetime import datetime
@@ -74,7 +75,6 @@ class LocalExperimentManager(object):
         self.config_builder = None
         self.commandline = None
         self.analyzers = []
-        self.thread_queue = None
 
         max_threads = int(self.setup.get('GLOBAL', 'max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
@@ -267,22 +267,19 @@ class LocalExperimentManager(object):
         return  # no batching in LOCAL
 
     def commission_simulations(self):
+        # Retrieve the experiment dirs and the sim ids that we have to run
         exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
         sim_ids = self.exp_data['sims'].keys()
-
         max_local_sims = int(self.get_property('max_local_sims'))
 
-        from multiprocessing import Queue
+        # Create the paths
+        paths = [os.path.join(exp_dir,sim_id) for sim_id in sim_ids]
+        local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "LocalRunner.py")
+        cache_path = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
-        self.thread_queue = Queue(maxsize=max_local_sims)  # A queue to multithread when running 'All' in a given step
-
-        for sim_id in sim_ids:
-            self.thread_queue.put('run1')
-            c = SimulationCommissioner(os.path.join(exp_dir, sim_id), self.commandline, self.thread_queue)
-            c.start()
-            self.exp_data['sims'][sim_id]['jobId'] = c.job_id
-            states, msgs = self.get_simulation_status()
-            logger.info(dict(Counter(states.values())))
+        # Open the local runner as a subprocess and pass it all the required info to run the simulations
+        subprocess.Popen(["python", local_runner_path, ",".join(paths),
+                          self.commandline.Commandline, str(max_local_sims), cache_path], shell=False)
 
         return True
 
@@ -354,6 +351,11 @@ class LocalExperimentManager(object):
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
             time.sleep(init_sleep)
+
+            # Reload the exp_data because job ids may have been added by the thread
+            cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
+            self.exp_data = json.load(open(cache_file_path))
+
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
                 break
