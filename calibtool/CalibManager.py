@@ -1,15 +1,13 @@
 import glob
+from datetime import datetime
 import json
 import logging
 import os
 import pprint
 import re
 
-import datetime
 import pandas as pd
 import shutil
-
-import time
 
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
@@ -106,7 +104,6 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "C":
                 self.cleanup()
-                time.sleep(1)
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
@@ -148,12 +145,7 @@ class CalibManager(object):
             self.update_next_point(results)
             if self.finished():
                 break
-
-            # Write the CSV
-            self.write_LL_csv()
-
             self.increment_iteration()
-
 
         self.finalize_calibration()
 
@@ -273,6 +265,8 @@ class CalibManager(object):
         final_samples = self.next_point.get_final_samples()
         logger.debug('Final samples:\n%s', pprint.pformat(final_samples))
         self.cache_calibration(final_samples=final_samples)
+        # Write the CSV
+        self.write_LL_csv()
 
     def generate_suite_id(self, exp_manager):
         """
@@ -305,24 +299,33 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # Depp copy all_results and pnames to not disturb the calibration
-        import copy
-        pnames = copy.deepcopy(self.param_names())
-        all_results = self.all_results.copy(True)
-
         # Prepare the dictionary for rounding
+        pnames = self.param_names()
         dictround = {}
         for p in pnames:
             dictround[p] = 8
 
         # Get the results DataFrame rounded and reset the index so we can conserve the sample column when merging
-        results_df = all_results.round(dictround).reset_index(level=0)
+        results_df = self.all_results.round(dictround).reset_index(level=0)
 
-        # Get the simIds
+        # Get the simulations information in the different iterations
         sims = list()
-        for simid, values in self.iteration_state.simulations["sims"].iteritems():
-            values['id'] = simid
-            sims.append(values)
+        sims_paths = dict()
+        for iteration in range(0, self.iteration):
+            iter_directory = os.path.join(self.name, 'iter%d' % iteration)
+            self.iteration_state = self.retrieve_iteration_state(iter_directory)
+            for simid, values in self.iteration_state.simulations["sims"].iteritems():
+                values['id'] = simid
+                values['iteration'] = iteration
+                sims.append(values)
+
+                # If we are local also retrieve the sims paths
+                if self.location == "LOCAL":
+                    sim_info = self.iteration_state.simulations
+                    base_path = os.path.join(sim_info['sim_root'], "%s_%s" % (sim_info['exp_name'], sim_info['exp_id']))
+
+                    for sim_id, sim in sim_info['sims'].iteritems():
+                        sims_paths[sim_id] = os.path.join(base_path, sim_id)
 
         # Put the simulation info in a dataframe and round it
         siminfo_df = pd.DataFrame(sims)
@@ -330,7 +333,7 @@ class CalibManager(object):
 
         # Merge the info with the results to be able to have parameters -> simulations ids
         m = pd.merge(results_df, siminfo_df,
-                     on=pnames,
+                     on=pnames.extend(['iteration']),
                      indicator=True)
 
         # Group the results by parameters and transform the ids into an array
@@ -347,14 +350,6 @@ class CalibManager(object):
         if self.location == "HPC":
             from simtools.OutputParser import CompsDTKOutputParser
             sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
-        else :
-            sims_paths = dict()
-
-            sim_info = self.iteration_state.simulations
-            base_path = os.path.join(sim_info['sim_root'], "%s_%s" % (sim_info['exp_name'], sim_info['exp_id']))
-
-            for sim_id, sim in sim_info['sims'].iteritems():
-                sims_paths[sim_id] = os.path.join(base_path, sim_id)
 
         # Transform the ids in actual paths
         def find_path(el):
@@ -371,8 +366,8 @@ class CalibManager(object):
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0)
-        with open(os.path.join(self.name, 'LL_all.csv'), 'a') as fp:
+        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv()
+        with open(os.path.join(self.name, 'LL_all.csv'), 'w') as fp:
             fp.writelines(csv)
 
     def cache_iteration_state(self, backup_existing=False):
