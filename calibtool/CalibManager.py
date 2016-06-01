@@ -1,22 +1,18 @@
+import datetime
 import glob
 import json
 import logging
 import os
 import pprint
 import re
-
-import datetime
-import pandas as pd
 import shutil
-
 import time
 
-from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
-from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-from simtools.ExperimentManager import ExperimentManagerFactory
-from simtools.ModBuilder import ModBuilder
+import pandas as pd
 
 from IterationState import IterationState
+from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
@@ -154,7 +150,6 @@ class CalibManager(object):
 
             self.increment_iteration()
 
-
         self.finalize_calibration()
 
     def get_next_parameters(self):
@@ -202,7 +197,6 @@ class CalibManager(object):
 
             self.iteration_state.simulations = exp_manager.exp_data
             self.cache_iteration_state()
-            # sim_ids = exp_manager.exp_data['sims'].keys()
 
         exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
 
@@ -245,7 +239,6 @@ class CalibManager(object):
 
         # Run all the plotters
         map(lambda plotter: plotter.visualize(self), self.plotters)
-
 
         return results.total.tolist()
 
@@ -343,7 +336,7 @@ class CalibManager(object):
         # Merge back with the results
         results_df = pd.merge(df, results_df, on=pnames)
 
-        # Retrieve the mappign between id - path
+        # Retrieve the mapping between id - path
         if self.location == "HPC":
             from simtools.OutputParser import CompsDTKOutputParser
             sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
