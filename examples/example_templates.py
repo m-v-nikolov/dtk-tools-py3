@@ -34,15 +34,15 @@ Active templates will be written to the working directly.
 Note, you could easily use a different tag for each file / file type (config vs campaign vs demographics), but I have not demonstrated that here.
 '''
 cfg = ConfigTemplate.from_file( os.path.join(plugin_files_dir, 'config.json') )
-print "TRUE  ?=", cfg.is_consumed_by_template('Base_Infectivity')
-print "TRUE  ?=", cfg.is_consumed_by_template('STI_Network_Params_By_Property.NONE.Extra_Relational_Flag_Type')
-print "FALSE ?=", cfg.is_consumed_by_template('Demographics_Filenames[10]')
+print "TRUE  ?=", cfg.has_param('Base_Infectivity')
+print "TRUE  ?=", cfg.has_param('STI_Network_Params_By_Property.NONE.Extra_Relational_Flag_Type')
+print "FALSE ?=", cfg.has_param('Demographics_Filenames[10]')
 print cfg.get_param('Demographics_Filenames[1]')
 
 
 cpn = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign.json'), '__KP' )   # Here is how you set the tag, "__KP", for campaign, demographics, and potentially also config files
-print "FALSE ?=", cpn.is_consumed_by_template('Events[0]')
-print "TRUE  ?=", cpn.is_consumed_by_template('Demographic_Coverage__KP_Seeding_15_24_Male')
+print "FALSE ?=", cpn.has_param('Events[0]')
+print "TRUE  ?=", cpn.has_param('Demographic_Coverage__KP_Seeding_15_24_Male')
 print cpn.get_param('Events[0].Start_Year')
 
 
@@ -60,12 +60,14 @@ static_config_params = {
     'Base_Population_Scale_Factor':  1/10000.0
 }
 static_campaign_params = {
-    'Demographic_Coverage__KP_Seeding_15_24_Male': 0.035,
-    'Intervention_Config__KP_STI_CoInfection_At_Debut.Demographic_Coverage': 0.055
+    'Intervention_Config__KP_STI_CoInfection_At_Debut.Demographic_Coverage': 0.055,
+    'Demographic_Coverage__KP_Seeding_15_24_Male': 0.035
 }
 static_demog_params = {
     'Relationship_Parameters__KP_TRANSITORY.Coital_Act_Rate': 0.5
 }
+
+test = cpn.get_param( 'Intervention_Config__KP_STI_CoInfection_At_Debut.Demographic_Coverage' )
 
 before = cfg.get_param( static_config_params.keys()[0] )
 cfg.set_params( static_config_params )
@@ -86,7 +88,7 @@ The header and table contain the parameter names and values, respectively.  One 
 
 header = [  'ACTIVE_TEMPLATES', 'Start_Year__KP_Seeding_Year', 'Condom_Usage_Probability__KP_INFORMAL.Max', 'Base_Infectivity', 'TAGS' ]
 table = [
-            [ [cfg, cpn,          demog_pfa], 1985, 0.95, 1.5e-3, ['Testing1'] ],
+            [ [cfg, cpn,          demog_pfa], 1985, 0.95, 1.5e-3, ['Testing1a', {'Testing1b': 'Works'}] ],
             [ [cfg, cpn_outbreak, demog_pfa], 1980, 0.50, 1.0e-3, ['Testing2'] ]
         ]
 

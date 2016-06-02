@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 class TemplateHelper():
     # A helper class for templates.
 
+    active_templates = []
+
     def set_dynamic_header_table(self, header, table):
         """
         Set the header and table for dynamic (per-simulation) configuration.
@@ -20,8 +22,8 @@ class TemplateHelper():
 
         :param table: Containes the parameter values.  One simulation will be created for each row, e.g.:
             table = [
-                [ [config1, campaign],               1980, 1, ['Tag1']         ],
-                [ [config2, campaign_outbreak_only], 1990, 2, ['Tag2', 'Tag3'] ]
+                [ [config1, campaign],               1980, 0.1, ['Tag1']         ],
+                [ [config2, campaign_outbreak_only], 1990, 0.2, ['Tag2', 'Tag3'] ]
             ]
         """
 
@@ -43,38 +45,41 @@ class TemplateHelper():
         logger.info( '-----------------------------------------' )
         all_params = copy.deepcopy(dynamic_params)
 
-        if 'ACTIVE_TEMPLATES' in all_params:
-            active_templates = all_params.pop('ACTIVE_TEMPLATES')
-            for template in active_templates:
-                logger.debug( "Active templates: %s" % [t.get_filename() for t in active_templates] )
+        tags = []
+        if 'TAGS' in all_params:
+            taglist = all_params.pop('TAGS')
+            for t in taglist:
+                if isinstance(t,str):
+                    tags.append({t:None})
+                elif isinstance(t,dict):
+                    tags.append( t )
+                else:
+                    raise Exception("Tag %s is neither a string not a dictionary, not sure what to do.", t)
 
-        # For error checking, union all tags and active template filenames
-        # TODO: Better.  map or function asking each active template if it has a key?
-        '''
-        tag_list = set()
-        active_template_filenames = []
-        if self.config_template is not None:
-            [tag_list.add(k) for k in self.config_template.tag_dict.keys() ]
-            active_template_filenames.append( self.config_template.filename )
-        if self.campaign_template is not None:
-            [tag_list.add(k) for k in self.campaign_template.tag_dict.keys() ]
-            active_template_filenames.append( self.campaign_template.filename )
-        if self.demographic_templates is not None:
-            for d in self.demographic_templates:
-                [tag_list.add(k) for k in d.tag_dict.keys() ]
-                active_template_filenames.append( d.filename )
+        if 'ACTIVE_TEMPLATES' in all_params:
+            self.active_templates = all_params.pop('ACTIVE_TEMPLATES')
+            for template in self.active_templates:
+                logger.debug( "Active templates: %s" % [t.get_filename() for t in self.active_templates] )
+
+        if not self.active_templates:
+            raise Exception("No templates are active!")
 
         # Error checking.  Make sure all dynamic parameters will be found in at least one place.
-        for param in all_params.keys():
-            tag = param.split('.')[0]
-            if tag not in tag_list:
-                raise Exception("Could not find tag in any active template.\n--> Tag: %s\n--> Available tags: %s.\n--> Active templates: %s." % (tag, tag_list, active_template_filenames) )
-        '''
+        for param in all_params:
+            found = False
+            for template in self.active_templates:
+                if not found and template.has_param(param):
+                    found = True
+            if not found:
+                active_template_filenames = [t.get_filename() for t in self.active_templates]
+                raise Exception("None of the active templates consume parameter %s.  Active templates: %s." % (param, active_template_filenames) )
 
-        tags = []
-        for template in active_templates:
+        for template in self.active_templates:
             new_tags = template.set_params_and_modify_cb(all_params, cb)
             tags.append(new_tags)
+
+        print "TAGS",tags
+        #return tags
 
 
     def get_modifier_functions(self):
