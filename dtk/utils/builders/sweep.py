@@ -1,15 +1,19 @@
 import itertools
 
+from calibtool.study_sites.set_calibration_site import set_calibration_site
 from simtools.ModBuilder import ModBuilder
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from dtk.calibration.study_sites.set_calibration_site import set_calibration_site
 
 
 class RunNumberSweepBuilder(ModBuilder):
     def __init__(self, nsims):
-        self.mod_generator = (self.set_mods([self.ModFn(DTKConfigBuilder.set_param, 'Run_Number', i)]) for i in range(nsims))
+        self.mod_generator = (
+            self.set_mods(
+                [self.ModFn(DTKConfigBuilder.set_param, 'Run_Number', i)]
+            ) for i in range(nsims)
+        )
 
 
 class GenericSweepBuilder(ModBuilder):

@@ -5,6 +5,7 @@
 *.pyproj
 *.sln
 *.suo
+*vscode*
 
 # Simulation meta-data
 *simulations/
@@ -37,3 +38,6 @@ dtk/calibration/calib_example/*test*/
 examples/calibration/
 examples/ExampleCalibration/
 test/tmp/
+
+# Helper
+*.ignore.*

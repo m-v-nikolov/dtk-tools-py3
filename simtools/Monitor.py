@@ -85,7 +85,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         Client.Login(self.server_endpoint)
 
         def sims_from_experiment(e):
-            logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())
+            #logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())
             return e.GetSimulations(QueryCriteria().Select('Id,SimulationState')).toArray()
 
         def sims_from_experiment_id(exp_id):

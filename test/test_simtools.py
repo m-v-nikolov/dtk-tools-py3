@@ -47,7 +47,7 @@ class TestConfigBuilder(unittest.TestCase):
         file1 = 'input/dummy_exe_folder/dummy_exe.txt'
         md5 = utils.get_md5(file1)
         self.cb.stage_executable(file1, local_setup)
-        staged_dir = os.path.join(self.setup.get('LOCAL', 'bin_root'), md5)
+        staged_dir = os.path.join(self.setup.get('LOCAL', 'bin_staging_root'), md5)
         staged_path = os.path.join(staged_dir, 'dummy_exe.txt')
         self.assertTrue(os.path.exists(staged_path))
 
@@ -145,7 +145,7 @@ class TestLocalExperimentManager(unittest.TestCase):
         self.assertEqual(local_manager.exp_data['exp_name'], 'test')
 
     def test_status(self):
-        local_manager = ExperimentManagerFactory.from_file(utils.most_recent_exp_file())
+        local_manager = ExperimentManagerFactory.from_file(utils.exp_file())
         states, msgs = local_manager.get_simulation_status()
         self.assertListEqual(states.values(), ['Running'] * self.nsims)
 
