@@ -1,19 +1,24 @@
-import json
-
-import numpy as np
-
-from dtk.interventions.health_seeking import add_health_seeking
-from dtk.interventions.input_EIR import add_InputEIR
-from dtk.interventions.irs import add_node_IRS
-from dtk.interventions.itn import add_ITN
-from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
-from dtk.interventions.migrate_to import add_migration_event
-from dtk.interventions.mosquito_release import add_mosquito_release
-from dtk.interventions.outbreak import recurring_outbreak
 from dtk.malaria.immunity import add_immune_overlays
-from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report,add_filtered_report
-from dtk.vector.input_EIR_by_site import configure_site_EIR
+
 from dtk.vector.species import set_larval_habitat, set_species_param
+from dtk.vector.species import set_larval_habitat, set_species_param
+from dtk.vector.input_EIR_by_site import configure_site_EIR
+
+from dtk.interventions.input_EIR import add_InputEIR
+from dtk.interventions.mosquito_release import add_mosquito_release
+from dtk.interventions.itn import add_ITN
+from dtk.interventions.irs import add_node_IRS
+from dtk.interventions.malaria_challenge import add_challenge_trial
+from dtk.interventions.outbreak import recurring_outbreak
+from dtk.interventions.migrate_to import add_migration_event
+from dtk.interventions.health_seeking import add_health_seeking
+from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
+
+from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report,add_filtered_report
+
+import pandas as pd
+import json
+import numpy as np
 
 def config_setup_fn(duration=21915):
     return lambda cb: cb.update_params({'Simulation_Duration' : duration,
@@ -51,8 +56,8 @@ def add_outbreak_fn(start_day=0, outbreak_fraction=0.01, repetitions=-1, tsteps_
 
 # migration
 def add_migration_fn(nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, duration_of_stay=100, is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
-    return lambda cb : add_migration_event(cb, nodeto, start_day=start_day, coverage=coverage, repetitions=repetitions,
-                                           tsteps_btwn=tsteps_btwn, duration_of_stay=duration_of_stay,
+    return lambda cb : add_migration_event(cb, nodeto, start_day=start_day, coverage=coverage, repetitions=repetitions, 
+                                           tsteps_btwn=tsteps_btwn, duration_of_stay=duration_of_stay, 
                                            is_family_trip=is_family_trip, target=target, nodesfrom=nodesfrom)
 
 # mosquito release
@@ -67,7 +72,7 @@ def add_treatment_fn(start=0,drug=['Artemether', 'Lumefantrine'],targets=[{'trig
     return fn
 
 # health-seeking from nodeid-coverage specified in json
-def add_HS_by_node_id_fn(reffname, start=0) :
+def add_HS_by_node_id_fn(reffname, start=0) :        
     def fn(cb) :
         with open(reffname) as fin :
             cov = json.loads(fin.read())
