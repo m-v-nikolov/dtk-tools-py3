@@ -1,6 +1,6 @@
 from site_setup_functions import *
 
-burn_years = 40 - 11
+burn_years = 18+7
 sim_duration = burn_years*365 + 2*365
 
 itn_dates = [x/12. for x in [96, 36, 24, 12, 6, 3]]

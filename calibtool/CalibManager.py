@@ -5,7 +5,7 @@ import os
 import pprint
 import re
 
-import datetime
+from datetime import datetime
 import pandas as pd
 import shutil
 
@@ -371,7 +371,7 @@ class CalibManager(object):
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0)
+        csv = results_df.sort_values(by='total', ascending=False)[col_order].to_csv(header=self.iteration == 0)
         with open(os.path.join(self.name, 'LL_all.csv'), 'a') as fp:
             fp.writelines(csv)
 

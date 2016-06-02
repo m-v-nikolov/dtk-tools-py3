@@ -1,3 +1,5 @@
+import copy
+
 ''' OLD
 # IRS parameters
 irs_housingmod = {"class": "IRSHousingModification",
