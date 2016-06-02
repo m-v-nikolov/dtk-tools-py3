@@ -2,11 +2,11 @@ from dtk.utils.parsers.JSON import json2dict
 import os
 import logging
 
-import dtk.utils.builders.ITemplate as ITemplate
+import dtk.utils.builders.BaseTemplate as BaseTemplate
 
 logger = logging.getLogger(__name__)
 
-class TaggedTemplate(ITemplate.BaseTemplate):
+class TaggedTemplate(BaseTemplate.BaseTemplate):
     """
     A class for building, modifying, and writing input files marked with tags (e.g. __KP), including campaign,
     demographics, and potentially even config files.
@@ -58,6 +58,7 @@ class TaggedTemplate(ITemplate.BaseTemplate):
         self.tag = tag
         self.tag_dict = self.__findKeyPaths(self.contents, self.tag)
 
+
     @classmethod
     def from_file(cls, template_filepath, tag='__KP'):
         # Read in template
@@ -69,19 +70,22 @@ class TaggedTemplate(ITemplate.BaseTemplate):
 
         return cls(template_filename, content, tag)
 
+
     # ITemplate functions follow
     def get_param(self, param):
         """
-        Get param:value dict.
+        Get param value(s).
+        :return: a tuple of values and paths
         """
-        values = {}
-        for expanded_param in self.expand_tag(param):
-            print "GET",expanded_param
+        values = []
+        expanded_params = self.expand_tag(param)
+        for expanded_param in expanded_params:
             #value = self.__get_expanded_param(expanded_param)
-            value = super(TaggedTemplate, self).get_param(expanded_param)
-            values[param] = value
+            (_,value) = super(TaggedTemplate, self).get_param(expanded_param)
+            values.append(value)
 
-        return values
+        return (expanded_params, values)
+
 
     def set_param(self, param, value):
         """
@@ -93,16 +97,17 @@ class TaggedTemplate(ITemplate.BaseTemplate):
         :param value: The value to place at expanded parameter loci.
         :return: Simulation tags
         """
-        sim_tags = []
-        for param in self.expand_tag(param):
-            print "SET",param
-            tag = super(TaggedTemplate, self).set_param(param, value)
-            sim_tags.append(tag)
+        sim_tags = {}
+        for expanded_param in self.expand_tag(param):
+            tag = super(TaggedTemplate, self).set_param(expanded_param, value)
+            assert(len(tag)==1)
+            sim_tags[tag.keys()[0]] = tag.values()[0]
+            sim_tags["[BUILDER] "+param] = value
 
         return sim_tags
 
+
     def expand_tag(self, param):
-        print "EXPANDING:", param
         expanded_params = []
 
         if '.' in param:
@@ -140,11 +145,13 @@ class TaggedTemplate(ITemplate.BaseTemplate):
 
         return path_dict
 
+
     def __extractKey(self, string):
         index = string.find(self.tag)
         if index < 0:
             raise Exception( "[%s] Failed to find key fragment %s in string %s.", self.get_filename(), self.tag, string)
         return string[index + len(self.tag):]
+
 
     def __recurseKeyPaths(self, search_obj, key_fragment, partial_path=[]):
         """

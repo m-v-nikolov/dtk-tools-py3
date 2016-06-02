@@ -45,14 +45,14 @@ class TemplateHelper():
         logger.info( '-----------------------------------------' )
         all_params = copy.deepcopy(dynamic_params)
 
-        tags = []
+        tags = {}
         if 'TAGS' in all_params:
             taglist = all_params.pop('TAGS')
             for t in taglist:
                 if isinstance(t,str):
-                    tags.append({t:None})
+                    tags.update({t : None})
                 elif isinstance(t,dict):
-                    tags.append( t )
+                    tags.update()
                 else:
                     raise Exception("Tag %s is neither a string not a dictionary, not sure what to do.", t)
 
@@ -76,10 +76,10 @@ class TemplateHelper():
 
         for template in self.active_templates:
             new_tags = template.set_params_and_modify_cb(all_params, cb)
-            tags.append(new_tags)
+            if new_tags:
+                tags.update(new_tags)
 
-        print "TAGS",tags
-        #return tags
+        return tags
 
 
     def get_modifier_functions(self):

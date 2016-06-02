@@ -10,7 +10,7 @@
         "Society" : {
             "TRANSITORY" :
             {
-                "Relationship_Parameters__KP_TRANSITORY" : "<-- MARKER",
+                "Relationship_Parameters__KP_TRANSITORY_and_INFORMAL" : "<-- MARKER",
                 "Relationship_Parameters" :
                 {
                     "Coital_Act_Rate" : 0.33,
@@ -68,9 +68,10 @@
             },
             "INFORMAL" :
             {
+                "Relationship_Parameters__KP_TRANSITORY_and_INFORMAL" : "<-- MARKER",
                 "Relationship_Parameters" :
                 {
-                    "Coital_Act_Rate" : 0.33,
+                    "Coital_Act_Rate" : 0.35,
                     "Condom_Usage_Probability__KP_INFORMAL" : "<-- MARKER",
                     "Condom_Usage_Probability" :
                     {

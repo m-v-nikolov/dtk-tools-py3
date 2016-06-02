@@ -1,21 +1,20 @@
-'''
+"""
+The philosophy of "templates" is to manually augment existing files with special tags that facilitate referencing.
+
 This example highlights features of template-based input file manipulation building on 
 an EMOD-HIV scenario: Scenarios/STIAndHIV/04_Health_Care/4_3_Health_Care_Model_Baseline.
 
-The scenario has a config, campaign, and three demographic templates.  Here, we are going to 
+The scenario has a config, campaign, and three demographic templates.  Here, we are going to:
 * Edit parameters in config json
 * Switch between two different campaign json files, both of which have been lightly marked with __KP tags
 * Use tags to reference and subsequently edit parameters in campaign json
-* Edit parameters in one of the three demographic files, the other two come from the InputFiles folder.  This file has been augmented with tags.
+* Edit parameters in one of the three demographic files, the other two come from the InputFiles folder.  The file we will edit has been augmented with tags.
 
 Template files, e.g. the ones we're going to generate on a per-simulation basis, will come from the plugin_files_dir.
-
-The philosophy of "templates" is to manually augment existing files with special tags that facilitate referencing.
-'''
+"""
 
 import os
 from dtk.utils.builders.TemplateHelper import TemplateHelper
-#from dtk.utils.builders.Templates import ConfigTemplate, CampaignTemplate, DemographicsTemplate
 from dtk.utils.builders.ConfigTemplate import ConfigTemplate
 from dtk.utils.builders.TaggedTemplate import CampaignTemplate, DemographicsTemplate
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
@@ -24,7 +23,7 @@ from simtools.ModBuilder import ModBuilder
 # The following directory holds the plugin files for this example.
 plugin_files_dir = 'Templates'
 
-'''
+"""
 Create templates.  Templates can be used as config, campaign, or demographics files.
 
 Templates can contain tagged parameters, typically Param_Name__KP_Some_Informative_String.  Parameters targeting these templates reference the __KP-tagged parameter names, see below When setting the parameter, everything after and including the tag will be removed, leaving just the parameter name, e.g. Param_Name in this example.  Tags need not be set at the root level, they can be placed deep in a nested json file and the system will automatically complete their json path(s).  Any given tag can be repeated in several locations in a file, and even across several files.
@@ -32,30 +31,21 @@ Templates can contain tagged parameters, typically Param_Name__KP_Some_Informati
 Active templates will be written to the working directly.
 
 Note, you could easily use a different tag for each file / file type (config vs campaign vs demographics), but I have not demonstrated that here.
-'''
+"""
 cfg = ConfigTemplate.from_file( os.path.join(plugin_files_dir, 'config.json') )
-print "TRUE  ?=", cfg.has_param('Base_Infectivity')
-print "TRUE  ?=", cfg.has_param('STI_Network_Params_By_Property.NONE.Extra_Relational_Flag_Type')
-print "FALSE ?=", cfg.has_param('Demographics_Filenames[10]')
-print cfg.get_param('Demographics_Filenames[1]')
-
-
 cpn = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign.json'), '__KP' )   # Here is how you set the tag, "__KP", for campaign, demographics, and potentially also config files
-print "FALSE ?=", cpn.has_param('Events[0]')
-print "TRUE  ?=", cpn.has_param('Demographic_Coverage__KP_Seeding_15_24_Male')
-print cpn.get_param('Events[0].Start_Year')
-
-
 cpn_outbreak = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign_outbreak_only.json') ) # These get the default tag, which is also "__KP"
-
 demog_pfa = DemographicsTemplate.from_file( os.path.join(plugin_files_dir, 'pfa_overlay.json') )
 
+# You can query and obtain values from templates.  Because some parameters can exist in multiple locates, i.e. tagged parameters, get_param return a tuple of (paths, values).\
+demo_key = 'Start_Year__KP_Seeding_Year'
+if cpn.has_param(demo_key):
+    print "Demo getting values of %s:" % demo_key
+    (paths, values) = cpn.get_param(demo_key)
+    for (path, value) in zip( paths, values ):
+        print '\t%s: %f'%(path, value)
 
-
-'''
-Set "static" parameters in these files.  These "static" parameters will be applied to every input file generated.
-TODO: Would like to list parameters and feed to kwargs, but the periods make them invalid keywords
-'''
+# Set "static" parameters in these files.  These "static" parameters will be applied to every input file generated.
 static_config_params = {
     'Base_Population_Scale_Factor':  1/10000.0
 }
@@ -64,27 +54,25 @@ static_campaign_params = {
     'Demographic_Coverage__KP_Seeding_15_24_Male': 0.035
 }
 static_demog_params = {
-    'Relationship_Parameters__KP_TRANSITORY.Coital_Act_Rate': 0.5
+    'Relationship_Parameters__KP_TRANSITORY_and_INFORMAL.Coital_Act_Rate': 0.5
 }
 
-test = cpn.get_param( 'Intervention_Config__KP_STI_CoInfection_At_Debut.Demographic_Coverage' )
+cfg.set_params( static_config_params )              # <-- Set the parameter values
+cpn.set_params( static_campaign_params )            # <-- Set the parameter values
+cpn_outbreak.set_params( static_campaign_params )   # <-- Set the parameter values
 
-before = cfg.get_param( static_config_params.keys()[0] )
-cfg.set_params( static_config_params )
-after = cfg.get_param( static_config_params.keys()[0] )
-print "Before =: %s, After = %s" % (before, after)
+demo_key = static_demog_params.keys()[0]
+demo_value = static_demog_params.values()[0]
+(paths,before) = demog_pfa.get_param( demo_key )
+demog_pfa.set_params( static_demog_params )         # <-- Set the parameter values
+(_,after) = demog_pfa.get_param( demo_key )
+print 'Demo setting of %s to %f:' % (demo_key, demo_value)
+for (p,b,a) in zip(paths, before, after):
+    print '\t%s: %f --> %f'%(p,b,a)
 
-
-before = cpn.get_param( static_campaign_params.keys()[0] )
-cpn.set_params( static_campaign_params )
-after = cpn.get_param( static_campaign_params.keys()[0] )
-print "Before =: %s, After = %s" % (before, after)
-cpn_outbreak.set_params( static_campaign_params )
-demog_pfa.set_params( static_demog_params )
-
-'''
-The header and table contain the parameter names and values, respectively.  One simulation will be created for each row of the table.  Active templates are listed in the column with header keyword ACTIVE_TEMPLATES.  Additional tags can be added to each simulation using header keywork TAGS.
-'''
+"""
+The following header and table contain the parameter names and values to be modified dynamically.  One simulation will be created for each row of the table.  Active template files are listed in the column with header keyword ACTIVE_TEMPLATES.  Additional tags can be added to each simulation using header keyword TAGS.
+"""
 
 header = [  'ACTIVE_TEMPLATES', 'Start_Year__KP_Seeding_Year', 'Condom_Usage_Probability__KP_INFORMAL.Max', 'Base_Infectivity', 'TAGS' ]
 table = [
@@ -92,11 +80,11 @@ table = [
             [ [cfg, cpn_outbreak, demog_pfa], 1980, 0.50, 1.0e-3, ['Testing2'] ]
         ]
 
-'''
+"""
 Create an instance of the TemplateHelper helper class and, if desired, give it templates to work with.
 In this example, there's no need to set the campaign_template because it will be set dynamically from the table above.
 TODO: Directly setting config_template, campaign_template, and demographic_templates doesn't feel right.  Should they have trivial setters?
-'''
+"""
 templates = TemplateHelper()
 
 # Give the header and table to the template helper

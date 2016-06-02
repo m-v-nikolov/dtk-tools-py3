@@ -71,11 +71,11 @@ class ITemplate(object):
 class BaseTemplate(ITemplate):
 
     def __init__(self, filename, contents):
-        '''
+        """
         Initialize a BaseTemplate.
         :param filename: The name of the template file.  This is not the full path to the file, just the filename.
         :param contents: The contents of the template file
-        '''
+        """
 
         self.contents = contents
         self.filename = filename
@@ -83,10 +83,10 @@ class BaseTemplate(ITemplate):
 
     @classmethod
     def from_file(cls, template_filepath):
-        '''
+        """
         Initialize a BaseTemplate from a file path.
         :param template_file: Path to the file on disk.
-        '''
+        """
         # Read in template
         logger.info( "Reading config template from file:", template_filepath )
         contents = json2dict(template_filepath)
@@ -103,10 +103,10 @@ class BaseTemplate(ITemplate):
         return self.contents
 
     def has_param(self, param):
-        '''
+        """
         Boolean to determine if this template can set param.
         :return: Boolean
-        '''
+        """
         if param in self.known_params:
             return self.known_params[param]
 
@@ -125,11 +125,11 @@ class BaseTemplate(ITemplate):
         """
         Gets a parameter value.  The return type is a dictionary because some tagged parameters can have multiple addresses, and therefore multiple values.
         :param param: The parameter, may contain '.' and numeric indices, '[0]',  e.g. Events[3].Start_Day
-        :return: A dictionary of key value pairs
+        :return: A tuple of (value, param)
         """
 
         path_steps = param.split('.')
-        current_parameter = self.contents
+        value = self.contents
 
         for path_step in path_steps:
             if '[' in path_step:
@@ -137,13 +137,13 @@ class BaseTemplate(ITemplate):
                 assert( subpaths[1][-1] == ']' )
                 path_step = subpaths[0]
                 index = int(float(subpaths[1][:-1]))
-                current_parameter = current_parameter[self.cast_value(path_step)]
-                current_parameter = current_parameter[index]
+                value = value[self.cast_value(path_step)]
+                value = value[index]
             else:
                 # If the step is a number, we are in a list, we need to cast the step to int
-                current_parameter = current_parameter[self.cast_value(path_step)]
+                value = value[self.cast_value(path_step)]
 
-        return {param: current_parameter}
+        return (param, value)
 
     def set_params(self, params):
         """
@@ -152,11 +152,11 @@ class BaseTemplate(ITemplate):
         :param params: A dictionary of key value pairs to be passed to set_param.
         :return: Simulation tags
         """
-        sim_tags = []
+        sim_tags = {}
         for param,value in params.iteritems():
             if self.has_param(param):
                 new_sim_tags = self.set_param(param, value)
-                sim_tags.append( new_sim_tags )
+                sim_tags.update( new_sim_tags )
 
         return sim_tags
 
@@ -189,7 +189,7 @@ class BaseTemplate(ITemplate):
 
         current_parameter[path_steps[-1]] = self.cast_value(value)
 
-        return {param: value}
+        return {"["+self.get_filename()+"] " + param: value}
 
     def cast_value(self,value):
         """
