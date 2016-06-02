@@ -145,9 +145,6 @@ class CalibManager(object):
             if self.finished():
                 break
 
-            # Write the CSV
-            self.write_LL_csv()
-
             self.increment_iteration()
 
         self.finalize_calibration()
@@ -239,6 +236,9 @@ class CalibManager(object):
 
         # Run all the plotters
         map(lambda plotter: plotter.visualize(self), self.plotters)
+
+        # Write the CSV
+        self.write_LL_csv()
 
         return results.total.tolist()
 
@@ -543,6 +543,9 @@ class CalibManager(object):
         if calib_data['location'] == 'HPC':
             from COMPS import Client
             Client.Login(self.setup.get('HPC', 'server_endpoint'))
+
+        # Cleanup the LL_all.csv
+        os.remove(os.path.join(self.name, 'LL_all.csv'))
 
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
