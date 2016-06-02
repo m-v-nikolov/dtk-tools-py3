@@ -298,7 +298,7 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # Depp copy all_results and pnames to not disturb the calibration
+        # Deep copy all_results and pnames to not disturb the calibration
         import copy
         pnames = copy.deepcopy(self.param_names())
         all_results = self.all_results.copy(True)
@@ -364,7 +364,7 @@ class CalibManager(object):
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0)
+        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0, index=False)
         with open(os.path.join(self.name, 'LL_all.csv'), 'a') as fp:
             fp.writelines(csv)
 
