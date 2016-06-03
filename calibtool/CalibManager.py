@@ -365,9 +365,9 @@ class CalibManager(object):
         col_order.extend(['outputs'])
 
         # Concatenate the current csv
-        csv_path =os.path.join(self.name, 'LL_all.csv')
+        csv_path = os.path.join(self.name, 'LL_all.csv')
         if os.path.exists(csv_path):
-            # We need to get the same colum order from the csv that the results_df to append them correctly
+            # We need to get the same column order from the csv that the results_df to append them correctly
             current = pd.read_csv(open(csv_path, 'r'))[col_order]
             results_df = results_df.append(current, ignore_index = True)
 
