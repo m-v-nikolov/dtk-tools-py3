@@ -358,14 +358,22 @@ class CalibManager(object):
 
         results_df['outputs'] = results_df['outputs'].apply(find_path)
 
-        # Sort and save
+        # Defines the column order
         col_order = ['iteration', 'sample', 'total']
         col_order.extend(results_df.keys()[len(pnames)+2:-2])   # The analyzers
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0, index=False)
-        with open(os.path.join(self.name, 'LL_all.csv'), 'a') as fp:
+        # Concatenate the current csv
+        csv_path =os.path.join(self.name, 'LL_all.csv')
+        if os.path.exists(csv_path):
+            # We need to get the same colum order from the csv that the results_df to append them correctly
+            current = pd.read_csv(open(csv_path, 'r'))[col_order]
+            results_df = results_df.append(current, ignore_index = True)
+
+        # Write the csv
+        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=True, index=False)
+        with open(csv_path, 'w') as fp:
             fp.writelines(csv)
 
     def cache_iteration_state(self, backup_existing=False):
@@ -545,7 +553,8 @@ class CalibManager(object):
             Client.Login(self.setup.get('HPC', 'server_endpoint'))
 
         # Cleanup the LL_all.csv
-        os.remove(os.path.join(self.name, 'LL_all.csv'))
+        if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
+            os.remove(os.path.join(self.name, 'LL_all.csv'))
 
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
