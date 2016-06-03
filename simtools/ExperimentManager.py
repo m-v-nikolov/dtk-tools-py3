@@ -100,6 +100,15 @@ class LocalExperimentManager(object):
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
+        # Get the git revision of the tools
+        try:
+            import subprocess
+            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n","")
+        except:
+            revision = "Unknown"
+
+        self.exp_data['dtk-tools_revision'] = revision
+
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
 
