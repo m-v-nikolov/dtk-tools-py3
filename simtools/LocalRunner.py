@@ -27,27 +27,30 @@ class SimulationCommissioner(threading.Thread):
                 p = subprocess.Popen(self.eradication_command.split(),
                                      cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
-                job_id = p.pid
-
                 # We are now running
-                self.change_state(job_id, status="Running")
+                self.change_state(status="Running")
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
                 while p.poll() is None:
                     time.sleep(1)
-                    self.change_state(job_id, message=self.last_status_line())
+                    self.change_state(message=self.last_status_line())
 
                 # When poll returns None, the process is done, test if succeeded or failed
                 if "Done" in self.last_status_line():
-                    self.change_state(job_id, status="Finished")
+                    self.change_state(status="Finished")
                 else:
-                    self.change_state(job_id, status="Failed")
+                    self.change_state(status="Failed")
 
                 # Free up an item in the queue
                 self.queue.get()
 
     def last_status_line(self):
+        """
+        Returns the last line of the status.txt file for the simulation.
+        None if the file doesnt exist or is empty
+        :return:
+        """
         status_path = os.path.join(self.sim_dir, 'status.txt')
         msg = None
         if os.path.exists(status_path) and os.stat(status_path).st_size != 0:
@@ -56,19 +59,33 @@ class SimulationCommissioner(threading.Thread):
 
         return msg
 
-    def change_state(self, job_id, status=None, message=None):
+    def change_state(self, status=None, message=None):
+        """
+        Change either status, message or both for the simulation currently handled by the thread.
+        Everything inside the lock is in a try, finally block to prevent infinite blocking even if something goes wrong.
+        :param status:
+        :param message:
+        :return:
+        """
+        # Acquire the lock on the file
         self.lock.acquire()
-        cache = json.load(open(self.cache_path, 'rb'))
-        cache['sims'][self.sim_id]["jobId"] = job_id
-        if status:
-            cache['sims'][self.sim_id]["status"] = status
-        if message:
-            cache['sims'][self.sim_id]["message"] = message
+        try:
+            # Open the metadata file
+            cache = json.load(open(self.cache_path, 'rb'))
 
-        cache_file = open(self.cache_path, 'wb')
-        json.dump(cache, cache_file, indent=4)
-        cache_file.close()
-        self.lock.release()
+            # If we have a status, set it (same for message)
+            if status:
+                cache['sims'][self.sim_id]["status"] = status
+            if message:
+                cache['sims'][self.sim_id]["message"] = message
+
+            # Write the file back
+            with open(self.cache_path, 'wb') as cache_file:
+                json.dump(cache, cache_file, indent=4)
+
+        finally:
+            # To finish release the lock
+            self.lock.release()
 
 if __name__ == "__main__":
     import sys
@@ -79,6 +96,7 @@ if __name__ == "__main__":
     queue_size = int(sys.argv[3])
     cache_path = sys.argv[4]
 
+    # Create the queue and the re-entrant lock
     queue = Queue(maxsize=queue_size)
     lock = threading.RLock()
 

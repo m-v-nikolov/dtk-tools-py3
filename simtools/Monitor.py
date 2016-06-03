@@ -11,11 +11,10 @@ except:
 logger = logging.getLogger(__name__)
 
 class SimulationMonitor(object):
-
-    '''
+    """
     A class to monitor the status of local simulation.
     Threads are spawned to query each simulation in parallel.
-    '''
+    """
 
     def __init__(self, exp_data, setup):
         self.exp_data = exp_data
@@ -23,48 +22,9 @@ class SimulationMonitor(object):
     def query(self):
         states, msgs = {}, {}
         for sim_id, sim in self.exp_data['sims'].items():
-            job_id = sim.get('jobId')
-            if job_id:
-                state, msg = self.query_sim(sim_id, job_id)
-                states[job_id] = state
-                msgs[job_id] = msg
+            states[sim_id] = sim["status"] if "status" in sim else "Waiting"
+            msgs[sim_id] = sim["message"] if "message" in sim else ""
         return states, msgs
-
-    def query_sim(self, sim_id, job_id):
-
-        state, msg = 'Unknown', ''
-        job_running = False
-
-        try:
-            logger.debug('exe_name = %s', self.exp_data.get('exe_name'))
-            logger.debug('job_id = %d, psutil.Process.name = %s', job_id, psutil.Process(job_id).name())
-            job_running = (os.path.basename(self.exp_data.get('exe_name')).lower()
-                           in psutil.Process(job_id).name().lower())
-        except NameError:
-            logger.warning("Failed to import 'psutil' package.  Unable to query status of locally submitted simulations.")
-            return state, msg
-        except psutil.AccessDenied:
-            logger.warning('Access to process ID denied.')
-        except psutil.NoSuchProcess:
-            logger.debug('No such process with PID %d', job_id)
-
-        status_path = os.path.join(self.exp_data['sim_root'],
-                               '_'.join([self.exp_data['exp_name'], self.exp_data['exp_id']]),
-                               sim_id, 'status.txt')
-
-        if os.path.exists(status_path) and os.stat(status_path).st_size != 0:
-            with open(status_path, 'r') as status_file:
-                msg = list(status_file)[-1]
-
-        if job_running:
-            state = 'Running'
-        else:
-            if msg:
-                state = 'Finished' if 'Done' in msg else 'Canceled'
-            else:
-                state = 'Failed'
-
-        return state, msg
 
 
 class CompsSimulationMonitor(SimulationMonitor):

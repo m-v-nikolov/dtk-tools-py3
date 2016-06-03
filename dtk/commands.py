@@ -45,12 +45,13 @@ def status(args):
 
     sm = reload_experiment(args)
     while True:
-        states, msgs = sm.get_simulation_status()
+        states, msgs = sm.get_simulation_status(args.repeat)
         sm.print_status(states, msgs)
         if not args.repeat or sm.finished():
             break
         else:
             time.sleep(20)
+
 
 def resubmit(args):
     sm = reload_experiment(args)
