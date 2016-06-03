@@ -1,12 +1,5 @@
 import json
 import logging
-import os
-
-try:
-    import psutil  # for local PID lookup in SimulationStatus (external dependency: https://code.google.com/p/psutil/)
-except:
-    print("Unable to import 'psutil' package.  Will not be able to query status of locally submitted simulations.")
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +21,10 @@ class SimulationMonitor(object):
 
 
 class CompsSimulationMonitor(SimulationMonitor):
-
-    '''
+    """
     A class to monitor the status of COMPS simulations.
     Note that only a single thread is spawned as the COMPS query is based on the experiment ID
-    '''
+    """
 
     def __init__(self, exp_data, setup):
         self.exp_data = exp_data
