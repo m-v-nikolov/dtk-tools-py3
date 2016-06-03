@@ -3,7 +3,7 @@ import os
 import sys
 
 from ConfigParser import ConfigParser
-from IniValidator import IniValidator
+from simtools.IniValidator import IniValidator
 
 default_setup = os.path.join(os.path.dirname(__file__),
                              'simtools.cfg')
