@@ -34,7 +34,6 @@ class SimulationCommissioner(threading.Thread):
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
-                print "RUN %s" % self.sim_dir
                 while p.poll() is None:
                     time.sleep(1)
                     self.change_state(job_id, message=self.last_status_line())
