@@ -138,7 +138,7 @@ class LocalExperimentManager(object):
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         :param reload: Reload the exp_data (used in case of repeating poll with local simulations)
         """
-        if reload:
+        if reload and self.location == "LOCAL":
             self.reload_exp_data()
 
         logger.debug("Status of simulations run on '%s':" % self.location)
