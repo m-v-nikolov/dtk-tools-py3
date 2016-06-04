@@ -8,6 +8,7 @@ import time
 
 import simtools.utils as utils
 
+from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
 from simtools.ExperimentManager import ExperimentManagerFactory
 
@@ -74,6 +75,10 @@ def resubmit(args):
 
 def kill(args):
 
+    sm = reload_experiment(args)
+    states, msgs = sm.get_simulation_status()
+    sm.print_status(states, msgs)
+
     if args.simIds:
         logging.info('KIlling job(s) with ids: ' + str(args.simIds))
         params = { 'ids': args.simIds }
@@ -101,19 +106,40 @@ def stdout(args):
     sm = reload_experiment(args)
     states, msgs = sm.get_simulation_status()
 
+    if args.succeeded:
+        args.simIds = [k for k in states if states.get(k) in ['Finished', 'Succeeded']][:1]
+    elif args.failed:
+        args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
+
     if not args.force:
         if not sm.status_succeeded(states):
             logging.warning('Not all jobs have finished successfully yet...')
             logging.info('Job states:')
-            logging.info(json.dumps(states, sort_keys=True, indent=4))
+            logging.info(json.dumps(states, sort_keys = True, indent = 4))
             return
 
-    sm.add_analyzer(StdoutAnalyzer(args.simIds))
+    sm.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
 
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
     sm.analyze_simulations()
+
+def progress(args):
+    logging.info('Getting progress...')
+
+    sm = reload_experiment(args)
+    states, msgs = sm.get_simulation_status()
+
+    sm.add_analyzer(ProgressAnalyzer(args.simIds))
+
+    if args.comps:
+        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+
+    try:
+        sm.analyze_simulations()
+    except:
+        logging.info('This experiment is not ready.')
 
 def analyze(args):
 
@@ -204,18 +230,28 @@ def main():
     parser_kill.set_defaults(func = kill)
 
     # 'dtk stdout' options
-    parser_stdout = subparsers.add_parser('stdout', help = 'Print stdout from simulation.')
+    parser_stdout = subparsers.add_parser('stdout', help = 'Print stdout from first simulation in selected experiment.')
     parser_stdout.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
     parser_stdout.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
     parser_stdout.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
+    parser_stdout.add_argument('-e', '--error', action = 'store_true', help = 'Print stderr instead of stdout.')
     parser_stdout.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
+    parser_stdout.add_argument('--failed', action = 'store_true', help = 'Get the stdout for the first failed simulation in the selected experiment.')
+    parser_stdout.add_argument('--succeeded', action = 'store_true', help = 'Get the stdout for the first succeeded simulation in the selected experiment.')
     parser_stdout.set_defaults(func = stdout)
+
+    # 'dtk progress' options
+    parser_progress = subparsers.add_parser('progress', help = 'Print progress from simulation(s) in experiment.')
+    parser_progress.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_progress.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
+    parser_progress.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
+    parser_progress.set_defaults(func = progress)
 
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
     parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
-    parser_analyze.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
+    parser_analyze.add_argument('-c', '--comps', action = 'store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func = analyze)
 

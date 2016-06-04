@@ -9,27 +9,32 @@ from plot import plot_by_channel
 logger = logging.getLogger(__name__)
 
 class StdoutAnalyzer():
-    def __init__(self, simIds = None):
-        self.filenames = ['StdOut.txt']
+    def __init__(self, simIds = None, error = False):
+        self.filenames = ['StdOut.txt', 'StdErr.txt']
         self.simIds = simIds
+        self.error = error
 
     def filter(self, sim_metadata):
         return lambda x: True
 
     def apply(self, parser):
-        parser.selected_data = parser.raw_data[self.filenames[0]]
+        if self.error:
+            parser.stdout = parser.raw_data[self.filenames[1]]
+        else:
+            parser.stdout = parser.raw_data[self.filenames[0]]
 
     def combine(self, parsers):
-        if self.simIds:
+        if self.simIds is not None:
             try:
-                selected = [parsers.get(key).selected_data for key in self.simIds]
+                selected = [parsers.get(k).stdout for k in self.simIds]
             except:
+                logger.error('Bad simulation id(s).')
                 raise Exception('Bad simulation id(s).')
         else:
-            selected = [p.selected_data for p in parsers.values()]
+            selected = [parsers.get(k).stdout for k in parsers][:1]
 
         combined = ''.join(selected)
         self.data = combined
 
     def finalize(self):
-        logger.info(self.data)
+        print self.data

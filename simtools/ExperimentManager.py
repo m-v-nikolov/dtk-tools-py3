@@ -348,6 +348,13 @@ class LocalExperimentManager(object):
     def succeeded(self):
         return self.status_succeeded(self.get_simulation_status()[0])
 
+    @staticmethod
+    def status_failed(states):
+        return all(v in ['Failed'] for v in states.itervalues())
+
+    def failed(self):
+        return self.status_failed(self.get_simulation_status()[0])
+
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
             time.sleep(init_sleep)

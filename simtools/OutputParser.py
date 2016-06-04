@@ -43,6 +43,16 @@ class SimulationOutputParser(threading.Thread):
     def get_path(self, filename):
         return os.path.join(self.get_sim_dir(), filename)
 
+    def get_last_megabyte(self, filename):
+        with open(self.get_path(filename)) as file:
+            # Go to end of file.
+            file.seek(0, os.SEEK_END)
+
+            seekDistance = min(file.tell(), 1024 * 1024)
+            file.seek(-1 * seekDistance, os.SEEK_END)
+
+            return file.read()
+
     def load_all_files(self, filenames):
         for filename in filenames:
             self.load_single_file(filename)
@@ -66,8 +76,10 @@ class SimulationOutputParser(threading.Thread):
             self.raw_data[filename] = json.loads(json_file.read())
 
     def load_txt_file(self, filename, *args):
-        with open(self.get_path(filename)) as file:
-            self.raw_data[filename] = file.read()
+        try:
+            self.raw_data[filename] = self.get_last_megabyte(filename)
+        except:
+            self.raw_data[filename] = 'Error reading file.'
 
     def load_bin_file(self, filename, *args):
         with open(self.get_path(filename), 'rb') as bin_file:
@@ -108,8 +120,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         from COMPS.Data import Experiment, Suite, QueryCriteria
 
         def workdirs_from_simulations(sims):
-            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory()
-                    for sim in sims}
+            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims}
 
         def sims_from_experiment(e):
             print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
