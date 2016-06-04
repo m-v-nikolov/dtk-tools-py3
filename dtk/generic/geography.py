@@ -333,37 +333,42 @@ geographies = {
                        'Enable_Vital_Dynamics' : 0, # No births/deaths.  Just following a birth cohort.
                        "Climate_Model" : "CLIMATE_CONSTANT" # no mosquitoes
                      },
-    "Bbondo_households" :    { "Geography": "Household",
-                        "Demographics_Filename":      "Bbondo_households_demographics.json", 
-                        "Air_Temperature_Filename":   "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
-                        "Land_Temperature_Filename":  "Zambia_Gwembe_30arcsec_air_temperature_daily.bin",
-                        "Rainfall_Filename":          "Zambia_Gwembe_30arcsec_rainfall_daily.bin", 
-                        "Relative_Humidity_Filename": "Zambia_Gwembe_30arcsec_relative_humidity_daily.bin",
-                        "Local_Migration_Filename":   "Bbondo_households_Local_Migration.bin",
-                        "Regional_Migration_Filename":"Bbondo_households_Regional_Migration.bin",
-                        "Sea_Migration_Filename":     "Bbondo_households_Work_Migration.bin",
-                        "Vector_Migration_Filename_Local":   "Bbondo_households_Local_Vector_Migration.bin",
-                        "Vector_Migration_Filename_Regional":   "Bbondo_households_Regional_Vector_Migration.bin",
-                        "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 'Spray_IRS',
-                                          'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle', 'Received_Test'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
+
+    "Household" :    {  "Geography": "Household",
+                        "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 'Spray_IRS','Drug_Campaign_Blackout', 'IRS_Blackout', 'Node_Sprayed',
+                                          'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle', 'Received_Test', 'Received_RCD_Drugs'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
+                        "Report_Event_Recorder_Events" : ["NewClinicalCase", 'Received_Campaign_Drugs',  'Received_RCD_Drugs', 'Received_Treatment', 'TestedPositive', 'Received_ITN', 'Received_Test', 'Node_Sprayed'],
+
                         "Enable_Climate_Stochasticity": 0, # daily in raw data series
                         "Climate_Model": "CLIMATE_BY_DATA",
                         'Enable_Nondisease_Mortality' : 1,
                         "Minimum_Adult_Age_Years"                  : 15,
-                        "Vector_Sampling_Type": "TRACK_ALL_VECTORS",
-                        "Enable_Vector_Aging": 1, 
-                        "Enable_Vector_Mortality": 1,
                         "Birth_Rate_Dependence" : "FIXED_BIRTH_RATE",
                         "Enable_Demographics_Other": 0,
                         "Enable_Demographics_Initial": 1,
                         "Enable_Vital_Dynamics" : 1,
+
+                        "Enable_Migration_Heterogeneity": 1, 
+                        "Migration_Model": "FIXED_RATE_MIGRATION", 
+                        "Enable_Local_Migration": 1,
+                        "Migration_Pattern": "SINGLE_ROUND_TRIPS",
+                        "Local_Migration_Roundtrip_Duration"       : 3.0,
+                        "Local_Migration_Roundtrip_Probability"    : 1.0,
+                        "x_Local_Migration" : 0.1,
+                        "Enable_Sea_Demographics_Modifiers"        : 0,
+                        "Enable_Sea_Family_Migration"              : 0,
+
+                        "Vector_Sampling_Type": "TRACK_ALL_VECTORS",
+                        "Enable_Vector_Aging": 1, 
+                        "Enable_Vector_Mortality": 1,
                         "Enable_Vector_Migration": 1, 
                         "Enable_Vector_Migration_Local": 1, 
                         "Enable_Vector_Migration_Regional" : 1,
                         "Vector_Migration_Modifier_Equation" : "EXPONENTIAL",
                         "x_Vector_Migration_Local" : 100,
                         "x_Vector_Migration_Regional" : 0.1,
-                        "Vector_Migration_Food_Modifier" : 0
-
+                        "Vector_Migration_Habitat_Modifier": 3.8, 
+                        "Vector_Migration_Food_Modifier" : 0,
+                        "Vector_Migration_Stay_Put_Modifier" : 10
                       }
 }

@@ -69,6 +69,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
 
     elif campaign_type == 'rfMSAT' :
 
+        receiving_drugs_event['Broadcast_Event'] = 'Received_RCD_Drugs'
         rcd_event = {   "Event_Name": "Trigger RCD MSAT", 
                         "class": "CampaignEvent",
                         "Start_Day": start_days[0],
@@ -111,6 +112,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                       nodes=nodes, positive_diagnosis_configs=[fmda_setup] )
 
         elif campaign_type == 'rfMDA' :
+            receiving_drugs_event['Broadcast_Event'] = 'Received_RCD_Drugs'
             rcd_event = {   "Event_Name": "Trigger RCD MDA", 
                             "class": "CampaignEvent",
                             "Start_Day": start_days[0],
@@ -155,10 +157,11 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                                             "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
                                             "Trigger_Condition": "TriggerString",
                                             "Trigger_Condition_String": "Give_Drugs",
-                                            "Blackout_Event_Trigger" : "Blackout",
+                                            "Blackout_Event_Trigger" : "Drug_Campaign_Blackout",
                                             "Blackout_Period" : 3.0,
+                                            "Blackout_On_First_Occurrence" : 0,
                                             "Actual_IndividualIntervention_Config" : {
-                                                "Intervention_List" : drug_configs + [receiving_drugs_event] ,
+                                                "Intervention_List" : drug_configs + [receiving_drugs_event],
                                                 "class" : "MultiInterventionDistributor"
                                             }                                            
                                         }

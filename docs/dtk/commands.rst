@@ -15,7 +15,7 @@ Available commands
 ``analyze``
 -------------
 
-.. dtk-cmd:: dtk analyze {none|id|name} <config_name.py>
+.. dtk-cmd:: analyze {none|id|name} <config_name.py>
 
 Analyzes the *most recent* experiment matched by specified **id** or **name** (or just the most recent) with the python script passed.
 
