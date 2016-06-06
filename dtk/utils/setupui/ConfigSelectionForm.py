@@ -57,14 +57,14 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         # CHANGE THE GLOBAL DEFAULT BLOCKS selected
         # Set the type to global and display the default selection form
         if val == 0:
-            self.parentApp.getForm('DEFAULT_SELECTION').type = "GLOBAL"
+            self.parentApp.getForm('DEFAULT_SELECTION').local = False
             self.parentApp.change_form('DEFAULT_SELECTION')
             return
 
         # CHANGE THE LOCAL DEFAULT BLOCKS selected
         # Set the type to local and display the default selection form
         if val == 1:
-            self.parentApp.getForm('DEFAULT_SELECTION').type = "LOCAL"
+            self.parentApp.getForm('DEFAULT_SELECTION').local = True
             self.parentApp.change_form('DEFAULT_SELECTION')
             return
 

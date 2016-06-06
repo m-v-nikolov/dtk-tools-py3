@@ -70,7 +70,7 @@
       "label":"Priority",
       "help":"Priority to use",
       "type":"radio",
-      "choices": ["lowest","BelowNormal","Normal","AboveNormal","Highest"],
+      "choices": ["Lowest","BelowNormal","Normal","AboveNormal","Highest"],
       "default":"Lowest"
     },
     {

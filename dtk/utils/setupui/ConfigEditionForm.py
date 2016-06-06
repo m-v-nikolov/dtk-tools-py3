@@ -10,7 +10,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
     Form allowing edition/creation of a configuration block.
     Two important variables:
     - self.schema: holds the INI validation schema definition
-    - self.type: LOCAL or HPC to display the correct associated fields
+    - self.type: are we working with LOCAL or HPC block
     """
     # Rename the buttons
     OK_BUTTON_TEXT = "Save"
@@ -74,7 +74,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         popup = SaveLocationPopup()
         popup.edit()
-        block_name = add_block(local=popup.local, fields=self.fields)
+        block_name = add_block(block_type=self.type, local=popup.local, fields=self.fields)
         message = "local" if popup.local else "global"
         npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
         self.parentApp.switchFormPrevious()
