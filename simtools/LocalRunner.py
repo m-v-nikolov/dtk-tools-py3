@@ -57,7 +57,7 @@ class SimulationCommissioner(threading.Thread):
             with open(status_path, 'r') as status_file:
                 msg = list(status_file)[-1]
 
-        return msg
+        return msg if msg else ""
 
     def change_state(self, status=None, message=None):
         """
