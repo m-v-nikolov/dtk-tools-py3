@@ -3,6 +3,7 @@ import json         # to read JSON output files
 import numpy as np  # for reading spatial output data by node and timestep
 import struct       # for binary file unpacking
 import threading    # for multi-threaded job submission and monitoring
+import pandas as pd # for reading csv files
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
@@ -45,11 +46,14 @@ class SimulationOutputParser(threading.Thread):
             self.load_single_file(filename)
 
     def load_single_file(self, filename, *args):
-        file_extension = os.path.splitext(filename)[1][1:]
+        file_extension = os.path.splitext(filename)[1][1:].lower()
         if file_extension == 'json':
             #print(filename + ' is a JSON file.  Loading JSON output data...\n')
             logging.debug('reading JSON')
             self.load_json_file(filename, *args)
+        elif file_extension == 'csv':
+            logging.debug('reading CSV')
+            self.load_csv_file(filename, *args)
         elif file_extension == 'bin' and 'SpatialReport' in filename:
             #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
             self.load_bin_file(filename, *args)
@@ -60,6 +64,10 @@ class SimulationOutputParser(threading.Thread):
     def load_json_file(self, filename, *args):
         with open(os.path.join(self.get_sim_dir(), 'output', filename)) as json_file:
             self.raw_data[filename] = json.loads(json_file.read())
+
+    def load_csv_file(self, filename, *args):
+        with open(os.path.join(self.get_sim_dir(), 'output', filename)) as csv_file:
+            self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
 
     def load_bin_file(self, filename, *args):
         with open(os.path.join(self.get_sim_dir(), 'output', filename), 'rb') as bin_file:
