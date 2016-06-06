@@ -100,8 +100,8 @@ config_builder = DTKConfigBuilder.from_files(
 # For the experiment builder in the example, we use a ModBuilder from_combos to run
 # each of the configurations for two separate run numbers.
 experiment_builder = ModBuilder.from_combos(
-    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)],
-    templates.get_modifier_functions()
+    templates.get_modifier_functions(), # <-- Do this first!
+    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)]
 )
 
 run_sim_args =  {'config_builder': config_builder,
