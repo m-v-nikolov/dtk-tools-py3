@@ -1,5 +1,7 @@
 import npyscreen
 
+from dtk.utils.setupui.SaveLocationPopup import SaveLocationPopup
+from dtk.utils.setupui.utils import add_block
 from simtools import SetupParser
 
 
@@ -21,6 +23,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         self.schema = SetupParser().load_schema()
         self.type = "LOCAL"
+        self.fields = dict()
 
     def beforeEditing(self):
         """
@@ -32,6 +35,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         # Empty the form
         self._clear_all_widgets()
+        self.fields = dict()
 
         # Add explanation
         self.add(npyscreen.MultiLineEdit, editable=False, max_height=4,
@@ -40,7 +44,6 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
                        "To exit the selection of file/folder press 'ESC'.")
 
         # Display a name field
-        y = 6
         definitions = [
             {"type": "string", "label": "Block name", "help": "Name for the configuration block.", "name": "name"}]
         y = self.create_fields(definitions)
@@ -69,7 +72,11 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         Save is pushed -> save the configuration and return to main menu
         """
-        npyscreen.notify_confirm("The configuration has been saved successfully.", title='Success!')
+        popup = SaveLocationPopup()
+        popup.edit()
+        block_name = add_block(local=popup.local, fields=self.fields)
+        message = "local" if popup.local else "global"
+        npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
         self.parentApp.switchFormPrevious()
 
     def create_fields(self, definitions, starting_y=6):
@@ -129,6 +136,8 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
             # When we have the class and the addtional_params, create the widget
             w = self.add(widget_class, w_id=field['name'], name=field['label'] + ":", use_two_lines=False, rely=nexty,
                      begin_entry_at=len(field['label']) + 2, **additionnal_params)
+
+            self.fields[field['name']] = w
 
             # Add the help text
             h = self.add(npyscreen.FixedText,  editable=False, value=field['help'], color='CONTROL')

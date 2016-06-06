@@ -100,6 +100,15 @@ class LocalExperimentManager(object):
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
+        # Get the git revision of the tools
+        try:
+            import subprocess
+            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n","")
+        except:
+            revision = "Unknown"
+
+        self.exp_data['dtk-tools_revision'] = revision
+
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
 
@@ -132,11 +141,14 @@ class LocalExperimentManager(object):
         self.commission_simulations()
         self.cache_experiment_data()  # now we have job IDs
 
-    def get_simulation_status(self):
+    def get_simulation_status(self, reload=False):
         """
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
+        :param reload: Reload the exp_data (used in case of repeating poll with local simulations)
         """
+        if reload and self.location == "LOCAL":
+            self.reload_exp_data()
 
         logger.debug("Status of simulations run on '%s':" % self.location)
         states, msgs = self.monitorClass(self.exp_data, self.get_setup()).query()
@@ -353,8 +365,7 @@ class LocalExperimentManager(object):
             time.sleep(init_sleep)
 
             # Reload the exp_data because job ids may have been added by the thread
-            cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
-            self.exp_data = json.load(open(cache_file_path))
+            self.reload_exp_data()
 
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
@@ -375,6 +386,15 @@ class LocalExperimentManager(object):
 
     def add_analyzer(self, analyzer):
         self.analyzers.append(analyzer)
+
+    def reload_exp_data(self):
+        """
+        Refresh the exp_data with what is in the json metadata
+        :return:
+        """
+        cache_file_path = os.path.join(os.getcwd(), 'simulations',
+                                       "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
+        self.exp_data = json.load(open(cache_file_path))
 
 
 class CompsExperimentManager(LocalExperimentManager):
