@@ -89,7 +89,8 @@ def add_block(block_type, local, fields):
 
     return section
 
-def change_defaults(local, local_default=None, hpc_default=None, remove=False):
+
+def change_defaults(local, local_default=None, hpc_default=None):
     """
 
     :param local:
@@ -98,21 +99,24 @@ def change_defaults(local, local_default=None, hpc_default=None, remove=False):
     :param remove:
     :return:
     """
+    # Security
+    if not local_default and not hpc_default:
+        return
+
     # Create a config parser
     config = ConfigParser()
     config.read(get_file_path(local))
 
-    if not remove:
-        # Set the section
-        if hpc_default:
-            config.set('DEFAULT','HPC', hpc_default)
-        if local_default:
-            config.set('DEFAULT','LOCAL', local_default)
+    # Set the section
+    if hpc_default:
+        config.set('DEFAULT','HPC', hpc_default)
     else:
-        if hpc_default:
-            config.remove_option('DEFAULT','HPC')
-        if local_default:
-            config.remove_option('DEFAULT','LOCAL')
+        config.remove_option('DEFAULT','HPC')
+
+    if local_default:
+        config.set('DEFAULT','LOCAL', local_default)
+    else:
+        config.remove_option('DEFAULT','LOCAL')
 
     # Write down the file
     with open(get_file_path(local),'w') as file_handler:

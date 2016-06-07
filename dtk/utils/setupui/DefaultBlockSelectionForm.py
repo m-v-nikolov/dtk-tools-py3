@@ -58,9 +58,9 @@ class DefaultBlockSelectionForm(npyscreen.ActionFormV2):
         # Extra action buttons
         self.remove_local = self.add(
             npyscreen.MiniButtonPress,
-            name="Remove LOCAL default",
+            name="Deselect LOCAL default",
             rely=0 - self.__class__.OK_BUTTON_BR_OFFSET[0],
-            relx=2,
+            relx=1,
             use_max_space=True,
             color='DANGER',
             when_pressed_function=self.h_remove_default
@@ -68,7 +68,7 @@ class DefaultBlockSelectionForm(npyscreen.ActionFormV2):
 
         self.remove_hpc =self.add(
             npyscreen.MiniButtonPress,
-            name="Remove HPC default",
+            name="Deselect HPC default",
             rely=0 - self.__class__.OK_BUTTON_BR_OFFSET[0],
             relx=25,
             use_max_space=True,
@@ -78,11 +78,11 @@ class DefaultBlockSelectionForm(npyscreen.ActionFormV2):
 
     def h_remove_default(self):
         if self.remove_local.value:
-            change_defaults(self.local, local_default=True, remove=True)
             self.local_selection.value = None
+            self.local_selection.display()
         elif self.remove_hpc.value:
-            change_defaults(self.local, hpc_default=True, remove=True)
             self.hpc_selection.value = None
+            self.hpc_selection.display()
 
     def beforeEditing(self):
         """
