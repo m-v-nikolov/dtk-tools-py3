@@ -37,7 +37,7 @@ If you plan to run simulations on COMPS, you will also need the pyCOMPS package.
 
 #### Setup
 
-To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `dtk_setup.cfg`.
+To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `simtools/simtools.cfg`.
 
 One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
 
