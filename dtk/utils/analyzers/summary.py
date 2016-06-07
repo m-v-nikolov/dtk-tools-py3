@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,7 +13,7 @@ class SummaryAnalyzer(TimeseriesAnalyzer):
     output_file = 'summary.csv'
 
     def __init__(self,
-                 filename = 'MalariaSummaryReport_AnnualAverage.json',
+                 filename = os.path.join('output', 'MalariaSummaryReport_AnnualAverage.json'),
                  filter_function = lambda md: True, # no filtering based on metadata
                  select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
                  group_function  = lambda k,v: k,   # group by unique simid-key from parser

@@ -41,6 +41,19 @@ class SimulationOutputParser(threading.Thread):
             if self.semaphore:
                 self.semaphore.release()
 
+    def get_path(self, filename):
+        return os.path.join(self.get_sim_dir(), filename)
+
+    def get_last_megabyte(self, filename):
+        with open(self.get_path(filename)) as file:
+            # Go to end of file.
+            file.seek(0, os.SEEK_END)
+
+            seekDistance = min(file.tell(), 1024 * 1024)
+            file.seek(-1 * seekDistance, os.SEEK_END)
+
+            return file.read()
+
     def load_all_files(self, filenames):
         for filename in filenames:
             self.load_single_file(filename)
@@ -48,29 +61,36 @@ class SimulationOutputParser(threading.Thread):
     def load_single_file(self, filename, *args):
         file_extension = os.path.splitext(filename)[1][1:].lower()
         if file_extension == 'json':
-            #print(filename + ' is a JSON file.  Loading JSON output data...\n')
             logging.debug('reading JSON')
             self.load_json_file(filename, *args)
         elif file_extension == 'csv':
             logging.debug('reading CSV')
             self.load_csv_file(filename, *args)
+        elif file_extension == 'txt':
+            logging.debug('reading txt')
+            self.load_txt_file(filename, *args)
         elif file_extension == 'bin' and 'SpatialReport' in filename:
-            #print(filename + ' is a binary spatial output file.  Loading BIN output data...\n')
             self.load_bin_file(filename, *args)
         else:
             print(filename + ' is of an unknown type.  Skipping...')
             return
 
     def load_json_file(self, filename, *args):
-        with open(os.path.join(self.get_sim_dir(), 'output', filename)) as json_file:
+        with open(self.get_path(filename)) as json_file:
             self.raw_data[filename] = json.loads(json_file.read())
 
     def load_csv_file(self, filename, *args):
-        with open(os.path.join(self.get_sim_dir(), 'output', filename)) as csv_file:
+        with open(self.get_path(filename)) as csv_file:
             self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
 
+    def load_txt_file(self, filename, *args):
+        try:
+            self.raw_data[filename] = self.get_last_megabyte(filename)
+        except:
+            self.raw_data[filename] = 'Error reading file.'
+
     def load_bin_file(self, filename, *args):
-        with open(os.path.join(self.get_sim_dir(), 'output', filename), 'rb') as bin_file:
+        with open(self.get_path(filename), 'rb') as bin_file:
             data = bin_file.read(8)
             n_nodes, = struct.unpack( 'i', data[0:4] )
             n_tstep, = struct.unpack( 'i', data[4:8] )
@@ -108,8 +128,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         from COMPS.Data import Experiment, Suite, QueryCriteria
 
         def workdirs_from_simulations(sims):
-            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory()
-                    for sim in sims}
+            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims}
 
         def sims_from_experiment(e):
             print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
@@ -152,7 +171,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         # can't open files locally... we have to go through the COMPS asset service
         paths = ArrayList()
         for filename in filenames:
-            paths.add('output/' + filename)
+            paths.add(filename.replace('\\', '/'))
 
         asset_byte_arrays = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None).toArray()
         
@@ -167,6 +186,13 @@ class CompsDTKOutputParser(SimulationOutputParser):
         else:
             jsonstr = args[0].tostring()
             self.raw_data[filename] = json.loads(jsonstr)
+
+    def load_txt_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_txt_file(filename)
+        else:
+            str = args[0].tostring()
+            self.raw_data[filename] = str
 
     def load_bin_file(self, filename, *args):
         if self.sim_dir_map is not None:

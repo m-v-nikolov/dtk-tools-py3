@@ -5,7 +5,8 @@
 *.pyproj
 *.sln
 *.suo
-*vscode*
+*.vscode*
+*.vs*
 
 # Simulation meta-data
 *simulations/

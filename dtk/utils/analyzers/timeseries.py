@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,7 +24,7 @@ class TimeseriesAnalyzer():
     output_file = 'timeseries.csv'
 
     def __init__(self,
-                 filename = 'InsetChart.json',
+                 filename = os.path.join('output', 'InsetChart.json'),
                  filter_function = lambda md: True, # no filtering based on metadata
                  select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
                  group_function  = lambda k,v: k, # group by unique simid-key from parser
