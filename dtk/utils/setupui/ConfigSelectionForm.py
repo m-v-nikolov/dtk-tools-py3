@@ -24,7 +24,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         self.add(npyscreen.FixedText, editable=False, value="  \\ \\ \\_\\ \\ \\ \\ \\ \\ \\ \\\\`\\ /\\______\\\\ \\ \\/\\ \\L\\ \\/\\ \\L\\ \\\\_\\ \\_/\\__, `\\")
         self.add(npyscreen.FixedText, editable=False, value="   \\ \\____/  \\ \\_\\ \\ \\_\\ \\_\\/______/ \\ \\_\\ \\____/\\ \\____//\\____\\/\\____/")
         self.add(npyscreen.FixedText, editable=False, value="    \\/___/    \\/_/  \\/_/\\/_/          \\/_/\\/___/  \\/___/ \\/____/\\/___/")
-        self.add(npyscreen.FixedText, editable=False, value="Configuration script for dtk-tools", relx=9)
+        self.add(npyscreen.FixedText, editable=False, value="Configuration Application", relx=9)
 
         # Create the menu
         menu = self.add(npyscreen.SelectOne, max_height=5, value=[0],
