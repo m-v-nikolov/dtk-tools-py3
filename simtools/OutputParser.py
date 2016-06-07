@@ -3,6 +3,7 @@ import json         # to read JSON output files
 import numpy as np  # for reading spatial output data by node and timestep
 import struct       # for binary file unpacking
 import threading    # for multi-threaded job submission and monitoring
+import pandas as pd # for reading csv files
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
@@ -58,10 +59,13 @@ class SimulationOutputParser(threading.Thread):
             self.load_single_file(filename)
 
     def load_single_file(self, filename, *args):
-        file_extension = os.path.splitext(filename)[1][1:]
+        file_extension = os.path.splitext(filename)[1][1:].lower()
         if file_extension == 'json':
             logging.debug('reading JSON')
             self.load_json_file(filename, *args)
+        elif file_extension == 'csv':
+            logging.debug('reading CSV')
+            self.load_csv_file(filename, *args)
         elif file_extension == 'txt':
             logging.debug('reading txt')
             self.load_txt_file(filename, *args)
@@ -74,6 +78,10 @@ class SimulationOutputParser(threading.Thread):
     def load_json_file(self, filename, *args):
         with open(self.get_path(filename)) as json_file:
             self.raw_data[filename] = json.loads(json_file.read())
+
+    def load_csv_file(self, filename, *args):
+        with open(self.get_path(filename)) as csv_file:
+            self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
 
     def load_txt_file(self, filename, *args):
         try:
