@@ -25,13 +25,13 @@
       "type":"directory"
     },
     {
-      "name":"bin_path",
+      "name":"exe_path",
       "label":"Model executable path",
       "help":"Path to the model executable.",
       "type":"file"
     },
     {
-      "name":"lib_path",
+      "name":"dll_path",
       "label":"Model libraries path",
       "help":"Path to the folder containing the libraries used for the simulations.",
       "type":"directory"
