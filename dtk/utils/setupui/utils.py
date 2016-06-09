@@ -20,6 +20,27 @@ def get_default_blocks(local):
 
     return local_default, hpc_default
 
+def get_block(block):
+    """
+    Retrieve a block.
+    Returns a dictionnary with the block info
+    :param block: block name. If the name contains (*) look into the local ini file
+    :return: dictionary containing the block info
+    """
+    config = ConfigParser()
+    config.read(get_file_path("(*)" in block))
+
+    # Transform in dictionary
+    block_name = block.replace(' (*)', '')
+    ret = {a:b for (a, b) in config.items(block_name, True)}
+
+    # set the name and location
+    ret['name'] = block_name
+    ret['location'] = "LOCAL" if "(*)" in block else "GLOBAL"
+
+    # Returns a dict with the info
+    return ret
+
 def get_all_blocks(local):
     """
     Returns a dictionary containing the blocks in the local or global file.
@@ -48,6 +69,21 @@ def get_all_blocks(local):
 
     return ret
 
+def delete_block(block, local):
+    """
+    Delete the block passed in the local or global file
+    :param block: The block to remove
+    :param local: local ini file or global ini file
+    :return:
+    """
+    config = ConfigParser()
+    config.read(get_file_path(local))
+
+    if config.has_section(block):
+        config.remove_section(block)
+
+    with open(get_file_path(local), 'w') as file_handler:
+        config.write(file_handler)
 
 def add_block(block_type, local, fields):
     """
@@ -57,17 +93,17 @@ def add_block(block_type, local, fields):
     :param fields: Dictionary containing the form widgets with user inputs
     :return: the section name
     """
-    # Get the file handler
-    file_handler = open(get_file_path(local),'a')
+    config = ConfigParser()
+    config.read(get_file_path(local))
 
     # Prepare the section name
     section = fields['name'].value
     section = section.replace(' ', '_').upper()
     del fields['name']
 
-    # Create a config parser to help
-    config = ConfigParser()
-    config.add_section(section)
+    # Add section if doesnt exist
+    if not config.has_section(section):
+        config.add_section(section)
 
     # Add the type
     config.set(section, 'type', block_type)
@@ -85,7 +121,8 @@ def add_block(block_type, local, fields):
 
             config.set(section, id, value)
 
-    config.write(file_handler)
+    with open(get_file_path(local), 'w') as file_handler:
+     config.write(file_handler)
 
     return section
 

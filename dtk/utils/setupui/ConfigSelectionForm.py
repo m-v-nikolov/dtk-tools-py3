@@ -76,6 +76,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
             popup.edit()
             if popup.value:
                 self.parentApp.getForm('EDIT').type = popup.value
+                self.parentApp.getForm('EDIT').block = None
                 self.parentApp.change_form('EDIT')
             return
 
@@ -85,6 +86,9 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         if val == 3:
             popup = BlockSelectionPopup()
             popup.edit()
+            if popup.block:
+                self.parentApp.getForm('EDIT').set_block(popup.block)
+                self.parentApp.change_form('EDIT')
             return
 
         # QUIT selected

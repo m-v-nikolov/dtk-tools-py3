@@ -1,7 +1,7 @@
 import npyscreen
 
 from dtk.utils.setupui.SaveLocationPopup import SaveLocationPopup
-from dtk.utils.setupui.utils import add_block
+from dtk.utils.setupui.utils import add_block, get_block, delete_block
 from simtools import SetupParser
 
 
@@ -72,12 +72,27 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         Save is pushed -> save the configuration and return to main menu
         """
-        popup = SaveLocationPopup()
-        popup.edit()
-        block_name = add_block(block_type=self.type, local=popup.local, fields=self.fields)
-        message = "local" if popup.local else "global"
-        npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
+        if not self.block:
+            # Ask the location only if the bloc
+            popup = SaveLocationPopup()
+            popup.edit()
+
+        if self.block:
+            # We had a block, delete it first before adding
+            delete_block(self.block['name'], self.block['location'] == 'LOCAL')
+            block_name = add_block(block_type=self.type, local=self.block['location'] == 'LOCAL', fields=self.fields)
+            message = "local" if self.block['location'] == 'LOCAL' else "global"
+            npyscreen.notify_confirm("The configuration block %s has been modified successfully in the %s INI file." % (block_name, message), title='Success!')
+        else:
+            # Add the block
+            block_name = add_block(block_type=self.type, local=popup.local, fields=self.fields)
+            message = "local" if popup.local else "global"
+            npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
         self.parentApp.switchFormPrevious()
+
+    def set_block(self,block):
+        self.block = get_block(block)
+        self.type = self.block['type']
 
     def create_fields(self, definitions, starting_y=6):
         """
@@ -104,25 +119,32 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         # Browse through the definitions and create the correct widget class
         for field in definitions:
             type = field['type']
+            # Retrieve the current value if present
+            value = self.block[field['name']] if self.block and self.block.has_key(field['name']) else None
 
             if type == "string" or type == "url":
                 # Simpla text box for string and url
                 widget_class = npyscreen.TitleText
+                additionnal_params['value'] = value
 
             elif type == "int":
                 # Slider for int
                 widget_class = npyscreen.TitleSlider
                 additionnal_params['out_of'] = field['max']
                 additionnal_params['lowest'] = field['min']
+                additionnal_params['value'] = 0 if not value else float(value)
+
 
             elif type == "file" or type == "directory":
                 # File picker for file and directory
                 widget_class = npyscreen.TitleFilenameCombo
                 additionnal_params['select_dir'] = type != "file"
+                additionnal_params['value'] = value
 
             elif type == "bool":
                 # Checkbox for bool
                 widget_class = npyscreen.Checkbox
+                additionnal_params['value'] = bool(value)
 
             elif type == "radio":
                 # List of choices for radio
@@ -132,8 +154,9 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
                 additionnal_params['return_exit'] = True
                 additionnal_params['select_exit'] = True
                 additionnal_params['scroll_exit'] = True
+                additionnal_params['value'] = None if not value else field['choices'].index(value)
 
-            # When we have the class and the addtional_params, create the widget
+            # When we have the class and the additional_params, create the widget
             w = self.add(widget_class, w_id=field['name'], name=field['label'] + ":", use_two_lines=False, rely=nexty,
                      begin_entry_at=len(field['label']) + 2, **additionnal_params)
 
