@@ -100,7 +100,6 @@ class CompsSimulationCommissioner(threading.Thread):
 
     @staticmethod
     def create_experiment(setup, config_builder, exp_name, bin_path, input_args, suite_id=None):
-
         from COMPS import Client
         from COMPS.Data import Configuration, HPCJob__Priority, Experiment, Suite
 

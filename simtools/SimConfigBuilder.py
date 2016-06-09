@@ -60,7 +60,7 @@ class SimConfigBuilder(object):
     def get_commandline(self, exe_path, paths):
         return utils.CommandlineGenerator(exe_path, {}, [])
 
-    def stage_required_libraries(self, dll_path, paths):
+    def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
         pass
 
     def dump_files(self, working_directory):

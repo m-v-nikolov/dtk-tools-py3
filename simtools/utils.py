@@ -9,7 +9,7 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def translate_COMPS_path(path, setup):
+def translate_COMPS_path(path, setup=None):
     """
     Transform a COMPS path into fully qualified path.
     Supports:
@@ -41,7 +41,7 @@ def translate_COMPS_path(path, setup):
     abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
 
     # Replace and return
-    return path.replace(groups[0],abs_path).replace("$(User)",user)
+    return path.replace(groups[0], abs_path).replace("$(User)", user)
 
 
 def get_md5(filename):
