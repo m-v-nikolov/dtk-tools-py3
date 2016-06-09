@@ -3,9 +3,51 @@ var int_id;
 var time;
 var map;
 
+
+function update_widgets(params)
+{
+	time = Math.round(params["time"]);
+	//alert(time);
+	if(time <= timesteps.length - 1)
+	{
+		//alert(timesteps[time["idx"]]);
+		style_map(
+			    'anim_drugs', 
+			    map,
+			    {
+				   time_idx : timesteps[time],
+				   //node_attr_2_color : ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 0.52]).range(colorbrewer.OrRd[9])],
+				   node_attr_2_color: ["New_Diagnostic_Prevalence", d3.scale.quantize().domain([0, 1]).range(colorbrewer.Greys[9])],
+				   //node_attr_2_color : ["Prevalence", d3.scale.quantize().domain([0, 0.7]).range(colorbrewer.OrRd[9])],
+				   //node_attr_2_stroke : ["Received_ITN", d3.scale.threshold().domain([0, 10]).range(['#000000','#281005','#471609','#691a0c','#8c1b0c','#b11a0a','#d71306','#ff0000'])],
+				   //node_attrs_2_img : node_attrs_img,
+				   //node_events_2_img:node_events_img,
+				   //node_attr_2_opacity : ["Received_Campaign_Drugs", d3.scale.threshold().domain([0, 10]).range(['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8'])],
+				   node_attr_2_radius : ["Population", d3.scale.sqrt().domain([0, 15]).range([2, 10])]
+			    }
+		);	
+		
+		update_slider("prevalence_dates_slider", time);
+		update_date("hhs", d3.select("#hhs"), time); // function in timeseries.js
+	}
+
+}
+
 function load_dashboard(map_data_file)
 {	
 	map = map_data_file;
+	
+	load_slider(
+			"prevalence_hhs.tsv",
+			"prevalence_dates_slider",
+			{},
+			".resourcecontainer.maps", //target container,
+			{
+	   			"selector":{"function": {"func":update_widgets, "params":{}}},
+	   			"attributes_req":["time"]
+			}
+	);
+	
 	load_map(
 	 		   'anim_drugs', // map id 
 	 		   map, 
@@ -24,15 +66,27 @@ function load_dashboard(map_data_file)
 	 		   }
 	);
 	
-	
 	load_timeseries(
 			'hhs', 
 			'prevalence', 
+			//['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
+			['#89d0c5','#f9b554','#b2df8a'],
+			{"special":"avg_itn_hh","time_idx":0},
+			".resourcecontainer.maps" // target display location: place the timeseries next to the maps (to the right of previously placed maps) if enough horizontal space is available for the width of the timeseries; otherwise place the timeseries below the previously displayed maps
+			//".resourcecontainer.timeseries" // target display location: place the timeseries below maps (if any maps are visualized)
+	);
+
+	
+	
+	/*
+	load_timeseries(
+			'hhs_2', 
+			'prevalence_2', 
 			['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928'],
-			'avg_itn_hh',
+			{"special":"avg_itn_hh"},
 			".resourcecontainer.timeseries"
 	);
-	
+	*/
 	
 	time = 0;
 	int_id = setInterval(load_snapshot, 125);
@@ -53,12 +107,15 @@ function load_snapshot()
 				   node_attr_2_radius : ["Population", d3.scale.quantize().domain([0, 10]).range([0, 12])],
 			    }
 		);
+		
+		update_date("hhs", d3.select("#hhs"), time); // function in timeseries.js
+		update_slider("prevalence_dates_slider", time); // function in slider.js
 
 		time ++;
 		
 	}
 	else
 	{
-		clearInterval(intId); 
+		clearInterval(int_id); 
 	}
 }

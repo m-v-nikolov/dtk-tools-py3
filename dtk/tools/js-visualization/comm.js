@@ -1,13 +1,19 @@
-var events = {
-				"mouseover":"mouseover",
-				"click":"click"
-			 }
-
 /*
  *  an array of strings that are prevented from parsing and emitting comm messages;
  *  perhaps needs to be accessed/changed with accessors/mutators; for now it's naked 
  */
 var comm_blacklist = [] 
+
+/*
+ * global time index; 
+ * 
+ * given centralized time index, visualization of all
+ * entities with temporal dimension can be synced;
+ * 
+ * to indicate that an entity has a temporal dimension, the entity should have an attribute 'time:true';
+ * see function style_map(...) in spatial.js for examples of such entities
+ */
+var global_time_idx = 0; 
 
 
 function emit(comm_msg)
@@ -26,7 +32,7 @@ function emit(comm_msg)
 	else
 		return;
 	
-	/* just testing; will make these more concise w/ jquery/d3 and more generic*/
+	/* just testing; will make these more concise w/ jquery/d3 and more generic if needed */
 	if(selector_type == "class")
 	{
 		emit_candidates = document.getElementsByClassName(selector);
@@ -126,6 +132,7 @@ function trigger_event(emit_candidate, event)
 */
 function trigger_emit(element, comm_msg)
 {
+	
 	if(!comm_msg.hasOwnProperty("selector"))
 		return; // if the selector attribute is not set, do nothing.
 
@@ -133,6 +140,7 @@ function trigger_emit(element, comm_msg)
 	
 	if(d3.select(element).attr("emitted") == "false") // if the element has not emitted this message yet, emit the message
 	{
+		d3.select(element).attr("emitted", "true") // set emitted to true to avoid more emits before this one concludes
 		if (selector != "function") // if entity type is not "function" call emit to dispatch a javascript event to the matching elements   
 		{
 			var event = "mouseover";
@@ -159,7 +167,7 @@ function trigger_emit(element, comm_msg)
 		}
 		
 		// set the element emitted attribute to false for the next mouseover event
-		d3.select(element).attr("emitted", false);
+		d3.select(element).attr("emitted", "false");
 	}
 }
 
@@ -182,7 +190,9 @@ function parse_comm_msg(comm_msg, data)
 			{
 				var attribute = attributes[i];
 				if (data.hasOwnProperty(attribute))
+				{
 					comm_msg["selector"]["function"]["params"][attribute] = data[attribute];
+				}
 			}	
 		}
 	}
