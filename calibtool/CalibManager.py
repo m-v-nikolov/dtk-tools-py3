@@ -339,7 +339,7 @@ class CalibManager(object):
         # Retrieve the mapping between id - path
         if self.location == "HPC":
             from simtools.OutputParser import CompsDTKOutputParser
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id, save=False)
         else :
             sims_paths = dict()
 

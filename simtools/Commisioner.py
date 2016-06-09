@@ -115,6 +115,7 @@ class CompsSimulationCommissioner(threading.Thread):
                      .setPriority(HPCJob__Priority.valueOf(setup.get('HPC','priority'))) \
                      .setMinCores(config_builder.get_param('Num_Cores',1)) \
                      .setMaxCores(config_builder.get_param('Num_Cores',1)) \
+                     .setEnvironmentName('Bayesian') \
                      .build()
 
         logging.debug('exp_name - ' + str(exp_name))
