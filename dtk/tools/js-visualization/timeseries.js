@@ -7,16 +7,65 @@
  * column headers are used for timeseries line ids with spaces and slashes removed			
  */
 
-function load_timeseries(ts_id, ts_type, colors, special, target_container, comm_msg)
+var update_date;
+
+function load_timeseries(ts_input_file, ts_id, ts_type, colors, params, target_container, comm_msg)
 {
 	var target_container = typeof target_container !== 'undefined' ? target_container : "body";
-	var special = typeof special !== 'undefined' ? special : "unspecified";
 	
-	var margin = {top: 20, right: 350, bottom: 100, left: 50},
-    margin2 = { top: 430, right: 150, bottom: 20, left: 40 },
-    width = 1100 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    height2 = 500 - margin2.top - margin2.bottom;
+	var special;
+	if(params.hasOwnProperty("special"))
+		special = params["special"];
+	else
+		special = false;
+	
+	var time_idx;
+	if(params.hasOwnProperty('time_idx'))
+		time_idx = params.time_idx;
+	else
+		time_idx = false;
+	
+	var width_param;
+	if(params.hasOwnProperty('width'))
+		width_param = params.width;
+	else
+		width_param = 1100;
+	
+	var height_param;
+	if(params.hasOwnProperty('height'))
+		height_param = params.height;
+	else
+		height_param = 500;
+	
+	var margin_param;
+	if(params.hasOwnProperty('margin'))
+		margin_param = params.margin;
+	else
+		margin_param = {top: 20, right: 350, bottom: 100, left: 50};
+	
+	var margin2_param;
+	if(params.hasOwnProperty('margin2'))
+		margin2_param = params.margin2;
+	else
+		margin2_param = { top: 430, right: 150, bottom: 20, left: 40 };
+	
+	
+	// set local map time if provided
+	var time = 0;
+	if(time_idx)
+		time = time_idx;
+	else
+	{
+		// check if global_time_idx is defined by coms.js (e.g. comms.js was imported)
+		if(typeof global_time_index !== 'undefined')
+			time = global_time_idx;			
+	}
+	
+	var margin = margin_param,
+    margin2 = margin2_param,
+    width = width_param - margin.left - margin.right,
+    height = height_param - margin.top - margin.bottom,
+    height2 = height_param - margin2.top - margin2.bottom;
 
 	var parseDate = d3.time.format("%Y%m%d").parse;
 	var bisectDate = d3.bisector(function(d) { return d.date; }).left;
@@ -26,6 +75,9 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 	
 	    xScale2 = d3.time.scale()
 	    .range([0, width]);
+	
+	var xScaleOrdinal = d3.scale.linear()
+						.range([0, width]);
 	
 	var yScale = d3.scale.linear()
 	    .range([height, 0]);
@@ -70,7 +122,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 	    .attr("height", height)                                    
 	    .attr("x", 0) 
 	    .attr("y", 0)
-	    .attr("id", "mouse-tracker")
+	    .attr("id", ts_id + "mouse-tracker")
 	    .style("fill", "white"); 
 	
 	//slider
@@ -87,28 +139,38 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 	    .attr("height", height); 
 	
 	
-	var ts_input_file = ts_type + "_" + ts_id + ".tsv";
+	//var ts_input_file = ts_type + "_" + ts_id + ".tsv";
 	
 	d3.tsv(ts_input_file, function(error, data) {
-		
+	
 		  color.domain(d3.keys(data[0]).filter(function(key) { // Set the domain of the color ordinal scale to be all the csv headers except "date", matching a color to parameter key
 		    return key !== "date"; 
 		  }));
 		
-		  data.forEach(function(d) { // Make every date in the tsv data a javascript date object format
+		  
+		  var current_date = 0;
+		  var dates_idx  = [];
+		  data.forEach(function(d,i) { // Make every date in the tsv data a javascript date object format
 		    d.date = parseDate(d.date);
+		    dates_idx.push(i);
+		    if(i == time)
+		    {
+		    	current_date = d.date;
+		    }
 		  });
+		  
 		
 		  var categories = color.domain().map(function(name) { // Nest the data into an array of objects with new keys
 		
-			var isVisible = true;
+			var isVisible = false;
 		      
-		    if(name !== "Special")
-		    	isVisible = false; 
-		   
+		    //if(name !== "Special")
+		    //	isVisible = false; 
+		    
 		    return {
 		      name: name, // "name": the tsv headers except date; might change 'name' to 'header'
 		      ts_color: color(name),
+		      ts_current_date: current_date,
 		      values: data.map(function(d) { // "values": which has an array of the times and values
 		        return {
 		          date: d.date, 
@@ -119,23 +181,33 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		    };
 		  });
 		
-		  xScale.domain(d3.extent(data, function(d) { return d.date; })); 
+		  xScaleOrdinal.domain(d3.extent(dates_idx, function(d) { return d; }));
+		  
+		  xScale.domain(d3.extent(data, function(d) { return d.date; }));
 		
 		  yScale.domain([0, d3.max(categories, function(c) { return d3.max(c.values, function(v) { return v.ts_entry; }); })]);
 		
 		  xScale2.domain(xScale.domain());
 		  
 		  var special_ts;
-		  for(var i = 0; i < categories.length; i ++)
-			 if (categories[i].name == special) 
-			 {
-				 //alert("found special");
-				  special_ts = categories[i].values;
-				 //alert(special_ts.length);
-				  break;
-			 }
-			 
+		  if(special)
+		  {
+			  for(var i = 0; i < categories.length; i ++)
+				  if (categories[i].name == special) 
+				  {
+					  //alert("found special");
+					  special_ts = categories[i].values;
+					  //alert(special_ts.length);
+					  break;
+				  }
+		  }
+			
 		 
+		 //update_date_indicator(d3.select("#"+ts_id), current_date);
+		  //update_date(d3.select("#"+ts_id), current_date);
+		  
+		  
+  
 		 //for slider part
 		
 		 var brush = d3.svg.brush()//for slider bar at the bottom
@@ -199,20 +271,11 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		      })
 		      .attr("d", function(d) { 
 		    	  
-		    	  	 // draw dots instead of a line if the timeseries is "special" 
-		    	 if(d.name === special) 
-	        	 {
-	        		 if(d.visible)
-	        			 draw_special(svg, d.values, line, special);
-	        		 else
-	        			 remove_special(svg);
-	        	 }	
-		         else
-		         {
-		        	remove_special(svg);
-		        	draw_special(svg, special_ts, line, special); // redraw special in case yaxis is rescaled
-		        	return d.visible ? line(d.values) : null; // if d.visible is true then draw line
-		         }
+		    	 /*
+		    	  * draw dots instead of a line if the timeseries is "special"
+		    	  * otherwise draw a line
+		    	  */
+		    	 return draw_line(d, svg, line, special, special_ts);
 		      })
 		      .attr("clip-path", "url(#clip)")//use clip path to make irrelevant part invisible
 		      .style("stroke", function(d) { return color(d.name); });
@@ -247,21 +310,8 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		        category.select("path")
 		          .transition()
 		          .attr("d", function(d){
-		        	 // TODO: pull out the if statement block in a helper function
-		        	  // (the exact code is repeated above and below as well)
-		        	 if(d.name === special) 
-		        	 {		        		 
-		        		 if(d.visible)
-		        			 draw_special(svg, d.values, line, special);
-		        		 else
-		        			 remove_special(svg);
-		        	 }	
-		        	 else
-		        	 {
-	                    remove_special(svg);
-		        	  	draw_special(svg, special_ts, line, special); // redraw special in case yaxis is rescaled; (this logic is not very good since redraw happens too frequently)
-		        	  	return d.visible ? line(d.values) : null; // If d.visible is true then draw line for this d selection
-		        	 }
+		
+		        	  return draw_line(d, svg, line, special, special_ts);
 		        		 
 		          })
 
@@ -346,7 +396,7 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		
 		  // add mouseover events for hover line.
 		  /*
-		  d3.select("#mouse-tracker") // select chart plot background rect #mouse-tracker
+		  d3.select("#"+ts_id+"mouse-tracker") // select chart plot background rect
 		  .on("mousemove", mousemove) // on mousemove activate mousemove function defined below
 		  .on("mouseout", function() {
 		      hoverDate
@@ -419,19 +469,8 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		    category.select("path") // redraw lines based on brush xAxis scale and domain
 		      .transition()
 		      .attr("d", function(d){
-		    	  if(d.name === special) 
-		          {
-		        		 if(d.visible)
-		        			 draw_special(svg, d.values, line, special);	 
-		        		 else
-		        			 remove_special(svg);
-		          }	
-		          else
-		          {
-	        	  	remove_special(svg);
-	        	  	draw_special(svg, special_ts, line, special); // redraw special in case yaxis is rescaled
-	        	  	return d.visible ? line(d.values) : null; // if d.visible is true then draw line for this d selection
-		          }
+		    	  
+		    	  return draw_line(d, svg, line, special, special_ts);
 		        		
 		      });
 		    
@@ -449,6 +488,21 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 	    return d3.max(maxYValues);
 	  }
 	  
+	  
+	  update_date = function update_date_indicator(ts_id, svg, date_idx)
+	  {  
+		  d3.select("#"+ts_id+"indicator").remove();
+		  svg.append("g")
+		  .append("line")
+		  .attr("x1", xScaleOrdinal(date_idx))
+		  .attr("y1", 0)
+		  .attr("x2", xScaleOrdinal(date_idx))
+		  .attr("y2", height)
+		  .style("stroke-width", 2)
+		  .style("stroke", "red")
+		  .attr("id",ts_id+"indicator")
+		  .style("fill", "none");  
+	  }
 	  
 	  function draw_special(svg, timeseries, line, special)
 	  {
@@ -474,5 +528,44 @@ function load_timeseries(ts_id, ts_type, colors, special, target_container, comm
 		  svg.selectAll(".dot").remove();
  		 
 	  }
-	
+	  
+	  /*
+	   * helper function drawing line or scatters (is "special" timeseries are provided)
+	   * d: data bound to the line element
+	   * svg: svg element in which the line is drawn
+	   * line: svg line 
+	   * special: name of special timeseries; false otherwise
+	   * special_ts: timeseries data for the special timeseries
+	   * 
+	   *  TODO: 
+	   *  - allow various plots styles for special (nto just scatter)
+	   *  - allow multiple special timeseries
+	   */
+	  function draw_line(d, svg, line, special, special_ts)
+	  {
+		  //alert(special);
+		  //draw date indicator
+		  
+		  //alert(Object.keys(d));
+		  
+		  if(special)
+	      {
+			  if(d.name === special) 
+		 	  {
+		 		 if(d.visible)
+		 			 draw_special(svg, d.values, line, special);
+		 		 else
+		 			 remove_special(svg);
+		 	  }	
+		      else
+		      {
+		     	
+		     		remove_special(svg);
+		     		draw_special(svg, special_ts, line, special); // redraw special in case yaxis is rescaled
+		      }
+	      }
+		  return d.visible ? line(d.values) : null; // if d.visible is true then draw line
+	  }
+	  
+	  return xScaleOrdinal;
 }
