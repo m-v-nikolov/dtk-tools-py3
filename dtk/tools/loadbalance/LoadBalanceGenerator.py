@@ -10,7 +10,7 @@ class LoadBalanceGenerator(object):
     Generate multi-core simulation load balancing depending 
     on number of nodes, population size per node, etc..
     '''
-    def __init__(self, num_cores, demographics_file_path, load_balanace_algo = 'rhumba'):
+    def __init__(self, num_cores, demographics_file_path, load_balanace_algo = 'kmeans'):
         
         self.num_cores = num_cores # number of cores to load balance nodes' populations
         self.demographics_file_path = demographics_file_path # contains population size per node
