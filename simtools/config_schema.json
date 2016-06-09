@@ -59,6 +59,13 @@
       "default": "https://comps.idmod.org"
     },
     {
+      "name": "environment",
+      "label": "Running environment",
+      "help": "Name of the environment to run on.",
+      "type": "string",
+      "default": "Bayesian"
+    },
+    {
       "name":"node_group",
       "label":"Node group",
       "help":"Nodegroup to use.",

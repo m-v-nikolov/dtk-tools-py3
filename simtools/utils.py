@@ -4,7 +4,45 @@ from hashlib import md5
 import logging
 import shutil
 
+import re
+
 logger = logging.getLogger(__name__)
+
+
+def translate_COMPS_path(path, setup):
+    """
+    Transform a COMPS path into fully qualified path.
+    Supports:
+    - $COMPS_PATH('BIN')
+    - $COMPS_PATH('USER')
+    - $COMPS_PATH('PUBLIC')
+    - $COMPS_PATH('INPUT')
+    - $COMPS_PATH('HOME')
+
+    Query the COMPS Java client with the current environment to get the correct path.
+    :param path: The COMPS path to transform
+    :param setup: The setup to find user and environment
+    :return: The absolute path
+    """
+    # Create the regexp
+    regexp = re.search('.*(\$COMPS_PATH\((\w+)\)).*', path)
+
+    # If no COMPS variable found -> return the path untouched
+    if not regexp:
+        return path
+
+    # Prepare the variables we will need
+    groups = regexp.groups()
+    environment = setup.get('HPC', 'environment')
+    user = setup.get('HPC','user')
+
+    # Query COMPS to get the path corresponding to the variable
+    from COMPS import Client
+    abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
+
+    # Replace and return
+    return path.replace(groups[0],abs_path).replace("$(User)",user)
+
 
 def get_md5(filename):
     logger.info('Getting md5 for ' + filename)

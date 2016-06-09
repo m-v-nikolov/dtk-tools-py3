@@ -92,7 +92,10 @@ class LocalExperimentManager(object):
         # Fix for the use of comps asset service
         # exe and dll pre-staged
         if self.location == "HPC" and self.setup.get('HPC','use_comps_asset_svc'):
-            self.staged_bin_path = "$COMPS_PATH(BIN)\\Eradication_2_5_0.exe"
+            # For the exe, the path is in the bin_staging_path
+            self.staged_bin_path = self.setup('HPC','bin_staging_path')
+
+            # For the DLLs for now, the list of available reporters is hardcoded
             available_dlls = ['libhumanmigrationtracking.dll',
                               'libmalariaimmunity_report_plugin.dll',
                               'libmalariapatientJSON_report_plugin.dll',
@@ -106,11 +109,14 @@ class LocalExperimentManager(object):
                               'libvectormigration.dll',
                               'libvectorstats.dll',
                               'lib_custom_tb_reporter_Scenarios.dll']
+
+            # Join the list of dlls with the path (the root of path is in lib_staging_path)
+            dll_path = utils.translate_COMPS_path(self.setup('HPC','lib_staging_path'), self.setup)
+
+            # Store all the paths in the config builder staged_dlls
             self.config_builder.staged_dlls = dict()
-            dll_path = '$COMPS_PATH(HOME)\\braybaud\\dll'
-            dll_path = '\\\\bayesianfil01\\idm\\home\\braybaud\\dll'
             for dll in available_dlls:
-                self.config_builder.staged_dlls[('reporter_plugins', dll)] = os.path.join(dll_path,dll)
+                self.config_builder.staged_dlls[('reporter_plugins', dll)] = os.path.join(dll_path, dll)
         else:
             # Normal way of staging exe
             self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
