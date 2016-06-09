@@ -24,7 +24,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         self.add(npyscreen.FixedText, editable=False, value="  \\ \\ \\_\\ \\ \\ \\ \\ \\ \\ \\\\`\\ /\\______\\\\ \\ \\/\\ \\L\\ \\/\\ \\L\\ \\\\_\\ \\_/\\__, `\\")
         self.add(npyscreen.FixedText, editable=False, value="   \\ \\____/  \\ \\_\\ \\ \\_\\ \\_\\/______/ \\ \\_\\ \\____/\\ \\____//\\____\\/\\____/")
         self.add(npyscreen.FixedText, editable=False, value="    \\/___/    \\/_/  \\/_/\\/_/          \\/_/\\/___/  \\/___/ \\/____/\\/___/")
-        self.add(npyscreen.FixedText, editable=False, value="Configuration script for dtk-tools", relx=9)
+        self.add(npyscreen.FixedText, editable=False, value="Configuration Application", relx=9)
 
         # Create the menu
         menu = self.add(npyscreen.SelectOne, max_height=5, value=[0],
@@ -57,14 +57,14 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         # CHANGE THE GLOBAL DEFAULT BLOCKS selected
         # Set the type to global and display the default selection form
         if val == 0:
-            self.parentApp.getForm('DEFAULT_SELECTION').type = "GLOBAL"
+            self.parentApp.getForm('DEFAULT_SELECTION').local = False
             self.parentApp.change_form('DEFAULT_SELECTION')
             return
 
         # CHANGE THE LOCAL DEFAULT BLOCKS selected
         # Set the type to local and display the default selection form
         if val == 1:
-            self.parentApp.getForm('DEFAULT_SELECTION').type = "LOCAL"
+            self.parentApp.getForm('DEFAULT_SELECTION').local = True
             self.parentApp.change_form('DEFAULT_SELECTION')
             return
 
@@ -76,6 +76,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
             popup.edit()
             if popup.value:
                 self.parentApp.getForm('EDIT').type = popup.value
+                self.parentApp.getForm('EDIT').block = None
                 self.parentApp.change_form('EDIT')
             return
 
@@ -85,6 +86,9 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         if val == 3:
             popup = BlockSelectionPopup()
             popup.edit()
+            if popup.block:
+                self.parentApp.getForm('EDIT').set_block(popup.block)
+                self.parentApp.change_form('EDIT')
             return
 
         # QUIT selected

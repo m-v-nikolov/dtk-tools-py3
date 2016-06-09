@@ -19,8 +19,8 @@ class SetupApplication(npyscreen.NPSAppManaged):
 
     def onStart(self):
         self.addForm('MAIN', ConfigSelectionForm, name='dtk-tools v0.3.5')
-        self.addForm('DEFAULT_SELECTION', DefaultBlockSelectionForm, name='dtk-tools v0.3.5')
-        self.addForm('EDIT', ConfigEditionForm, name='dtk-tools v0.3.5')
+        self.addForm('DEFAULT_SELECTION', DefaultBlockSelectionForm, name='Configuration of the default blocks')
+        self.addForm('EDIT', ConfigEditionForm, name='Block creation/edition form')
 
     def change_form(self, name):
         # Switch forms.  NB. Do *not* call the .edit() method directly (which
