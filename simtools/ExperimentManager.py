@@ -35,11 +35,13 @@ class ExperimentManagerFactory(object):
         return cls.factory(location)(model_file, {})
 
     @classmethod
-    def from_setup(cls, setup=SetupParser(), location='LOCAL', **kwargs):
+    def from_setup(cls, setup=None, location='LOCAL', **kwargs):
+        if not setup:
+            setup = SetupParser()
         logger.info('Initializing %s ExperimentManager from parsed setup', location)
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)
-        return cls.factory(location)(setup.get('BINARIES', 'exe_path'), {}, setup)
+        return cls.factory(location)(setup.get('exe_path'), {}, setup)
 
     @classmethod
     def from_data(cls, exp_data):
@@ -65,11 +67,15 @@ class LocalExperimentManager(object):
     monitorClass = SimulationMonitor
     parserClass = SimulationOutputParser
 
-    def __init__(self, model_file, exp_data, setup=SetupParser()):
+    def __init__(self, model_file, exp_data, setup=None):
+        if setup is None:
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
+            setup = SetupParser(selected_block=selected_block)
+
         self.model_file = model_file
         self.exp_data = exp_data
         self.setup = setup
-        self.assets_service = setup.getboolean('HPC','use_comps_asset_svc') and self.location == "HPC"
+        self.assets_service = self.location == "HPC" and setup.getboolean('use_comps_asset_svc')
 
         self.exp_builder = None
         self.staged_bin_path = None
@@ -77,7 +83,7 @@ class LocalExperimentManager(object):
         self.commandline = None
         self.analyzers = []
 
-        max_threads = int(self.setup.get('GLOBAL', 'max_threads'))
+        max_threads = int(self.setup.get('max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
 
     def create_simulations(self, config_builder, exp_name='test',
@@ -93,7 +99,7 @@ class LocalExperimentManager(object):
         # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
         # If not, use the normal staging process
         if self.assets_service:
-            self.staged_bin_path = self.setup.get('HPC','bin_staging_root')
+            self.staged_bin_path = self.setup.get('bin_staging_root')
         else:
             self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
 
@@ -113,7 +119,8 @@ class LocalExperimentManager(object):
                               'exp_name': exp_name,
                               'location': self.location,
                               'sim_type': self.config_builder.get_param('Simulation_Type'),
-                              'dtk-tools_revision': revision})
+                              'dtk-tools_revision': revision,
+                              'selected_block':self.setup.selected_block})
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
@@ -129,12 +136,12 @@ class LocalExperimentManager(object):
 
             # If the assets service is in use, the path needs to come from COMPS
             if self.assets_service:
-                lib_staging_root = utils.translate_COMPS_path(self.setup.get('HPC','lib_staging_root'), self.setup)
+                lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
             else:
-                lib_staging_root = self.setup.get(self.location,'lib_staging_root')
+                lib_staging_root = self.setup.get('lib_staging_root')
 
             # Stage the required dll for the experiment
-            self.config_builder.stage_required_libraries(self.setup.get('BINARIES','dll_path'), lib_staging_root,
+            self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
                                                          self.assets_service)
 
             commissioner = self.create_simulation()
@@ -326,10 +333,10 @@ class LocalExperimentManager(object):
         raise NotImplementedError('resubmit_job not implemented for %s jobs' % self.location)
 
     def get_property(self, property):
-        return self.setup.get(self.location, property)
+        return self.setup.get(property)
 
     def get_setup(self):
-        return dict(self.setup.items(self.location))
+        return dict(self.setup.items())
 
     def cache_experiment_data(self, verbose=True):
 
@@ -429,7 +436,10 @@ class CompsExperimentManager(LocalExperimentManager):
     monitorClass = CompsSimulationMonitor
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, exe_path, exp_data, setup=SetupParser()):
+    def __init__(self, exe_path, exp_data, setup=None):
+        if setup is None:
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'HPC'
+            setup = SetupParser(selected_block=selected_block)
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
         self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
@@ -504,9 +514,9 @@ class CompsExperimentManager(LocalExperimentManager):
         s.Cancel()
 
     def analyze_simulations(self):
-        if not self.setup.getboolean(self.location, 'use_comps_asset_svc'):
+        if not self.assets_service:
             CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
-        if self.setup.getboolean(self.location, 'compress_assets'):
+        if self.location == "HPC" and self.setup.getboolean('compress_assets'):
             CompsDTKOutputParser.enableCompression()
 
         LocalExperimentManager.analyze_simulations(self)

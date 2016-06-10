@@ -8,11 +8,10 @@ from time import sleep
 
 
 class SimulationCommissioner(threading.Thread):
-
-    '''
+    """
     A class to commission a local simulation.
     Threads are spawned for each simulation to run on the local machine.
-    '''
+    """
 
     def __init__(self, sim_dir=None, eradication_command=None, queue=None):
         threading.Thread.__init__(self)
@@ -41,12 +40,11 @@ class SimulationCommissioner(threading.Thread):
 
 
 class CompsSimulationCommissioner(threading.Thread):
-
-    '''
+    """
     A class to commission COMPS experiments and simulations.
     Threads are spawned for each batch submission of created simulation (and associated) objects.
     Commissioning and meta-data retrieval are done by single calls by passing the experiment ID.
-    '''
+    """
 
     def __init__(self, exp_id, maxThreadSemaphore):
         threading.Thread.__init__(self)
@@ -89,7 +87,7 @@ class CompsSimulationCommissioner(threading.Thread):
         from COMPS import Client
         from COMPS.Data import Suite
 
-        Client.Login(setup.get('HPC', 'server_endpoint'))
+        Client.Login(setup.get('server_endpoint'))
 
         logging.debug('suite_name - ' + str(suite_name))
 
@@ -103,18 +101,18 @@ class CompsSimulationCommissioner(threading.Thread):
         from COMPS import Client
         from COMPS.Data import Configuration, HPCJob__Priority, Experiment, Suite
 
-        Client.Login(setup.get('HPC', 'server_endpoint'))
+        Client.Login(setup.get('server_endpoint'))
 
         bldr = Configuration.getBuilderInstance()
 
         # When new version of pyCOMPS
-        # .setEnvironmentName(setup.get('HPC','environment')) \
+        # .setEnvironmentName(setup.get('environment')) \
         config = bldr.setSimulationInputArgs(input_args) \
-                     .setWorkingDirectoryRoot(os.path.join(setup.get('HPC','sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
+                     .setWorkingDirectoryRoot(os.path.join(setup.get('sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
                      .setExecutablePath(bin_path) \
-                     .setNodeGroupName(setup.get('HPC','node_group')) \
-                     .setMaximumNumberOfRetries(int(setup.get('HPC', 'num_retries'))) \
-                     .setPriority(HPCJob__Priority.valueOf(setup.get('HPC','priority'))) \
+                     .setNodeGroupName(setup.get('node_group')) \
+                     .setMaximumNumberOfRetries(int(setup.get('num_retries'))) \
+                     .setPriority(HPCJob__Priority.valueOf(setup.get('priority'))) \
                      .setMinCores(config_builder.get_param('Num_Cores',1)) \
                      .setMaxCores(config_builder.get_param('Num_Cores',1)) \
                      .build()
