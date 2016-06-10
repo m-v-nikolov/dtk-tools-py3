@@ -69,6 +69,7 @@ class LocalExperimentManager(object):
         self.model_file = model_file
         self.exp_data = exp_data
         self.setup = setup
+        self.assets_service = setup.getboolean('HPC','use_comps_asset_svc') and self.location == "HPC"
 
         self.exp_builder = None
         self.staged_bin_path = None
@@ -89,16 +90,15 @@ class LocalExperimentManager(object):
         self.config_builder = config_builder
         self.exp_builder = exp_builder
 
-        self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
+        # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
+        # If not, use the normal staging process
+        if self.assets_service:
+            self.staged_bin_path = self.setup.get('HPC','bin_staging_root')
+        else:
+            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
+
+        # Create the command line
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
-
-        self.exp_data.update({'sim_root': self.get_property('sim_root'),
-                              'exe_name': self.commandline.Executable,
-                              'exp_name': exp_name,
-                              'location': self.location,
-                              'sim_type': self.config_builder.get_param('Simulation_Type')})
-
-        self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
         # Get the git revision of the tools
         try:
@@ -107,7 +107,15 @@ class LocalExperimentManager(object):
         except:
             revision = "Unknown"
 
-        self.exp_data['dtk-tools_revision'] = revision
+        # Set the meta data
+        self.exp_data.update({'sim_root': self.get_property('sim_root'),
+                              'exe_name': self.commandline.Executable,
+                              'exp_name': exp_name,
+                              'location': self.location,
+                              'sim_type': self.config_builder.get_param('Simulation_Type'),
+                              'dtk-tools_revision': revision})
+
+        self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
@@ -119,8 +127,15 @@ class LocalExperimentManager(object):
             # modify next simulation according to experiment builder
             map(lambda func: func(self.config_builder), mod_fn_list)
 
-            # inside loop if different requirements by sim in sweep
-            self.config_builder.stage_required_libraries(self.setup.get('BINARIES', 'dll_path'), self.get_setup())
+            # If the assets service is in use, the path needs to come from COMPS
+            if self.assets_service:
+                lib_staging_root = utils.translate_COMPS_path(self.setup.get('HPC','lib_staging_root'), self.setup)
+            else:
+                lib_staging_root = self.setup.get(self.location,'lib_staging_root')
+
+            # Stage the required dll for the experiment
+            self.config_builder.stage_required_libraries(self.setup.get('BINARIES','dll_path'), lib_staging_root,
+                                                         self.assets_service)
 
             commissioner = self.create_simulation()
             if commissioner is not None:

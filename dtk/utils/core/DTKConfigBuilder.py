@@ -132,13 +132,23 @@ class DTKConfigBuilder(SimConfigBuilder):
         eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
         return utils.CommandlineGenerator(exe_path, eradication_options, [])
 
-    def stage_required_libraries(self, dll_path, paths):
+    def stage_required_libraries(self, dll_path, staging_root,assets_service = False):
         for dll_type, dll_name in self.dlls:
+            # Try top retrieve the dll from the staged dlls
             staged_dll = self.staged_dlls.get((dll_type, dll_name), None)
+
             if not staged_dll:
-                staged_dll = utils.stage_file(os.path.join(dll_path, dll_type, dll_name),
-                                                os.path.join(paths['lib_staging_root'], dll_type))
-                self.staged_dlls[(dll_type, dll_name)] = staged_dll  # caching to avoid repeat md5 and os calls
+                if not assets_service:
+                    # If the assets service is not use, actually stage the dll file
+                    staged_dll = utils.stage_file(os.path.join(dll_path, dll_type, dll_name),
+                                                    os.path.join(staging_root, dll_type))
+                else:
+                    # If the assets service is used, assume that the dll is staged already
+                    staged_dll = os.path.join(staging_root ,dll_name)
+                # caching to avoid repeat md5 and os calls
+                self.staged_dlls[(dll_type, dll_name)] = staged_dll
+
+            # Add the dll to the emodules_map
             self.emodules_map[dll_type].append(staged_dll)
 
     def file_writer(self, write_fn):

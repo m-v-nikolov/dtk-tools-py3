@@ -100,13 +100,15 @@ class CompsSimulationCommissioner(threading.Thread):
 
     @staticmethod
     def create_experiment(setup, config_builder, exp_name, bin_path, input_args, suite_id=None):
-
         from COMPS import Client
         from COMPS.Data import Configuration, HPCJob__Priority, Experiment, Suite
 
         Client.Login(setup.get('HPC', 'server_endpoint'))
 
         bldr = Configuration.getBuilderInstance()
+
+        # When new version of pyCOMPS
+        # .setEnvironmentName(setup.get('HPC','environment')) \
         config = bldr.setSimulationInputArgs(input_args) \
                      .setWorkingDirectoryRoot(os.path.join(setup.get('HPC','sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
                      .setExecutablePath(bin_path) \

@@ -124,7 +124,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         cls.use_compression = True
 
     @classmethod
-    def createSimDirectoryMap(cls, exp_id=None, suite_id=None):
+    def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True):
         from COMPS.Data import Experiment, Suite, QueryCriteria
 
         def workdirs_from_simulations(sims):
@@ -156,7 +156,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
             raise Exception('Unable to map COMPS simulations to output directories without Suite or Experiment ID.')
 
         print('Populated map of %d simulation IDs to output directories' % len(sim_map))
-        cls.sim_dir_map = sim_map
+        if save:
+            cls.sim_dir_map = sim_map
         return sim_map
 
     def load_all_files(self, filenames):
