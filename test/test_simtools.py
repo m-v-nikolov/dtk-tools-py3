@@ -2,6 +2,7 @@ import os
 import stat
 import time
 import unittest
+from ConfigParser import ConfigParser
 
 from simtools import utils
 from simtools.SetupParser import SetupParser
@@ -42,12 +43,12 @@ class TestConfigBuilder(unittest.TestCase):
         os.remove('config.json')
 
     def test_stage_exe(self):
-        local_setup = dict(self.setup.items('LOCAL'))
+        local_setup = dict(self.setup.items())
 
         file1 = 'input/dummy_exe_folder/dummy_exe.txt'
         md5 = utils.get_md5(file1)
         self.cb.stage_executable(file1, local_setup)
-        staged_dir = os.path.join(self.setup.get('LOCAL', 'bin_staging_root'), md5)
+        staged_dir = os.path.join(self.setup.get('bin_staging_root'), md5)
         staged_path = os.path.join(staged_dir, 'dummy_exe.txt')
         self.assertTrue(os.path.exists(staged_path))
 
@@ -63,7 +64,7 @@ class TestConfigBuilder(unittest.TestCase):
         os.rmdir(staged_dir)
 
     def test_commandline(self):
-        commandline = self.cb.get_commandline('input/file.txt', dict(self.setup.items('LOCAL')))
+        commandline = self.cb.get_commandline('input/file.txt', dict(self.setup.items()))
         self.assertEqual('input/file.txt', commandline.Commandline)
 
         another_command = utils.CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
@@ -82,11 +83,65 @@ class TestConfigExceptions(unittest.TestCase):
 class TestSetupParser(unittest.TestCase):
 
     def setUp(self):
-        self.setup = SetupParser()
+        self.cwd = os.getcwd()
 
-    def test_set(self):
-        self.setup.set('GLOBAL', 'foo', 'bar')
-        self.assertEqual(self.setup.get('GLOBAL', 'foo'), 'bar')
+    def tearDown(self):
+        os.chdir(self.cwd)
+        SetupParser.selected_block = None
+
+    def test_no_overlay_default_block(self):
+        sp = SetupParser()
+        # Default should be LOCAL block
+        self.assertEqual(sp.selected_block, 'LOCAL')
+        self.assertEqual(sp.get('type'), 'LOCAL')
+
+        # User should be there
+        self.assertIsNotNone(sp.get('user'))
+
+        # We dont want HPC or unknown params
+        self.assertRaises(ValueError, sp.get, 'use_comps_asset_svc')
+        self.assertRaises(ValueError, sp.get, 'WRONG')
+
+    def test_block_selection(self):
+        # Pass a block name
+        sp = SetupParser('HPC')
+        self.assertEqual(sp.selected_block, 'HPC')
+        self.assertEqual(sp.get('type'),'HPC')
+
+        # Pass another block name but shouldn't change
+        sp = SetupParser('TEST')
+        self.assertEqual(sp.selected_block, 'HPC')
+
+    def test_overlay_file_cwd(self):
+        os.chdir(os.path.abspath('input'))
+        sp = SetupParser('TEST')
+
+        # We have the TEST selected
+        self.assertEqual(sp.selected_block,'TEST')
+
+        # The data overlay properly
+        self.assertEqual(sp.get('use_comps_asset_svc'), str(1))
+
+        # and the defaults are properly retrieved
+        self.assertIsNotNone(sp.get('bin_staging_root'))
+        self.assertIsNotNone(sp.get('compress_assets'))
+
+        # But not all of them (we dont want LOCAL)
+        self.assertRaises(ValueError, sp.get, 'max_local_sims')
+
+        # Test if the default are overlayed from cwd file
+        self.assertEqual(sp.get('max_threads'), str(0))
+
+        # global file DEFAULT(max_threads = 16) / local file DEFAULT(max_threads = 0) / local file LOCAL2(max_threads = 1)
+        SetupParser.selected_block = None
+        sp = SetupParser('LOCAL2')
+        self.assertEqual(sp.get('max_threads'), str(1))
+
+    def test_overlay_file_with_path(self):
+        sp = SetupParser('DUMMY','input/dummy_ini.ini')
+        self.assertEqual(sp.get('max_threads'),str(1000))
+        self.assertEqual(sp.get('type'),'LOCAL')
+
 
 
 class TestBuilders(unittest.TestCase):

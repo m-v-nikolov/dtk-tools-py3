@@ -1,11 +1,7 @@
-import inspect
 import json
 import os
-from ConfigParser import ConfigParser
-
 import sys
-
-from simtools.IniValidator import IniValidator
+from ConfigParser import ConfigParser
 
 
 class SetupParser:
@@ -15,7 +11,7 @@ class SetupParser:
     """
     selected_block = None
 
-    def __init__(self, setup_file='', selected_block='LOCAL'):
+    def __init__(self, selected_block='LOCAL', setup_file=''):
         # Store the selected_block in the class
         if not SetupParser.selected_block:
             SetupParser.selected_block = selected_block
@@ -31,19 +27,23 @@ class SetupParser:
         elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
             overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
 
-        # If we found an overlay applies it
-        if overlay_path:
-            overlay = ConfigParser()
-            overlay.read(overlay_path)
-            self.overlay_setup(overlay)
-
         # Add the user to the default
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
         else:
             import pwd
             user = pwd.getpwuid(os.geteuid())[0]
-        self.setup.set('DEFAULT','user',user)
+        self.setup.set('DEFAULT', 'user', user)
+
+        # If we found an overlay applies it
+        if overlay_path:
+            overlay = ConfigParser()
+            overlay.read(overlay_path)
+            # Add the user just in case
+            overlay.set('DEFAULT','user',user)
+
+            # Overlay
+            self.overlay_setup(overlay)
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.get('type') == "HPC":
@@ -56,6 +56,9 @@ class SetupParser:
 
             except KeyError:
                 print('Unable to determine JAVA_HOME; please set JAVA_HOME environment variable as described in pyCOMPS README.txt')
+
+        # Validate
+        self.validate()
 
 
     def overlay_setup(self,cp):
@@ -77,6 +80,8 @@ class SetupParser:
             self.setup.set(self.selected_block,item[0], item[1])
 
     def get(self, parameter):
+        if not self.setup.has_option(self.selected_block, parameter):
+            raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.get(self.selected_block,parameter)
 
     def set(self, parameter, value):
@@ -97,12 +102,4 @@ class SetupParser:
         return self.ini_file
 
     def validate(self):
-        local_section = self.get("DEFAULT", "local")
-        local_default = IniValidator(local_section)
-        local_default.validate(self)
-
-        hpc_section = self.get("DEFAULT", "hpc")
-        hpc_default = IniValidator(hpc_section)
-        hpc_default.validate(self)
-
-        # print "Ini file passed schema validation"
+        pass
