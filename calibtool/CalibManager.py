@@ -445,7 +445,7 @@ class CalibManager(object):
 
         calib_data = self.read_calib_data()
 
-        kw_location = kwargs.pop('location')
+        kw_location = kwargs.pop('location') if 'location' in kwargs else None
         self.location = calib_data.get('location', kw_location if kw_location else self.location)
         self.suite_id = calib_data.get('suite_id')
         latest_iteration = calib_data.get('iteration')
