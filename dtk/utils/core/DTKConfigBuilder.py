@@ -130,6 +130,11 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     def get_commandline(self, exe_path, paths):
         eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
+
+        if 'python_path' in paths and paths['python_path'] != '':
+            eradication_options['--python-script-path'] = paths['python_path']
+
+        print eradication_options
         return utils.CommandlineGenerator(exe_path, eradication_options, [])
 
     def stage_required_libraries(self, dll_path, staging_root,assets_service = False):
