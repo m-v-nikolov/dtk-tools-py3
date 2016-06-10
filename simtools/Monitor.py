@@ -32,7 +32,7 @@ class CompsSimulationMonitor(SimulationMonitor):
 
     def query(self):
         from COMPS import Client
-        from COMPS.Data import Simulation, Experiment, Suite, QueryCriteria
+        from COMPS.Data import Experiment, Suite, QueryCriteria
 
         Client.Login(self.server_endpoint)
 
