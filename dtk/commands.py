@@ -26,7 +26,7 @@ def run(args):
 
     # run the simulation
     location = 'HPC' if (args and args.hpc) else 'LOCAL'
-    setup = SetupParser()
+    setup = SetupParser(location)
     additional_args = {}
     if location == 'HPC':
         if args.priority:

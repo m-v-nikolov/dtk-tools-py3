@@ -24,5 +24,5 @@ if __name__ == "__main__":
     from simtools.SetupParser import SetupParser
     from simtools.ExperimentManager import ExperimentManagerFactory
 
-    sm = ExperimentManagerFactory.from_model(SetupParser().get('BINARIES', 'exe_path'), 'LOCAL')
+    sm = ExperimentManagerFactory.from_model(SetupParser().get('exe_path'), 'LOCAL')
     sm.run_simulations(**run_sim_args)
