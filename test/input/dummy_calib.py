@@ -56,5 +56,4 @@ calib_manager = CalibManager(name='ExampleCalibration',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='LOCAL'))
     calib_manager.run_calibration(**run_calib_args)

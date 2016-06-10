@@ -84,6 +84,7 @@ class TestSetupParser(unittest.TestCase):
 
     def setUp(self):
         self.cwd = os.getcwd()
+        SetupParser.selected_block = None
 
     def tearDown(self):
         os.chdir(self.cwd)
