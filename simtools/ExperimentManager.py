@@ -69,7 +69,7 @@ class LocalExperimentManager(object):
         self.model_file = model_file
         self.exp_data = exp_data
         self.setup = setup
-        self.assets_service = setup.getboolean('HPC','use_comps_asset_svc')
+        self.assets_service = setup.getboolean('HPC','use_comps_asset_svc') and self.location == "HPC"
 
         self.exp_builder = None
         self.staged_bin_path = None
