@@ -44,7 +44,7 @@ class CalibManager(object):
     """
 
     def __init__(self, setup, config_builder, sample_point_fn, sites, next_point,
-                 name='calib_test', iteration_state=IterationState(), location='LOCAL',
+                 name='calib_test', iteration_state=IterationState(),
                  sim_runs_per_param_set=1, num_to_plot=10, max_iterations=5, plotters=list()):
 
         self.name = name
@@ -55,7 +55,7 @@ class CalibManager(object):
         self.next_point = next_point
         self.iteration_state = iteration_state
 
-        self.location = location
+        self.location = setup.get('type')
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
