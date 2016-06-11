@@ -4,6 +4,7 @@ import sys
 from ConfigParser import ConfigParser
 
 
+
 class SetupParser:
     """
     Parse user settings and directory locations
@@ -12,12 +13,12 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block='LOCAL', setup_file=''):
+    def __init__(self, selected_block='LOCAL', setup_file='', force=False):
         # Store the selected_block in the class
-        if not SetupParser.selected_block:
+        if not SetupParser.selected_block or force:
             SetupParser.selected_block = selected_block
 
-        if not SetupParser.setup_file:
+        if not SetupParser.setup_file or force:
             SetupParser.setup_file = setup_file
 
         # First, always load the defaults
@@ -43,8 +44,9 @@ class SetupParser:
         if overlay_path:
             overlay = ConfigParser()
             overlay.read(overlay_path)
-            # Add the user just in case
-            overlay.set('DEFAULT','user',user)
+            # Add the user just in case if not specified already
+            if not overlay.has_option('DEFAULT','user'):
+                overlay.set('DEFAULT','user',user)
 
             # Overlay
             self.overlay_setup(overlay)
@@ -64,6 +66,8 @@ class SetupParser:
         # Validate
         self.validate()
 
+    def override_block(self,block):
+        self.__init__(selected_block=block, force=True)
 
     def overlay_setup(self,cp):
         # If the cp doesnt have the selected block, no need of overlaying

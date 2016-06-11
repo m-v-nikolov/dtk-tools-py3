@@ -10,6 +10,7 @@ import time
 
 import pandas as pd
 
+
 from IterationState import IterationState
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
@@ -71,7 +72,9 @@ class CalibManager(object):
         """
 
         if 'location' in kwargs:
+            # We want to override the location
             self.location = kwargs.pop('location')
+            self.setup.override_block(self.location)
 
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)

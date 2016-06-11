@@ -1,14 +1,13 @@
 import os
 import stat
-import time
 import unittest
-from ConfigParser import ConfigParser
 
 from simtools import utils
-from simtools.SetupParser import SetupParser
-from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder
-from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
 from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder
+from simtools.SetupParser import SetupParser
+from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
+
 
 class TestConfigBuilder(unittest.TestCase):
 
