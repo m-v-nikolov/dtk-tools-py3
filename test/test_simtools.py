@@ -85,10 +85,12 @@ class TestSetupParser(unittest.TestCase):
     def setUp(self):
         self.cwd = os.getcwd()
         SetupParser.selected_block = None
+        SetupParser.setup_file = None
 
     def tearDown(self):
         os.chdir(self.cwd)
         SetupParser.selected_block = None
+        SetupParser.setup_file = None
 
     def test_no_overlay_default_block(self):
         sp = SetupParser()
