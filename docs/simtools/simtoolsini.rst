@@ -4,14 +4,97 @@
 simtools.ini file
 ===================
 
-The ``simtools.ini`` file allows you to overrides the default configuration options available.
+The ``simtools.ini`` file allows you to specify the default configuration options.
 
-GLOBAL section
+.. seealso::
+    To know more on the overlay mechanism, consult the :doc:`overlay`.
+
+
+.. contents::
+    :local:
+
+DEFAULT section
 ===============
+
+Anything in this section will apply to all the subsequent blocks if they do not override the value.
+For example, let's assume the following file:
+
+.. snippet:: cfg
+    :filename: simtools/simtools.ini
+
+    [DEFAULT]
+    max_threads = 16
+
+    [HPC]
+    other_param = 2
+
+    [LOCAL]
+    max_threads = 8
+
+
+if the ``HPC`` block is used for a simulation, the ``max_threads`` value will be coming from the ``[DEFAULT]`` block.
+However, if the ``LOCAL`` block is used, the ``max_threads`` will be coming from the ``[LOCAL]`` block.
+
+Usually this section contains the following parameters: :setting:`exe_path`, :setting:`dll_path` and :setting:`max_threads`.
+
+Common parameters
+==================
+
+Those parameters apply to both HPC and LOCAL configurations.
+
+.. setting:: type
+
+``type``
+--------------------------
+
+Default: LOCAL
+
+Every blocks defined in ini files need to have a type. The type can be either ``HPC`` or ``LOCAL`` and defines which set of defaults will be used
+and which parameters are expected.
+
+.. setting:: python_path
+
+``python_path``
+--------------------------
+
+Default: Empty
+
+Specify the path for the python scripts. This will correspond to the ``--python-script-path`` flag of ``Eradication.exe`` and can be left blank.
+
+.. warning::
+    If the path does not contain Python script, it can prevent the model to run and should be left blank.
+
+
+.. setting:: exe_path
+
+``exe_path``
+--------------------------
+
+Default: ``C:\Eradication\DtkTrunk\Eradication\x64\Release\Eradication.exe``
+
+Path of the current executable you wish to use for your simulations. This executable will be staged in the :setting:`bin_staging_root`.
+
+.. warning::
+    If the :setting:`use_comps_asset_svc` is used, this path will be ignored as the executable will not be staged.
+
+.. setting:: dll_path
+
+``dll_path``
+--------------------------
+
+Default: ``C:\Eradication\DtkTrunk\x64\Release``
+
+Path where the DLL used for the simulations are stored. The required DLLs will be copied from this directory and staged in the :setting:`lib_staging_root`.
+
+.. note::
+    This folder should not contained directly the dll as simtools will add ``reporter_plugins``, ``interventions`` or ``disease_plugins`` to this path depending on the type of DLLs it looks for.
+
+.. warning::
+    If the :setting:`use_comps_asset_svc` is used, this path will be ignored as the dll will not be staged.
 
 .. setting:: max_threads
 
-``max_trheads``
+``max_threads``
 --------------------------
 
 Default: ``6``
@@ -19,10 +102,11 @@ Default: ``6``
 Defines how many threads can be fired off when analyzing an experiment.
 
 
-HPC section
+HPC defaults
 =============
 
 This section defines parameters related to running the simulations in an HPC environment.
+Those defaults will apply to every blocks with the ``type=HPC``.
 
 .. setting:: server_endpoint
 
@@ -90,7 +174,7 @@ Folder where all the input files (climate and demographics) are stored.
 
 
 
-.. setting:: hpc_bin_root
+.. setting:: bin_staging_root
 
 ``bin_staging_root``
 --------------------------
@@ -102,9 +186,10 @@ Folder where the executable will be cached.
 .. warning::
 
     The provided path needs to be accessible by your endpoint.
+    Also if the :setting:`use_comps_asset_svc` is on, this path needs to be the full path to an accessible exe.
 
 
-.. setting:: hpc_dll_root
+.. setting:: lib_staging_root
 
 ``lib_staging_root``
 --------------------------
@@ -116,6 +201,7 @@ Folder where the custom reporters and other dlls will be cached.
 .. warning::
 
     The provided path needs to be accessible by your endpoint.
+    Also if the :setting:`use_comps_asset_svc` is on, this path needs to hold the path where the DLL are stored.
 
 
 .. setting:: num_retries
@@ -147,6 +233,12 @@ Default: 0
 
 If set to ``1``, uses the COMPS assets service.
 
+.. warning::
+    When setting this to ``1``, don't forget to set:
+
+    * :setting:`lib_staging_root` with the folder containing already staged DLLs.
+    * :setting:`bin_staging_root` with the full path to the exe used for the simulations.
+
 
 .. setting:: compress_assets
 
@@ -158,90 +250,14 @@ Default: 0
 If the COMPS assets service is used, choose to compress the assets or not.
 
 
+.. setting:: environment
 
-LOCAL/POSIX section
-====================
-
-| This section defines parameters related to running the simulations on your local machine.
-| ``[LOCAL]`` will be used for a Windows machine.
-| ``[POSIX]`` will be used for a MacOS machine.
-
-.. setting:: max_local_sims
-
-``max_local_sims``
+``environment``
 --------------------------
 
-Default: 8
+Default: Bayesian
 
-Maximum number of simulations to run in parallel.
-
-
-.. setting:: sim_root
-
-``sim_root``
---------------------------
-
-| Default LOCAL: ``C:\Eradication\simulations``
-| Default POSIX: ``/Users/%(user)s/simtools/simulations``
-
-The folder where your simulations inputs/outputs will be stored. The folder needs to exists.
-
-
-.. setting:: input_root
-
-``input_root``
---------------------------
-
-| Default LOCAL: ``C:\Eradication\EMOD-InputData``
-| Default POSIX: ``/Users/%(user)s/simtools/input``
-
-The folder where the simulations input files are stored (demographics, climate).
-
-
-.. setting:: bin_root
-
-``bin_staging_root``
---------------------------
-
-| Default LOCAL: ``C:\Eradication\bin``
-| Default POSIX: ``/Users/%(user)s/simtools/bin``
-
-Folder where the executable will be cached.
-
-
-
-.. setting:: dll_root
-
-``lib_staging_root``
---------------------------
-
-| Default LOCAL: ``C:\Eradication\dll``
-| Default POSIX: ``/Users/%(user)s/simtools/emodules``
-
-Folder where the custom reporters and other dlls will be cached.
-
-
-BINARIES section
-==================
-
-
-.. setting:: exe_path
-
-``exe_path``
---------------------------
-
-Default: ``C:\Eradication\DtkTrunk\Eradication\x64\Release\Eradication.exe``
-
-Path of the current executable you wish to use for your simulations.
-
-.. setting:: dll_path
-
-``dll_path``
---------------------------
-
-Default: ``C:\Eradication\DtkTrunk\x64\Release``
-
-Path where the DLL used for the simulations are stored. 
+Specify which environment to run on.
 
 
 Complete example
@@ -250,37 +266,34 @@ Complete example
 .. snippet:: cfg
     :filename: dtk/dtk_setup.cfg
 
-    [GLOBAL]
-    max_threads    = 16
+    [DEFAULT]
+    max_threads = 16
+    exe_path = C:\Eradication\DtkTrunk\Eradication\x64\Release\Eradication.exe
+    dll_path = C:\Eradication\DtkTrunk\x64\Release
+
 
     [HPC]
+    type = HPC
     server_endpoint = https://comps.idmod.org
-    node_group      = emod_abcd
-    priority = Lowest
+    environment = Bayesian
+    node_group = emod_abcd
+    priority = Normal
 
-    sim_root            = \\idmppfil01\IDM\home\%(user)s\output\simulations\
-    input_root          = \\idmppfil01\IDM\home\%(user)s\input\
-    bin_staging_root    = \\idmppfil01\IDM\home\%(user)s\bin\
-    lib_staging_root    = \\idmppfil01\IDM\home\%(user)s\emodules\
+    sim_root = \\idmppfil01\IDM\home\%(user)s\output\simulations\
+    input_root = \\idmppfil01\IDM\home\%(user)s\input\
+    bin_staging_root = \\idmppfil01\IDM\home\%(user)s\bin\
+    lib_staging_root = \\idmppfil01\IDM\home\%(user)s\emodules\
 
-    num_retries         = 0
-    sims_per_thread     = 20
+    num_retries = 0
+    sims_per_thread = 20
     use_comps_asset_svc = 0
-    compress_assets     = 0
+    compress_assets = 0
 
     [LOCAL]
-    max_local_sims   = 8
-    sim_root         = C:\Eradication\simulations
-    input_root       = C:\Eradication\EMOD-InputData
+    type = LOCAL
+    max_local_sims = 3
+    sim_root = C:\Eradication\simulations
+    input_root = C:\Eradication\EMOD-InputData
     bin_staging_root = C:\Eradication\bin
-    lib_staging_root = C:\Eradication\dll
-
-    [POSIX]
-    sim_root         = /Users/%(user)s/simtools/simulations
-    input_root       = /Users/%(user)s/simtools/input
-    bin_staging_root = /Users/%(user)s/simtools/bin
-    lib_staging_root = /Users/%(user)s/simtools/emodules
-
-    [BINARIES]
-    exe_path   = C:\Eradication\DtkTrunk\Eradication\x64\Release\Eradication.exe
-    dll_path   = C:\Eradication\DtkTrunk\x64\Release
+    lib_staging_root = C:\Eradication\bin
+    python_path=C:\Eradication\python

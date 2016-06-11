@@ -10,11 +10,15 @@ class SetupParser:
     from setup configuration file: simtools.cfg
     """
     selected_block = None
+    setup_file = None
 
     def __init__(self, selected_block='LOCAL', setup_file=''):
         # Store the selected_block in the class
         if not SetupParser.selected_block:
             SetupParser.selected_block = selected_block
+
+        if not SetupParser.setup_file:
+            SetupParser.setup_file = setup_file
 
         # First, always load the defaults
         self.setup = ConfigParser()
@@ -22,8 +26,8 @@ class SetupParser:
 
         # Then overlays the eventual setup_file passed or simtools.ini in working dir
         overlay_path = None
-        if setup_file and os.path.exists(setup_file):
-            overlay_path = setup_file
+        if self.setup_file and os.path.exists(self.setup_file):
+            overlay_path = self.setup_file
         elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
             overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
 

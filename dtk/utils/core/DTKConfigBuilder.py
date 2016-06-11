@@ -148,7 +148,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                                                     os.path.join(staging_root, dll_type))
                 else:
                     # If the assets service is used, assume that the dll is staged already
-                    staged_dll = os.path.join(staging_root ,dll_name)
+                    staged_dll = os.path.join(staging_root, dll_type. dll_name)
                 # caching to avoid repeat md5 and os calls
                 self.staged_dlls[(dll_type, dll_name)] = staged_dll
 
