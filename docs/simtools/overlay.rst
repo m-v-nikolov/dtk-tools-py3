@@ -1,5 +1,4 @@
-.. _inifileoverlay:
-
+===========================
 INI File overlay mechanism
 ===========================
 
@@ -295,7 +294,7 @@ So you can just change their values directly on the class at any point on the co
 The previous calibration example can also be set the same way instead of using the constructor:
 
 .. code-block:: python
-    :emphasize-lines: 1,3,4.7
+    :emphasize-lines: 1,3,4,7
 
     from simtools.SetupParser import SetupParser
 
