@@ -3,6 +3,7 @@ import os
 import sys
 from ConfigParser import ConfigParser
 
+from dtk.utils.ioformat.OutputMessage import OutputMessage
 
 
 class SetupParser:
@@ -13,13 +14,17 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block='LOCAL', setup_file='', force=False):
+    def __init__(self, selected_block='LOCAL', setup_file='', force=False, fallback='LOCAL'):
         # Store the selected_block in the class
         if not SetupParser.selected_block or force:
             SetupParser.selected_block = selected_block
 
         if not SetupParser.setup_file or force:
-            SetupParser.setup_file = setup_file
+            # Only add the file if it exists
+            if os.path.exists(setup_file):
+                SetupParser.setup_file = setup_file
+            else:
+                OutputMessage('The setup file (%s) do not exist anymore, ignoring...' % setup_file, 'warning')
 
         # First, always load the defaults
         self.setup = ConfigParser()
@@ -50,6 +55,13 @@ class SetupParser:
 
             # Overlay
             self.overlay_setup(overlay)
+
+        # Test if we now have the block we want
+        if not self.setup.has_section(self.selected_block):
+            setup_file_path = overlay_path if overlay_path else os.path.join(os.path.dirname(__file__), 'simtools.ini')
+            OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
+            raw_input('Press Enter to continue... ')
+            self.selected_block = fallback
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.get('type') == "HPC":

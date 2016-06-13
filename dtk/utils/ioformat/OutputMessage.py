@@ -8,20 +8,14 @@ class OutputMessage:
 
         self.style = style
 
-        if self.style == 'bold':
-            self.bold(msg)
-
-        elif self.style == 'regular':
-            self.regular(msg)
-
-        elif self.style == 'flushed':
-            self.flushed(msg)
-
-        elif self.style == 'deprecate':
+        if self.style == 'deprecate':
             # Avoid warning the user multiple times
             if msg not in OutputMessage.deprecation_list:
                 OutputMessage.deprecation_list.append(msg)
                 self.deprecate(msg)
+        else:
+            func = getattr(self, style)
+            func(msg)
 
     def bold(self, msg):
         print
@@ -37,6 +31,11 @@ class OutputMessage:
     def regular(self, msg):
         print
         print msg
+        print
+
+    def warning(self, msg):
+        print
+        print "/!\\ %s /!\\" % msg
         print
 
     def flushed(self, msg):

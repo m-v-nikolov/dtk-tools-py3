@@ -68,9 +68,12 @@ class LocalExperimentManager(object):
     parserClass = SimulationOutputParser
 
     def __init__(self, model_file, exp_data, setup=None):
+        # If no setup is passed -> create it
         if setup is None:
             selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
-            setup = SetupParser(selected_block=selected_block)
+            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
+            fallback = exp_data['location']
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback=fallback)
 
         self.model_file = model_file
         self.exp_data = exp_data
@@ -120,7 +123,8 @@ class LocalExperimentManager(object):
                               'location': self.location,
                               'sim_type': self.config_builder.get_param('Simulation_Type'),
                               'dtk-tools_revision': revision,
-                              'selected_block':self.setup.selected_block})
+                              'selected_block': self.setup.selected_block,
+                              'setup_overlay_file': self.setup.setup_file})
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
@@ -437,9 +441,13 @@ class CompsExperimentManager(LocalExperimentManager):
     parserClass = CompsDTKOutputParser
 
     def __init__(self, exe_path, exp_data, setup=None):
+        # If no setup is passed -> create it
         if setup is None:
-            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'HPC'
-            setup = SetupParser(selected_block=selected_block)
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
+            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
+            fallback = exp_data['location']
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback=fallback)
+
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
         self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
