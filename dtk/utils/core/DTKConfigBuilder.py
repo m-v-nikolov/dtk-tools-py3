@@ -130,6 +130,10 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     def get_commandline(self, exe_path, paths):
         eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
+
+        if 'python_path' in paths and paths['python_path'] != '':
+            eradication_options['--python-script-path'] = paths['python_path']
+
         return utils.CommandlineGenerator(exe_path, eradication_options, [])
 
     def stage_required_libraries(self, dll_path, staging_root,assets_service = False):
@@ -144,7 +148,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                                                     os.path.join(staging_root, dll_type))
                 else:
                     # If the assets service is used, assume that the dll is staged already
-                    staged_dll = os.path.join(staging_root ,dll_name)
+                    staged_dll = os.path.join(staging_root, dll_type, dll_name)
                 # caching to avoid repeat md5 and os calls
                 self.staged_dlls[(dll_type, dll_name)] = staged_dll
 

@@ -36,7 +36,7 @@ def init_access(**kwargs):
     return set_property('Accessibility', kwargs.keys(), kwargs.values())
 
 
-def add_properties_overlay(cb, properties, directory=SetupParser().get('LOCAL','input_root'), tag=''):
+def add_properties_overlay(cb, properties, directory=None, tag=''):
     """
     Creates a property overlay with the given properties.
 
@@ -46,6 +46,9 @@ def add_properties_overlay(cb, properties, directory=SetupParser().get('LOCAL','
     :param tag: Properties tag
     :return: Nothing
     """
+    if directory is None:
+        directory = SetupParser().get('input_root')
+
     filenames = cb.get_param('Demographics_Filenames')
     demogfiles = [f for f in filenames if 'demographics' in f]
 

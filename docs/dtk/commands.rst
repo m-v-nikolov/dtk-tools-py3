@@ -7,9 +7,11 @@ Available commands
 +------------------------+------------------------+
 | :dtk-cmd:`analyze`     |  :dtk-cmd:`kill`       |
 +------------------------+------------------------+
-| :dtk-cmd:`resubmit`    |  :dtk-cmd:`run`        |
+| :dtk-cmd:`progress`    |  :dtk-cmd:`resubmit`   |
 +------------------------+------------------------+
-| :dtk-cmd:`status`      |                        |
+| :dtk-cmd:`run`         |  :dtk-cmd:`status`     |
++------------------------+------------------------+
+| :dtk-cmd:`stdout`      |                        |
 +------------------------+------------------------+
 
 ``analyze``
@@ -41,6 +43,14 @@ Comma separated list of job IDs or process of simulations to kill in the *most r
 .. dtk-cmd-option:: --all, -a
 
 Kills all simulations in all experiments matched by specified id or name (or just the most recent).
+
+
+``progress``
+-------------
+
+.. dtk-cmd:: progress {none|id|name}
+
+Analyzes ``StdOut.txt`` and ``status.txt`` and prints the percent progress, time elapsed and approximate time remaining for each simulation. In addition, it prints the overall progress of all of the simulations in the selected experiment.
 
 
 ``resubmit``
@@ -188,3 +198,23 @@ For example:
     }
     {'Finished': 1}
 
+
+
+``stdout``
+-------------
+
+.. dtk-cmd:: stdout {none|id|name}
+
+Prints ``StdOut.txt`` for the *first* simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: -e
+
+Prints ``StdErr.txt`` for the *first* simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: --failed, --succeeded
+
+Prints ``StdOut.txt`` for the *first* failed or succeeded (depending on flag) simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: --force, -f
+
+``dtk stdout`` by default will only display simulations of a finished experiment. If you wish to display the outputs while the experiment is running, use this flag.

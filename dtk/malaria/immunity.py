@@ -29,7 +29,7 @@ params = {
     "Erythropoiesis_Anemia_Effect": 3.5
     }
 
-def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_root'), site=None):
+def add_immune_overlays(cb, tags, directory=None, site=None):
     """
     Add an immunity overlay.
 
@@ -41,7 +41,8 @@ def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_roo
     :param site: If the site is specified, the files will be expected to be found in the immune_init/site subdirectory.
     :return: Nothing
     """
-
+    if not directory:
+        directory = SetupParser().get('input_root')
     demogfiles = cb.get_param("Demographics_Filenames")
 
     if len(demogfiles) != 1:
