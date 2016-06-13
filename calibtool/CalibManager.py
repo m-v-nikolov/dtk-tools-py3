@@ -455,11 +455,6 @@ class CalibManager(object):
         self.location = calib_data.get('location', kw_location if kw_location else self.location)
         self.suite_id = calib_data.get('suite_id')
 
-        # Even though the SetupParser is usually instanciated in the CalibManager constructor
-        # Make sure we have a correct instance by forcing with the selected_block and setup_file in the metadata
-        self.setup = SetupParser(selected_block=calib_data.get('selected_block',self.location),
-                                 setup_file=calib_data.get('setup_file', ''), force=True, fallback=self.location)
-
         latest_iteration = calib_data.get('iteration')
 
         if iteration is None:
