@@ -14,12 +14,12 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block='LOCAL', setup_file='', force=False, fallback='LOCAL'):
+    def __init__(self, selected_block='LOCAL', setup_file=None, force=False, fallback='LOCAL'):
         # Store the selected_block in the class
         if not SetupParser.selected_block or force:
             SetupParser.selected_block = selected_block
 
-        if not SetupParser.setup_file or force:
+        if setup_file and (not SetupParser.setup_file or force):
             # Only add the file if it exists
             if os.path.exists(setup_file):
                 SetupParser.setup_file = setup_file

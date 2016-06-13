@@ -72,8 +72,7 @@ class LocalExperimentManager(object):
         if setup is None:
             selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
             setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
-            fallback = exp_data['location']
-            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback=fallback)
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL')
 
         self.model_file = model_file
         self.exp_data = exp_data
@@ -443,10 +442,9 @@ class CompsExperimentManager(LocalExperimentManager):
     def __init__(self, exe_path, exp_data, setup=None):
         # If no setup is passed -> create it
         if setup is None:
-            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'HPC'
             setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
-            fallback = exp_data['location']
-            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback=fallback)
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='HPC')
 
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
         self.comps_logged_in = False
