@@ -15,6 +15,23 @@ class SetupParser:
     setup_file = None
 
     def __init__(self, selected_block='LOCAL', setup_file=None, force=False, fallback='LOCAL'):
+        """
+        Build a SetupParser.
+        The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
+        instances if the force parameter is True.
+
+        If no setup_file is specified, the SetupParser will look in the current working directory for a simtools.ini
+        file. If a file is specified, then this file is used and simtools.ini in the working directory is ignored.
+
+        The global defaults (simtools/simtools.ini) are always loaded first before any overlay is applied.
+
+        If the current selected_block cannot be found in the global default or overlay, then the fallback block is used.
+
+        :param selected_block: The current block we want to use
+        :param setup_file: The current overlay file we want to use
+        :param force: Force the replacement of selected_block and setup_file in the class variable
+        :param fallback: Fallback block if the selected_block cannot be found
+        """
         # Store the selected_block in the class
         if not SetupParser.selected_block or force:
             SetupParser.selected_block = selected_block
@@ -80,9 +97,18 @@ class SetupParser:
         self.validate()
 
     def override_block(self,block):
+        """
+        Overrides the selected block.
+        Basically call the constructor with force=True
+        :param block: New block we want to use
+        """
         self.__init__(selected_block=block, force=True)
 
     def overlay_setup(self,cp):
+        """
+        Overlays a ConfigParser on the current self.setup ConfigParser
+        :param cp: The ConfigParser to overlay
+        """
         # If the cp doesnt have the selected block, no need of overlaying
         if not cp.has_section(self.selected_block):
             return
@@ -99,7 +125,6 @@ class SetupParser:
         # Go through all the parameters of the cp for the selected_block and overlay them to the current section
         for item in cp.items(self.selected_block):
             self.setup.set(self.selected_block,item[0], item[1])
-
 
     def get(self, parameter):
         if not self.setup.has_option(self.selected_block, parameter):
