@@ -49,6 +49,7 @@ class SetupParser:
         if overlay_path:
             overlay = ConfigParser()
             overlay.read(overlay_path)
+
             # Add the user just in case if not specified already
             if not overlay.has_option('DEFAULT','user'):
                 overlay.set('DEFAULT','user',user)
@@ -60,8 +61,8 @@ class SetupParser:
         if not self.setup.has_section(self.selected_block):
             setup_file_path = overlay_path if overlay_path else os.path.join(os.path.dirname(__file__), 'simtools.ini')
             OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
-            raw_input('Press Enter to continue... ')
-            self.selected_block = fallback
+            # The current block was not found... revert to the fallback
+            return self.override_block(fallback)
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.get('type') == "HPC":
@@ -98,6 +99,7 @@ class SetupParser:
         # Go through all the parameters of the cp for the selected_block and overlay them to the current section
         for item in cp.items(self.selected_block):
             self.setup.set(self.selected_block,item[0], item[1])
+
 
     def get(self, parameter):
         if not self.setup.has_option(self.selected_block, parameter):

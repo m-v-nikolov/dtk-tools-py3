@@ -91,6 +91,30 @@ class TestSetupParser(unittest.TestCase):
         SetupParser.selected_block = None
         SetupParser.setup_file = None
 
+    def test_fallback(self):
+        # Specified fallback
+        sp = SetupParser(selected_block="BAD_BLOCK",fallback='HPC')
+        self.assertEqual(sp.selected_block,'HPC')
+
+        # Default LOCAL fallback
+        SetupParser.selected_block = None
+        SetupParser.setup_file = None
+        sp = SetupParser(selected_block="BAD_BLOCK")
+        self.assertEqual(sp.selected_block, 'LOCAL')
+
+        # Fallback value coming from overlay
+        os.chdir(os.path.abspath('input'))
+        SetupParser.selected_block = None
+        SetupParser.setup_file = None
+        sp = SetupParser(selected_block="BAD_BLOCK", fallback="LOCAL2")
+        self.assertEqual(sp.selected_block, 'LOCAL2')
+
+        # Bad fallback
+        SetupParser.selected_block = None
+        SetupParser.setup_file = None
+        sp = SetupParser(selected_block="BAD_BLOCK", fallback="BAD_FALLBACK")
+        self.assertEqual(sp.selected_block, 'LOCAL')
+
     def test_no_overlay_default_block(self):
         sp = SetupParser()
         # Default should be LOCAL block
