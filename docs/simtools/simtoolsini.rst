@@ -283,7 +283,7 @@ Complete example
 ==================
 
 .. snippet:: cfg
-    :filename: dtk/dtk_setup.cfg
+    :filename: simtools/simtools.ini
 
     [DEFAULT]
     max_threads = 16
