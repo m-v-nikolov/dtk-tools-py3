@@ -20,7 +20,9 @@ class MenuForm():
         self.menu = menu
         self.menu.add_handlers({curses.ascii.CR: select_function,
                                 curses.KEY_UP: self.h_go_up,
-                                curses.KEY_DOWN: self.h_go_down})
+                                curses.KEY_DOWN: self.h_go_down,
+                                curses.KEY_LEFT: self.h_go_up,
+                                curses.KEY_RIGHT: self.h_go_down})
 
     def h_go_up(self, ch):
         """

@@ -5,7 +5,7 @@ from ConfigTypePopup import ConfigTypePopup
 from MenuForm import MenuForm
 
 
-class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
+class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
     """
     Form representing the main menu of the application.
     Displays the title and a menu allowing to access the different features.
@@ -27,11 +27,12 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         self.add(npyscreen.FixedText, editable=False, value="Configuration Application", relx=9)
 
         # Create the menu
-        menu = self.add(npyscreen.SelectOne, max_height=5, value=[0],
-                      values=["CHANGE THE GLOBAL DEFAULT BLOCKS",
-                              "CHANGE THE LOCAL DEFAULT BLOCKS",
+        menu = self.add(npyscreen.SelectOne, max_height=6, value=[0],
+                      values=["CHANGE THE DEFAULT LOCAL CONFIGURATION",
+                              "CHANGE THE DEFAULT HPC CONFIGURATION",
                               "NEW CONFIGURATION BLOCK",
-                              "EDIT CONFIGURATION BLOCK",
+                              "EDIT CONFIGURATION BLOCKS",
+                              "EDIT CONFIGURATION BLOCKS FROM OTHER FILE",
                               "QUIT"], scroll_exit=True, rely=12)
         self.set_menu_handlers(menu, self.h_select_menu)
 
@@ -54,18 +55,18 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         # Extract the value
         val = self.menu.value[0]
 
-        # CHANGE THE GLOBAL DEFAULT BLOCKS selected
-        # Set the type to global and display the default selection form
+        # CHANGE THE DEFAULT LOCAL CONFIGURATION selected
+        # Edit the global LOCAL block
         if val == 0:
-            self.parentApp.getForm('DEFAULT_SELECTION').local = False
-            self.parentApp.change_form('DEFAULT_SELECTION')
+            self.parentApp.getForm('EDIT').set_block('LOCAL')
+            self.parentApp.change_form('EDIT')
             return
 
-        # CHANGE THE LOCAL DEFAULT BLOCKS selected
-        # Set the type to local and display the default selection form
+        # CHANGE THE DEFAULT HPC CONFIGURATION selected
+        # Edit the global HPC block
         if val == 1:
-            self.parentApp.getForm('DEFAULT_SELECTION').local = True
-            self.parentApp.change_form('DEFAULT_SELECTION')
+            self.parentApp.getForm('EDIT').set_block('HPC')
+            self.parentApp.change_form('EDIT')
             return
 
         # NEW CONFIGURATION BLOCK selected
@@ -76,7 +77,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
             popup.edit()
             if popup.value:
                 self.parentApp.getForm('EDIT').type = popup.value
-                self.parentApp.getForm('EDIT').block = None
+                self.parentApp.getForm('EDIT').set_block(None)
                 self.parentApp.change_form('EDIT')
             return
 
@@ -89,6 +90,10 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
             if popup.block:
                 self.parentApp.getForm('EDIT').set_block(popup.block)
                 self.parentApp.change_form('EDIT')
+            return
+
+        # EDIT CONFIGURATION BLOCKS FROM OTHER FILE selected
+        if val == 4:
             return
 
         # QUIT selected

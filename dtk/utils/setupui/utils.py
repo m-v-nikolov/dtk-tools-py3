@@ -1,6 +1,11 @@
 import os
 from ConfigParser import ConfigParser
 
+import re
+
+from simtools.SetupParser import SetupParser
+
+
 def get_file_path(local):
     """
     Get the file path for either the local ini or the global ini.
@@ -8,35 +13,33 @@ def get_file_path(local):
     :return: Complete file path to the ini file
     """
     if local:
-        return os.path.join(os.getcwd(), "config.ini")
-    return os.path.join(os.path.dirname(__file__), "..", "..","..", "simtools", 'simtools.cfg')
-
-def get_default_blocks(local):
-    config = ConfigParser()
-    config.read(get_file_path(local))
-
-    local_default = config.get('DEFAULT','local') if config.has_option('DEFAULT','local') else None
-    hpc_default = config.get('DEFAULT','hpc') if config.has_option('DEFAULT','hpc') else None
-
-    return local_default, hpc_default
+        return os.path.join(os.getcwd(), "simtools.ini")
+    return os.path.join(os.path.dirname(__file__), "..", "..","..", "simtools", 'simtools.ini')
 
 def get_block(block):
     """
     Retrieve a block.
-    Returns a dictionnary with the block info
+    Returns a dictionary with the block info
     :param block: block name. If the name contains (*) look into the local ini file
     :return: dictionary containing the block info
     """
-    config = ConfigParser()
-    config.read(get_file_path("(*)" in block))
-
-    # Transform in dictionary
+    # Retrieve the cleanup name
     block_name = block.replace(' (*)', '')
-    ret = {a:b for (a, b) in config.items(block_name, True)}
+
+    # Set the location
+    location = "LOCAL" if "(*)" in block else "GLOBAL"
+
+    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
+    # So if we want a block in the global default, just pass the global default as setup overlay
+    # to bypass the CWD simtools.ini
+    sp = SetupParser(selected_block=block_name, force=True, setup_file=get_file_path(location == "LOCAL"))
+
+    # Transform into a dictionary
+    ret = {a:b for (a, b) in sp.setup.items(block_name, True)}
 
     # set the name and location
     ret['name'] = block_name
-    ret['location'] = "LOCAL" if "(*)" in block else "GLOBAL"
+    ret['location'] = location
 
     # Returns a dict with the info
     return ret
@@ -53,19 +56,31 @@ def get_all_blocks(local):
     :param local: If true, reads the local ini file, if false reads the global ini file
     :return: Dictionary of blocks categorized on type
     """
-
     config = ConfigParser()
     config.read(get_file_path(local))
+
     ret = {'LOCAL':[], 'HPC':[]}
     for section in  config.sections():
         # Ignore certain sections
-        if section in ("DEFAULT","GLOBAL","BINARIES"): continue
+        if section in ("DEFAULT", "GLOBAL", "BINARIES"): continue
 
-        # Depending on the section type, append it to the correct return section
-        if config.get(section, "type") == "HPC":
-            ret['HPC'].append(section)
+        # If the section has no type, it is probably av overlay. Check in the global
+        if not config.has_option(section,'type'):
+            if not local:
+                # We are in the global file and we dont have type, it is an error... assume local
+                current_type = 'LOCAL'
+            else:
+                global_config = ConfigParser()
+                global_config.read(get_file_path(False))
+                # If the global config doesnt have the block type either, its an error assumes LOCAL else get
+                # the correct block type
+                current_type = global_config.get(section,"type") if global_config.has_section(section) and global_config.has_option(section,'type') else "LOCAL"
         else:
-            ret['LOCAL'].append(section)
+            # Normal behavior
+            current_type = config.get(section,'type')
+
+        # Append it to the correct return section
+        ret[current_type].append(section)
 
     return ret
 
@@ -96,6 +111,11 @@ def add_block(block_type, local, fields):
     config = ConfigParser()
     config.read(get_file_path(local))
 
+    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
+    # So if we want a block in the global default, just pass the global default as setup overlay
+    # to bypass the CWD simtools.ini
+    sp = SetupParser(selected_block=block_type, force=True, setup_file=get_file_path(local))
+
     # Prepare the section name
     section = fields['name'].value
     section = section.replace(' ', '_').upper()
@@ -118,24 +138,30 @@ def add_block(block_type, local, fields):
                 value = widget.get_selected_objects()[0]
             elif isinstance(widget.value, bool):
                 value = 1 if widget.value else 0
+            elif isinstance(widget.value, float):
+                value = int(widget.value)
 
-            config.set(section, id, value)
+            # Only add if different than in the SetupParser
+            if str(sp.get(id)) != str(value):
+                config.set(section, id, value)
 
     with open(get_file_path(local), 'w') as file_handler:
      config.write(file_handler)
 
     return section
 
+# DEPRECATED AS WE DO NOT USE DEFAULTS ANYMORE
+def get_default_blocks(local):
+    config = ConfigParser()
+    config.read(get_file_path(local))
 
+    local_default = config.get('DEFAULT','local') if config.has_option('DEFAULT','local') else None
+    hpc_default = config.get('DEFAULT','hpc') if config.has_option('DEFAULT','hpc') else None
+
+    return local_default, hpc_default
+
+# DEPRECATED AS WE DO NOT USE DEFAULTS ANYMORE
 def change_defaults(local, local_default=None, hpc_default=None):
-    """
-
-    :param local:
-    :param local_default:
-    :param hpc_default:
-    :param remove:
-    :return:
-    """
     # Security
     if not local_default and not hpc_default:
         return
@@ -158,9 +184,3 @@ def change_defaults(local, local_default=None, hpc_default=None):
     # Write down the file
     with open(get_file_path(local),'w') as file_handler:
         config.write(file_handler)
-
-
-
-if __name__ == '__main__':
-    local,hpc = get_default_blocks(True)
-    print hpc

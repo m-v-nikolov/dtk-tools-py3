@@ -25,6 +25,12 @@
       "type":"directory"
     },
     {
+      "name":"python_path",
+      "label":"Model Python script path",
+      "help":"Path to the folder containing the python scripts (Eradication run flag --python-script-path)",
+      "type":"directory"
+    },
+    {
       "name":"exe_path",
       "label":"Model executable path",
       "help":"Path to the model executable.",
@@ -34,12 +40,6 @@
       "name":"dll_path",
       "label":"Model libraries path",
       "help":"Path to the folder containing the libraries used for the simulations.",
-      "type":"directory"
-    },
-    {
-      "name":"python_path",
-      "label":"Model Python script path",
-      "help":"Path to the folder containing the python scripts (Eradication run flag --python-script-path)",
       "type":"directory"
     }
   ],

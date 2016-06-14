@@ -2,8 +2,16 @@ import npyscreen
 
 from dtk.utils.setupui.SaveLocationPopup import SaveLocationPopup
 from dtk.utils.setupui.utils import add_block, get_block, delete_block
-from simtools import SetupParser
+from simtools.SetupParser import SetupParser
 
+class IntegerSlider(npyscreen.Slider):
+    def translate_value(self):
+        stri = "%s / %s" % (int(self.value), int(self.out_of))
+        if isinstance(stri, bytes):
+            stri = stri.decode(self.encoding, 'replace')
+        l = (len(str(self.out_of))) * 2 + 4
+        stri = stri.rjust(l)
+        return stri
 
 class ConfigEditionForm(npyscreen.FormMultiPageAction):
     """
@@ -11,6 +19,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
     Two important variables:
     - self.schema: holds the INI validation schema definition
     - self.type: are we working with LOCAL or HPC block
+    - self.global_defaults: are we editing the global defaults?
     """
     # Rename the buttons
     OK_BUTTON_TEXT = "Save"
@@ -24,6 +33,11 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         self.schema = SetupParser().load_schema()
         self.type = "LOCAL"
         self.fields = dict()
+        self.helps = dict()
+        self.global_defaults = False
+
+        # The sliders will be int
+        npyscreen.TitleSlider._entry_type = IntegerSlider
 
     def beforeEditing(self):
         """
@@ -31,11 +45,12 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         We are clearing out everything because the type may have changed so new fields needs to be created.
 
         If the type=HPC, there are more fields to display so are creating a new form page.
-        If the type=LOCAL, everthing can fit on one page.
+        If the type=LOCAL, everything can fit on one page.
         """
         # Empty the form
         self._clear_all_widgets()
         self.fields = dict()
+        self.helps = dict()
 
         # Add explanation
         self.add(npyscreen.MultiLineEdit, editable=False, max_height=4,
@@ -62,6 +77,18 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         # Go to first page
         self.switch_page(0)
 
+        # Overrides event to react to toggle of the service assets checkbox
+        if self.type == 'HPC':
+            self.fields['use_comps_asset_svc'].whenToggled = self.h_asset_svc_toggled
+            # Also call it once to hide/show the fields
+            self.h_asset_svc_toggled()
+
+        # If we are editing global default -> make name it readonly
+        if self.global_defaults:
+            self.fields['name'].editable = False
+            self.fields['name'].update()
+
+
     def on_cancel(self):
         """
         Cancel is pushed -> simply return to the main menu
@@ -72,27 +99,32 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         Save is pushed -> save the configuration and return to main menu
         """
-        if not self.block:
-            # Ask the location only if the bloc
-            popup = SaveLocationPopup()
-            popup.edit()
 
         if self.block:
-            # We had a block, delete it first before adding
-            delete_block(self.block['name'], self.block['location'] == 'LOCAL')
+            # Add/edit the block
             block_name = add_block(block_type=self.type, local=self.block['location'] == 'LOCAL', fields=self.fields)
             message = "local" if self.block['location'] == 'LOCAL' else "global"
             npyscreen.notify_confirm("The configuration block %s has been modified successfully in the %s INI file." % (block_name, message), title='Success!')
         else:
+            # Ask the location
+            popup = SaveLocationPopup()
+            popup.edit()
+
             # Add the block
             block_name = add_block(block_type=self.type, local=popup.local, fields=self.fields)
             message = "local" if popup.local else "global"
             npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
+
         self.parentApp.switchFormPrevious()
 
     def set_block(self,block):
-        self.block = get_block(block)
-        self.type = self.block['type']
+        if block:
+            self.block = get_block(block)
+            self.type = self.block['type']
+            self.global_defaults = block in ('LOCAL','HPC')
+        else:
+            self.block = None
+            self.global_defaults = False
 
     def create_fields(self, definitions, starting_y=6):
         """
@@ -123,7 +155,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
             value = self.block[field['name']] if self.block and self.block.has_key(field['name']) else None
 
             if type == "string" or type == "url":
-                # Simpla text box for string and url
+                # Simple text box for string and url
                 widget_class = npyscreen.TitleText
                 additionnal_params['value'] = value
 
@@ -134,17 +166,20 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
                 additionnal_params['lowest'] = field['min']
                 additionnal_params['value'] = 0 if not value else float(value)
 
-
             elif type == "file" or type == "directory":
-                # File picker for file and directory
-                widget_class = npyscreen.TitleFilenameCombo
-                additionnal_params['select_dir'] = type != "file"
+                # If we are working with HPC block -> no browsing of directory so display simple strings
+                if self.type == "HPC":
+                    widget_class = npyscreen.TitleText
+                else:
+                    # File picker for file and directory
+                    widget_class = npyscreen.TitleFilenameCombo
+                    additionnal_params['select_dir'] = type != "file"
                 additionnal_params['value'] = value
 
             elif type == "bool":
                 # Checkbox for bool
                 widget_class = npyscreen.Checkbox
-                additionnal_params['value'] = bool(value)
+                additionnal_params['value'] = value == '1'
 
             elif type == "radio":
                 # List of choices for radio
@@ -158,17 +193,25 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
 
             # When we have the class and the additional_params, create the widget
             w = self.add(widget_class, w_id=field['name'], name=field['label'] + ":", use_two_lines=False, rely=nexty,
-                     begin_entry_at=len(field['label']) + 2, **additionnal_params)
+                         begin_entry_at=len(field['label']) + 2, **additionnal_params)
 
             self.fields[field['name']] = w
 
             # Add the help text
             h = self.add(npyscreen.FixedText,  editable=False, value=field['help'], color='CONTROL')
+            self.helps[field['name']] = h
 
             nexty = h.rely + 2
 
         return nexty
 
+
+    def h_asset_svc_toggled(self):
+        asset_svc = self.fields['use_comps_asset_svc'].value
+        self.fields['exe_path'].hidden = asset_svc
+        self.fields['dll_path'].hidden = asset_svc
+        self.helps['exe_path'].hidden = asset_svc
+        self.helps['dll_path'].hidden = asset_svc
 
 
 

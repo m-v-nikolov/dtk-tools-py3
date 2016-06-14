@@ -39,6 +39,7 @@ class BlockSelectionPopup(npyscreen.ActionFormMinimal):
         """
         Initialization of the form
         """
+        self.block = None
         # Add some explanation text
         self.add(npyscreen.MultiLineEdit, max_height=3, editable=False,
                  value="Please choose the block to edit.\r\nThe (*) next to a name indicates the block is stored in the local ini file.", color='CURSOR')
