@@ -14,7 +14,7 @@ def get_file_path(local):
     """
     if local:
         return os.path.join(os.getcwd(), "simtools.ini")
-    return os.path.join(os.path.dirname(__file__), "..", "..","..", "simtools", 'simtools.ini')
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..","..", "simtools", 'simtools.ini'))
 
 def get_block(block):
     """
