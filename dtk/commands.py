@@ -6,10 +6,13 @@ import os
 import sys
 import time
 
+import npyscreen
+
 import simtools.utils as utils
 
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
+from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.ExperimentManager import ExperimentManagerFactory
 
 from simtools.SetupParser import SetupParser
@@ -19,6 +22,15 @@ def load_config_module(config_name):
     module_name = os.path.splitext(os.path.basename(config_name))[0]
     return import_module(module_name)
 
+def setup(args):
+    # If we are on windows, resize the terminal
+    if os.name == "nt":
+        os.system("mode con: cols=100 lines=35")
+    else:
+        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
+
+    npyscreen.DISABLE_RESIZE_SYSTEM = True
+    SetupApplication().run()
 
 def run(args):
     # get simulation-running instructions from script
@@ -255,6 +267,10 @@ def main():
     parser_analyze.add_argument('-c', '--comps', action = 'store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func = analyze)
+
+    # 'dtk setup' options
+    parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
+    parser_setup.set_defaults(func=setup)
 
     # run specified function passing in function-specific arguments
     args = parser.parse_args()

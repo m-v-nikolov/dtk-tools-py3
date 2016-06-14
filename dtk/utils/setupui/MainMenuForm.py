@@ -3,13 +3,15 @@ import npyscreen
 from BlockSelectionPopup import BlockSelectionPopup
 from ConfigTypePopup import ConfigTypePopup
 from MenuForm import MenuForm
+from dtk.utils.setupui.utils import get_file_path
 
 
-class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
+class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
     """
     Form representing the main menu of the application.
     Displays the title and a menu allowing to access the different features.
     """
+    DEFAULT_X_OFFSET = 4
 
     def create(self):
         """
@@ -27,16 +29,22 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         self.add(npyscreen.FixedText, editable=False, value="Configuration Application", relx=9)
 
         # Create the menu
-        menu = self.add(npyscreen.SelectOne, max_height=5, value=[0],
-                      values=["CHANGE THE GLOBAL DEFAULT BLOCKS",
-                              "CHANGE THE LOCAL DEFAULT BLOCKS",
+        self.add(npyscreen.TitleText, editable=False, name="MAIN MENU", rely=12)
+        menu = self.add(npyscreen.SelectOne, max_height=6, value=[0],
+                      values=["CHANGE THE DEFAULT LOCAL CONFIGURATION",
+                              "CHANGE THE DEFAULT HPC CONFIGURATION",
                               "NEW CONFIGURATION BLOCK",
-                              "EDIT CONFIGURATION BLOCK",
-                              "QUIT"], scroll_exit=True, rely=12)
+                              "EDIT CONFIGURATION BLOCKS",
+                              "QUIT"], scroll_exit=True, rely=13)
+
         self.set_menu_handlers(menu, self.h_select_menu)
 
         # Add handlers to quick the app when Ctrl+C is pushed
         self.add_handlers({'^C': self.h_quit})
+
+        # Add the paths for information
+        self.add(npyscreen.TitleText, editable=False, name="Local ini path", value=get_file_path(True), use_two_lines = True, begin_entry_at=0, rely=19)
+        self.add(npyscreen.TitleText, editable=False, name="Global ini path", value=get_file_path(False), use_two_lines = True, begin_entry_at=0, rely=22)
 
     def h_quit(self, item=None):
         """
@@ -54,18 +62,18 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
         # Extract the value
         val = self.menu.value[0]
 
-        # CHANGE THE GLOBAL DEFAULT BLOCKS selected
-        # Set the type to global and display the default selection form
+        # CHANGE THE DEFAULT LOCAL CONFIGURATION selected
+        # Edit the global LOCAL block
         if val == 0:
-            self.parentApp.getForm('DEFAULT_SELECTION').local = False
-            self.parentApp.change_form('DEFAULT_SELECTION')
+            self.parentApp.getForm('EDIT').set_block('LOCAL')
+            self.parentApp.change_form('EDIT')
             return
 
-        # CHANGE THE LOCAL DEFAULT BLOCKS selected
-        # Set the type to local and display the default selection form
+        # CHANGE THE DEFAULT HPC CONFIGURATION selected
+        # Edit the global HPC block
         if val == 1:
-            self.parentApp.getForm('DEFAULT_SELECTION').local = True
-            self.parentApp.change_form('DEFAULT_SELECTION')
+            self.parentApp.getForm('EDIT').set_block('HPC')
+            self.parentApp.change_form('EDIT')
             return
 
         # NEW CONFIGURATION BLOCK selected
@@ -76,7 +84,7 @@ class ConfigSelectionForm(npyscreen.FormBaseNew, MenuForm):
             popup.edit()
             if popup.value:
                 self.parentApp.getForm('EDIT').type = popup.value
-                self.parentApp.getForm('EDIT').block = None
+                self.parentApp.getForm('EDIT').set_block(None)
                 self.parentApp.change_form('EDIT')
             return
 

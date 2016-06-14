@@ -3,9 +3,8 @@ import os
 import npyscreen
 import sys
 
-from ConfigSelectionForm import ConfigSelectionForm
 from ConfigEditionForm import ConfigEditionForm
-from DefaultBlockSelectionForm import DefaultBlockSelectionForm
+from dtk.utils.setupui.MainMenuForm import MainMenuForm
 
 
 class SetupApplication(npyscreen.NPSAppManaged):
@@ -18,8 +17,7 @@ class SetupApplication(npyscreen.NPSAppManaged):
     """
 
     def onStart(self):
-        self.addForm('MAIN', ConfigSelectionForm, name='dtk-tools v0.3.5')
-        self.addForm('DEFAULT_SELECTION', DefaultBlockSelectionForm, name='Configuration of the default blocks')
+        self.addForm('MAIN', MainMenuForm, name='dtk-tools v0.3.5')
         self.addForm('EDIT', ConfigEditionForm, name='Block creation/edition form')
 
     def change_form(self, name):
@@ -28,13 +26,3 @@ class SetupApplication(npyscreen.NPSAppManaged):
         # Instead, use the method .switchForm to change forms.
         self.switchForm(name)
 
-
-if __name__ == '__main__':
-    # If we are on windows, resize the terminal
-    if os.name == "nt":
-        os.system("mode con: cols=100 lines=32")
-    else:
-        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=32, cols=100))
-
-    npyscreen.DISABLE_RESIZE_SYSTEM = True
-    TestApp = SetupApplication().run()

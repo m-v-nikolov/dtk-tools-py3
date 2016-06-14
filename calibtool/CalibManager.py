@@ -14,6 +14,7 @@ import pandas as pd
 from IterationState import IterationState
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
+from simtools.SetupParser import SetupParser
 from utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
@@ -293,7 +294,9 @@ class CalibManager(object):
                  'iteration': self.iteration,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
-                 'results': self.serialize_results()}
+                 'results': self.serialize_results(),
+                 'setup_file':self.setup.setup_file,
+                 'selected_block': self.setup.selected_block}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
@@ -451,6 +454,7 @@ class CalibManager(object):
         kw_location = kwargs.pop('location') if 'location' in kwargs else None
         self.location = calib_data.get('location', kw_location if kw_location else self.location)
         self.suite_id = calib_data.get('suite_id')
+
         latest_iteration = calib_data.get('iteration')
 
         if iteration is None:

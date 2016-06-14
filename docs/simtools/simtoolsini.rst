@@ -99,6 +99,87 @@ Default: ``6``
 
 Defines how many threads can be fired off when analyzing an experiment.
 
+.. setting:: sim_root
+
+``sim_root``
+--------------------------
+
+| HPC Default:  ``\\idmppfil01\IDM\home\%(user)s\output\simulations\``
+| LOCAL Default:  ``C:\Eradication\simulations``
+
+Folder where all the simulations inputs/outputs will be stored.
+
+.. warning::
+
+    The provided path needs to be accessible by your endpoint in the case of HPC simulation.
+
+
+
+.. setting:: input_root
+
+``input_root``
+--------------------------
+
+| HPC Default: ``\\idmppfil01\IDM\home\%(user)s\input\``
+| LOCAL Default: ``C:\Eradication\EMOD-InputData``
+
+Folder where all the input files (climate and demographics) are stored.
+
+.. warning::
+
+    The provided path needs to be accessible by your endpoint in the case of HPC simulation.
+
+
+
+.. setting:: bin_staging_root
+
+``bin_staging_root``
+--------------------------
+
+| HPC Default: ``\\idmppfil01\IDM\home\%(user)s\bin\``
+| LOCAL Default: ``C:\Eradication\bin``
+
+Folder where the executable will be cached.
+
+.. warning::
+
+    The provided path needs to be accessible by your endpoint in the case of an HPC simulation.
+    Also if the :setting:`use_comps_asset_svc` is on, this path needs to be the full path to an accessible exe.
+
+
+.. setting:: lib_staging_root
+
+``lib_staging_root``
+--------------------------
+
+| HPC Default: ``\\idmppfil01\IDM\home\%(user)s\emodules\``
+| LOCAL Default: ``C:\Eradication\bin``
+
+Folder where the custom reporters and other dlls will be cached.
+
+.. warning::
+
+    The provided path needs to be accessible by your endpoint in the case of an HPC simulation.
+    Also if the :setting:`use_comps_asset_svc` is on, this path needs to hold the path where the DLL are stored.
+
+
+
+
+LOCAL defaults
+===============
+This section defines parameters related to running the simulations in a LOCAL environment.
+Those defaults will apply to every blocks with the ``type=LOCAL``.
+
+.. setting:: max_local_sims
+
+``max_local_sims``
+--------------------------
+
+Default: 8
+
+Number of simulations ran in parallel.
+
+
 
 HPC defaults
 =============
@@ -140,66 +221,6 @@ Priority of the simulation can be:
     - ``Normal``
     - ``AboveNormal``
     - ``Highest``
-
-
-.. setting:: hpc_sim_root
-
-``sim_root``
---------------------------
-
-Default:  ``\\idmppfil01\IDM\home\%(user)s\output\simulations\``
-
-Folder where all the simulations inputs/outputs will be stored.
-
-.. warning::
-
-    The provided path needs to be accessible by your endpoint.
-
-
-
-.. setting:: hpc_input_root
-
-``input_root``
---------------------------
-
-Default: ``\\idmppfil01\IDM\home\%(user)s\input\``
-
-Folder where all the input files (climate and demographics) are stored.
-
-.. warning::
-
-    The provided path needs to be accessible by your endpoint.
-
-
-
-.. setting:: bin_staging_root
-
-``bin_staging_root``
---------------------------
-
-Default: ``\\idmppfil01\IDM\home\%(user)s\bin\``
-
-Folder where the executable will be cached.
-
-.. warning::
-
-    The provided path needs to be accessible by your endpoint.
-    Also if the :setting:`use_comps_asset_svc` is on, this path needs to be the full path to an accessible exe.
-
-
-.. setting:: lib_staging_root
-
-``lib_staging_root``
---------------------------
-
-Default: ``\\idmppfil01\IDM\home\%(user)s\emodules\``
-
-Folder where the custom reporters and other dlls will be cached.
-
-.. warning::
-
-    The provided path needs to be accessible by your endpoint.
-    Also if the :setting:`use_comps_asset_svc` is on, this path needs to hold the path where the DLL are stored.
 
 
 .. setting:: num_retries
@@ -262,7 +283,7 @@ Complete example
 ==================
 
 .. snippet:: cfg
-    :filename: dtk/dtk_setup.cfg
+    :filename: simtools/simtools.ini
 
     [DEFAULT]
     max_threads = 16
