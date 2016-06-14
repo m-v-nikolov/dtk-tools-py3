@@ -74,8 +74,17 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         # Then display the extra fields depending on the type
         self.create_fields(self.schema[self.type], starting_y=y)
 
-        # Go to first page
-        self.switch_page(0)
+        # Add the menu item if we are editing
+        if self.block and not self.global_defaults:
+            self.remove_local = self.add(
+                npyscreen.MiniButtonPress,
+                name="Remove block",
+                rely=0 - self.__class__.OK_BUTTON_BR_OFFSET[0],
+                relx=1,
+                use_max_space=True,
+                color='DANGER',
+                when_pressed_function=self.h_remove_block
+            )
 
         # Overrides event to react to toggle of the service assets checkbox
         if self.type == 'HPC':
@@ -87,7 +96,6 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         if self.global_defaults:
             self.fields['name'].editable = False
             self.fields['name'].update()
-
 
     def on_cancel(self):
         """
@@ -103,7 +111,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         if self.block:
             # Add/edit the block
             block_name = add_block(block_type=self.type, local=self.block['location'] == 'LOCAL', fields=self.fields)
-            message = "local" if self.block['location'] == 'LOCAL' else "global"
+            message = "local" if self.block['location'] == 'LOCAL' else "GLOBAL"
             npyscreen.notify_confirm("The configuration block %s has been modified successfully in the %s INI file." % (block_name, message), title='Success!')
         else:
             # Ask the location
@@ -205,7 +213,6 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
 
         return nexty
 
-
     def h_asset_svc_toggled(self):
         asset_svc = self.fields['use_comps_asset_svc'].value
         self.fields['exe_path'].hidden = asset_svc
@@ -213,6 +220,22 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         self.helps['exe_path'].hidden = asset_svc
         self.helps['dll_path'].hidden = asset_svc
 
+    def h_remove_block(self):
+        # Ask for confirmation
+        confirm = npyscreen.notify_yes_no("Are you sure you want to delete the block: %s" % self.block['name'], "Confirm deletion", form_color='DANGER')
+        if not confirm:
+            return
 
+        # Actually delete the blcok
+        delete_block(self.block['name'], self.block['location'] == "LOCAL")
+
+        # Notify
+        npyscreen.notify_wait("The block %s has been delete from the %s ini file." % (self.block['name'], self.block['location']))
+
+        # Add to specify this edit_return_value to prevent failure
+        self.edit_return_value = None
+
+        # Returns to the MainMenu
+        self.parentApp.switchFormPrevious()
 
 
