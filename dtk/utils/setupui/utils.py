@@ -130,6 +130,9 @@ def add_block(block_type, local, fields):
 
     # Add the different config item to the section providing they are not None or 0
     for id, widget in fields.iteritems():
+        if widget.hidden:
+            continue
+
         if widget.value and widget.value != 0:
             value = widget.value
 
