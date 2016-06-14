@@ -26,13 +26,3 @@ class SetupApplication(npyscreen.NPSAppManaged):
         # Instead, use the method .switchForm to change forms.
         self.switchForm(name)
 
-
-if __name__ == '__main__':
-    # If we are on windows, resize the terminal
-    if os.name == "nt":
-        os.system("mode con: cols=100 lines=35")
-    else:
-        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-
-    npyscreen.DISABLE_RESIZE_SYSTEM = True
-    TestApp = SetupApplication().run()
