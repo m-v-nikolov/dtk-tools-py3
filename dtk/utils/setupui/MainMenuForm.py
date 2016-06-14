@@ -11,6 +11,7 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
     Form representing the main menu of the application.
     Displays the title and a menu allowing to access the different features.
     """
+    DEFAULT_X_OFFSET = 4
 
     def create(self):
         """
