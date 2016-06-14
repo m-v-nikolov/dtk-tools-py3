@@ -1,8 +1,6 @@
 import os
 from ConfigParser import ConfigParser
 
-import re
-
 from simtools.SetupParser import SetupParser
 
 
@@ -14,7 +12,8 @@ def get_file_path(local):
     """
     if local:
         return os.path.join(os.getcwd(), "simtools.ini")
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..","..", "simtools", 'simtools.ini'))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "simtools", 'simtools.ini'))
+
 
 def get_block(block):
     """
@@ -35,7 +34,7 @@ def get_block(block):
     sp = SetupParser(selected_block=block_name, force=True, setup_file=get_file_path(location == "LOCAL"))
 
     # Transform into a dictionary
-    ret = {a:b for (a, b) in sp.setup.items(block_name, True)}
+    ret = {a: b for (a, b) in sp.setup.items(block_name, True)}
 
     # set the name and location
     ret['name'] = block_name
@@ -43,6 +42,7 @@ def get_block(block):
 
     # Returns a dict with the info
     return ret
+
 
 def get_all_blocks(local):
     """
@@ -59,30 +59,29 @@ def get_all_blocks(local):
     config = ConfigParser()
     config.read(get_file_path(local))
 
-    ret = {'LOCAL':[], 'HPC':[]}
-    for section in  config.sections():
-        # Ignore certain sections
-        if section in ("DEFAULT", "GLOBAL", "BINARIES"): continue
-
+    ret = {'LOCAL': [], 'HPC': []}
+    for section in config.sections():
         # If the section has no type, it is probably av overlay. Check in the global
-        if not config.has_option(section,'type'):
+        if not config.has_option(section, 'type'):
             if not local:
-                # We are in the global file and we dont have type, it is an error... assume local
+                # We are in the global file and we don't have type, it is an error... assume local
                 current_type = 'LOCAL'
             else:
                 global_config = ConfigParser()
                 global_config.read(get_file_path(False))
+
                 # If the global config doesnt have the block type either, its an error assumes LOCAL else get
                 # the correct block type
                 current_type = global_config.get(section,"type") if global_config.has_section(section) and global_config.has_option(section,'type') else "LOCAL"
         else:
             # Normal behavior
-            current_type = config.get(section,'type')
+            current_type = config.get(section, 'type')
 
         # Append it to the correct return section
         ret[current_type].append(section)
 
     return ret
+
 
 def delete_block(block, local):
     """
@@ -99,6 +98,7 @@ def delete_block(block, local):
 
     with open(get_file_path(local), 'w') as file_handler:
         config.write(file_handler)
+
 
 def add_block(block_type, local, fields):
     """
@@ -129,7 +129,7 @@ def add_block(block_type, local, fields):
     config.set(section, 'type', block_type)
 
     # Add the different config item to the section providing they are not None or 0
-    for id, widget in fields.iteritems():
+    for widget_id, widget in fields.iteritems():
         if widget.hidden:
             continue
 
@@ -144,46 +144,12 @@ def add_block(block_type, local, fields):
             elif isinstance(widget.value, float):
                 value = int(widget.value)
 
-            # Only add if different than in the SetupParser
-            if str(sp.get(id)) != str(value):
-                config.set(section, id, value)
+            # Only add if different from the SetupParser value
+            # Allow to only record the differences and make cleaner files
+            if str(sp.get(widget_id)) != str(value):
+                config.set(section, widget_id, value)
 
     with open(get_file_path(local), 'w') as file_handler:
-     config.write(file_handler)
+        config.write(file_handler)
 
     return section
-
-# DEPRECATED AS WE DO NOT USE DEFAULTS ANYMORE
-def get_default_blocks(local):
-    config = ConfigParser()
-    config.read(get_file_path(local))
-
-    local_default = config.get('DEFAULT','local') if config.has_option('DEFAULT','local') else None
-    hpc_default = config.get('DEFAULT','hpc') if config.has_option('DEFAULT','hpc') else None
-
-    return local_default, hpc_default
-
-# DEPRECATED AS WE DO NOT USE DEFAULTS ANYMORE
-def change_defaults(local, local_default=None, hpc_default=None):
-    # Security
-    if not local_default and not hpc_default:
-        return
-
-    # Create a config parser
-    config = ConfigParser()
-    config.read(get_file_path(local))
-
-    # Set the section
-    if hpc_default:
-        config.set('DEFAULT','HPC', hpc_default)
-    else:
-        config.remove_option('DEFAULT','HPC')
-
-    if local_default:
-        config.set('DEFAULT','LOCAL', local_default)
-    else:
-        config.remove_option('DEFAULT','LOCAL')
-
-    # Write down the file
-    with open(get_file_path(local),'w') as file_handler:
-        config.write(file_handler)

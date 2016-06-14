@@ -5,6 +5,9 @@ from dtk.utils.setupui.utils import add_block, get_block, delete_block
 from simtools.SetupParser import SetupParser
 
 class IntegerSlider(npyscreen.Slider):
+    """
+    Allow the slider to display ints instead of floats
+    """
     def translate_value(self):
         stri = "%s / %s" % (int(self.value), int(self.out_of))
         if isinstance(stri, bytes):
@@ -76,15 +79,13 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
 
         # Add the menu item if we are editing
         if self.block and not self.global_defaults:
-            self.remove_local = self.add(
-                npyscreen.MiniButtonPress,
-                name="Remove block",
-                rely=0 - self.__class__.OK_BUTTON_BR_OFFSET[0],
-                relx=1,
-                use_max_space=True,
-                color='DANGER',
-                when_pressed_function=self.h_remove_block
-            )
+            self.add(npyscreen.MiniButtonPress,
+                     name="Remove block",
+                     rely=0 - self.__class__.OK_BUTTON_BR_OFFSET[0],
+                     relx=1,
+                     use_max_space=True,
+                     color='DANGER',
+                     when_pressed_function=self.h_remove_block)
 
         # Overrides event to react to toggle of the service assets checkbox
         if self.type == 'HPC':
@@ -107,7 +108,6 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         Save is pushed -> save the configuration and return to main menu
         """
-
         if self.block:
             # Add/edit the block
             block_name = add_block(block_type=self.type, local=self.block['location'] == 'LOCAL', fields=self.fields)
@@ -172,7 +172,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
                 widget_class = npyscreen.TitleSlider
                 additionnal_params['out_of'] = field['max']
                 additionnal_params['lowest'] = field['min']
-                additionnal_params['value'] = 0 if not value else float(value)
+                additionnal_params['value'] = 0 if not value else int(value)
 
             elif type == "file" or type == "directory":
                 # If we are working with HPC block -> no browsing of directory so display simple strings
@@ -200,13 +200,22 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
                 additionnal_params['value'] = None if not value else field['choices'].index(value)
 
             # When we have the class and the additional_params, create the widget
-            w = self.add(widget_class, w_id=field['name'], name=field['label'] + ":", use_two_lines=False, rely=nexty,
-                         begin_entry_at=len(field['label']) + 2, **additionnal_params)
+            w = self.add(widget_class,
+                         w_id=field['name'],
+                         name=field['label'] + ":",
+                         use_two_lines=False,
+                         rely=nexty,
+                         begin_entry_at=len(field['label']) + 2,
+                         **additionnal_params)
 
             self.fields[field['name']] = w
 
             # Add the help text
-            h = self.add(npyscreen.FixedText,  editable=False, value=field['help'], color='CONTROL')
+            h = self.add(npyscreen.FixedText,
+                         editable=False,
+                         value=field['help'],
+                         color='CONTROL')
+
             self.helps[field['name']] = h
 
             nexty = h.rely + 2
@@ -214,6 +223,9 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         return nexty
 
     def h_asset_svc_toggled(self):
+        """
+        When the comps asset service is toggled, hide/show the exe_path/dll_path
+        """
         asset_svc = self.fields['use_comps_asset_svc'].value
         self.fields['exe_path'].hidden = asset_svc
         self.fields['dll_path'].hidden = asset_svc
@@ -221,19 +233,24 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         self.helps['dll_path'].hidden = asset_svc
 
     def h_remove_block(self):
+        """
+        The "Remove block" button is pushed.
+        Ask for confirmation and delete if ok.
+        """
         # Ask for confirmation
-        confirm = npyscreen.notify_yes_no("Are you sure you want to delete the block: %s" % self.block['name'], "Confirm deletion", form_color='DANGER')
-        if not confirm:
+        if not npyscreen.notify_yes_no("Are you sure you want to delete the block: %s" % self.block['name'],
+                                       "Confirm deletion", form_color='DANGER'):
             return
 
-        # Actually delete the blcok
+        # Actually delete the block
         delete_block(self.block['name'], self.block['location'] == "LOCAL")
 
         # Notify
-        npyscreen.notify_wait("The block %s has been delete from the %s ini file." % (self.block['name'], self.block['location']))
+        npyscreen.notify_wait("The block %s has been delete from the %s ini file."
+                              % (self.block['name'], self.block['location']))
 
         # Add to specify this edit_return_value to prevent failure
-        self.edit_return_value = None
+        self.__class__.edit_return_value = None
 
         # Returns to the MainMenu
         self.parentApp.switchFormPrevious()
