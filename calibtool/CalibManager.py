@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import glob
 import json
 import logging
