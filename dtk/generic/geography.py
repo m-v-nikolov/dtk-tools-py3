@@ -24,6 +24,8 @@ def convert_filepaths(params):
             params['Demographics_Filenames'] = [os.path.join(g, fn) for fn in params.pop(k).split(';')]
         elif k == 'Demographics_Filenames':
             params[k] = [os.path.join(g, fn) for fn in v]
+        elif k=='Campaign_Filename':
+            continue
         elif 'Filename' in k:
             params[k] = os.path.join(g, v)
 

@@ -47,21 +47,23 @@ def run(args, unknownArgs):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        location = 'LOCAL'
+        selected_block = 'LOCAL'
     elif len(unknownArgs) == 1:
-        location = unknownArgs[0][2:].upper()
+        selected_block = unknownArgs[0][2:].upper()
     else:
-        raise Exception('Too many unknown arguments: please see help.');
+        raise Exception('Too many unknown arguments: please see help.')
 
     # run the simulation
-    setup = SetupParser(selected_block = location, setup_file = args.ini)
+    setup = SetupParser(selected_block=selected_block, setup_file=args.ini)
     additional_args = {}
-    if location == 'HPC':
+    if setup.get('type') == 'HPC':
         if args.priority:
             additional_args['priority'] = args.priority
         if args.node_group:
             additional_args['node_group'] = args.node_group
-    sm = ExperimentManagerFactory.from_setup(setup, location, **additional_args)
+
+    # Create the experiment manager based on the setup
+    sm = ExperimentManagerFactory.from_setup(setup, location=setup.get('type'), **additional_args)
     sm.run_simulations(**mod.run_sim_args)
 
 
