@@ -568,7 +568,7 @@ class CalibManager(object):
         suite_id = calib_data.get('suite_id')
 
         # Go through each already ran iterations
-        for i in range(0, iter_count):
+        for i in range(0, iter_count+1):
             # Create the path for the iteration dir
             iter_directory = os.path.join(self.name, 'iter%d' % i)
 

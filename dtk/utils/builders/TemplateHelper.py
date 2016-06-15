@@ -39,7 +39,7 @@ class TemplateHelper():
 
         logger.info( "Table with %d configurations of %d parameters." % (nRow, nParm) )
 
-    def __mod_dynamic_parameters(self, cb, dynamic_params):
+    def mod_dynamic_parameters(self, cb, dynamic_params):
         # Modify the config builder according to the dynamic_parameters
 
         logger.info( '-----------------------------------------' )
@@ -87,6 +87,6 @@ class TemplateHelper():
         Returns a ModBuilder ModFn that sets file contents and values in config builder according to the dynamic parameters.
         """
         return [
-            ModBuilder.ModFn(self.__mod_dynamic_parameters, dict(zip(self.header, row)))
+            ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
             for row in self.table
         ]
