@@ -14,7 +14,7 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block='LOCAL', setup_file=None, force=False, fallback='LOCAL'):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL'):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
