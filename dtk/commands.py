@@ -47,14 +47,14 @@ def run(args, unknownArgs):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        selected_block = 'LOCAL'
+        selected_block = None
     elif len(unknownArgs) == 1:
         selected_block = unknownArgs[0][2:].upper()
     else:
         raise Exception('Too many unknown arguments: please see help.')
 
     # run the simulation
-    setup = SetupParser(selected_block=selected_block, setup_file=args.ini)
+    setup = SetupParser(selected_block=selected_block, setup_file=args.ini, force=True)
     additional_args = {}
     if setup.get('type') == 'HPC':
         if args.priority:

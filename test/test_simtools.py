@@ -129,6 +129,7 @@ class TestSetupParser(unittest.TestCase):
         self.assertRaises(ValueError, sp.get, 'WRONG')
 
     def test_block_selection(self):
+        os.chdir(os.path.abspath('input'))
         # Pass a block name
         sp = SetupParser('HPC')
         self.assertEqual(sp.selected_block, 'HPC')
@@ -136,6 +137,16 @@ class TestSetupParser(unittest.TestCase):
 
         # Pass another block name but shouldn't change
         sp = SetupParser('TEST')
+        self.assertEqual(sp.selected_block, 'HPC')
+
+        # Change in the class and subsequent instances
+        SetupParser.selected_block = None
+        SetupParser.selected_block = 'TEST'
+        sp = SetupParser('HPC')
+        self.assertEqual('TEST', sp.selected_block)
+
+        # And now force
+        sp = SetupParser('HPC', force=True)
         self.assertEqual(sp.selected_block, 'HPC')
 
     def test_overlay_file_cwd(self):
