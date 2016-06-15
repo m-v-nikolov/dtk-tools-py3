@@ -7,6 +7,9 @@ import signal
 import subprocess
 import threading
 import time
+
+import sys
+
 import utils
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -315,7 +318,7 @@ class LocalExperimentManager(object):
         cache_path = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
-        subprocess.Popen(["python", local_runner_path, ",".join(paths),
+        subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
                           self.commandline.Commandline, str(max_local_sims), cache_path], shell=False)
 
         return True
