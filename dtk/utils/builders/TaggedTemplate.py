@@ -62,7 +62,7 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
     @classmethod
     def from_file(cls, template_filepath, tag='__KP'):
         # Read in template
-        logger.info( "Reading template from file:", template_filepath )
+        logger.info( "Reading template from file:" + template_filepath )
         content = json2dict(template_filepath)
 
         # Get the filename and create a TaggedTemplate
