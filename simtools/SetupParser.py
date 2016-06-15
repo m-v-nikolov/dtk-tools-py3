@@ -14,7 +14,7 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block='LOCAL', setup_file=None, force=False, fallback='LOCAL'):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL'):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -32,10 +32,11 @@ class SetupParser:
         :param force: Force the replacement of selected_block and setup_file in the class variable
         :param fallback: Fallback block if the selected_block cannot be found
         """
-        # Store the selected_block in the class
+        # Store the selected_block in the class only if passed
         if selected_block and (not SetupParser.selected_block or force):
             SetupParser.selected_block = selected_block
         elif not SetupParser.selected_block and not selected_block:
+            # There's no block stored and none passed -> assume the fallback
             SetupParser.selected_block = fallback
 
         if setup_file and (not SetupParser.setup_file or force):
