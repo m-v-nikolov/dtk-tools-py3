@@ -36,9 +36,12 @@ class SetupParser:
         if selected_block and (not SetupParser.selected_block or force):
             SetupParser.selected_block = selected_block
 
-        # Assumes LOCAL if no passed and no stored
+        # Assumes fallback if no passed and no stored
+        # Do not store in the class as it is just a fallback for legacy code
+        # (e.g. regression analyzers that needs the bin_path first)
+        # TODO: Remove when no code uses SetupParser().get before dtk run command initializes the setup
         if not selected_block and not self.selected_block:
-            selected_block = 'LOCAL'
+            selected_block = fallback
 
         if setup_file and (not SetupParser.setup_file or force):
             # Only add the file if it exists
@@ -79,7 +82,7 @@ class SetupParser:
             self.overlay_setup(overlay)
 
         # Test if we now have the block we want
-        if not self.setup.has_section(self.selected_block):
+        if not self.setup.has_section(selected_block):
             setup_file_path = overlay_path if overlay_path else os.path.join(os.path.dirname(__file__), 'simtools.ini')
             OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
             # The current block was not found... revert to the fallback
@@ -131,9 +134,15 @@ class SetupParser:
             self.setup.set(self.selected_block,item[0], item[1])
 
     def get(self, parameter):
-        if not self.setup.has_option(self.selected_block, parameter):
-            raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
-        return self.setup.get(self.selected_block,parameter)
+        # Assumes fallback if no passed and no stored
+        # Do not store in the class as it is just a fallback for legacy code
+        # (e.g. regression analyzers that needs the bin_path first)
+        # TODO: Remove when no code uses SetupParser().get before dtk run command initializes the setup
+        selected_block = self.selected_block if self.selected_block else 'LOCAL'
+
+        if not self.setup.has_option(selected_block, parameter):
+            raise ValueError("%s block does not have the option %s!" % (selected_block, parameter))
+        return self.setup.get(selected_block,parameter)
 
     def set(self, parameter, value):
         self.setup.set(self.selected_block, parameter, value)
