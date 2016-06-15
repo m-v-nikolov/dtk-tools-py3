@@ -28,13 +28,16 @@ class SimulationCommissioner(threading.Thread):
                                      cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
-                self.change_state(status="Running")
+                self.change_state(status="Running", pid = p.pid)
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
                 while p.poll() is None:
                     time.sleep(1)
                     self.change_state(message=self.last_status_line())
+
+                # Remove "pid" from cached json file.
+                self.change_state(pid = -1)
 
                 # When poll returns None, the process is done, test if succeeded or failed
                 if "Done" in self.last_status_line():
@@ -59,7 +62,7 @@ class SimulationCommissioner(threading.Thread):
 
         return msg if msg else ""
 
-    def change_state(self, status=None, message=None):
+    def change_state(self, status=None, message=None, pid = None):
         """
         Change either status, message or both for the simulation currently handled by the thread.
         Everything inside the lock is in a try, finally block to prevent infinite blocking even if something goes wrong.
@@ -78,6 +81,11 @@ class SimulationCommissioner(threading.Thread):
                 cache['sims'][self.sim_id]["status"] = status
             if message:
                 cache['sims'][self.sim_id]["message"] = message
+            if pid:
+                if pid == -1 and 'pid' in cache['sims'][self.sim_id]:
+                    del cache['sims'][self.sim_id]["pid"]
+                else:
+                    cache['sims'][self.sim_id]["pid"] = pid
 
             # Write the file back
             with open(self.cache_path, 'wb') as cache_file:

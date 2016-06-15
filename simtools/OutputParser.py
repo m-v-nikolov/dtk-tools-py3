@@ -174,7 +174,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
         for filename in filenames:
             paths.add(filename.replace('\\', '/'))
 
-        asset_byte_arrays = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None).toArray()
+        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
+        asset_byte_arrays = assets.toArray() if assets else []
         
         #print('done retrieving files; starting load')
         
