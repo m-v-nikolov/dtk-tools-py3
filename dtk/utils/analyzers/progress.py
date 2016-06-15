@@ -1,5 +1,7 @@
 import logging
 import re
+import time
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,10 +16,28 @@ class ProgressAnalyzer():
         self.filenames = ['StdOut.txt', 'status.txt']
         self.simIds = simIds
 
+    @staticmethod
+    def getFormattedTime(seconds):
+        flooredSeconds = int(math.floor(seconds))
+        decimal = 100 * (round(seconds, 2) - float(flooredSeconds))
+
+        m, s = divmod(flooredSeconds, 60)
+        h, m = divmod(m, 60)
+        d, h = divmod(m, 24)
+
+        return '%d:%02d:%02d:%02d.%02d' % (d, h, m, s, decimal)
+
     def filter(self, sim_metadata):
         return lambda x: True
 
     def apply(self, parser):
+
+        # Ff this experiment has not started, set the values and return.
+        if not self.filenames[0] in parser.raw_data:
+            parser.timeElapsed = 0
+            parser.progress = 0
+            return
+
         lastLineOfStdOut = [i for i in parser.raw_data[self.filenames[0]].split('\n') if i != ''][-1]
         timeCapture = re.match('(\d*):(\d*):(\d*)', lastLineOfStdOut)
         if timeCapture:
@@ -62,9 +82,9 @@ class ProgressAnalyzer():
                 timeRemaining = None
 
             self.data += 'Simulation ' + str(k) + ':\n'
-            self.data += '    ' + '{0:.2f}'.format(round(progress, 2)) + '% complete in ' + str(timeElapsed) + ' seconds.\n'
+            self.data += '    ' + '{0:.2f}'.format(round(progress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + '.\n'
             if timeRemaining:
-                self.data += '    Approximately ' + '{0:.2f}'.format(round(timeRemaining, 2)) + ' seconds remaining.\n'
+                self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(timeRemaining) + ' remaining.\n'
 
         # Compute and print the total progress.
         averageProgress = totalProgress / len(selected)
@@ -75,9 +95,9 @@ class ProgressAnalyzer():
             averageTimeRemaining = None
 
         self.data += 'Overall:\n'
-        self.data += '    ' + '{0:.2f}'.format(round(averageProgress, 2)) + '% complete in ' + '{0:.2f}'.format(round(averageTimeElapsed, 2)) + ' seconds (on average).\n'
+        self.data += '    ' + '{0:.2f}'.format(round(averageProgress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + ' (on average).\n'
         if averageTimeRemaining:
-            self.data += '    Approximately ' + '{0:.2f}'.format(round(averageTimeRemaining, 2)) + ' seconds remaining.\n'
+            self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(averageTimeRemaining) + ' remaining.\n'
 
     def finalize(self):
         print self.data

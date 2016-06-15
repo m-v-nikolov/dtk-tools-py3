@@ -17,12 +17,21 @@ from simtools.ExperimentManager import ExperimentManagerFactory
 
 from simtools.SetupParser import SetupParser
 
+from dtk.utils.analyzers.select import example_selection
+from dtk.utils.analyzers.group  import group_by_name
+from dtk.utils.analyzers.plot   import plot_grouped_lines
+from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+builtinAnalyzers = { 
+    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines), 
+    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_')) 
+}
+
 def load_config_module(config_name):
     sys.path.append(os.getcwd())
     module_name = os.path.splitext(os.path.basename(config_name))[0]
     return import_module(module_name)
 
-def setup(args):
+def setup(args, unknownArgs):
     # If we are on windows, resize the terminal
     if os.name == "nt":
         os.system("mode con: cols=100 lines=35")
@@ -32,13 +41,20 @@ def setup(args):
     npyscreen.DISABLE_RESIZE_SYSTEM = True
     SetupApplication().run()
 
-def run(args):
+def run(args, unknownArgs):
     # get simulation-running instructions from script
     mod = load_config_module(args.config_name)
 
+    # Get the proper configuration block.
+    if len(unknownArgs) == 0:
+        location = 'LOCAL'
+    elif len(unknownArgs) == 1:
+        location = unknownArgs[0][2:].upper()
+    else:
+        raise Exception('Too many unknown arguments: please see help.');
+
     # run the simulation
-    location = 'HPC' if (args and args.hpc) else 'LOCAL'
-    setup = SetupParser(location)
+    setup = SetupParser(selected_block = location, setup_file = args.ini)
     additional_args = {}
     if location == 'HPC':
         if args.priority:
@@ -49,7 +65,7 @@ def run(args):
     sm.run_simulations(**mod.run_sim_args)
 
 
-def status(args):
+def status(args, unknownArgs):
     if args.active:
         logging.info('Getting status of all active experiments.')
         sms = reload_active_experiments()
@@ -68,7 +84,7 @@ def status(args):
             time.sleep(20)
 
 
-def resubmit(args):
+def resubmit(args, unknownArgs):
     sm = reload_experiment(args)
 
     if args.simIds:
@@ -86,7 +102,7 @@ def resubmit(args):
         sm = reload_experiment(args)
         sm.resubmit_simulations(**params)
 
-def kill(args):
+def kill(args, unknownArgs):
 
     sm = reload_experiment(args)
     states, msgs = sm.get_simulation_status()
@@ -113,7 +129,7 @@ def kill(args):
         sm = reload_experiment(args)
         sm.cancel_simulations(**params)
 
-def stdout(args):
+def stdout(args, unknownArgs):
     logging.info('Getting stdout...')
 
     sm = reload_experiment(args)
@@ -124,12 +140,8 @@ def stdout(args):
     elif args.failed:
         args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
 
-    if not args.force:
-        if not sm.status_succeeded(states):
-            logging.warning('Not all jobs have finished successfully yet...')
-            logging.info('Job states:')
-            logging.info(json.dumps(states, sort_keys = True, indent = 4))
-            return
+    if not sm.status_succeeded(states):
+        logging.warning('WARNING: not all jobs have finished successfully yet...')
 
     sm.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
 
@@ -138,7 +150,7 @@ def stdout(args):
 
     sm.analyze_simulations()
 
-def progress(args):
+def progress(args, unknownArgs):
     logging.info('Getting progress...')
 
     sm = reload_experiment(args)
@@ -149,12 +161,9 @@ def progress(args):
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
-    try:
-        sm.analyze_simulations()
-    except:
-        logging.info('This experiment is not ready.')
+    sm.analyze_simulations()
 
-def analyze(args):
+def analyze(args, unknownArgs):
 
     logging.info('Analyzing results...')
 
@@ -168,7 +177,13 @@ def analyze(args):
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
         
-    analyze_from_script(args, sm)
+    if os.path.exists(args.config_name):
+        analyze_from_script(args, sm)
+    elif args.config_name in builtinAnalyzers.keys():
+        sm.add_analyzer(builtinAnalyzers[args.config_name])
+    else:
+        logging.error('Unknown analyzer...available builtin analyzers: ' + ', '.join(builtinAnalyzers.keys()))
+        return
 
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
@@ -216,7 +231,7 @@ def main():
     # 'dtk run' options
     parser_run = subparsers.add_parser('run', help = 'Run one or more simulations configured by run-options.')
     parser_run.add_argument(dest = 'config_name', default = None, help = 'Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--hpc', action = 'store_true', help = 'Run simulation on HPC using COMPS (default is local simulation).')
+    parser_run.add_argument('--ini', default = None, help = 'Specify an overlay configuration file (*.ini).')
     parser_run.add_argument('--priority', default = None, help = 'Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default = None, help = 'Specify node group of COMPS simulation (only for HPC).')
     parser_run.set_defaults(func = run)
@@ -248,7 +263,6 @@ def main():
     parser_stdout.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
     parser_stdout.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_stdout.add_argument('-e', '--error', action = 'store_true', help = 'Print stderr instead of stdout.')
-    parser_stdout.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_stdout.add_argument('--failed', action = 'store_true', help = 'Get the stdout for the first failed simulation in the selected experiment.')
     parser_stdout.add_argument('--succeeded', action = 'store_true', help = 'Get the stdout for the first succeeded simulation in the selected experiment.')
     parser_stdout.set_defaults(func = stdout)
@@ -273,8 +287,8 @@ def main():
     parser_setup.set_defaults(func=setup)
 
     # run specified function passing in function-specific arguments
-    args = parser.parse_args()
-    args.func(args)
+    args, unknownArgs = parser.parse_known_args()
+    args.func(args, unknownArgs)
 
 if __name__ == '__main__':
     main()

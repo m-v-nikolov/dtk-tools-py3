@@ -332,8 +332,10 @@ class LocalExperimentManager(object):
         logger.info('Killing all simulations in experiment: ' + str(ids))
         self.cancel_simulations(ids)
 
-    def kill_job(self, job_id):
-        os.kill(job_id, signal.SIGTERM)
+    def kill_job(self, simId):
+        pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
+        if pid:
+            os.kill(pid, signal.SIGTERM)
 
     def resubmit_job(self, job_id):
         raise NotImplementedError('resubmit_job not implemented for %s jobs' % self.location)
@@ -511,7 +513,7 @@ class CompsExperimentManager(LocalExperimentManager):
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Cancel()
 
-    def kill_job(self, job_id):
+    def kill_job(self, simId):
         from COMPS import Client
         from COMPS.Data import Simulation, QueryCriteria
 
@@ -519,7 +521,7 @@ class CompsExperimentManager(LocalExperimentManager):
             Client.Login(self.get_property('server_endpoint'))
             self.comps_logged_in = True
 
-        s = Simulation.GetById(job_id, QueryCriteria().Select('Id'))
+        s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
 
     def analyze_simulations(self):
