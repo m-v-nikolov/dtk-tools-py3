@@ -4,6 +4,7 @@ from dtk.utils.setupui.SaveLocationPopup import SaveLocationPopup
 from dtk.utils.setupui.utils import add_block, get_block, delete_block
 from simtools.SetupParser import SetupParser
 
+
 class IntegerSlider(npyscreen.Slider):
     """
     Allow the slider to display ints instead of floats
@@ -15,6 +16,7 @@ class IntegerSlider(npyscreen.Slider):
         l = (len(str(self.out_of))) * 2 + 4
         stri = stri.rjust(l)
         return stri
+
 
 class ConfigEditionForm(npyscreen.FormMultiPageAction):
     """
@@ -42,6 +44,18 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         # The sliders will be int
         npyscreen.TitleSlider._entry_type = IntegerSlider
 
+    def switch_page(self, page, display=True):
+        """
+        Correct a bug selecting the explanation text when changing page.
+        Even though it has the editable=False flag.
+        First call the parent switch_page function and just go to the next editw or +3 if global defaults (bypass name)
+        depending on global_defaults and if we are on the first page.
+        """
+        super(ConfigEditionForm,self).switch_page(page,display)
+
+        if page == 0 and len(self._widgets__) > self.editw and self._widgets__[self.editw].name == "headtext":
+            self.editw += 1 if not self.global_defaults else 3
+
     def beforeEditing(self):
         """
         Before editing, clear all widgets and create the form again.
@@ -56,9 +70,9 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         self.helps = dict()
 
         # Add explanation
-        self.add(npyscreen.MultiLineEdit, editable=False, max_height=4,
-                 value="In this form, you will be able to specify the values for the different field of the configuration.\r\n"
-                       "Leaving a field blank will accept the global defaults.\r\n"
+        self.add(npyscreen.MultiLineEdit, editable=False, max_height=4, color='STANDOUT', name="headtext",
+                 value="In this form, you will be able to specify the values for the different field of the\r\n"
+                       "configuration. Leaving a field blank will accept the global defaults.\r\n"
                        "To exit the selection of file/folder press 'ESC'.")
 
         # Display a name field
