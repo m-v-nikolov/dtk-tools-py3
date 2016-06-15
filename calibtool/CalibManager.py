@@ -295,7 +295,7 @@ class CalibManager(object):
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
-                 'setup_file':self.setup.setup_file,
+                 'setup_overlay_file':self.setup.setup_file,
                  'selected_block': self.setup.selected_block}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
