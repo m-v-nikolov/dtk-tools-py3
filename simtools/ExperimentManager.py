@@ -321,6 +321,10 @@ class LocalExperimentManager(object):
         subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
                           self.commandline.Commandline, str(max_local_sims), cache_path], shell=False)
 
+        if self.setup.has_option('blocking'):
+            self.cache_experiment_data()
+            self.wait_for_finished(verbose=True)
+
         return True
 
     def cancel_all_simulations(self, states=None):
@@ -499,6 +503,9 @@ class CompsExperimentManager(LocalExperimentManager):
 
     def commission_simulations(self):
         CompsSimulationCommissioner.commission_experiment(self.exp_data['exp_id'])
+        if self.setup.has_option('blocking'):
+            self.cache_experiment_data()
+            self.wait_for_finished(verbose=True)
         return True
 
     def collect_sim_metadata(self):

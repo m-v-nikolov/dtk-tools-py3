@@ -130,9 +130,12 @@ class SetupParser:
             self.setup.set(self.selected_block,item[0], item[1])
 
     def get(self, parameter):
-        if not self.setup.has_option(self.selected_block, parameter):
+        if not self.has_option(parameter):
             raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.get(self.selected_block,parameter)
+
+    def has_option(self,option):
+        return self.setup.has_option(self.selected_block,option)
 
     def set(self, parameter, value):
         self.setup.set(self.selected_block, parameter, value)
