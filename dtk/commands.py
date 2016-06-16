@@ -65,6 +65,9 @@ def run(args, unknownArgs):
     if args.blocking:
         setup.set('blocking', '1')
 
+    if args.quiet:
+        setup.set('quiet', '1')
+
     # Create the experiment manager based on the setup
     sm = ExperimentManagerFactory.from_setup(setup, location=setup.get('type'), **additional_args)
     sm.run_simulations(**mod.run_sim_args)
@@ -239,7 +242,8 @@ def main():
     parser_run.add_argument('--ini', default = None, help = 'Specify an overlay configuration file (*.ini).')
     parser_run.add_argument('--priority', default = None, help = 'Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default = None, help = 'Specify node group of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--blocking', action = 'store_true', help = 'Block the thread until the simulations are done.')
+    parser_run.add_argument('-b', '--blocking', action = 'store_true', help = 'Block the thread until the simulations are done.')
+    parser_run.add_argument('-q', '--quiet', action = 'store_true', help = 'Runs quietly.')
     parser_run.set_defaults(func = run)
 
     # 'dtk status' options
