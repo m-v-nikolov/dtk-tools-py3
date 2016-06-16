@@ -87,6 +87,7 @@ class LocalExperimentManager(object):
         self.config_builder = None
         self.commandline = None
         self.analyzers = []
+        self.quiet = setup.has_option('quiet')
 
         max_threads = int(self.setup.get('max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
@@ -323,7 +324,7 @@ class LocalExperimentManager(object):
 
         if self.setup.has_option('blocking'):
             self.cache_experiment_data()
-            self.wait_for_finished(verbose=True)
+            self.wait_for_finished(verbose=not self.quiet)
 
         return True
 
@@ -505,7 +506,7 @@ class CompsExperimentManager(LocalExperimentManager):
         CompsSimulationCommissioner.commission_experiment(self.exp_data['exp_id'])
         if self.setup.has_option('blocking'):
             self.cache_experiment_data()
-            self.wait_for_finished(verbose=True)
+            self.wait_for_finished(verbose=not self.quiet)
         return True
 
     def collect_sim_metadata(self):
