@@ -22,8 +22,8 @@ class TemplateHelper():
 
         :param table: Containes the parameter values.  One simulation will be created for each row, e.g.:
             table = [
-                [ [config1, campaign],               1980, 0.1, ['Tag1']         ],
-                [ [config2, campaign_outbreak_only], 1990, 0.2, ['Tag2', 'Tag3'] ]
+                [ [config1, campaign],               1980, 0.1, {'Tag1':'Value1'}              ],
+                [ [config2, campaign_outbreak_only], 1990, 0.2, {'Tag2':None, 'Tag3':'Value3'} ]
             ]
         """
 
@@ -48,13 +48,7 @@ class TemplateHelper():
         tags = {}
         if 'TAGS' in all_params:
             taglist = all_params.pop('TAGS')
-            for t in taglist:
-                if isinstance(t,str):
-                    tags.update({t : None})
-                elif isinstance(t,dict):
-                    tags.update()
-                else:
-                    raise Exception("Tag %s is neither a string not a dictionary, not sure what to do.", t)
+            tags.update( taglist )
 
         if 'ACTIVE_TEMPLATES' in all_params:
             self.active_templates = all_params.pop('ACTIVE_TEMPLATES')

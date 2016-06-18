@@ -194,10 +194,20 @@ class CampaignTemplate(TaggedTemplate):
 
 class DemographicsTemplate(TaggedTemplate):
     def set_params_and_modify_cb(self, params, cb):
-        demographics_filenames = cb.params['Demographics_Filenames']
+        demog_filenames = cb.params['Demographics_Filenames']
         # Make sure the filename is listed in Demographics_Filenames
-        if self.get_filename() not in demographics_filenames:
-            raise Exception( "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s", self.get_filename(), demographics_filenames)
+        if self.get_filename() not in demog_filenames:
+            # Perhaps it was a relative path
+            demog_filenames_file_only = [os.path.split(fn)[1] for fn in demog_filenames]
+            if self.get_filename() in demog_filenames_file_only:
+                # remove relative path from demographics filename as it will now be place in the working directory
+                idx = demog_filenames_file_only.index(self.get_filename())
+                logger.info( "Changing Demographics_Filenames: " +demog_filenames[idx]+" --> "+demog_filenames_file_only[idx])
+                demog_filenames[idx] = demog_filenames_file_only[idx]
+                cb.set_param('Demographics_Filenames', demog_filenames)
+
+            else:
+                raise Exception( "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s", self.get_filename(), demog_filenames)
 
         self.set_params(params)
         cb.add_input_file(self.filename.replace(".json",""), self.get_contents())

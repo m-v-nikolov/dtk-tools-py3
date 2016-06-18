@@ -76,8 +76,8 @@ The following header and table contain the parameter names and values to be modi
 
 header = [  'ACTIVE_TEMPLATES', 'Start_Year__KP_Seeding_Year', 'Condom_Usage_Probability__KP_INFORMAL.Max', 'Base_Infectivity', 'TAGS' ]
 table = [
-            [ [cfg, cpn,          demog_pfa], 1985, 0.95, 1.5e-3, ['Testing1a', {'Testing1b': 'Works'}] ],
-            [ [cfg, cpn_outbreak, demog_pfa], 1980, 0.50, 1.0e-3, ['Testing2'] ]
+            [ [cfg, cpn,          demog_pfa], 1985, 0.95, 1.5e-3, {'Testing1a':None, 'Testing1b': 'Works'} ],
+            [ [cfg, cpn_outbreak, demog_pfa], 1980, 0.50, 1.0e-3, {'Testing2':None} ]
         ]
 
 """
