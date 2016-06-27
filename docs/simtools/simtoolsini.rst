@@ -1,3 +1,5 @@
+.. _simtoolsini:
+
 ===================
 simtools.ini file
 ===================

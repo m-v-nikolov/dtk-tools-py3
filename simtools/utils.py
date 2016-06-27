@@ -33,8 +33,8 @@ def translate_COMPS_path(path, setup=None):
 
     # Prepare the variables we will need
     groups = regexp.groups()
-    environment = setup.get('HPC', 'environment')
-    user = setup.get('HPC','user')
+    environment = setup.get('environment')
+    user = setup.get('user')
 
     # Query COMPS to get the path corresponding to the variable
     from COMPS import Client
