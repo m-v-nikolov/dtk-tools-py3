@@ -561,21 +561,21 @@ class CompsExperimentManager(LocalExperimentManager):
         Delete local cache data for experiment and marks the server entity for deletion.
         """
 
-        raise Exception('Hard delete for COMPS is not currently supported (awaiting CAGE update).')
+        #raise Exception('Hard delete for COMPS is not currently supported (awaiting CAGE update).')
 
-        # # Perform soft delete cleanup.
-        # self.soft_delete()
+        # Perform soft delete cleanup.
+        self.soft_delete()
 
-        # # Mark experiment for deletion in COMPS.
-        # from COMPS import Client
-        # from COMPS.Data import Experiment, QueryCriteria
+        # Mark experiment for deletion in COMPS.
+        from COMPS import Client
+        from COMPS.Data import Experiment, QueryCriteria
 
-        # if not self.comps_logged_in:
-        #     Client.Login(self.get_property('server_endpoint'))
-        #     self.comps_logged_in = True
+        if not self.comps_logged_in:
+            Client.Login(self.get_property('server_endpoint'))
+            self.comps_logged_in = True
 
-        # e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
-        # e.Delete()
+        e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
+        e.Delete()
 
     def kill_job(self, simId):
         from COMPS import Client
