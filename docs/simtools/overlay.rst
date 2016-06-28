@@ -1,3 +1,5 @@
+.. _simtoolsoverlay:
+
 ===========================
 INI File overlay mechanism
 ===========================

@@ -19,10 +19,12 @@ study_site_monthly_EIRs = {
     'Bakau':        [0.12*m for m in [0.02, 0.01, 0.04, 0.00, 0.00, 0.00, 0.32, 0.11, 0.24, 0.20, 0.04, 0.03]]  # EIR =   0.12
 }
 
+
 def mAb_vs_EIR(EIR):
     # Rough cut at function from eyeballing a few BinnedReport outputs parsed into antibody fractions
     mAb = 0.9 * (1e-4*EIR*EIR + 0.7*EIR) / ( 0.7*EIR + 2 )
     return min(mAb, 1.0)
+
 
 # Configuration of study-site input EIR
 def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True, set_site_geography=True):

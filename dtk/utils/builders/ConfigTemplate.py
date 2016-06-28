@@ -1,5 +1,6 @@
 import dtk.utils.builders.BaseTemplate as BaseTemplate
 
+
 class ConfigTemplate(BaseTemplate.BaseTemplate):
     """
     A class for building, modifying, and writing config.json DTK input files.
@@ -14,8 +15,7 @@ class ConfigTemplate(BaseTemplate.BaseTemplate):
 
         super(ConfigTemplate, self).__init__(filename, contents)
 
-        self.contents = self.contents['parameters'] # Remove "parameters"
-
+        self.contents = self.contents['parameters']  # Remove "parameters"
 
     # ITemplate functions follow
     def get_contents(self):
@@ -24,7 +24,6 @@ class ConfigTemplate(BaseTemplate.BaseTemplate):
         :return: The potentially modified contents of the template file
         """
         return {"parameters": self.contents}
-
 
     def set_params_and_modify_cb(self, params, cb):
         """
@@ -36,4 +35,3 @@ class ConfigTemplate(BaseTemplate.BaseTemplate):
         tags = self.set_params(params)
         cb.config = self.get_contents()
         return tags
-

@@ -3,6 +3,7 @@ import json
 from json import JSONDecoder
 from functools import partial
 
+
 # consider configuring a data-path variable listing directories of interest
 # that may store json and other data files (?)
 
@@ -37,13 +38,13 @@ def strip(pieces):
 # (e.g. lists, other dictionaries, etc.
 #
 # by default REMOVE all new lines
-def parse(input_data, decoder = JSONDecoder(), pieces_mem = 1024):    
+def parse(input_data, decoder=JSONDecoder(), pieces_mem=1024):
     pieces = ''
     for piece in iter(partial(input_data.read, pieces_mem), ''):
         pieces = pieces + piece
-        #pieces =  pieces.replace('\n','')
+        # pieces =  pieces.replace('\n','')
         pieces = strip(pieces)
-        #print pieces
+        # print pieces
         while pieces:
             try:
                 j, idx = decoder.raw_decode(pieces)
@@ -51,6 +52,7 @@ def parse(input_data, decoder = JSONDecoder(), pieces_mem = 1024):
                 pieces = pieces[idx:]
             except ValueError:
                 break
+
 
 # reads json file to a dictionary
 
@@ -99,15 +101,15 @@ Output:
 
 '''
 
-def json2dict(json_file, as_is = True, func = None):
-    
+
+def json2dict(json_file, as_is=True, func=None):
     with open(json_file, 'Ur') as input_data:
         if as_is:
             data = json.load(input_data)
             return data
         else:
             data_dict = {}
-            for i,data in enumerate(parse(input_data)):
+            for i, data in enumerate(parse(input_data)):
                 if not func is None:
                     data, do_break = func(data)
                     if not data is None:
@@ -118,6 +120,7 @@ def json2dict(json_file, as_is = True, func = None):
                     data_dict[i] = data
             return data_dict
 
-def dict2json(filename,dict_content):
-    with open(filename,'w') as f:
+
+def dict2json(filename, dict_content):
+    with open(filename, 'w') as f:
         f.write(dict_content)

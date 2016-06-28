@@ -1,18 +1,12 @@
 import logging
-import re
-import time
 import math
-
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
-from plot import plot_by_channel
+import re
 
 logger = logging.getLogger(__name__)
 
+
 class ProgressAnalyzer():
-    def __init__(self, simIds = None):
+    def __init__(self, simIds=None):
         self.filenames = ['StdOut.txt', 'status.txt']
         self.simIds = simIds
 
@@ -41,7 +35,8 @@ class ProgressAnalyzer():
         lastLineOfStdOut = [i for i in parser.raw_data[self.filenames[0]].split('\n') if i != ''][-1]
         timeCapture = re.match('(\d*):(\d*):(\d*)', lastLineOfStdOut)
         if timeCapture:
-            parser.timeElapsed = (60**2) * float(timeCapture.group(1)) + 60 * float(timeCapture.group(2)) + float(timeCapture.group(3))
+            parser.timeElapsed = (60 ** 2) * float(timeCapture.group(1)) + 60 * float(timeCapture.group(2)) + float(
+                timeCapture.group(3))
         else:
             parser.timeElapsed = 0
 
@@ -82,7 +77,8 @@ class ProgressAnalyzer():
                 timeRemaining = None
 
             self.data += 'Simulation ' + str(k) + ':\n'
-            self.data += '    ' + '{0:.2f}'.format(round(progress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + '.\n'
+            self.data += '    ' + '{0:.2f}'.format(
+                round(progress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + '.\n'
             if timeRemaining:
                 self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(timeRemaining) + ' remaining.\n'
 
@@ -95,9 +91,12 @@ class ProgressAnalyzer():
             averageTimeRemaining = None
 
         self.data += 'Overall:\n'
-        self.data += '    ' + '{0:.2f}'.format(round(averageProgress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + ' (on average).\n'
+        self.data += '    ' + '{0:.2f}'.format(
+            round(averageProgress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(
+            timeElapsed) + ' (on average).\n'
         if averageTimeRemaining:
-            self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(averageTimeRemaining) + ' remaining.\n'
+            self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(
+                averageTimeRemaining) + ' remaining.\n'
 
     def finalize(self):
         print self.data

@@ -23,6 +23,7 @@ from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
 from datetime import datetime
 
+
 class ExperimentManagerFactory(object):
     @staticmethod
     def factory(type):
@@ -115,7 +116,7 @@ class LocalExperimentManager(object):
         # Get the git revision of the tools
         try:
             import subprocess
-            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n","")
+            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n", "")
         except:
             revision = "Unknown"
 
@@ -314,9 +315,10 @@ class LocalExperimentManager(object):
         max_local_sims = int(self.get_property('max_local_sims'))
 
         # Create the paths
-        paths = [os.path.join(exp_dir,sim_id) for sim_id in sim_ids]
+        paths = [os.path.join(exp_dir, sim_id) for sim_id in sim_ids]
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "LocalRunner.py")
-        cache_path = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
+        cache_path = os.path.join(os.getcwd(), 'simulations',
+                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
@@ -411,6 +413,8 @@ class LocalExperimentManager(object):
 
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
+                # Wait when we are all done to make sure all the output files have time to get written
+                time.sleep(sleep_time)
                 break
             else:
                 if verbose:

@@ -21,15 +21,17 @@ from dtk.utils.analyzers.select import example_selection
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
-builtinAnalyzers = { 
-    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines), 
-    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_')) 
+builtinAnalyzers = {
+    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
+    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
 }
+
 
 def load_config_module(config_name):
     sys.path.append(os.getcwd())
     module_name = os.path.splitext(os.path.basename(config_name))[0]
     return import_module(module_name)
+
 
 def setup(args, unknownArgs):
     # If we are on windows, resize the terminal
@@ -40,6 +42,7 @@ def setup(args, unknownArgs):
 
     npyscreen.DISABLE_RESIZE_SYSTEM = True
     SetupApplication().run()
+
 
 def run(args, unknownArgs):
     # get simulation-running instructions from script
@@ -110,6 +113,7 @@ def resubmit(args, unknownArgs):
         sm = reload_experiment(args)
         sm.resubmit_simulations(**params)
 
+
 def kill(args, unknownArgs):
 
     sm = reload_experiment(args)
@@ -137,6 +141,7 @@ def kill(args, unknownArgs):
         sm = reload_experiment(args)
         sm.cancel_simulations(**params)
 
+
 def stdout(args, unknownArgs):
     logging.info('Getting stdout...')
 
@@ -158,6 +163,7 @@ def stdout(args, unknownArgs):
 
     sm.analyze_simulations()
 
+
 def progress(args, unknownArgs):
     logging.info('Getting progress...')
 
@@ -170,6 +176,7 @@ def progress(args, unknownArgs):
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
     sm.analyze_simulations()
+
 
 def analyze(args, unknownArgs):
 
@@ -184,7 +191,7 @@ def analyze(args, unknownArgs):
             logging.info('Job states:')
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
-        
+
     if os.path.exists(args.config_name):
         analyze_from_script(args, sm)
     elif args.config_name in builtinAnalyzers.keys():
@@ -219,6 +226,7 @@ def reload_experiment(args=None):
 
     return ExperimentManagerFactory.from_file(utils.exp_file(id))
 
+
 def reload_experiments(args=None):
     if args:
         id = args.expId
@@ -226,6 +234,7 @@ def reload_experiments(args=None):
         id = None
 
     return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+
 
 def reload_active_experiments(args=None):
     return [sm for sm in reload_experiments(args) if not sm.finished()]

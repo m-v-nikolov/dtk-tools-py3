@@ -34,5 +34,4 @@ params = {
     "Infection_Updates_Per_Timestep": 1, ###
     "Enable_Maternal_Transmission": 0, 
     "Maternal_Transmission_Probability": 0
-
 }

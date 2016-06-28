@@ -1,16 +1,15 @@
-import os
 import json
+import os
 from collections import defaultdict
 
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from simtools.SetupParser import SetupParser
-from timeseries import TimeseriesAnalyzer
 from group import group_by_name
 from plot import plot_by_channel, plot_lines
+from simtools.SetupParser import SetupParser
+from timeseries import TimeseriesAnalyzer
+
 
 class RegressionTestAnalyzer(TimeseriesAnalyzer):
 

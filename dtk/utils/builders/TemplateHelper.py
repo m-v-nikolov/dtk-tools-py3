@@ -5,6 +5,7 @@ from simtools.ModBuilder import ModBuilder
 
 logger = logging.getLogger(__name__)
 
+
 class TemplateHelper():
     # A helper class for templates.
 
@@ -33,27 +34,27 @@ class TemplateHelper():
         nParm = len(header)
         nRow = len(table)
 
-        assert( nRow > 0 )
+        assert (nRow > 0)
         for row in table:
-            assert( nParm == len(row) )
+            assert (nParm == len(row))
 
-        logger.info( "Table with %d configurations of %d parameters." % (nRow, nParm) )
+        logger.info("Table with %d configurations of %d parameters." % (nRow, nParm))
 
     def mod_dynamic_parameters(self, cb, dynamic_params):
         # Modify the config builder according to the dynamic_parameters
 
-        logger.info( '-----------------------------------------' )
+        logger.info('-----------------------------------------')
         all_params = copy.deepcopy(dynamic_params)
 
         tags = {}
         if 'TAGS' in all_params:
             taglist = all_params.pop('TAGS')
-            tags.update( taglist )
+            tags.update(taglist)
 
         if 'ACTIVE_TEMPLATES' in all_params:
             self.active_templates = all_params.pop('ACTIVE_TEMPLATES')
             for template in self.active_templates:
-                logger.debug( "Active templates: %s" % [t.get_filename() for t in self.active_templates] )
+                logger.debug("Active templates: %s" % [t.get_filename() for t in self.active_templates])
 
         if not self.active_templates:
             raise Exception("No templates are active!")
@@ -66,7 +67,8 @@ class TemplateHelper():
                     found = True
             if not found:
                 active_template_filenames = [t.get_filename() for t in self.active_templates]
-                raise Exception("None of the active templates consume parameter %s.  Active templates: %s." % (param, active_template_filenames) )
+                raise Exception("None of the active templates consume parameter %s.  Active templates: %s." % (
+                param, active_template_filenames))
 
         for template in self.active_templates:
             new_tags = template.set_params_and_modify_cb(all_params, cb)
@@ -75,7 +77,6 @@ class TemplateHelper():
 
         return tags
 
-
     def get_modifier_functions(self):
         """
         Returns a ModBuilder ModFn that sets file contents and values in config builder according to the dynamic parameters.
@@ -83,4 +84,4 @@ class TemplateHelper():
         return [
             ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
             for row in self.table
-        ]
+            ]
