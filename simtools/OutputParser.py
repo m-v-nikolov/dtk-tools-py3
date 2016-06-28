@@ -66,6 +66,9 @@ class SimulationOutputParser(threading.Thread):
         elif file_extension == 'csv':
             logging.debug('reading CSV')
             self.load_csv_file(filename, *args)
+        elif file_extension == 'xlsx':
+            logging.debug('reading XLSX')
+            self.load_xlsx_file(filename, *args)
         elif file_extension == 'txt':
             logging.debug('reading txt')
             self.load_txt_file(filename, *args)
@@ -82,6 +85,11 @@ class SimulationOutputParser(threading.Thread):
     def load_csv_file(self, filename, *args):
         with open(self.get_path(filename)) as csv_file:
             self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
+
+    def load_xlsx_file(self, filename, *args):
+        excel_file = pd.ExcelFile( self.get_path(filename) )
+        self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name) 
+          for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, *args):
         try:

@@ -19,14 +19,14 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
         """
 
         # Display the ASCII title
-        self.add(npyscreen.FixedText, editable=False, value=" ____    ______  __  __          ______                ___ ")
-        self.add(npyscreen.FixedText, editable=False, value="/\\  _`\\ /\\__  _\\/\\ \\/\\ \\        /\\__  _\\              /\\_ \\")
-        self.add(npyscreen.FixedText, editable=False, value="\\ \\ \\/\\ \\/_/\\ \\/\\ \\ \\/'/'       \\/_/\\ \\/   ___     ___\\//\\ \\     ____  ")
-        self.add(npyscreen.FixedText, editable=False, value=" \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ , <    _______\\ \\ \\  / __`\\  / __`\\\\ \\ \\   /',__\\ ")
-        self.add(npyscreen.FixedText, editable=False, value="  \\ \\ \\_\\ \\ \\ \\ \\ \\ \\ \\\\`\\ /\\______\\\\ \\ \\/\\ \\L\\ \\/\\ \\L\\ \\\\_\\ \\_/\\__, `\\")
-        self.add(npyscreen.FixedText, editable=False, value="   \\ \\____/  \\ \\_\\ \\ \\_\\ \\_\\/______/ \\ \\_\\ \\____/\\ \\____//\\____\\/\\____/")
-        self.add(npyscreen.FixedText, editable=False, value="    \\/___/    \\/_/  \\/_/\\/_/          \\/_/\\/___/  \\/___/ \\/____/\\/___/")
-        self.add(npyscreen.FixedText, editable=False, value="Configuration Application", relx=9)
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value=" ____    ______  __  __          ______                ___ ")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="/\\  _`\\ /\\__  _\\/\\ \\/\\ \\        /\\__  _\\              /\\_ \\")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="\\ \\ \\/\\ \\/_/\\ \\/\\ \\ \\/'/'       \\/_/\\ \\/   ___     ___\\//\\ \\     ____  ")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value=" \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ , <    _______\\ \\ \\  / __`\\  / __`\\\\ \\ \\   /',__\\ ")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="  \\ \\ \\_\\ \\ \\ \\ \\ \\ \\ \\\\`\\ /\\______\\\\ \\ \\/\\ \\L\\ \\/\\ \\L\\ \\\\_\\ \\_/\\__, `\\")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="   \\ \\____/  \\ \\_\\ \\ \\_\\ \\_\\/______/ \\ \\_\\ \\____/\\ \\____//\\____\\/\\____/")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="    \\/___/    \\/_/  \\/_/\\/_/          \\/_/\\/___/  \\/___/ \\/____/\\/___/")
+        self.add(npyscreen.FixedText, editable=False, color='STANDOUT', value="Configuration Application", relx=9)
 
         # Create the menu
         self.add(npyscreen.TitleText, editable=False, name="MAIN MENU", rely=12)
@@ -45,6 +45,9 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
         # Add the paths for information
         self.add(npyscreen.TitleText, editable=False, name="Local ini path", value=get_file_path(True), use_two_lines = True, begin_entry_at=0, rely=19)
         self.add(npyscreen.TitleText, editable=False, name="Global ini path", value=get_file_path(False), use_two_lines = True, begin_entry_at=0, rely=22)
+
+        # Add warning
+        self.add(npyscreen.MultiLineEdit, editable=False, color='DANGER', rely=30, value=u"/!\\ This software is distributed as is, completely without warranty or service support.\r\n Institute for Disease Modeling and its employees are not liable for the condition or\r\n performance of the software.")
 
     def h_quit(self, item=None):
         """

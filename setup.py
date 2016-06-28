@@ -42,5 +42,5 @@ setup(name='dtk-tools',
       entry_points={
           'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
       },
-      package_data={'': ['simtools/simtools.cfg']},
+      package_data={'': ['simtools/simtools.ini']},
       zip_safe=False)

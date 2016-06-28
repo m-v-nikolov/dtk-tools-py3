@@ -17,6 +17,9 @@ The package being in development, run the following command from the dtk-tools r
 
     pip install -e .
 
+.. note::
+    EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
+
 Setup
 ----------
 To configure your user-specific paths and settings for local and HPC job submission, edit the properties in ``simtools/simtools.ini``.
