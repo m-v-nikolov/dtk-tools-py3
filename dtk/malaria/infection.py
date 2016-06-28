@@ -1,11 +1,11 @@
 params = {
-    "Infection_Updates_Per_Timestep": 8,
+    "Infection_Updates_Per_Timestep": 8, ###
     "Enable_Superinfection": 1,
-    "Max_Individual_Infections": 3,
+    "Max_Individual_Infections": 3, ###
 
     "Mean_Sporozoites_Per_Bite": 11,
     "Base_Sporozoite_Survival_Fraction": 0.25,
-    "Base_Incubation_Period": 7,
+    "Base_Incubation_Period": 7, ###
     "Merozoites_Per_Hepatocyte": 15000,
 
     "Antibody_IRBC_Kill_Rate": 1.596,

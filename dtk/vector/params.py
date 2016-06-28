@@ -9,7 +9,7 @@ import larval_habitat
 
 disease_params = {
     "Incubation_Period_Distribution": "FIXED_DURATION",
-    "Base_Incubation_Period": 25,
+    "Base_Incubation_Period": 25, ###
 
     "Infectious_Period_Distribution": "EXPONENTIAL_DURATION",
     "Base_Infectious_Period": 180,
@@ -17,7 +17,7 @@ disease_params = {
 
     "Enable_Superinfection": 1,
     "Max_Individual_Infections": 5,
-    "Infection_Updates_Per_Timestep": 1
+    "Infection_Updates_Per_Timestep": 1 ###
 }
 
 cohort_params = {

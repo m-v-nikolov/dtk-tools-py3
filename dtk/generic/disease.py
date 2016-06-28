@@ -16,7 +16,7 @@ params = {
     "x_Population_Immunity": 1, 
     "Susceptibility_Scale_Type": "CONSTANT_SUSCEPTIBILITY",
 
-    "Base_Incubation_Period": 25,
+    "Base_Incubation_Period": 25, ###
     "Incubation_Period_Distribution": "FIXED_DURATION",
 
     "Base_Infectious_Period": 180, 
@@ -31,7 +31,7 @@ params = {
 
     "Enable_Superinfection": 1, 
     "Max_Individual_Infections": 5, 
-    "Infection_Updates_Per_Timestep": 1,
+    "Infection_Updates_Per_Timestep": 1, ###
     "Enable_Maternal_Transmission": 0, 
     "Maternal_Transmission_Probability": 0
 }

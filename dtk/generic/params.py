@@ -4,7 +4,7 @@ import migration
 import disease
 
 params = {
-    "Config_Name": "",
+    "Config_Name": "", ###
     "Campaign_Filename": "campaign.json", 
     "Enable_Interventions": 1, 
     "Enable_Spatial_Output": 0,
@@ -21,8 +21,8 @@ params = {
     "Default_Geography_Initial_Node_Population": 1000,
     "Default_Geography_Torus_Size": 10,
 
-    "Geography": "",
-    "Node_Grid_Size": 0.042,
+    "Geography": "", ###
+    "Node_Grid_Size": 0.042, ###
     "Default_Geography_Initial_Node_Population": 100, 		
     "Default_Geography_Torus_Size": 10,
 
@@ -30,7 +30,7 @@ params = {
     "Run_Number": 5, 
     "Simulation_Duration": 1825, 
     "Simulation_Timestep": 1, 
-    "Simulation_Type": "",
+    "Simulation_Type": "", ###
     "Start_Time": 0,
     
     "Num_Cores": 1, 
