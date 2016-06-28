@@ -223,19 +223,60 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.dlls.add(r.get_dll_path())
 
     def add_input_file(self, name, content):
+        """
+        Add input file to the simulation.
+        The file can be of any type.
+
+        Args:
+            name (string): Name of the file. Will be used when the file is written to the simulation directory.
+            content (string): Contents of the file.
+
+        Examples:
+            Usage for this function could be::
+
+                my_txt = open('test.txt', 'r')
+                cb.add_input_file('test.txt',my_txt.read())
+
+        """
         if name in self.input_files:
             logger.warn('Already have input file named %s, replacing previous input file.' % name)
         self.input_files[name] = content
 
     def append_overlay(self, demog_file):
+        """
+        Append a demographic overlay at the end of the ``Demographics_Filenames`` array.
+
+        Args:
+            demog_file (string): The demographic file name to append to the array.
+
+        """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
     def add_demog_overlay(self, name, content):
+        """
+        Add a demographic overlay to the simulation.
+
+        Args:
+            name (string): Name of the demographic overlay
+            content (string): Content of the file
+
+        """
         if name in self.demog_overlays:
             raise Exception('Already have demographics overlay named %s' % name)
         self.demog_overlays[name] = content
 
     def get_commandline(self, exe_path, paths):
+        """
+        Get the complete command line to run the simulation.
+
+        Args:
+            exe_path (string): The path to the model executable
+            paths (dict): Dictionary containing the setup and allowing this function to retrieve the ``input_root`` and ``python_path``
+
+        Returns:
+            The :py:class:`CommandlineGenerator` object created with the correct paths
+
+        """
         eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
 
         if 'python_path' in paths and paths['python_path'] != '':
@@ -244,6 +285,23 @@ class DTKConfigBuilder(SimConfigBuilder):
         return utils.CommandlineGenerator(exe_path, eradication_options, [])
 
     def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
+        """
+        Stage the required DLLs.
+
+        This function will work differently depending on the use of the assets service or not.
+        If the assets service is used, the function will simply create the path for the dll and not copy the file itself.
+        If the assets service is not used, the function will call the :py:func:`stage_file` function and store
+        the returned path.
+
+        For each dll to stage, the ``staged_dlls`` dictionary is updated with the path to the dll mapped to its
+        type and name and the ``emodules_map`` dictionary is also updated accordingly.
+
+        Args:
+            dll_path (string): The path where the dll to be staged are
+            staging_root (string): The staging dll path
+            assets_service (bool): Are we using the assets service?
+
+        """
         for dll_type, dll_name in self.dlls:
             # Try top retrieve the dll from the staged dlls
             staged_dll = self.staged_dlls.get((dll_type, dll_name), None)
@@ -263,6 +321,30 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.emodules_map[dll_type].append(staged_dll)
 
     def file_writer(self, write_fn):
+        """
+        Dump all the files needed for the simulation in the simulation directory.
+        This includes:
+
+        * The campaign file
+        * The custom reporters file
+        * The different demographic overlays
+        * The other input files (``input_files`` dictionary)
+        * The config file
+        * The emodules_map file
+
+        Args:
+            write_fn: The function that will write the files. This function needs to take a file name and a content.
+
+        Examples:
+            For example, in the :py:class:`SimConfigBuilder` class, the :py:func:`dump_files` is defining the `write_fn`
+            like::
+
+                def write_file(name, content):
+                    filename = os.path.join(working_directory, '%s.json' % name)
+                    with open(filename, 'w') as f:
+                        f.write(content)
+        """
+
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
