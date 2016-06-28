@@ -413,6 +413,8 @@ class LocalExperimentManager(object):
 
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
+                # Wait when we are all done to make sure all the output files have time to get written
+                time.sleep(sleep_time)
                 break
             else:
                 if verbose:

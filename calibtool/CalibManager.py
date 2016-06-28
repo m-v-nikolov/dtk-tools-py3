@@ -1,4 +1,3 @@
-from datetime import datetime
 import glob
 import json
 import logging
@@ -7,14 +6,13 @@ import pprint
 import re
 import shutil
 import time
+from datetime import datetime
 
 import pandas as pd
-
 
 from IterationState import IterationState
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
-from simtools.SetupParser import SetupParser
 from utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
@@ -192,9 +190,7 @@ class CalibManager(object):
             self.iteration_state.simulations = exp_manager.exp_data
             self.cache_iteration_state()
 
-        exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
-
-        time.sleep(3)  # Even if its all done wait a couple of seconds to make sure all files are written and closed
+        exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)
 
     def analyze_iteration(self):
         """
