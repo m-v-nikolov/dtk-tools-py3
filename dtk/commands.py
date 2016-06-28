@@ -217,9 +217,17 @@ def reload_experiments(args=None):
     else:
         id = None
 
-    return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+    # Attempt to read files 3 times.
+    for i in range(0, 3):
+        try:
+            return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+        except:
+            time.sleep(.2)
+            continue
+            
+    raise Exception('Could not successfully load experiment files (due to writes by LocalRunner).')
 
-def reload_active_experiments(args=None):
+def reload_active_experiments(args = None):
     return [sm for sm in reload_experiments(args) if not sm.finished()]
 
 
