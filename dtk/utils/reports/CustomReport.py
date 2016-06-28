@@ -34,6 +34,8 @@ class BaseReport(object):
 
 class BaseEventReport(BaseReport):
 
+    dlls = {'MalariaTransmissionReport': 'libReportMalariaTransmissions.dll'}
+
     def __init__(self,
                  event_trigger_list,
                  start_day=0,
