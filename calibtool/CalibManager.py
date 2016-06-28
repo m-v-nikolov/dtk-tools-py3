@@ -56,12 +56,10 @@ class CalibManager(object):
         self.sites = sites
         self.next_point = next_point
         self.iteration_state = iteration_state
-
-        self.location = setup.get('type')
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
-
+        self.location = None
         self.suite_id = None
         self.all_results = None
 
@@ -71,12 +69,7 @@ class CalibManager(object):
         """
         Create and run a complete multi-iteration calibration suite.
         """
-
-        if 'location' in kwargs:
-            # We want to override the location
-            self.location = kwargs.pop('location')
-            self.setup.override_block(self.location)
-
+        self.location = self.setup.get('type')
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -451,10 +444,9 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        calib_data = self.read_calib_data()
+        self.location = self.setup.get('type')
 
-        kw_location = kwargs.pop('location') if 'location' in kwargs else None
-        self.location = calib_data.get('location', kw_location if kw_location else self.location)
+        calib_data = self.read_calib_data()
         self.suite_id = calib_data.get('suite_id')
 
         latest_iteration = calib_data.get('iteration')
@@ -596,11 +588,15 @@ class CalibManager(object):
         # Also finalize
         self.finalize_calibration()
 
-    def read_calib_data(self):
+    def read_calib_data(self, force=False):
         try:
             return json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
         except IOError:
-            raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+            if not force:
+                raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+            else:
+                return None
+
 
     @property
     def iteration(self):
