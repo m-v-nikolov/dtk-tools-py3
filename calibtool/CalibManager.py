@@ -59,7 +59,7 @@ class CalibManager(object):
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
-        self.location = None
+        self.location = self.setup.get('type')
         self.suite_id = None
         self.all_results = None
 
@@ -500,7 +500,6 @@ class CalibManager(object):
 
         # Print confirmation
         print "Calibration %s successfully cancelled!" % self.name
-
 
     def cleanup(self):
         """
