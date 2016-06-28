@@ -5,12 +5,13 @@ from dtk.utils.parsers.JSON import json2dict
 
 logger = logging.getLogger(__name__)
 
+
 class ITemplate(object):
     """
     Abstract class for working with templates.
     """
 
-    __metaclass__  = abc.ABCMeta
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def get_filename(self):
@@ -69,7 +70,6 @@ class ITemplate(object):
 
 
 class BaseTemplate(ITemplate):
-
     def __init__(self, filename, contents):
         """
         Initialize a BaseTemplate.
@@ -88,7 +88,7 @@ class BaseTemplate(ITemplate):
         :param template_file: Path to the file on disk.
         """
         # Read in template
-        logger.info( "Reading config template from file:", template_filepath )
+        logger.info("Reading config template from file:", template_filepath)
         contents = json2dict(template_filepath)
 
         # Get the filename and create a ConfigTemplate
@@ -120,7 +120,6 @@ class BaseTemplate(ITemplate):
         self.known_params[param] = is_param
         return is_param
 
-
     def get_param(self, param):
         """
         Gets a parameter value.  The return type is a dictionary because some tagged parameters can have multiple addresses, and therefore multiple values.
@@ -134,7 +133,7 @@ class BaseTemplate(ITemplate):
         for path_step in path_steps:
             if '[' in path_step:
                 subpaths = path_step.split('[')
-                assert( subpaths[1][-1] == ']' )
+                assert (subpaths[1][-1] == ']')
                 path_step = subpaths[0]
                 index = int(float(subpaths[1][:-1]))
                 value = value[self.cast_value(path_step)]
@@ -153,13 +152,12 @@ class BaseTemplate(ITemplate):
         :return: Simulation tags
         """
         sim_tags = {}
-        for param,value in params.iteritems():
+        for param, value in params.iteritems():
             if self.has_param(param):
                 new_sim_tags = self.set_param(param, value)
-                sim_tags.update( new_sim_tags )
+                sim_tags.update(new_sim_tags)
 
         return sim_tags
-
 
     def set_param(self, param, value):
         """
@@ -178,7 +176,7 @@ class BaseTemplate(ITemplate):
         for path_step in path_steps[:-1]:
             if '[' in path_step:
                 subpaths = path_step.split('[')
-                assert( subpaths[1][-1] == ']' )
+                assert (subpaths[1][-1] == ']')
                 path_step = subpaths[0]
                 index = int(float(subpaths[1][:-1]))
                 current_parameter = current_parameter[self.cast_value(path_step)]
@@ -189,9 +187,9 @@ class BaseTemplate(ITemplate):
 
         current_parameter[path_steps[-1]] = self.cast_value(value)
 
-        return {"["+self.get_filename()+"] " + param: value}
+        return {"[" + self.get_filename() + "] " + param: value}
 
-    def cast_value(self,value):
+    def cast_value(self, value):
         """
         Try to cas a value to float or int or string
         :param value: The value to cast.
@@ -203,7 +201,7 @@ class BaseTemplate(ITemplate):
 
         # We have a string so test if only digit
         if value.isdigit():
-            casted_value =  int(value)
+            casted_value = int(value)
         else:
             try:
                 casted_value = float(value)
@@ -211,4 +209,3 @@ class BaseTemplate(ITemplate):
                 casted_value = value
 
         return casted_value
-

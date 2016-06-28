@@ -1,15 +1,14 @@
-from collections import namedtuple
 import logging
+from collections import namedtuple
 
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
+import numpy as np
 import pandas as pd
-import statsmodels.nonparametric.api as nparam
 import seaborn as sns
+import statsmodels.nonparametric.api as nparam
 
-from .timeseries import TimeseriesAnalyzer
 from .group import group_by_name, combo_group
+from .timeseries import TimeseriesAnalyzer
 
 logger = logging.getLogger(__name__)
 

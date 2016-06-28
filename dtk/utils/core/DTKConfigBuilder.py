@@ -19,6 +19,13 @@ class DTKConfigBuilder(SimConfigBuilder):
     A class for building, modifying, and writing
     required configuration files for a DTK simulation.
 
+    There are four ways to create a DTKConfigBuilder:
+
+    1. From a set of defaults, with the :py:func:`from_defaults` class method.
+    2. From existing files, with the :py:func:`from_files` class method.
+    3. From a default config/campaign by calling the constructor without arguments.
+    4. From a custom config and/or campaign by calling the constructor with the ``config`` and ``campaign`` arguments.
+
     Arguments:
         config (dict): The config (contents of the config.json)
         campaign (dict): The campaign configuration (contents of the campaign.json)

@@ -4,12 +4,12 @@ from SimConfigBuilder import SimConfigBuilder
 
 
 class ModBuilder(object):
-    '''
+    """
     Classes derived from ModBuilder have generators that
-    yield ModList(ModFn(cb), ModFn(cb), ...) 
+    yield ModList(ModFn(cb), ModFn(cb), ...)
     where each ModFn modifies the base SimConfigBuilder (cb)
     and builds a ModBuilder.metadata dict that is reset on ModList init
-    '''
+    """
     metadata={}
 
     class ModList(list):
@@ -35,10 +35,10 @@ class ModBuilder(object):
 
     @classmethod
     def set_mods(cls, funcs):
-        '''
+        """
         Construct the list of ModFns to be applied to each simulation,
         verifying that only one site-configuration call is made and that it is done first.
-        '''
+        """
         funcs = list(funcs)  # to allow reordering
 
         site_mods = [s for s in funcs if s.fname in ('configure_site', 'set_calibration_site')]
