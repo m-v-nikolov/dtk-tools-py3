@@ -5,3 +5,4 @@ DTK package
        :maxdepth: 2
 
        dtk/commands
+       dtk/utils/core/DTKConfigBuilder
