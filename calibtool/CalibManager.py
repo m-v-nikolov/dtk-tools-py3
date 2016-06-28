@@ -201,6 +201,8 @@ class CalibManager(object):
 
         exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
 
+        time.sleep(3)  # Even if its all done wait a couple of seconds to make sure all files are written and closed
+
     def analyze_iteration(self):
         """
         Analyze the output of completed simulations by using the relevant analyzers by site.
