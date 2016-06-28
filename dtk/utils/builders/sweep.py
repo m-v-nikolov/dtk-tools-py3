@@ -17,28 +17,28 @@ class RunNumberSweepBuilder(ModBuilder):
 
 
 class GenericSweepBuilder(ModBuilder):
-    '''
+    """
     A convenient syntax for simple sweeps over configuration parameters.
-    '''
+    """
 
     @classmethod
     def from_dict(cls, d):
-        '''
+        """
         Generates lists of functions to override parameters for each combination of values.
 
         :param d: a dictionary of parameter names to lists of parameter values to sweep over.
-        '''
+        """
         params = d.keys()
         combos = itertools.product(*d.values())
         return cls((cls.set_mods(zip(params, combo)) for combo in combos))
 
     @classmethod
     def set_mods(cls, pv_pairs):
-        '''
+        """
         Dictionary may include the special keys: '__site__' or '__calibsite___',
         which are recognized as shorthand for site-configuration functions
         with the site name as the "parameter value".
-        '''
+        """
         def convert_to_mod_fn(pv_pair):
             p, v = pv_pair
             if p == '_site_':

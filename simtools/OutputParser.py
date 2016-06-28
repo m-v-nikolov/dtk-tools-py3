@@ -1,16 +1,16 @@
-import os           # mkdir, path, etc.
-import json         # to read JSON output files
+import os  # mkdir, path, etc.
+import json  # to read JSON output files
 import numpy as np  # for reading spatial output data by node and timestep
-import struct       # for binary file unpacking
-import threading    # for multi-threaded job submission and monitoring
-import pandas as pd # for reading csv files
+import struct  # for binary file unpacking
+import threading  # for multi-threaded job submission and monitoring
+import pandas as pd  # for reading csv files
 
 import logging
+
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
 
 
 class SimulationOutputParser(threading.Thread):
-
     def __init__(self, sim_dir, sim_id, sim_data, analyzers, semaphore=None):
         threading.Thread.__init__(self)
         self.sim_dir = sim_dir
@@ -36,7 +36,7 @@ class SimulationOutputParser(threading.Thread):
             for analyzer in self.analyzers:
                 self.selected_data[id(analyzer)] = analyzer.apply(self)
 
-            del self.raw_data #?
+            del self.raw_data  # ?
         finally:
             if self.semaphore:
                 self.semaphore.release()
@@ -87,9 +87,9 @@ class SimulationOutputParser(threading.Thread):
             self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
 
     def load_xlsx_file(self, filename, *args):
-        excel_file = pd.ExcelFile( self.get_path(filename) )
-        self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name) 
-          for sheet_name in excel_file.sheet_names}
+        excel_file = pd.ExcelFile(self.get_path(filename))
+        self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name)
+                                   for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, *args):
         try:
@@ -100,17 +100,17 @@ class SimulationOutputParser(threading.Thread):
     def load_bin_file(self, filename, *args):
         with open(self.get_path(filename), 'rb') as bin_file:
             data = bin_file.read(8)
-            n_nodes, = struct.unpack( 'i', data[0:4] )
-            n_tstep, = struct.unpack( 'i', data[4:8] )
-            #print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
+            n_nodes, = struct.unpack('i', data[0:4])
+            n_tstep, = struct.unpack('i', data[4:8])
+            # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids_dtype = np.dtype( [ ( 'ids', '<i4', (1, n_nodes ) ) ] )
-            nodeids = np.fromfile( bin_file, dtype=nodeids_dtype, count=1 )
-            nodeids = nodeids['ids'][:,:,:].ravel()
-            #print( "node IDs: " + str(nodeids) )
+            nodeids_dtype = np.dtype([('ids', '<i4', (1, n_nodes))])
+            nodeids = np.fromfile(bin_file, dtype=nodeids_dtype, count=1)
+            nodeids = nodeids['ids'][:, :, :].ravel()
+            # print( "node IDs: " + str(nodeids) )
 
-            channel_dtype = np.dtype( [ ( 'data', '<f4', (1, n_nodes ) ) ] )
-            channel_data = np.fromfile( bin_file, dtype=channel_dtype )
+            channel_dtype = np.dtype([('data', '<f4', (1, n_nodes))])
+            channel_data = np.fromfile(bin_file, dtype=channel_dtype)
             channel_data = channel_data['data'].reshape(n_tstep, n_nodes)
 
         self.raw_data[filename] = {'n_nodes': n_nodes,
@@ -121,8 +121,8 @@ class SimulationOutputParser(threading.Thread):
     def get_sim_dir(self):
         return os.path.join(self.sim_dir, self.sim_id)
 
-class CompsDTKOutputParser(SimulationOutputParser):
 
+class CompsDTKOutputParser(SimulationOutputParser):
     sim_dir_map = None
     use_compression = False
 
@@ -176,17 +176,18 @@ class CompsDTKOutputParser(SimulationOutputParser):
             # sim_dir_map -> we can just open files locally...
             super(CompsDTKOutputParser, self).load_all_files(filenames)
             return
-            
+
         # can't open files locally... we have to go through the COMPS asset service
         paths = ArrayList()
         for filename in filenames:
             paths.add(filename.replace('\\', '/'))
 
-        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
+        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression,
+                                           None)
         asset_byte_arrays = assets.toArray() if assets else []
-        
-        #print('done retrieving files; starting load')
-        
+
+        # print('done retrieving files; starting load')
+
         for filename, byte_array in zip(filenames, asset_byte_arrays):
             self.load_single_file(filename, byte_array)
 
@@ -210,15 +211,16 @@ class CompsDTKOutputParser(SimulationOutputParser):
         else:
             arr = args[0]
 
-            n_nodes, = struct.unpack( 'i', arr[0:4] )
-            n_tstep, = struct.unpack( 'i', arr[4:8] )
-            #print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
+            n_nodes, = struct.unpack('i', arr[0:4])
+            n_tstep, = struct.unpack('i', arr[4:8])
+            # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids = struct.unpack( str(n_nodes)+'i', arr[8:8+n_nodes*4])
+            nodeids = struct.unpack(str(n_nodes) + 'i', arr[8:8 + n_nodes * 4])
             nodeids = np.asarray(nodeids)
-            #print( "node IDs: " + str(nodeids) )
-            
-            channel_data = struct.unpack( str(n_nodes*n_tstep)+'f', arr[8+n_nodes*4:8+n_nodes*4+n_nodes*n_tstep*4])
+            # print( "node IDs: " + str(nodeids) )
+
+            channel_data = struct.unpack(str(n_nodes * n_tstep) + 'f',
+                                         arr[8 + n_nodes * 4:8 + n_nodes * 4 + n_nodes * n_tstep * 4])
             channel_data = np.asarray(channel_data)
             channel_data = channel_data.reshape(n_tstep, n_nodes)
 

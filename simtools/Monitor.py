@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class SimulationMonitor(object):
     """
     A class to monitor the status of local simulation.
@@ -37,7 +38,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         Client.Login(self.server_endpoint)
 
         def sims_from_experiment(e):
-            #logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())
+            # logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())
             return e.GetSimulations(QueryCriteria().Select('Id,SimulationState')).toArray()
 
         def sims_from_experiment_id(exp_id):
@@ -60,7 +61,9 @@ class CompsSimulationMonitor(SimulationMonitor):
             exp_id = self.exp_data['exp_id']
             sims = sims_from_experiment_id(exp_id)
         else:
-            raise Exception('Unable to monitor COMPS simulations as metadata contains no Suite or Experiment ID:\n%s' % json.dumps(self.exp_data, indent=4))
+            raise Exception(
+                'Unable to monitor COMPS simulations as metadata contains no Suite or Experiment ID:\n%s' % json.dumps(
+                    self.exp_data, indent=4))
 
         states, msgs = {}, {}
         for sim in sims:

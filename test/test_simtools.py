@@ -239,14 +239,7 @@ class TestLocalExperimentManager(unittest.TestCase):
     def test_status(self):
         local_manager = ExperimentManagerFactory.from_file(utils.exp_file())
         states, msgs = local_manager.get_simulation_status()
-        self.assertListEqual(states.values(), ['Running'] * self.nsims)
-
-        if os.name != 'posix':  # TODO: resolve permissions issues with process.kill functionality on Mac
-            local_manager.cancel_simulations(killall=True)
-            states, msgs = local_manager.get_simulation_status()
-            self.assertListEqual(states.values(), ['Failed'] * self.nsims)
-
-            self.assertRaises(NotImplementedError, lambda: local_manager.resubmit_simulations(resubmit_all_failed=True))
+        self.assertListEqual(states.values(), ['Waiting'] * self.nsims)
 
 
 if __name__ == '__main__':

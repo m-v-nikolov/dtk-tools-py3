@@ -1,14 +1,13 @@
 import logging
-import random
-import time
-import warnings
 import threading
+import warnings
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 lock = threading.Lock()
+
 
 def sample_selection(start_date='1/1/2000', freq='W'):
     def f(timeseries):
@@ -26,6 +25,7 @@ def sample_selection(start_date='1/1/2000', freq='W'):
             logger.info('periods = %d', len(freq_sliced))
             raise
         return pd.Series(freq_sliced, index=dates)
+
     return f
 
 
@@ -33,12 +33,13 @@ def summary_interval_selection(start_date='1/1/2000', freq='M'):
     def f(ts):
         dates = pd.date_range(start_date, periods=len(ts), freq=freq)
         return pd.Series(ts, index=dates)
+
     return f
 
 
 def example_selection(*args, **kwargs):
-    '''
+    """
     For backwards compatibility
-    '''
+    """
     warnings.warn('Use the sample_selection() function instead.', DeprecationWarning, stacklevel=2)
     return sample_selection(*args, **kwargs)

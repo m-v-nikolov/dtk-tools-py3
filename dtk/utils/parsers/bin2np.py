@@ -39,8 +39,9 @@ def filter_generator(src, func, sep=" "):
                 yield x
             if not read and goon:
                 pass
-  
-def bin2np(src, func = None, sep = " "):
+
+
+def bin2np(src, func=None, sep=" "):
     if not func is None:
         with open(src) as f:
             return np.genfromtxt(filter_generator(f, func, sep))

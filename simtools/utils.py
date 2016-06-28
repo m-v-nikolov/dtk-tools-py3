@@ -34,8 +34,8 @@ def translate_COMPS_path(path, setup=None):
 
     # Prepare the variables we will need
     groups = regexp.groups()
-    environment = setup.get('HPC', 'environment')
-    user = setup.get('HPC','user')
+    environment = setup.get('environment')
+    user = setup.get('user')
 
     # Query COMPS to get the path corresponding to the variable
     from COMPS import Client
@@ -57,7 +57,8 @@ def get_md5(filename):
     md5_value = md5calc.hexdigest()
     return md5_value
 
-def exp_files(idOrName = None):
+
+def exp_files(idOrName=None):
     files = None
 
     if idOrName:
@@ -71,11 +72,14 @@ def exp_files(idOrName = None):
 
     return files
 
-def exp_file(idOrName = None):
+
+def exp_file(idOrName=None):
     return max(exp_files(idOrName), key=os.path.getctime)
+
 
 def is_remote_path(path):
     return path.startswith('\\\\')
+
 
 def stage_file(from_path, to_directory):
     if is_remote_path(from_path):
@@ -103,9 +107,9 @@ def stage_file(from_path, to_directory):
 
 
 def override_HPC_settings(setup, **kwargs):
-
     overrides_by_variable = dict(priority=['Lowest', 'BelowNormal', 'Normal', 'AboveNormal', 'Highest'],
-                                 node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab', 'emod_cd', 'emod_abcd'],
+                                 node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab',
+                                             'emod_cd', 'emod_abcd'],
                                  use_comps_asset_svc=['0', '1'])
 
     for variable, allowed_overrides in overrides_by_variable.items():
@@ -119,14 +123,14 @@ def override_HPC_settings(setup, **kwargs):
 
 
 class CommandlineGenerator(object):
-    '''
+    """
     A class to construct command line strings from executable, options, and params
-    '''
+    """
 
     def __init__(self, exe_path, options, params):
         self._exe_path = exe_path
-        self._options  = options
-        self._params   = params
+        self._options = options
+        self._params = params
 
     @property
     def Executable(self):
@@ -137,9 +141,9 @@ class CommandlineGenerator(object):
         options = []
         for k, v in self._options.items():
             if k[-1] == ':':
-                options.append(k + v)   # if the option ends in ':', don't insert a space
+                options.append(k + v)  # if the option ends in ':', don't insert a space
             else:
-                options.extend([k, v])   # otherwise let join (below) add a space
+                options.extend([k, v])  # otherwise let join (below) add a space
 
         return ' '.join(options)
 

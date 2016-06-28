@@ -106,7 +106,6 @@ class CompsSimulationCommissioner(threading.Thread):
         bldr = Configuration.getBuilderInstance()
 
         # When new version of pyCOMPS
-        # .setEnvironmentName(setup.get('environment')) \
         config = bldr.setSimulationInputArgs(input_args) \
                      .setWorkingDirectoryRoot(os.path.join(setup.get('sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
                      .setExecutablePath(bin_path) \
@@ -115,6 +114,7 @@ class CompsSimulationCommissioner(threading.Thread):
                      .setPriority(HPCJob__Priority.valueOf(setup.get('priority'))) \
                      .setMinCores(config_builder.get_param('Num_Cores',1)) \
                      .setMaxCores(config_builder.get_param('Num_Cores',1)) \
+                     .setEnvironmentName(setup.get('environment')) \
                      .build()
 
         logging.debug('exp_name - ' + str(exp_name))
