@@ -47,17 +47,6 @@ Simulation job management is handled through the various `dtk` command-line opti
 
 #### Dependencies
 
-* [`numpy`](https://pypi.python.org/pypi/numpy) (Windows compilation issues discussed in Installation section above)
-* [`psutil`](https://pypi.python.org/pypi/psutil) for process ID lookup of local simulations with the `dtk status` command
-* statistical analysis with [`pandas`](https://pypi.python.org/pypi/pandas)
-* plotting of output with [`matplotlib`](https://pypi.python.org/pypi/matplotlib).
-
-Recommended optional dependencies: 
-* [`seaborn`](http://stanford.edu/~mwaskom/software/seaborn/) for statistical data visualization (requires scipy)
-* [`statsmodels`](https://pypi.python.org/pypi/statsmodels) for statistical estimation and inference (requires scipy)
-* `scipy` (e.g. from [scipy-0.15.1-cp27-none-win_amd64.whl](http://www.lfd.uci.edu/~gohlke/pythonlibs))
-* `nose` for running test suite
-
-32- and 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
+All dependencies are automatically installed by the `pip install -e .` command but you 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
 Interoperability with the Java layer of COMPS requires installation of the COMPSJavaInterop package.  [More detailed instructions](https://github.com/InstituteforDiseaseModeling/pyCOMPS/blob/master/README.md) can be found within the [`pyCOMPS`](https://github.com/InstituteforDiseaseModeling/pyCOMPS) repository.
