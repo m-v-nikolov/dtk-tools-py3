@@ -7,6 +7,8 @@ import shutil
 
 import re
 
+from simtools.SetupParser import SetupParser
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +34,10 @@ def translate_COMPS_path(path, setup=None):
     if not regexp:
         return path
 
+    # Check if we have a setup
+    if not setup:
+        setup = SetupParser()
+
     # Prepare the variables we will need
     groups = regexp.groups()
     environment = setup.get('environment')
@@ -39,6 +45,7 @@ def translate_COMPS_path(path, setup=None):
 
     # Query COMPS to get the path corresponding to the variable
     from COMPS import Client
+    Client.Login(setup.get('server_endpoint'))
     abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
 
     # Replace and return
@@ -77,20 +84,17 @@ def exp_file(idOrName=None):
     return max(exp_files(idOrName), key=os.path.getctime)
 
 
-def is_remote_path(path):
-    return path.startswith('\\\\')
-
-
 def stage_file(from_path, to_directory):
-    if is_remote_path(from_path):
-        logger.info('File is already staged; skipping copy to file-share')
-        return from_path
+    # Translate $COMPS path if needed
+    to_directory_translated = translate_COMPS_path(to_directory)
 
     file_hash = get_md5(from_path)
     logger.info('MD5 of ' + os.path.basename(from_path) + ': ' + file_hash)
 
-    stage_dir = os.path.join(to_directory, file_hash)
+    # We need to use the translated path for the copy but return the untouched staged path
+    stage_dir = os.path.join(to_directory_translated, file_hash)
     stage_path = os.path.join(stage_dir, os.path.basename(from_path))
+    original_stage_path = os.path.join(to_directory,file_hash,os.path.basename(from_path))
 
     if not os.path.exists(stage_dir):
         try:
@@ -99,11 +103,11 @@ def stage_file(from_path, to_directory):
             raise Exception("Unable to create directory: " + stage_dir)
 
     if not os.path.exists(stage_path):
-        logger.info('Copying ' + os.path.basename(from_path) + ' to ' + to_directory + '...')
+        logger.info('Copying %s to %s (translated in: %s)' % (os.path.basename(from_path), to_directory, to_directory_translated))
         shutil.copy(from_path, stage_path)
         logger.info('Copying complete.')
 
-    return stage_path
+    return original_stage_path
 
 
 def override_HPC_settings(setup, **kwargs):
