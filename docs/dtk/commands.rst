@@ -5,13 +5,15 @@ dtk commands
 Available commands
 ------------------
 +------------------------+------------------------+
-| :dtk-cmd:`analyze`     |  :dtk-cmd:`kill`       |
+| :dtk-cmd:`analyze`     |  :dtk-cmd:`clean`      |
 +------------------------+------------------------+
-| :dtk-cmd:`progress`    |  :dtk-cmd:`resubmit`   |
+| :dtk-cmd:`delete`      |  :dtk-cmd:`exterminate`|
 +------------------------+------------------------+
-| :dtk-cmd:`run`         |  :dtk-cmd:`status`     |
+| :dtk-cmd:`kill`        |  :dtk-cmd:`progress`   |
 +------------------------+------------------------+
-| :dtk-cmd:`stdout`      |                        |
+| :dtk-cmd:`resubmit`    |  :dtk-cmd:`run`        |
++------------------------+------------------------+
+| :dtk-cmd:`status`      |  :dtk-cmd:`stdout`     |
 +------------------------+------------------------+
 
 ``analyze``
@@ -29,6 +31,32 @@ Use COMPS asset service to read output files (default is direct file access).
 
 Force analyzer to run even if jobs are not all finished.
 
+``clean``
+-------------
+
+.. dtk-cmd:: clean {none|id|name}
+
+Hard deletes **ALL** experiments matched by the id or name (or literally all experiments if nothing is passed).
+
+``delete``
+-------------
+
+.. dtk-cmd:: delete {none|id|name}
+
+Deletes the cached JSON file for the selected experiment (or most recent).
+
+.. dtk-cmd-option:: --hard
+
+Deletes the cached JSON file and deletes local working directory or marks the experimented as deleted in COMPS for the selected experiment (or most recent).
+
+``exterminate``
+-------------
+
+.. dtk-cmd:: exterminate {none|id|name}
+
+Kills ALL experiments matched by the id or name (or literally all experiments if nothing is passed).
+
+
 ``kill``
 -------------
 
@@ -40,9 +68,6 @@ Kills all simulations in the *most recent* experiment matched by specified **id*
 
 Comma separated list of job IDs or process of simulations to kill in the *most recent* experiment matched by specified **id** or **name** (or just the most recent).
 
-.. dtk-cmd-option:: --all, -a
-
-Kills all simulations in all experiments matched by specified id or name (or just the most recent).
 
 
 ``progress``
