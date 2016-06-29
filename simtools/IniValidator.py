@@ -32,7 +32,8 @@ class IniValidator:
             print "Section: " + self.section_name + " not found in schema"
             sys.exit()
 
-        self.schemaSection = self.schema[self.section_name]
+        self.schemaSection = self.schema["COMMON"]
+        self.schemaSection += self.schema[self.section_name]
 
     def validate(self, setup_parser):
 
@@ -41,7 +42,7 @@ class IniValidator:
 
         for rule in self.schemaSection:
 
-            val = setup_parser.get(self.section_name, rule["name"])
+            val = setup_parser.get(rule["name"])
 
             if val is None:
                 print "No section called: " + rule["name"]
@@ -74,3 +75,27 @@ class IniValidator:
     @staticmethod
     def validate_bool(val, rule):
         return val in boolean_values
+
+    @staticmethod
+    def validate_directory(val, rule):
+        if "optional" in rule and rule["optional"] is True and val is "":
+            return True
+
+        res = os.path.isdir(os.path.abspath(val))
+
+        if res is not True:
+            print "Directory validation failed: " + val
+
+        return res
+
+    @staticmethod
+    def validate_file(val, rule):
+        if "optional" in rule and rule["optional"] is True and val is "":
+            return True
+
+        res = os.path.isfile(os.path.abspath(val))
+
+        if res is not True:
+            print "File validation failed: " + val
+
+        return res

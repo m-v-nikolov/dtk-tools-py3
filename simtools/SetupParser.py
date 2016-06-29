@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from ConfigParser import ConfigParser
+from IniValidator import IniValidator
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage
 
@@ -97,7 +98,7 @@ class SetupParser:
                 print('Unable to determine JAVA_HOME; please set JAVA_HOME environment variable as described in pyCOMPS README.txt')
 
         # Validate
-        self.validate()
+        self.validate(self.selected_block)
 
     def override_block(self,block):
         """
@@ -154,6 +155,7 @@ class SetupParser:
     def file_name(self):
         return self.ini_file
 
-    def validate(self):
-        pass
+    def validate(self, section_name):
+        local_default = IniValidator(section_name)
+        return local_default.validate(self)
 
