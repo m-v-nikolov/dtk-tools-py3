@@ -35,8 +35,10 @@ class ExperimentManagerFactory(object):
         raise Exception("ExperimentManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
-    def from_model(cls, model_file, location='LOCAL', setup=SetupParser(), **kwargs):
+    def from_model(cls, model_file, location='LOCAL', setup=None, **kwargs):
         logger.info('Initializing %s ExperimentManager from: %s', location, model_file)
+        if not setup:
+            setup = SetupParser()
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)
         return cls.factory(location)(model_file, {}, setup)
