@@ -1,3 +1,4 @@
+import sys
 import os
 import glob
 from hashlib import md5
@@ -66,7 +67,8 @@ def exp_files(idOrName=None):
         files = glob.glob('simulations/*.json')
 
     if not files or len(files) < 1:
-        raise Exception('Unable to find experiment meta-data file in local directory.')
+        logger.error('Unable to find experiment meta-data file in local directory (' + os.path.join(os.getcwd(), 'simulations') + ').')
+        sys.exit()
 
     return files
 
