@@ -22,10 +22,12 @@ study_site_monthly_EIRs = {
     '_pulse_':      [1] + [0] * 11
     }
 
+
 def mAb_vs_EIR(EIR):
     # Rough cut at function from eyeballing a few BinnedReport outputs parsed into antibody fractions
     mAb = 0.9 * (1e-4*EIR*EIR + 0.7*EIR) / ( 0.7*EIR + 2 )
     return min(mAb, 1.0)
+
 
 # Configuration of study-site input EIR
 def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True, set_site_geography=True):

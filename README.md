@@ -33,11 +33,13 @@ If the command succeed and present you with the details of the dtk command you a
 pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
 ```
 
+**Note:** EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
+
 If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Setup
 
-To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `dtk_setup.cfg`.
+To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `simtools/simtools.cfg`.
 
 One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
 

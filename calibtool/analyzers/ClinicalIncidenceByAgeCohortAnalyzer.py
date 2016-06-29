@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ClinicalIncidenceByAgeCohortAnalyzer(CalibAnalyzer):
 
     required_reference_types = ['annual_clinical_incidence_by_age']
-    filenames = ['MalariaSummaryReport_Annual_Report.json']
+    filenames = ['output/MalariaSummaryReport_Annual_Report.json']
 
     x = 'age_bins'
     y = 'Annual Clinical Incidence by Age Bin'

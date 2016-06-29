@@ -1,4 +1,3 @@
-import datetime
 import glob
 import json
 import logging
@@ -7,6 +6,7 @@ import pprint
 import re
 import shutil
 import time
+from datetime import datetime
 
 import pandas as pd
 
@@ -44,7 +44,7 @@ class CalibManager(object):
     """
 
     def __init__(self, setup, config_builder, sample_point_fn, sites, next_point,
-                 name='calib_test', iteration_state=IterationState(), location='LOCAL',
+                 name='calib_test', iteration_state=IterationState(),
                  sim_runs_per_param_set=1, num_to_plot=10, max_iterations=5, plotters=list()):
 
         self.name = name
@@ -54,12 +54,10 @@ class CalibManager(object):
         self.sites = sites
         self.next_point = next_point
         self.iteration_state = iteration_state
-
-        self.location = location
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
-
+        self.location = self.setup.get('type')
         self.suite_id = None
         self.all_results = None
 
@@ -69,10 +67,7 @@ class CalibManager(object):
         """
         Create and run a complete multi-iteration calibration suite.
         """
-
-        if 'location' in kwargs:
-            self.location = kwargs.pop('location')
-
+        self.location = self.setup.get('type')
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -145,9 +140,6 @@ class CalibManager(object):
             if self.finished():
                 break
 
-            # Write the CSV
-            self.write_LL_csv()
-
             self.increment_iteration()
 
         self.finalize_calibration()
@@ -198,7 +190,7 @@ class CalibManager(object):
             self.iteration_state.simulations = exp_manager.exp_data
             self.cache_iteration_state()
 
-        exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)  # TODO: resolve status.txt line[-1] IndexError?
+        exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)
 
     def analyze_iteration(self):
         """
@@ -239,6 +231,9 @@ class CalibManager(object):
 
         # Run all the plotters
         map(lambda plotter: plotter.visualize(self), self.plotters)
+
+        # Write the CSV
+        self.write_LL_csv()
 
         return results.total.tolist()
 
@@ -290,7 +285,9 @@ class CalibManager(object):
                  'iteration': self.iteration,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
-                 'results': self.serialize_results()}
+                 'results': self.serialize_results(),
+                 'setup_overlay_file':self.setup.setup_file,
+                 'selected_block': self.setup.selected_block}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
@@ -298,7 +295,7 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # Depp copy all_results and pnames to not disturb the calibration
+        # Deep copy all_results and pnames to not disturb the calibration
         import copy
         pnames = copy.deepcopy(self.param_names())
         all_results = self.all_results.copy(True)
@@ -339,7 +336,7 @@ class CalibManager(object):
         # Retrieve the mapping between id - path
         if self.location == "HPC":
             from simtools.OutputParser import CompsDTKOutputParser
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id)
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id, save=False)
         else :
             sims_paths = dict()
 
@@ -358,14 +355,22 @@ class CalibManager(object):
 
         results_df['outputs'] = results_df['outputs'].apply(find_path)
 
-        # Sort and save
+        # Defines the column order
         col_order = ['iteration', 'sample', 'total']
         col_order.extend(results_df.keys()[len(pnames)+2:-2])   # The analyzers
         col_order.extend(pnames)
         col_order.extend(['outputs'])
 
-        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=self.iteration == 0)
-        with open(os.path.join(self.name, 'LL_all.csv'), 'a') as fp:
+        # Concatenate the current csv
+        csv_path = os.path.join(self.name, 'LL_all.csv')
+        if os.path.exists(csv_path):
+            # We need to get the same column order from the csv that the results_df to append them correctly
+            current = pd.read_csv(open(csv_path, 'r'))[col_order]
+            results_df = results_df.append(current, ignore_index = True)
+
+        # Write the csv
+        csv = results_df.sort_values(by='total', ascending=True)[col_order].to_csv(header=True, index=False)
+        with open(csv_path, 'w') as fp:
             fp.writelines(csv)
 
     def cache_iteration_state(self, backup_existing=False):
@@ -435,11 +440,11 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        calib_data = self.read_calib_data()
+        self.location = self.setup.get('type')
 
-        kw_location = kwargs.pop('location')
-        self.location = calib_data.get('location', kw_location if kw_location else self.location)
+        calib_data = self.read_calib_data()
         self.suite_id = calib_data.get('suite_id')
+
         latest_iteration = calib_data.get('iteration')
 
         if iteration is None:
@@ -492,7 +497,6 @@ class CalibManager(object):
         # Print confirmation
         print "Calibration %s successfully cancelled!" % self.name
 
-
     def cleanup(self):
         """
         Cleanup the current calibration
@@ -544,12 +548,16 @@ class CalibManager(object):
             from COMPS import Client
             Client.Login(self.setup.get('HPC', 'server_endpoint'))
 
+        # Cleanup the LL_all.csv
+        if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
+            os.remove(os.path.join(self.name, 'LL_all.csv'))
+
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
         suite_id = calib_data.get('suite_id')
 
         # Go through each already ran iterations
-        for i in range(0, iter_count):
+        for i in range(0, iter_count+1):
             # Create the path for the iteration dir
             iter_directory = os.path.join(self.name, 'iter%d' % i)
 
@@ -575,11 +583,15 @@ class CalibManager(object):
         # Also finalize
         self.finalize_calibration()
 
-    def read_calib_data(self):
+    def read_calib_data(self, force=False):
         try:
             return json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
         except IOError:
-            raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+            if not force:
+                raise Exception('Unable to find metadata in %s/CalibManager.json' % self.name)
+            else:
+                return None
+
 
     @property
     def iteration(self):

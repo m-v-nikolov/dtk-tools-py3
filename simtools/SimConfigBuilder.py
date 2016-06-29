@@ -6,11 +6,12 @@ import utils
 
 logger = logging.getLogger(__name__)
 
+
 class SimConfigBuilder(object):
-    '''
+    """
     A class for building, modifying, and writing
     required configuration files for a simulation
-    '''
+    """
 
     def __init__(self, config={}, **kwargs):
         self.config = config
@@ -60,22 +61,26 @@ class SimConfigBuilder(object):
     def get_commandline(self, exe_path, paths):
         return utils.CommandlineGenerator(exe_path, {}, [])
 
-    def stage_required_libraries(self, dll_path, paths):
+    def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
         pass
 
     def dump_files(self, working_directory):
         if not os.path.exists(working_directory):
             os.makedirs(working_directory)
+
         def write_file(name, content):
             filename = os.path.join(working_directory, '%s.json' % name)
             with open(filename, 'w') as f:
                 f.write(content)
+
         self.file_writer(write_file)
 
     def dump_files_to_string(self):
-        files={}
+        files = {}
+
         def update_strings(name, content):
             files[name] = content
+
         self.file_writer(update_strings)
         return files
 
@@ -85,6 +90,5 @@ class SimConfigBuilder(object):
 
 
 class PythonConfigBuilder(SimConfigBuilder):
-
     def get_commandline(self, exe_path, paths):
         return utils.CommandlineGenerator('python', {}, [exe_path])

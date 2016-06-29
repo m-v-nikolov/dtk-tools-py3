@@ -1,7 +1,6 @@
 import logging
+import os
 
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from plot import plot_by_channel
@@ -15,7 +14,7 @@ def default_plot_fn(df, ax):
     m.plot(ax=ax, legend=True)
 
 
-class TimeseriesAnalyzer():
+class TimeseriesAnalyzer:
 
     plot_name = 'ChannelPlots'
     data_group_names = ['group', 'sim_id', 'channel']
@@ -23,7 +22,7 @@ class TimeseriesAnalyzer():
     output_file = 'timeseries.csv'
 
     def __init__(self,
-                 filename = 'InsetChart.json',
+                 filename = os.path.join('output', 'InsetChart.json'),
                  filter_function = lambda md: True, # no filtering based on metadata
                  select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
                  group_function  = lambda k,v: k, # group by unique simid-key from parser

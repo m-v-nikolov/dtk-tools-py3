@@ -1,6 +1,6 @@
 {
-	"11aace62-11eb-e511-93fa-f0921c16849f":"C:/Users/Mnikolov/Zambia-raw/dtk-scripts/1node/simulations/Sinamalima_1_node_burnin_arabiensis_funestus_habs_11aace62-11eb-e511-93fa-f0921c16849f.json",
-	"2e74af3e-11eb-e511-93fa-f0921c16849f":"C:/Users/Mnikolov/Zambia-raw/dtk-scripts/1node/simulations/Gwembe_1_node_burnin_arabiensis_funestus_habs_2e74af3e-11eb-e511-93fa-f0921c16849f.json",
-	"5ca7831a-11eb-e511-93fa-f0921c16849f":"C:/Users/Mnikolov/Zambia-raw/dtk-scripts/1node/simulations/Lukonde_1_node_burnin_arabiensis_funestus_habs_5ca7831a-11eb-e511-93fa-f0921c16849f.json",
-	"dced1cd9-10eb-e511-93fa-f0921c16849f":"C:/Users/Mnikolov/Zambia-raw/dtk-scripts/1node/simulations/Munumbwe_1_node_burnin_arabiensis_funestus_habs_dced1cd9-10eb-e511-93fa-f0921c16849f.json"
+	"11aace62-11eb-e511-93fa-f0921c16849f":"./input/Sinamalima_1_node_burnin_arabiensis_funestus_habs_11aace62-11eb-e511-93fa-f0921c16849f.json",
+	"2e74af3e-11eb-e511-93fa-f0921c16849f":"./input/Gwembe_1_node_burnin_arabiensis_funestus_habs_2e74af3e-11eb-e511-93fa-f0921c16849f.json",
+	"5ca7831a-11eb-e511-93fa-f0921c16849f":"./input/Lukonde_1_node_burnin_arabiensis_funestus_habs_5ca7831a-11eb-e511-93fa-f0921c16849f.json",
+	"dced1cd9-10eb-e511-93fa-f0921c16849f":"./input/Munumbwe_1_node_burnin_arabiensis_funestus_habs_dced1cd9-10eb-e511-93fa-f0921c16849f.json"
 }

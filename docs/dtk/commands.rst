@@ -7,15 +7,17 @@ Available commands
 +------------------------+------------------------+
 | :dtk-cmd:`analyze`     |  :dtk-cmd:`kill`       |
 +------------------------+------------------------+
-| :dtk-cmd:`resubmit`    |  :dtk-cmd:`run`        |
+| :dtk-cmd:`progress`    |  :dtk-cmd:`resubmit`   |
 +------------------------+------------------------+
-| :dtk-cmd:`status`      |                        |
+| :dtk-cmd:`run`         |  :dtk-cmd:`status`     |
++------------------------+------------------------+
+| :dtk-cmd:`stdout`      |                        |
 +------------------------+------------------------+
 
 ``analyze``
 -------------
 
-.. dtk-cmd:: dtk analyze {none|id|name} <config_name.py>
+.. dtk-cmd:: analyze {none|id|name} <config_name.py>
 
 Analyzes the *most recent* experiment matched by specified **id** or **name** (or just the most recent) with the python script passed.
 
@@ -43,6 +45,14 @@ Comma separated list of job IDs or process of simulations to kill in the *most r
 Kills all simulations in all experiments matched by specified id or name (or just the most recent).
 
 
+``progress``
+-------------
+
+.. dtk-cmd:: progress {none|id|name}
+
+Analyzes ``StdOut.txt`` and ``status.txt`` and prints the percent progress, time elapsed and approximate time remaining for each simulation. In addition, it prints the overall progress of all of the simulations in the selected experiment.
+
+
 ``resubmit``
 -------------
 
@@ -67,11 +77,20 @@ Run the passed configuration python script for custom running of simulation. For
 
     dtk run example_sweep.py
 
-.. dtk-cmd-option:: --hpc
+.. dtk-cmd-option:: --<block_name>
 
-Overrides where the simulation will be ran. Even if the python configuration passed defines the location ``LOCAL``, the simulations will be ran on HPC::
+Overrides which configuration block the simulation will be ran. Even if the python configuration passed defines the location ``LOCAL``, the simulations will be ran on the selected block::
 
-    dtk run example_simulation.py --hpc
+    dtk run example_simulation.py --MY_CONFIG_BLOCK
+
+See :ref:`simtoolsoverlay` for more information.
+
+.. dtk-cmd-option:: --ini <ini_file_path>
+
+Overrides which overlay ini configuration file to use. Specifying this parameter will make the system ignore any ``simtools.ini`` file in the working directory::
+
+    dtk run --ini folder/test.ini
+
 
 .. dtk-cmd-option:: --priority
 
@@ -87,7 +106,7 @@ Priority can take the following values:
 
 For example, if we have a simulation supposed to run locally, we can force it to be HPC with lowest priority by using::
 
-    dtk run example_local_simulation.py --hpc --priority Lowest
+    dtk run example_local_simulation.py --HPC --priority Lowest
 
 .. dtk-cmd-option:: --node_group <node_group>
 
@@ -188,3 +207,23 @@ For example:
     }
     {'Finished': 1}
 
+
+
+``stdout``
+-------------
+
+.. dtk-cmd:: stdout {none|id|name}
+
+Prints ``StdOut.txt`` for the *first* simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: -e
+
+Prints ``StdErr.txt`` for the *first* simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: --failed, --succeeded
+
+Prints ``StdOut.txt`` for the *first* failed or succeeded (depending on flag) simulation in the *most recent* experiment matched by specified id or name (or just the most recent).
+
+.. dtk-cmd-option:: --force, -f
+
+``dtk stdout`` by default will only display simulations of a finished experiment. If you wish to display the outputs while the experiment is running, use this flag.

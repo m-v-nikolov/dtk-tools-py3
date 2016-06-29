@@ -1,16 +1,15 @@
-import os
 import json
+import os
 from collections import defaultdict
 
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from simtools.SetupParser import SetupParser
-from timeseries import TimeseriesAnalyzer
 from group import group_by_name
 from plot import plot_by_channel, plot_lines
+from simtools.SetupParser import SetupParser
+from timeseries import TimeseriesAnalyzer
+
 
 class RegressionTestAnalyzer(TimeseriesAnalyzer):
 
@@ -31,7 +30,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
         self.onlyPlotFailed=onlyPlotFailed
         self.results = defaultdict(list)
         setup = SetupParser()
-        self.regression_path = os.path.join(setup.get('BINARIES','dll_path'),
+        self.regression_path = os.path.join(setup.get('dll_path'),
                                             '..', '..', 'Regression')
 
     def apply(self, parser):
@@ -39,7 +38,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
 
         reference_path = os.path.join(self.regression_path,
                                       parser.sim_data['Config_Name'],
-                                      'output', self.filenames[0])
+                                      self.filenames[0])
         with open(reference_path) as f:
             data_by_channel = json.loads(f.read())['Channels']
         ref_channel_data = self.get_channel_data(data_by_channel)

@@ -15,7 +15,7 @@ params = {
 
     "Max_MSP1_Antibody_Growthrate": 0.045,
     "Antibody_Capacity_Growth_Rate": 0.09,
-    "Nonspecific_Antibody_Growth_Rate_Factor": 0.5, # multiplied by major-epitope number to get rate
+    "Nonspecific_Antibody_Growth_Rate_Factor": 0.5,  # multiplied by major-epitope number to get rate
     "Antibody_Stimulation_C50": 30,
     "Antibody_Memory_Level": 0.34,
     "Min_Adapted_Response": 0.05,
@@ -27,9 +27,10 @@ params = {
     "Maternal_Antibody_Decay_Rate": 0.01,
 
     "Erythropoiesis_Anemia_Effect": 3.5
-    }
+}
 
-def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_root'), site=None):
+
+def add_immune_overlays(cb, tags, directory=None, site=None):
     """
     Add an immunity overlay.
 
@@ -41,7 +42,8 @@ def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_roo
     :param site: If the site is specified, the files will be expected to be found in the immune_init/site subdirectory.
     :return: Nothing
     """
-
+    if not directory:
+        directory = SetupParser().get('input_root')
     demogfiles = cb.get_param("Demographics_Filenames")
 
     if len(demogfiles) != 1:
@@ -73,6 +75,7 @@ def add_immune_overlays(cb, tags, directory=SetupParser().get('LOCAL','input_roo
     cb.enable("Immunity_Initialization_Distribution")  # compatibility with EMOD v2.0 and earlier
     cb.set_param("Immunity_Initialization_Distribution_Type", "DISTRIBUTION_COMPLEX")
 
+
 def add_immune_init(cb, site, x_temp_habitats, directory=None):
     """
     Initializes the immunity based on habitat scaling.
@@ -87,6 +90,7 @@ def add_immune_init(cb, site, x_temp_habitats, directory=None):
     """
     tags = ["x_" + str(x) for x in x_temp_habitats]
     add_immune_overlays(cb, tags, directory, site=site)
+
 
 def scale_habitat_with_immunity(cb, available=[], scale=1.0):
     """

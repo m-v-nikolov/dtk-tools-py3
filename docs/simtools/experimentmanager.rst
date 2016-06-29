@@ -3,3 +3,6 @@
 ========================
 Experiment Manager Class
 ========================
+
+.. automodule:: simtools.ExperimentManager
+    :members:

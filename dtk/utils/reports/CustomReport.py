@@ -1,13 +1,12 @@
-import os
-
 def format(reports):
-    reportsJSON={'Custom_Reports':{'Use_Explicit_Dlls':1}}
-    types=set([r.type for r in reports])
-    buckets={t:{'Enabled':1,'Reports':[]} for t in types}
+    reports_json = {'Custom_Reports': {'Use_Explicit_Dlls': 1}}
+    types = set([r.type for r in reports])
+    buckets = {t: {'Enabled': 1, 'Reports': []} for t in types}
     for r in reports:
         buckets[r.type]['Reports'].append(r.to_dict())
-    reportsJSON['Custom_Reports'].update(buckets)
-    return reportsJSON
+        reports_json['Custom_Reports'].update(buckets)
+    return reports_json
+
 
 class BaseReport(object):
 
@@ -15,11 +14,11 @@ class BaseReport(object):
             'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll',
             'ReportVectorStats': 'libvectorstats.dll',
             'ReportVectorMigration': 'libvectormigration.dll',
-            'ReportHumanMigrationTracking' : 'libhumanmigrationtracking.dll',
-            'ReportEventCounter' : 'libreporteventcounter.dll',
-            'ReportMalariaFiltered' : 'libReportMalariaFiltered.dll'}
+            'ReportHumanMigrationTracking': 'libhumanmigrationtracking.dll',
+            'ReportEventCounter': 'libreporteventcounter.dll',
+            'ReportMalariaFiltered': 'libReportMalariaFiltered.dll'}
 
-    def __init__(self, type = ""):
+    def __init__(self, type=""):
         self.type = type
 
     def to_dict(self):
@@ -28,9 +27,10 @@ class BaseReport(object):
     def get_dll_path(self):
         dll = self.dlls.get(self.type, None)
         if dll:
-            return ('reporter_plugins', dll)
+            return 'reporter_plugins', dll
         else:
             raise Exception('No known DLL for report type %s' % self.type)
+
 
 class BaseEventReport(BaseReport):
 
@@ -40,7 +40,7 @@ class BaseEventReport(BaseReport):
                  event_trigger_list,
                  start_day=0,
                  duration_days=1000000,
-                 report_description ="",
+                 report_description="",
                  nodeset_config={"class": "NodeSetAll"},
                  type=""):
 
@@ -57,6 +57,7 @@ class BaseEventReport(BaseReport):
                 "Report_Description": self.report_description,
                 "Nodeset_Config": self.nodeset_config,
                 "Event_Trigger_List": self.event_trigger_list}
+
 
 class BaseEventReportIntervalOutput(BaseEventReport):
 

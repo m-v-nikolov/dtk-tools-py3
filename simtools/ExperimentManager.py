@@ -7,6 +7,9 @@ import signal
 import subprocess
 import threading
 import time
+
+import sys
+
 import utils
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -19,6 +22,7 @@ from Commisioner import CompsSimulationCommissioner
 from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
 from datetime import datetime
+
 
 class ExperimentManagerFactory(object):
     @staticmethod
@@ -37,11 +41,13 @@ class ExperimentManagerFactory(object):
         return cls.factory(location)(model_file, {}, setup)
 
     @classmethod
-    def from_setup(cls, setup=SetupParser(), location='LOCAL', **kwargs):
+    def from_setup(cls, setup=None, location='LOCAL', **kwargs):
+        if not setup:
+            setup = SetupParser()
         logger.info('Initializing %s ExperimentManager from parsed setup', location)
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)
-        return cls.factory(location)(setup.get('BINARIES', 'exe_path'), {}, setup)
+        return cls.factory(location)(setup.get('exe_path'), {}, setup)
 
     @classmethod
     def from_data(cls, exp_data):
@@ -67,18 +73,26 @@ class LocalExperimentManager(object):
     monitorClass = SimulationMonitor
     parserClass = SimulationOutputParser
 
-    def __init__(self, model_file, exp_data, setup=SetupParser()):
+    def __init__(self, model_file, exp_data, setup=None):
+        # If no setup is passed -> create it
+        if setup is None:
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
+            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL')
+
         self.model_file = model_file
         self.exp_data = exp_data
         self.setup = setup
+        self.assets_service = self.location == "HPC" and setup.getboolean('use_comps_asset_svc')
 
         self.exp_builder = None
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
         self.analyzers = []
+        self.quiet = setup.has_option('quiet')
 
-        max_threads = int(self.setup.get('GLOBAL', 'max_threads'))
+        max_threads = int(self.setup.get('max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
 
     def create_simulations(self, config_builder, exp_name='test',
@@ -91,14 +105,32 @@ class LocalExperimentManager(object):
         self.config_builder = config_builder
         self.exp_builder = exp_builder
 
-        self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
+        # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
+        # If not, use the normal staging process
+        if self.assets_service:
+            self.staged_bin_path = self.setup.get('bin_staging_root')
+        else:
+            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
+
+        # Create the command line
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
+        # Get the git revision of the tools
+        try:
+            import subprocess
+            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n", "")
+        except:
+            revision = "Unknown"
+
+        # Set the meta data
         self.exp_data.update({'sim_root': self.get_property('sim_root'),
                               'exe_name': self.commandline.Executable,
                               'exp_name': exp_name,
                               'location': self.location,
-                              'sim_type': self.config_builder.get_param('Simulation_Type')})
+                              'sim_type': self.config_builder.get_param('Simulation_Type'),
+                              'dtk-tools_revision': revision,
+                              'selected_block': self.setup.selected_block,
+                              'setup_overlay_file': self.setup.setup_file})
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
@@ -112,8 +144,15 @@ class LocalExperimentManager(object):
             # modify next simulation according to experiment builder
             map(lambda func: func(self.config_builder), mod_fn_list)
 
-            # inside loop if different requirements by sim in sweep
-            self.config_builder.stage_required_libraries(self.setup.get('BINARIES', 'dll_path'), self.get_setup())
+            # If the assets service is in use, the path needs to come from COMPS
+            if self.assets_service:
+                lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
+            else:
+                lib_staging_root = self.setup.get('lib_staging_root')
+
+            # Stage the required dll for the experiment
+            self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
+                                                         self.assets_service)
 
             commissioner = self.create_simulation()
             if commissioner is not None:
@@ -134,11 +173,14 @@ class LocalExperimentManager(object):
         self.commission_simulations()
         self.cache_experiment_data()  # now we have job IDs
 
-    def get_simulation_status(self):
+    def get_simulation_status(self, reload=False):
         """
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
+        :param reload: Reload the exp_data (used in case of repeating poll with local simulations)
         """
+        if reload and self.location == "LOCAL":
+            self.reload_exp_data()
 
         logger.debug("Status of simulations run on '%s':" % self.location)
         states, msgs = self.monitorClass(self.exp_data, self.get_setup()).query()
@@ -275,13 +317,18 @@ class LocalExperimentManager(object):
         max_local_sims = int(self.get_property('max_local_sims'))
 
         # Create the paths
-        paths = [os.path.join(exp_dir,sim_id) for sim_id in sim_ids]
+        paths = [os.path.join(exp_dir, sim_id) for sim_id in sim_ids]
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "LocalRunner.py")
-        cache_path = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
+        cache_path = os.path.join(os.getcwd(), 'simulations',
+                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
-        subprocess.Popen(["python", local_runner_path, ",".join(paths),
+        subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
                           self.commandline.Commandline, str(max_local_sims), cache_path], shell=False)
+
+        if self.setup.has_option('blocking'):
+            self.cache_experiment_data()
+            self.wait_for_finished(verbose=not self.quiet)
 
         return True
 
@@ -294,17 +341,19 @@ class LocalExperimentManager(object):
         logger.info('Killing all simulations in experiment: ' + str(ids))
         self.cancel_simulations(ids)
 
-    def kill_job(self, job_id):
-        os.kill(job_id, signal.SIGTERM)
+    def kill_job(self, simId):
+        pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
+        if pid:
+            os.kill(pid, signal.SIGTERM)
 
     def resubmit_job(self, job_id):
         raise NotImplementedError('resubmit_job not implemented for %s jobs' % self.location)
 
     def get_property(self, property):
-        return self.setup.get(self.location, property)
+        return self.setup.get(property)
 
     def get_setup(self):
-        return dict(self.setup.items(self.location))
+        return dict(self.setup.items())
 
     def cache_experiment_data(self, verbose=True):
 
@@ -350,16 +399,24 @@ class LocalExperimentManager(object):
     def succeeded(self):
         return self.status_succeeded(self.get_simulation_status()[0])
 
+    @staticmethod
+    def status_failed(states):
+        return all(v in ['Failed'] for v in states.itervalues())
+
+    def failed(self):
+        return self.status_failed(self.get_simulation_status()[0])
+
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
             time.sleep(init_sleep)
 
             # Reload the exp_data because job ids may have been added by the thread
-            cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
-            self.exp_data = json.load(open(cache_file_path))
+            self.reload_exp_data()
 
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
+                # Wait when we are all done to make sure all the output files have time to get written
+                time.sleep(sleep_time)
                 break
             else:
                 if verbose:
@@ -378,6 +435,15 @@ class LocalExperimentManager(object):
     def add_analyzer(self, analyzer):
         self.analyzers.append(analyzer)
 
+    def reload_exp_data(self):
+        """
+        Refresh the exp_data with what is in the json metadata
+        :return:
+        """
+        cache_file_path = os.path.join(os.getcwd(), 'simulations',
+                                       "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
+        self.exp_data = json.load(open(cache_file_path))
+
 
 class CompsExperimentManager(LocalExperimentManager):
     """
@@ -389,7 +455,13 @@ class CompsExperimentManager(LocalExperimentManager):
     monitorClass = CompsSimulationMonitor
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, exe_path, exp_data, setup=SetupParser()):
+    def __init__(self, exe_path, exp_data, setup=None):
+        # If no setup is passed -> create it
+        if setup is None:
+            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'HPC'
+            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
+            setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='HPC')
+
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
         self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
@@ -438,6 +510,9 @@ class CompsExperimentManager(LocalExperimentManager):
 
     def commission_simulations(self):
         CompsSimulationCommissioner.commission_experiment(self.exp_data['exp_id'])
+        if self.setup.has_option('blocking'):
+            self.cache_experiment_data()
+            self.wait_for_finished(verbose=not self.quiet)
         return True
 
     def collect_sim_metadata(self):
@@ -452,7 +527,7 @@ class CompsExperimentManager(LocalExperimentManager):
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Cancel()
 
-    def kill_job(self, job_id):
+    def kill_job(self, simId):
         from COMPS import Client
         from COMPS.Data import Simulation, QueryCriteria
 
@@ -460,13 +535,13 @@ class CompsExperimentManager(LocalExperimentManager):
             Client.Login(self.get_property('server_endpoint'))
             self.comps_logged_in = True
 
-        s = Simulation.GetById(job_id, QueryCriteria().Select('Id'))
+        s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
 
     def analyze_simulations(self):
-        if not self.setup.getboolean(self.location, 'use_comps_asset_svc'):
+        if not self.assets_service:
             CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
-        if self.setup.getboolean(self.location, 'compress_assets'):
+        if self.location == "HPC" and self.setup.getboolean('compress_assets'):
             CompsDTKOutputParser.enableCompression()
 
         LocalExperimentManager.analyze_simulations(self)

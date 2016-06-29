@@ -8,3 +8,5 @@ from .vector import VectorSpeciesAnalyzer
 from .summary import SummaryAnalyzer
 #from .elimination import EliminationAnalyzer  # statsmodels + seaborn + scipy dependencies
 from .regression import RegressionTestAnalyzer
+from .stdout import StdoutAnalyzer
+from .progress import ProgressAnalyzer

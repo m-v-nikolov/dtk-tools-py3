@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class PositiveFractionByDistanceAnalyzer(CalibAnalyzer):
 
     required_reference_types = ['risk_by_distance']
-    filenames = ['SpatialReport_New_Diagnostic_Prevalence.bin', 'SpatialReport_Population.bin']
+    filenames = ['output/SpatialReport_New_Diagnostic_Prevalence.bin', 'output/SpatialReport_Population.bin']
 
     x = 'distance'
     y = 'Risk of RDT Positive'

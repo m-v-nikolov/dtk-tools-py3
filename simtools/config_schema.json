@@ -25,13 +25,19 @@
       "type":"directory"
     },
     {
-      "name":"bin_path",
+      "name":"python_path",
+      "label":"Model Python script path",
+      "help":"Path to the folder containing the python scripts (Eradication run flag --python-script-path)",
+      "type":"directory"
+    },
+    {
+      "name":"exe_path",
       "label":"Model executable path",
       "help":"Path to the model executable.",
       "type":"file"
     },
     {
-      "name":"lib_path",
+      "name":"dll_path",
       "label":"Model libraries path",
       "help":"Path to the folder containing the libraries used for the simulations.",
       "type":"directory"
@@ -59,6 +65,13 @@
       "default": "https://comps.idmod.org"
     },
     {
+      "name": "environment",
+      "label": "Running environment",
+      "help": "Name of the environment to run on.",
+      "type": "string",
+      "default": "Bayesian"
+    },
+    {
       "name":"node_group",
       "label":"Node group",
       "help":"Nodegroup to use.",
@@ -70,7 +83,7 @@
       "label":"Priority",
       "help":"Priority to use",
       "type":"radio",
-      "choices": ["lowest","BelowNormal","Normal","AboveNormal","Highest"],
+      "choices": ["Lowest","BelowNormal","Normal","AboveNormal","Highest"],
       "default":"Lowest"
     },
     {

@@ -91,7 +91,7 @@ def visit_snippet(self, node):
     starttag = self.starttag(node, 'div', suffix='',
                              CLASS='highlight-%s' % lang)
     self.body.append(starttag)
-    self.body.append('<div class="snippet-filename">%s</div>\n''' % (fname,))
+    self.body.append('<div class="snippet-filename"><em>%s</em></div>\n''' % (fname,))
     self.body.append(highlighted)
     self.body.append('</div>\n')
     raise nodes.SkipNode
