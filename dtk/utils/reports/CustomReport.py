@@ -1,14 +1,15 @@
 def format(reports):
-    reportsJSON = {'Custom_Reports': {'Use_Explicit_Dlls': 1}}
+    reports_json = {'Custom_Reports': {'Use_Explicit_Dlls': 1}}
     types = set([r.type for r in reports])
     buckets = {t: {'Enabled': 1, 'Reports': []} for t in types}
     for r in reports:
         buckets[r.type]['Reports'].append(r.to_dict())
-    reportsJSON['Custom_Reports'].update(buckets)
-    return reportsJSON
+        reports_json['Custom_Reports'].update(buckets)
+    return reports_json
 
 
 class BaseReport(object):
+
     dlls = {'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll',
             'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll',
             'ReportVectorStats': 'libvectorstats.dll',
@@ -26,12 +27,15 @@ class BaseReport(object):
     def get_dll_path(self):
         dll = self.dlls.get(self.type, None)
         if dll:
-            return ('reporter_plugins', dll)
+            return 'reporter_plugins', dll
         else:
             raise Exception('No known DLL for report type %s' % self.type)
 
 
 class BaseEventReport(BaseReport):
+
+    dlls = {'MalariaTransmissionReport': 'libReportMalariaTransmissions.dll'}
+
     def __init__(self,
                  event_trigger_list,
                  start_day=0,
@@ -39,6 +43,7 @@ class BaseEventReport(BaseReport):
                  report_description="",
                  nodeset_config={"class": "NodeSetAll"},
                  type=""):
+
         BaseReport.__init__(self, type)
         self.start_day = start_day
         self.duration_days = duration_days
@@ -55,6 +60,7 @@ class BaseEventReport(BaseReport):
 
 
 class BaseEventReportIntervalOutput(BaseEventReport):
+
     dlls = {'MalariaSurveyJSONAnalyzer': 'libmalariasurveyJSON_analyzer_plugin.dll'}
 
     def __init__(self,
@@ -66,8 +72,9 @@ class BaseEventReportIntervalOutput(BaseEventReport):
                  max_number_reports=15,
                  reporting_interval=73,
                  type=""):
-        BaseEventReport.__init__(self, event_trigger_list, start_day, duration_days,
-                                 report_description, nodeset_config, type)
+
+        BaseEventReport.__init__(self, event_trigger_list, start_day, duration_days, 
+                                     report_description, nodeset_config, type)
         self.max_number_reports = max_number_reports
         self.reporting_interval = reporting_interval
 

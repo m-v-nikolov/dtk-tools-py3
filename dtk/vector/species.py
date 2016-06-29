@@ -149,32 +149,18 @@ def get_species_param(cb, species, parameter):
 def scale_all_habitats(cb, scale):
     species = cb.get_param('Vector_Species_Names')
     for s in species:
-        v = [scale * h for h in get_species_param(cb, s, 'Required_Habitat_Factor')]
-        set_species_param(cb, s, 'Required_Habitat_Factor', v)
+        habitats = get_species_param(cb, s, 'Larval_Habitat_Types')
+        scaled_habitats = {h: scale * v for (h, v) in habitats.items()}
+        set_species_param(cb, s, 'Larval_Habitat_Types', scaled_habitats)
 
 
 def set_larval_habitat(cb, habitats):
     """
     Set vector species and habitat parameters of config argument and return
     Example:
-    habitats = { "arabiensis" : {"TEMPORARY_RAINFALL":1.7e9,"CONSTANT":1e7} }
+    habitats = {"arabiensis": {"TEMPORARY_RAINFALL": 1.7e9, "CONSTANT": 1e7}}
     """
 
-    for species, habitat in habitats.iteritems():
-        cb.config["parameters"]["Vector_Species_Params"][species]["Larval_Habitat_Types"] = habitat
+    for species, habitat in habitats.items():
+        set_species_param(cb, species, 'Larval_Habitat_Types', habitat)
 
-    # cb.set_param('Vector_Species_Names', habitats.keys())
-    '''
-    for (species, habitat) in habitats.items():
-        s = cb.config["parameters"]["Vector_Species_Params"][species]
-        if isinstance(habitat, dict):
-            s["Habitat_Type"] = habitat.keys()
-            s["Required_Habitat_Factor"] = habitat.values()
-        elif isinstance(habitat, list):
-            s["Required_Habitat_Factor"] = habitat
-            if len(habitat) != len(s["Habitat_Type"] ):
-                raise Exception("Required_Habitat_Factor argument does not match size of Habitat_Type list")
-        else:
-            raise Exception("Don't recognize formatting of %s, which must be a dict or list",habitat)
-    '''
-    return
