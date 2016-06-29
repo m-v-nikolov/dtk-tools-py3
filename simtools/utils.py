@@ -117,7 +117,7 @@ def override_HPC_settings(setup, **kwargs):
         if value:
             if value in allowed_overrides:
                 logger.info('Overriding HPC %s: %s', variable, value)
-                setup.set('HPC', variable, value)
+                setup.set(variable, value)
             else:
                 logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
 
