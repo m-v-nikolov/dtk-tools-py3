@@ -122,20 +122,29 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         Save is pushed -> save the configuration and return to main menu
         """
+        # Validate the name (the rest doesnt really need to be validated here)
+        block_name = self.fields['name'].value.upper().replace(' ', '_')
+        if block_name in ("", "DEFAULT", "NODE_GROUP", "PRIORITY"):
+            npyscreen.notify_confirm("The block needs to have a valid name!", form_color='DANGER', title="ERROR")
+            return
+
         if self.block:
-            # Add/edit the block
-            block_name = add_block(block_type=self.type, local=self.block['location'] == 'LOCAL', fields=self.fields)
+            local_block = self.block['location'] == 'LOCAL'
             message = "local" if self.block['location'] == 'LOCAL' else "GLOBAL"
-            npyscreen.notify_confirm("The configuration block %s has been modified successfully in the %s INI file." % (block_name, message), title='Success!')
         else:
             # Ask the location
             popup = SaveLocationPopup()
             popup.edit()
+            local_block = popup.local
 
-            # Add the block
-            block_name = add_block(block_type=self.type, local=popup.local, fields=self.fields)
+            # Prepare the message
             message = "local" if popup.local else "global"
-            npyscreen.notify_confirm("The configuration block %s has been saved successfully in the %s INI file." % (block_name, message), title='Success!')
+
+        # Add/edit the block
+        block_name = add_block(block_type=self.type, local=local_block, fields=self.fields)
+        npyscreen.notify_confirm(
+            "The configuration block %s has been saved successfully in the %s INI file." % (block_name, message),
+            title='Success!',form_color='GOOD')
 
         self.parentApp.switchFormPrevious()
 
@@ -260,7 +269,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         delete_block(self.block['name'], self.block['location'] == "LOCAL")
 
         # Notify
-        npyscreen.notify_wait("The block %s has been delete from the %s ini file."
+        npyscreen.notify_wait("The block %s has been removed from the %s ini file."
                               % (self.block['name'], self.block['location']))
 
         # Add to specify this edit_return_value to prevent failure

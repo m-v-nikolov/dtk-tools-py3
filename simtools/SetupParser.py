@@ -14,7 +14,7 @@ class SetupParser:
     selected_block = None
     setup_file = None
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL'):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -44,11 +44,24 @@ class SetupParser:
             if os.path.exists(setup_file):
                 SetupParser.setup_file = setup_file
             else:
-                OutputMessage('The setup file (%s) do not exist anymore, ignoring...' % setup_file, 'warning')
+                if not quiet:
+                    OutputMessage('The setup file (%s) do not exist anymore, ignoring...' % setup_file, 'warning')
 
         # First, always load the defaults
         self.setup = ConfigParser()
         self.setup.read(os.path.join(os.path.dirname(__file__), 'simtools.ini'))
+
+        # Add the defaults of LOCAL/HPC to the other blocks in the defaults
+        for section in self.setup.sections():
+            if section in ('LOCAL','HPC'): continue
+
+            # get the type
+            type = self.setup.get(section,'type')
+
+            # brings the missing params
+            for item in self.setup.items(type):
+                if not self.setup.has_option(section, item[0]):
+                    self.setup.set(section, item[0],item[1])
 
         # Then overlays the eventual setup_file passed or simtools.ini in working dir
         overlay_path = None
@@ -80,7 +93,8 @@ class SetupParser:
         # Test if we now have the block we want
         if not self.setup.has_section(self.selected_block):
             setup_file_path = overlay_path if overlay_path else os.path.join(os.path.dirname(__file__), 'simtools.ini')
-            OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
+            if not quiet:
+                OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
             # The current block was not found... revert to the fallback
             return self.override_block(fallback)
 

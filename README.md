@@ -39,7 +39,19 @@ If you plan to run simulations on COMPS, you will also need the pyCOMPS package.
 
 #### Setup
 
-To configure your user-specific paths and settings for local and HPC job submission, edit the properties in `simtools/simtools.ini`.
+To configure your user-specific paths and settings for local and HPC job submission, run the `dtk setup` command.
+The command will display an interface allowing you to:
+
+* Change the default `LOCAL` configuration (Configuration used by default for all simulations and running on your local computer)
+* Change the default `HPC` configuration (Configuration used if you append a `--HPC` to a command and that will run on HPC environment)
+* Add a new configuration block (If you wish to create a configuration block that you can later reference by `--BLOCK_NAME`)
+* Edit the configuration blocks
+
+In this interface, the **default configurations** refers to the configuration blocks accessible everywhere in your environment (by default `LOCAL` and `HPC`).
+The **local configurations** refers to the configurations stored in the `simtools.ini` file in your current working directory (the directory from where you call the `dtk setup` command) and are
+accessible only to commands ran there. 
+
+Note that it is possible to have a local configuration called `LOCAL` or `HPC` which will overrides the global defaults. 
 
 One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
 
