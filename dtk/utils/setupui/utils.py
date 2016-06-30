@@ -118,15 +118,15 @@ def add_block(block_type, local, fields):
     config = ConfigParser()
     config.read(get_file_path(local))
 
-    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
-    # So if we want a block in the global default, just pass the global default as setup overlay
-    # to bypass the CWD simtools.ini
-    sp = SetupParser(selected_block=block_type, force=True, setup_file=get_file_path(local))
-
     # Prepare the section name
     section = fields['name'].value
     section = section.replace(' ', '_').upper()
     del fields['name']
+
+    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
+    # So if we want a block in the global default, just pass the global default as setup overlay
+    # to bypass the CWD simtools.ini
+    sp = SetupParser(selected_block=section, force=True, setup_file=get_file_path(local), fallback=block_type, quiet=True)
 
     # Add section if doesnt exist
     if not config.has_section(section):
