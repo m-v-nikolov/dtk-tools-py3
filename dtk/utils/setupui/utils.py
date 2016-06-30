@@ -7,11 +7,17 @@ from simtools.SetupParser import SetupParser
 def get_file_path(local):
     """
     Get the file path for either the local ini or the global ini.
+    Create the file if it doesnt exist.
+
     :param local: If true, opens the local ini file, if false opens the global one
     :return: Complete file path to the ini file
     """
     if local:
-        return os.path.join(os.getcwd(), "simtools.ini")
+        local_path = os.path.join(os.getcwd(), "simtools.ini")
+        if not os.path.exists(local_path):
+            open(local_path,'w').close()
+        return local_path
+
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "simtools", 'simtools.ini'))
 
 
@@ -103,6 +109,7 @@ def delete_block(block, local):
 def add_block(block_type, local, fields):
     """
     Add a block to a local (or global) config file
+
     :param local: If true, add to the local ini, if false add to the global default
     :param block_type: Block type (LOCAL or HPC)
     :param fields: Dictionary containing the form widgets with user inputs
