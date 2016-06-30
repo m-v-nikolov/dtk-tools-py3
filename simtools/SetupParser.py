@@ -50,6 +50,18 @@ class SetupParser:
         self.setup = ConfigParser()
         self.setup.read(os.path.join(os.path.dirname(__file__), 'simtools.ini'))
 
+        # Add the defaults of LOCAL/HPC to the other blocks in the defaults
+        for section in self.setup.sections():
+            if section in ('LOCAL','HPC'): continue
+
+            # get the type
+            type = self.setup.get(section,'type')
+
+            # brings the missing params
+            for item in self.setup.items(type):
+                if not self.setup.has_option(section, item[0]):
+                    self.setup.set(section, item[0],item[1])
+
         # Then overlays the eventual setup_file passed or simtools.ini in working dir
         overlay_path = None
         if self.setup_file and os.path.exists(self.setup_file):
