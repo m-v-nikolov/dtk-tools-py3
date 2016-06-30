@@ -17,7 +17,7 @@ class ProgressAnalyzer():
 
         m, s = divmod(flooredSeconds, 60)
         h, m = divmod(m, 60)
-        d, h = divmod(m, 24)
+        d, h = divmod(h, 24)
 
         return '%d:%02d:%02d:%02d.%02d' % (d, h, m, s, decimal)
 

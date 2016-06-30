@@ -565,8 +565,6 @@ class CompsExperimentManager(LocalExperimentManager):
         Delete local cache data for experiment and marks the server entity for deletion.
         """
 
-        #raise Exception('Hard delete for COMPS is not currently supported (awaiting CAGE update).')
-
         # Perform soft delete cleanup.
         self.soft_delete()
 
