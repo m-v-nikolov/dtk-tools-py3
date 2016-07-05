@@ -1,16 +1,19 @@
-from dtk.malaria.immunity import add_immune_overlays
-from dtk.vector.input_EIR_by_site import configure_site_EIR
-from dtk.interventions.input_EIR import add_InputEIR
-from dtk.interventions.health_seeking import add_health_seeking
-from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report,add_filtered_report
-from dtk.vector.species import set_larval_habitat, set_species_param
-from dtk.interventions.outbreak import recurring_outbreak
-from dtk.interventions.itn import add_ITN
-from dtk.interventions.migrate_to import add_migration_event
-from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
-import pandas as pd
 import json
+
 import numpy as np
+
+from dtk.interventions.health_seeking import add_health_seeking
+from dtk.interventions.input_EIR import add_InputEIR
+from dtk.interventions.irs import add_node_IRS
+from dtk.interventions.itn import add_ITN
+from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
+from dtk.interventions.migrate_to import add_migration_event
+from dtk.interventions.mosquito_release import add_mosquito_release
+from dtk.interventions.outbreak import recurring_outbreak
+from dtk.malaria.immunity import add_immune_overlays
+from dtk.utils.reports.MalariaReport import add_summary_report,add_survey_report,add_filtered_report
+from dtk.vector.input_EIR_by_site import configure_site_EIR
+from dtk.vector.species import set_larval_habitat, set_species_param
 
 def config_setup_fn(duration=21915):
     return lambda cb: cb.update_params({'Simulation_Duration' : duration,
@@ -46,6 +49,16 @@ def input_eir_fn(monthlyEIRs, start_day=0, nodes={"class": "NodeSetAll"}):
 def add_outbreak_fn(start_day=0, outbreak_fraction=0.01, repetitions=-1, tsteps_btwn=365, nodes={"class": "NodeSetAll"}) :
     return lambda cb: recurring_outbreak(cb, outbreak_fraction=outbreak_fraction, repetitions=repetitions, tsteps_btwn=tsteps_btwn, start_day=start_day, nodes=nodes)
 
+# migration
+def add_migration_fn(nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, duration_of_stay=100, is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
+    return lambda cb : add_migration_event(cb, nodeto, start_day=start_day, coverage=coverage, repetitions=repetitions,
+                                           tsteps_btwn=tsteps_btwn, duration_of_stay=duration_of_stay,
+                                           is_family_trip=is_family_trip, target=target, nodesfrom=nodesfrom)
+
+# mosquito release
+def add_mosquito_release_fn(start_day, vector_species, number_vectors, repetitions=-1, tsteps_btwn=365, nodes={"class": "NodeSetAll"}) :
+    return lambda cb : add_mosquito_release(cb, start_day, vector_species, number_vectors, repetitions=repetitions, tsteps_btwn=tsteps_btwn, nodes=nodes)
+
 # health-seeking
 def add_treatment_fn(start=0,drug=['Artemether', 'Lumefantrine'],targets=[{'trigger':'NewClinicalCase','coverage':0.8,'seek':0.6,'rate':0.2}]):
     def fn(cb,start=start,drug=drug,targets=targets):
@@ -53,8 +66,8 @@ def add_treatment_fn(start=0,drug=['Artemether', 'Lumefantrine'],targets=[{'trig
         cb.update_params({'PKPD_Model': 'CONCENTRATION_VERSUS_TIME'})
     return fn
 
-# health-seeking from nodeid-coverage specified in csv
-def add_HS_by_node_id_fn(reffname, start=0) :        
+# health-seeking from nodeid-coverage specified in json
+def add_HS_by_node_id_fn(reffname, start=0) :
     def fn(cb) :
         with open(reffname) as fin :
             cov = json.loads(fin.read())
@@ -72,7 +85,7 @@ def add_itn_fn(start=0, coverage=1, nodeIDs=[]) :
         add_ITN(cb, start=start, coverage_by_ages=[coverage_by_age], nodeIDs=nodeIDs)
     return fn
 
-# ITNs from nodeid-coverage specified in csv
+# ITNs from nodeid-coverage specified in json
 def add_itn_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') :
     def fn(cb) :
         itn_distr = zip(itn_dates, itn_fracs)
@@ -88,13 +101,20 @@ def add_itn_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') 
                     add_ITN(cb, itn_date, [coverage], nodeIDs=itncov['nodes'])
     return fn
 
-
-
-# migration
-def add_migration_fn(nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, duration_of_stay=100, is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
-    return lambda cb : add_migration_event(cb, nodeto, start_day=start_day, coverage=coverage, repetitions=repetitions, 
-                                           tsteps_btwn=tsteps_btwn, duration_of_stay=duration_of_stay, 
-                                           is_family_trip=is_family_trip, target=target, nodesfrom=nodesfrom)
+# IRS from nodeid-coverage specified in json
+def add_node_level_irs_by_node_id_fn(reffname, irs_dates, irs_fracs, channel='irs2012cov') :
+    def fn(cb) :
+        irs_distr = zip(irs_dates, irs_fracs)
+        with open(reffname) as fin :
+            cov = json.loads(fin.read())
+        for irscov in cov[channel] :
+            if irscov['coverage'] > 0 :
+                for i, (irs_date, irs_frac) in enumerate(irs_distr) :
+                    c = irscov['coverage']*irs_frac
+                    if i < len(irs_fracs)-1 :
+                        c /= np.prod([1 - x*irscov['coverage'] for x in irs_fracs[i+1:]])
+                    add_node_IRS(cb, irs_date, c, nodeIDs=irscov['nodes'])
+    return fn
 
 # drug campaign
 def add_drug_campaign_fn(drug_code, start_days, coverage=1.0, repetitions=3, interval=60, diagnostic_threshold=40, 
