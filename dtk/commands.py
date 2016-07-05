@@ -28,7 +28,14 @@ builtinAnalyzers = {
 
 
 def load_config_module(config_name):
-    sys.path.append(os.getcwd())
+    # Support of relative paths
+    config_name = config_name.replace('\\','/')
+    if '/' in config_name:
+        splitted = config_name.split('/')[:-1]
+        sys.path.append(os.path.join(os.getcwd(),*splitted))
+    else:
+        sys.path.append(os.getcwd())
+
     module_name = os.path.splitext(os.path.basename(config_name))[0]
     return import_module(module_name)
 
