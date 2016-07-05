@@ -9,10 +9,11 @@ from dtk.utils.ioformat.OutputMessage import OutputMessage
 class SetupParser:
     """
     Parse user settings and directory locations
-    from setup configuration file: simtools.cfg
+    from setup configuration file: simtools.ini
     """
     selected_block = None
     setup_file = None
+    default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
     def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False):
         """
@@ -49,26 +50,17 @@ class SetupParser:
 
         # First, always load the defaults
         self.setup = ConfigParser()
-        self.setup.read(os.path.join(os.path.dirname(__file__), 'simtools.ini'))
+        self.setup.read(self.default_ini)
 
-        # Add the defaults of LOCAL/HPC to the other blocks in the defaults
-        for section in self.setup.sections():
-            if section in ('LOCAL','HPC'): continue
+        # Only care for HPC/LOCAL -> all the other sections will be added when overlaying the default file
+        for sec in self.setup.sections():
+            if sec not in ('HPC','LOCAL'):
+                self.setup.remove_section(sec)
 
-            # get the type
-            type = self.setup.get(section,'type')
-
-            # brings the missing params
-            for item in self.setup.items(type):
-                if not self.setup.has_option(section, item[0]):
-                    self.setup.set(section, item[0],item[1])
-
-        # Then overlays the eventual setup_file passed or simtools.ini in working dir
-        overlay_path = None
-        if self.setup_file and os.path.exists(self.setup_file):
-            overlay_path = self.setup_file
-        elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
-            overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
+        # Overlay the default file to itself to ensure all blocks outside of HPC/LOCAL have all their params set
+        cp = ConfigParser()
+        cp.read(self.default_ini)
+        self.overlay_setup(cp)
 
         # Add the user to the default
         if sys.platform == 'win32':
@@ -77,6 +69,13 @@ class SetupParser:
             import pwd
             user = pwd.getpwuid(os.geteuid())[0]
         self.setup.set('DEFAULT', 'user', user)
+
+        # Then overlays the eventual setup_file passed or simtools.ini in working dir
+        overlay_path = None
+        if self.setup_file and os.path.exists(self.setup_file):
+            overlay_path = self.setup_file
+        elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
+            overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
 
         # If we found an overlay applies it
         if overlay_path:
@@ -123,25 +122,67 @@ class SetupParser:
 
     def overlay_setup(self,cp):
         """
-        Overlays a ConfigParser on the current self.setup ConfigParser
+        Overlays a ConfigParser on the current self.setup ConfigParser.
+        Overlays all the blocks found there.
+
+        We need to do the overlay in two stages.
+        1. Overlay HPC/LOCAL blocks to change the defaults
+        2. Overlay the other custom sections
+
+        This two steps allows the user to redefine defaults HPC/LOCAL in the overlay file.
+
+        Examples:
+            Lets assumes a global defaults with the following::
+
+                [LOCAL]
+                p1 = 1
+                p3 = 3
+
+                [HPC]
+                p1 = 2
+
+            And an overlay like::
+
+                [LOCAL]
+                p1 = 3
+
+                [CUSTOM]
+                type=LOCAL
+                p2 = 10
+
+            If we use the `CUSTOM` block, it will end up having::
+
+                p1 = 3
+                p2 = 10
+                p3 = 3
+
+            Because we will first overlay the custom LOCAL to the global LOCAL and then overlay the CUSTOM block.
+
         :param cp: The ConfigParser to overlay
         """
-        # If the cp doesnt have the selected block, no need of overlaying
-        if not cp.has_section(self.selected_block):
-            return
+        # Overlay the LOCAL/HPC to the default ones
+        for section in cp.sections():
+            if section in ('HPC','LOCAL'):
+                for item in cp.items(section):
+                    self.setup.set(section, item[0], item[1])
 
-        # If the current section doesnt exist in the current setup ->create it
-        if not self.setup.has_section(self.selected_block):
-            # Create the section
-            self.setup.add_section(self.selected_block)
+        # Then overlay all except the LOCAL/HPC ones (already did before)
+        for section in cp.sections():
+            if section in ("LOCAL", "HPC"):
+                continue
 
-            # Depending on the type grab the default from HPC or LOCAL
-            for item in self.setup.items(cp.get(self.selected_block,'type')):
-                self.setup.set(self.selected_block, item[0], item[1])
+            # The overlayed section doesnt exist in the setup -> create it
+            if not self.setup.has_section(section):
+                # Create the section
+                self.setup.add_section(section)
 
-        # Go through all the parameters of the cp for the selected_block and overlay them to the current section
-        for item in cp.items(self.selected_block):
-            self.setup.set(self.selected_block,item[0], item[1])
+                # Depending on the type grab the default from HPC or LOCAL
+                for item in self.setup.items(cp.get(section, 'type')):
+                    self.setup.set(section, item[0], item[1])
+
+            # Override the items
+            for item in cp.items(section):
+                self.setup.set(section, item[0], item[1])
 
     def get(self, parameter):
         if not self.has_option(parameter):
