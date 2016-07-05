@@ -11,7 +11,7 @@ from simtools.SetupParser import SetupParser
 
 logger = logging.getLogger(__name__)
 
-
+path_translations = {}
 def translate_COMPS_path(path, setup=None):
     """
     Transform a COMPS path into fully qualified path.
@@ -38,17 +38,27 @@ def translate_COMPS_path(path, setup=None):
     if not setup:
         setup = SetupParser()
 
-    # Prepare the variables we will need
+    # Retrieve the variable to translate
     groups = regexp.groups()
-    environment = setup.get('environment')
-    user = setup.get('user')
+    comps_variable = groups[1]
 
-    # Query COMPS to get the path corresponding to the variable
-    from COMPS import Client
-    Client.Login(setup.get('server_endpoint'))
-    abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
+    # Is the path already cached
+    if comps_variable in path_translations:
+        abs_path = path_translations[comps_variable]
+    else:
+        # Prepare the variables we will need
+        environment = setup.get('environment')
+
+        # Query COMPS to get the path corresponding to the variable
+        from COMPS import Client
+        Client.Login(setup.get('server_endpoint'))
+        abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
+
+        # Cache
+        path_translations[comps_variable] = abs_path
 
     # Replace and return
+    user = setup.get('user')
     return path.replace(groups[0], abs_path).replace("$(User)", user)
 
 
