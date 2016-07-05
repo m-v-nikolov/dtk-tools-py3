@@ -9,6 +9,8 @@ irs_housingmod = {"class": "IRSHousingModification",
                   "Cost_To_Consumer": 8.0
                   }
 '''
+import copy
+
 irs_housingmod = { "class": "IRSHousingModification",
                 "Killing_Config": {
                     "Initial_Effect": 0.7,
