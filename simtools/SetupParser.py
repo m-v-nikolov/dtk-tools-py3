@@ -57,11 +57,6 @@ class SetupParser:
             if sec not in ('HPC','LOCAL'):
                 self.setup.remove_section(sec)
 
-        # Overlay the default file to itself to ensure all blocks outside of HPC/LOCAL have all their params set
-        cp = ConfigParser()
-        cp.read(self.default_ini)
-        self.overlay_setup(cp)
-
         # Add the user to the default
         if sys.platform == 'win32':
             user = os.environ['USERNAME']
@@ -69,6 +64,12 @@ class SetupParser:
             import pwd
             user = pwd.getpwuid(os.geteuid())[0]
         self.setup.set('DEFAULT', 'user', user)
+
+        # Overlay the default file to itself to ensure all blocks outside of HPC/LOCAL have all their params set
+        cp = ConfigParser()
+        cp.read(self.default_ini)
+        cp.set('DEFAULT','user',user)
+        self.overlay_setup(cp)
 
         # Then overlays the eventual setup_file passed or simtools.ini in working dir
         overlay_path = None
