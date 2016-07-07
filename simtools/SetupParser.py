@@ -16,7 +16,7 @@ class SetupParser:
     setup_file = None
     default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=True):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -111,8 +111,8 @@ class SetupParser:
             except KeyError:
                 print('Unable to determine JAVA_HOME; please set JAVA_HOME environment variable as described in pyCOMPS README.txt')
 
-        # Validate
-        self.validate(self.selected_block)
+        if validate:
+            self.validate(self.selected_block, self)
 
     def override_block(self,block):
         """
@@ -211,7 +211,7 @@ class SetupParser:
     def file_name(self):
         return self.ini_file
 
-    def validate(self, section_name):
-        local_default = IniValidator(section_name)
-        return local_default.validate(self)
+    def validate(self, section_name, setup_parser):
+        validator = IniValidator(section_name)
+        return validator.validate(setup_parser)
 
