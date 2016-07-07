@@ -122,7 +122,7 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
     """
     pp = {}
     for s in ss:
-        pp[s] = vector_params_by_species[s]
+        pp[s] = copy.deepcopy(vector_params_by_species[s])
         if sim_type == "MALARIA_SIM":
             pp[s]["Acquire_Modifier"] = 0.8  ## gametocyte success modeled explicitly
 

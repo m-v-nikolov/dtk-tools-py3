@@ -6,12 +6,12 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.CalibAnalyzer import CalibAnalyzer
 from calibtool.analyzers.Helpers import accumulate_agebins_cohort
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
-class ClinicalIncidenceByAgeCohortAnalyzer(CalibAnalyzer):
+class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
 
     required_reference_types = ['annual_clinical_incidence_by_age']
     filenames = ['output/MalariaSummaryReport_Annual_Report.json']

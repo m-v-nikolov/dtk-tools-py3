@@ -6,11 +6,12 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.CalibAnalyzer import CalibAnalyzer
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
-class PrevalenceByRoundAnalyzer(CalibAnalyzer):
+
+class PrevalenceByRoundAnalyzer(BaseAnalyzer):
 
     required_reference_types = ['prevalence_by_round']
 

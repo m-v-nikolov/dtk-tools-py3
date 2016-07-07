@@ -1,9 +1,11 @@
 import logging
 
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+
 logger = logging.getLogger(__name__)
 
 
-class StdoutAnalyzer():
+class StdoutAnalyzer(BaseAnalyzer):
     def __init__(self, simIds=None, error=False):
         self.filenames = ['StdOut.txt', 'StdErr.txt']
         self.simIds = simIds
