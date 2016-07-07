@@ -1,15 +1,12 @@
 import logging
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-
-from plot import plot_by_channel
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
-class StdoutAnalyzer():
-    def __init__(self, simIds = None, error = False):
+
+class StdoutAnalyzer(BaseAnalyzer):
+    def __init__(self, simIds=None, error=False):
         self.filenames = ['StdOut.txt', 'StdErr.txt']
         self.simIds = simIds
         self.error = error

@@ -7,12 +7,26 @@ from simtools.SetupParser import SetupParser
 def get_file_path(local):
     """
     Get the file path for either the local ini or the global ini.
+    Create the file if it doesnt exist.
+
     :param local: If true, opens the local ini file, if false opens the global one
     :return: Complete file path to the ini file
     """
     if local:
-        return os.path.join(os.getcwd(), "simtools.ini")
+        local_path = os.path.join(os.getcwd(), "simtools.ini")
+        if not os.path.exists(local_path):
+            open(local_path,'w').close()
+        return local_path
+
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "simtools", 'simtools.ini'))
+
+
+def cleanup_empty_file():
+    """
+    Delete the local simtools.ini file if empty.
+    """
+    if os.stat(get_file_path(True)).st_size == 0:
+        os.remove(get_file_path(True))
 
 
 def get_block(block):
@@ -103,6 +117,7 @@ def delete_block(block, local):
 def add_block(block_type, local, fields):
     """
     Add a block to a local (or global) config file
+
     :param local: If true, add to the local ini, if false add to the global default
     :param block_type: Block type (LOCAL or HPC)
     :param fields: Dictionary containing the form widgets with user inputs
@@ -111,15 +126,15 @@ def add_block(block_type, local, fields):
     config = ConfigParser()
     config.read(get_file_path(local))
 
-    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
-    # So if we want a block in the global default, just pass the global default as setup overlay
-    # to bypass the CWD simtools.ini
-    sp = SetupParser(selected_block=block_type, force=True, setup_file=get_file_path(local))
-
     # Prepare the section name
     section = fields['name'].value
     section = section.replace(' ', '_').upper()
     del fields['name']
+
+    # The SetupParser will ignore any CWD overlay file if a setup_file is passed
+    # So if we want a block in the global default, just pass the global default as setup overlay
+    # to bypass the CWD simtools.ini
+    sp = SetupParser(selected_block=section, force=True, setup_file=get_file_path(local), fallback=block_type, quiet=True)
 
     # Add section if doesnt exist
     if not config.has_section(section):
@@ -133,7 +148,8 @@ def add_block(block_type, local, fields):
         if widget.hidden:
             continue
 
-        if widget.value and widget.value != 0:
+        # For python path and node_group we want to accept blank values
+        if widget_id in ("node_group", "python_path") or (widget.value and widget.value != 0):
             value = widget.value
 
             # Special case of widget.value (choices and checkboxes)

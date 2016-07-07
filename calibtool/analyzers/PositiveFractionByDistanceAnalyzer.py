@@ -6,12 +6,12 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.CalibAnalyzer import CalibAnalyzer
 from calibtool.analyzers.Helpers import get_spatial_report_data_at_date, get_risk_by_distance
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
-class PositiveFractionByDistanceAnalyzer(CalibAnalyzer):
+class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
 
     required_reference_types = ['risk_by_distance']
     filenames = ['output/SpatialReport_New_Diagnostic_Prevalence.bin', 'output/SpatialReport_Population.bin']

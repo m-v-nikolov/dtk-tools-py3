@@ -17,13 +17,15 @@ from calibtool.algo.IMIS import IMIS
 
 class TestCommands(unittest.TestCase):
     def setUp(self):
-        if not os.path.exists('calibration'):
-            os.mkdir('calibration')
         self.current_cwd = os.getcwd()
-        self.calibration_dir = os.path.join(self.current_cwd,'calibration')
+        self.calibration_dir = os.path.join(self.current_cwd, 'calibration')
+
+        if os.path.exists(self.calibration_dir):
+            shutil.rmtree(self.calibration_dir)
+
+        os.mkdir(self.calibration_dir)
 
         shutil.copy('input/dummy_calib.py', 'calibration')
-
 
     def tearDown(self):
         # Change the dir back to normal
@@ -42,7 +44,6 @@ class TestCommands(unittest.TestCase):
         # Clear the dir
         shutil.rmtree(self.calibration_dir)
 
-
     def test_run_calibration(self):
         os.chdir(self.calibration_dir)
 
@@ -52,13 +53,12 @@ class TestCommands(unittest.TestCase):
         # Test if files are present
         calibpath = os.path.abspath('ExampleCalibration')
         self.assertTrue(os.path.exists(calibpath))
-        self.assertTrue(os.path.exists(os.path.join(calibpath,'_plots')))
-        self.assertNotEqual(len(os.listdir(os.path.join(calibpath,'_plots'))), 0)
-        self.assertTrue(os.path.exists(os.path.join(calibpath,'iter0')))
-        self.assertTrue(os.path.exists(os.path.join(calibpath,'iter1')))
-        self.assertTrue(os.path.exists(os.path.join(calibpath,'CalibManager.json')))
-        self.assertTrue(os.path.exists(os.path.join(calibpath,'LL_all.csv')))
-
+        self.assertTrue(os.path.exists(os.path.join(calibpath, '_plots')))
+        self.assertNotEqual(len(os.listdir(os.path.join(calibpath, '_plots'))), 0)
+        self.assertTrue(os.path.exists(os.path.join(calibpath, 'iter0')))
+        self.assertTrue(os.path.exists(os.path.join(calibpath, 'iter1')))
+        self.assertTrue(os.path.exists(os.path.join(calibpath, 'CalibManager.json')))
+        self.assertTrue(os.path.exists(os.path.join(calibpath, 'LL_all.csv')))
 
     def test_reanalyze(self):
         # Run the calibration
@@ -95,8 +95,8 @@ class TestCommands(unittest.TestCase):
         simulation_paths = []
 
         for sfile in simulation_files:
-            info = json.load(open(os.path.join(simulation_dir,sfile),'rb'))
-            simulation_paths.append(os.path.join(info['sim_root'],"%s_%s" %(info['exp_name'], info['exp_id'])))
+            info = json.load(open(os.path.join(simulation_dir, sfile), 'rb'))
+            simulation_paths.append(os.path.join(info['sim_root'], "%s_%s" % (info['exp_name'], info['exp_id'])))
 
         # Cleanup
         ctool = Popen(['calibtool', 'cleanup', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
@@ -109,10 +109,7 @@ class TestCommands(unittest.TestCase):
             self.assertFalse(os.path.exists(path))
 
 
-
-
 class TestMultiVariatePrior(unittest.TestCase):
-
     def test_two_normals(self):
         two_normals = MultiVariatePrior(name='two_normals', functions=(norm(loc=0, scale=1), norm(loc=-10, scale=1)))
 
@@ -124,11 +121,12 @@ class TestMultiVariatePrior(unittest.TestCase):
         self.assertEqual(xx.shape, (2,))
 
     def test_normal_by_uniform(self):
-        normal_by_uniform = MultiVariatePrior(name='normal_by_uniform', functions=(norm(loc=0, scale=1), uniform(loc=-10, scale=5)))
+        normal_by_uniform = MultiVariatePrior(name='normal_by_uniform',
+                                              functions=(norm(loc=0, scale=1), uniform(loc=-10, scale=5)))
 
         xx = normal_by_uniform.rvs(size=1000)
         np.testing.assert_almost_equal(xx.mean(axis=0), np.array([0, -7.5]), decimal=1)
-        np.testing.assert_almost_equal(xx.std(axis=0), np.array([1, 5/np.sqrt(12)]), decimal=1)
+        np.testing.assert_almost_equal(xx.std(axis=0), np.array([1, 5 / np.sqrt(12)]), decimal=1)
 
     def test_uniform_pdf(self):
         uniform_prior = MultiVariatePrior.by_param(a=uniform(loc=0, scale=2))
@@ -145,9 +143,9 @@ class TestMultiVariatePrior(unittest.TestCase):
 
 
 class NextPointTestWrapper(object):
-    '''
+    """
     A simple wrapper for running iterative loops without all the CalibManager overhead.
-    '''
+    """
 
     def __init__(self, algo, likelihood_fn):
         self.algo = algo
@@ -172,10 +170,9 @@ class NextPointTestWrapper(object):
 
 
 class TestIMIS(unittest.TestCase):
-
     def test_multivariate(self):
         likelihood_fn = lambda x: multivariate_normal(mean=[1, 1], cov=[[1, 0.6], [0.6, 1]]).pdf(x)
-        prior_fn = multivariate_normal(mean=[0, 0], cov=3*np.identity(2))
+        prior_fn = multivariate_normal(mean=[0, 0], cov=3 * np.identity(2))
 
         x, y = np.mgrid[-5:5:0.01, -5:5:0.01]
         pos = np.empty(x.shape + (2,))
@@ -199,8 +196,8 @@ class TestIMIS(unittest.TestCase):
         tester.save_figure(fig, fig_name)
 
     def test_univariate(self):
-        likelihood_fn = lambda xx: 2 * np.exp(-np.sin(3*xx) * np.sin(xx**2) - 0.1*xx**2)
-        prior_fn = multivariate_normal(mean=[0], cov=[5**2])
+        likelihood_fn = lambda xx: 2 * np.exp(-np.sin(3 * xx) * np.sin(xx ** 2) - 0.1 * xx ** 2)
+        prior_fn = multivariate_normal(mean=[0], cov=[5 ** 2])
 
         xx = np.arange(-5, 5, 0.01)
         true_posterior = np.multiply(likelihood_fn(xx), prior_fn.pdf(xx))
@@ -221,7 +218,6 @@ class TestIMIS(unittest.TestCase):
 
 
 class TestIterationState(unittest.TestCase):
-
     init_state = dict(parameters={}, next_point={}, simulations={},
                       analyzers={}, results=[], iteration=0)
 
@@ -278,11 +274,10 @@ class TestIterationState(unittest.TestCase):
 
 
 class TestNumpyDecoder(unittest.TestCase):
-
-    '''
+    """
     This was discovered in caching CalibAnalyzer array with np.int64
     age_bins, which is not well handled by the utils.NumpyEncoder class.
-    ''' 
+    """
 
     def tearDown(self):
         os.remove('int32.json')

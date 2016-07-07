@@ -1,10 +1,9 @@
 import logging
 import os
 
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 from plot import plot_by_channel
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ def default_plot_fn(df, ax):
     m.plot(ax=ax, legend=True)
 
 
-class TimeseriesAnalyzer():
+class TimeseriesAnalyzer(BaseAnalyzer):
 
     plot_name = 'ChannelPlots'
     data_group_names = ['group', 'sim_id', 'channel']

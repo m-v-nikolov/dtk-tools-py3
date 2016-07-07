@@ -7,6 +7,7 @@ import signal
 import subprocess
 import threading
 import time
+import shutil
 
 import sys
 
@@ -23,6 +24,7 @@ from Monitor import SimulationMonitor, CompsSimulationMonitor
 from OutputParser import SimulationOutputParser, CompsDTKOutputParser
 from datetime import datetime
 
+
 class ExperimentManagerFactory(object):
     @staticmethod
     def factory(type):
@@ -33,9 +35,13 @@ class ExperimentManagerFactory(object):
         raise Exception("ExperimentManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
-    def from_model(cls, model_file, location='LOCAL'):
+    def from_model(cls, model_file, location='LOCAL', setup=None, **kwargs):
         logger.info('Initializing %s ExperimentManager from: %s', location, model_file)
-        return cls.factory(location)(model_file, {})
+        if not setup:
+            setup = SetupParser()
+        if location == 'HPC' and kwargs:
+            utils.override_HPC_settings(setup, **kwargs)
+        return cls.factory(location)(model_file, {}, setup)
 
     @classmethod
     def from_setup(cls, setup=None, location='LOCAL', **kwargs):
@@ -115,7 +121,7 @@ class LocalExperimentManager(object):
         # Get the git revision of the tools
         try:
             import subprocess
-            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n","")
+            revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n", "")
         except:
             revision = "Unknown"
 
@@ -211,6 +217,34 @@ class LocalExperimentManager(object):
                 self.kill_job(id)
             else:
                 logger.warning("JobID %s is already in a '%s' state." % (str(id), state))
+
+    def soft_delete(self):
+        """
+        Delete local cache data for experiment.
+        """
+
+        # First, ensure that all simulations are canceled.
+        states, msgs = self.get_simulation_status()
+        self.cancel_all_simulations(states)
+
+        # Wait for successful cancellation.
+        self.wait_for_finished(verbose=True)
+
+        # Delete local cache file.
+        cache_file = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
+        os.remove(cache_file)
+        
+    def hard_delete(self):
+        """
+        Delete local cache data for experiment and output data for experiment.
+        """
+
+        # Perform soft delete cleanup.
+        self.soft_delete()
+
+        # Delete local simulation data.
+        local_data_path = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
+        shutil.rmtree(local_data_path)
 
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
@@ -314,9 +348,10 @@ class LocalExperimentManager(object):
         max_local_sims = int(self.get_property('max_local_sims'))
 
         # Create the paths
-        paths = [os.path.join(exp_dir,sim_id) for sim_id in sim_ids]
+        paths = [os.path.join(exp_dir, sim_id) for sim_id in sim_ids]
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "LocalRunner.py")
-        cache_path = os.path.join(os.getcwd(), 'simulations', self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
+        cache_path = os.path.join(os.getcwd(), 'simulations',
+                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
@@ -411,6 +446,8 @@ class LocalExperimentManager(object):
 
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
+                # Wait when we are all done to make sure all the output files have time to get written
+                time.sleep(sleep_time)
                 break
             else:
                 if verbose:
@@ -516,10 +553,31 @@ class CompsExperimentManager(LocalExperimentManager):
         from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 
-        Client.Login(self.get_property('server_endpoint'))
+        if not self.comps_logged_in:
+            Client.Login(self.get_property('server_endpoint'))
+            self.comps_logged_in = True
 
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Cancel()
+        
+    def hard_delete(self):
+        """
+        Delete local cache data for experiment and marks the server entity for deletion.
+        """
+
+        # Perform soft delete cleanup.
+        self.soft_delete()
+
+        # Mark experiment for deletion in COMPS.
+        from COMPS import Client
+        from COMPS.Data import Experiment, QueryCriteria
+
+        if not self.comps_logged_in:
+            Client.Login(self.get_property('server_endpoint'))
+            self.comps_logged_in = True
+
+        e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
+        e.Delete()
 
     def kill_job(self, simId):
         from COMPS import Client

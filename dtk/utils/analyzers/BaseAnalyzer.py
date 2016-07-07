@@ -1,8 +1,10 @@
 import logging
+from abc import ABCMeta
 
 logger = logging.getLogger(__name__)
 
-class CalibAnalyzer(object):
+class BaseAnalyzer(object):
+    __metaclass__ = ABCMeta
 
     required_reference_types = []
     filenames = []

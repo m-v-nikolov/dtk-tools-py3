@@ -5,8 +5,8 @@ import disease
 
 params = {
     "Config_Name": "", ###
-    "Campaign_Filename": "campaign.json", 
-    "Enable_Interventions": 1, 
+    "Campaign_Filename": "campaign.json",
+    "Enable_Interventions": 1,
     "Enable_Spatial_Output": 0,
     "Enable_Property_Output": 0,
     "Enable_Timestep_Channel_In_Report": 0,
@@ -23,21 +23,21 @@ params = {
 
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###
-    "Default_Geography_Initial_Node_Population": 100, 		
+    "Default_Geography_Initial_Node_Population": 100,
     "Default_Geography_Torus_Size": 10,
 
-    "Random_Type": "USE_PSEUDO_DES", 
-    "Run_Number": 5, 
-    "Simulation_Duration": 1825, 
-    "Simulation_Timestep": 1, 
+    "Random_Type": "USE_PSEUDO_DES",
+    "Run_Number": 5,
+    "Simulation_Duration": 1825,
+    "Simulation_Timestep": 1,
     "Simulation_Type": "", ###
     "Start_Time": 0,
     
-    "Num_Cores": 1, 
+    "Num_Cores": 1,
     "Python_Script_Path": "",
     "Serialization_Test_Cycles": 0,
 
-    "Load_Balance_Filename": "", 
+    "Load_Balance_Filename": "",
     "Load_Balance_Scheme": "STATIC"
 }
 

@@ -21,15 +21,24 @@ from dtk.utils.analyzers.select import example_selection
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
-builtinAnalyzers = { 
-    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines), 
-    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_')) 
+builtinAnalyzers = {
+    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
+    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
 }
 
+
 def load_config_module(config_name):
-    sys.path.append(os.getcwd())
+    # Support of relative paths
+    config_name = config_name.replace('\\','/')
+    if '/' in config_name:
+        splitted = config_name.split('/')[:-1]
+        sys.path.append(os.path.join(os.getcwd(),*splitted))
+    else:
+        sys.path.append(os.getcwd())
+
     module_name = os.path.splitext(os.path.basename(config_name))[0]
     return import_module(module_name)
+
 
 def setup(args, unknownArgs):
     # If we are on windows, resize the terminal
@@ -40,6 +49,7 @@ def setup(args, unknownArgs):
 
     npyscreen.DISABLE_RESIZE_SYSTEM = True
     SetupApplication().run()
+
 
 def run(args, unknownArgs):
     # get simulation-running instructions from script
@@ -110,6 +120,7 @@ def resubmit(args, unknownArgs):
         sm = reload_experiment(args)
         sm.resubmit_simulations(**params)
 
+
 def kill(args, unknownArgs):
 
     sm = reload_experiment(args)
@@ -129,13 +140,72 @@ def kill(args, unknownArgs):
         logging.info('No action taken.')
         return
 
-    if args.all:
-        sms = reload_experiments(args)
+    sm.cancel_simulations(**params)
+
+def exterminate(args, unknownArgs):
+    sms = reload_experiments(args)
+
+    if args.expId:
         for sm in sms:
-            sm.cancel_simulations(**params)
+            states, msgs = sm.get_simulation_status()
+            sm.print_status(states, msgs)
+        logging.info('Killing ALL experiments matched by ""' + args.expId + '".')
     else:
-        sm = reload_experiment(args)
-        sm.cancel_simulations(**params)
+        logging.info('Killing ALL experiments.')
+
+    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+
+    if choice != 'Y':
+        logging.info('No action taken.')
+        return
+
+    for sm in sms:
+        states, msgs = sm.get_simulation_status()
+        sm.cancel_simulations(killall = True)
+
+def delete(args, unknownArgs):
+
+    sm = reload_experiment(args)
+    states, msgs = sm.get_simulation_status()
+    sm.print_status(states, msgs)
+    
+    if args.hard:
+        logging.info('Hard deleting selected experiment.')
+    else:
+        logging.info('Deleting selected experiment.')
+        
+    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+
+    if choice != 'Y':
+        logging.info('No action taken.')
+        return
+
+    if args.hard:
+        sm.hard_delete()
+    else:
+        sm.soft_delete()
+
+def clean(args, unknownArgs):
+    sms = reload_experiments(args)
+
+    if args.expId:
+        for sm in sms:
+            states, msgs = sm.get_simulation_status()
+            sm.print_status(states, msgs)
+        logging.info('Hard deleting ALL experiments matched by ""' + args.expId + '".')
+    else:
+        logging.info('Hard deleting ALL experiments.')
+    
+    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+
+    if choice != 'Y':
+        logging.info('No action taken.')
+        return
+
+    for sm in sms:
+        states, msgs = sm.get_simulation_status()
+        sm.hard_delete()
+
 
 def stdout(args, unknownArgs):
     logging.info('Getting stdout...')
@@ -158,6 +228,7 @@ def stdout(args, unknownArgs):
 
     sm.analyze_simulations()
 
+
 def progress(args, unknownArgs):
     logging.info('Getting progress...')
 
@@ -170,6 +241,7 @@ def progress(args, unknownArgs):
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
     sm.analyze_simulations()
+
 
 def analyze(args, unknownArgs):
 
@@ -184,7 +256,7 @@ def analyze(args, unknownArgs):
             logging.info('Job states:')
             logging.info(json.dumps(states, sort_keys=True, indent=4))
             return
-        
+
     if os.path.exists(args.config_name):
         analyze_from_script(args, sm)
     elif args.config_name in builtinAnalyzers.keys():
@@ -217,7 +289,14 @@ def reload_experiment(args=None):
     else:
         id = None
 
-    return ExperimentManagerFactory.from_file(utils.exp_file(id))
+    # Attempt to read file 3 times.
+    result = try_loop(lambda: ExperimentManagerFactory.from_file(utils.exp_file(id)))
+    if result:
+        return result
+            
+    logging.error('Could not successfully load any experiment files.')
+    sys.exit()
+
 
 def reload_experiments(args=None):
     if args:
@@ -225,11 +304,26 @@ def reload_experiments(args=None):
     else:
         id = None
 
-    return [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)]
+    # Attempt to read files 3 times.
+    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)])
+    if result:
+        return result
+    
+    logging.error('Could not successfully load any experiment files.')
+    sys.exit()
 
-def reload_active_experiments(args=None):
+
+def reload_active_experiments(args = None):
     return [sm for sm in reload_experiments(args) if not sm.finished()]
 
+def try_loop(func):
+    for i in range(0, 3):
+        try:
+            return func()
+        except:
+            time.sleep(.2)
+            continue
+    return None
 
 def main():
 
@@ -261,11 +355,26 @@ def main():
     parser_resubmit.set_defaults(func = resubmit)
 
     # 'dtk kill' options
-    parser_kill = subparsers.add_parser('kill', help = 'Kill running experiment specified by ID or name.')
+    parser_kill = subparsers.add_parser('kill', help = 'Kill most recent running experiment specified by ID or name.')
     parser_kill.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
     parser_kill.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to kill.')
-    parser_kill.add_argument('-a', '--all', action = 'store_true', help = 'Kill all simulations in (possibly multiple) selected experiments.')
     parser_kill.set_defaults(func = kill)
+
+    # 'dtk exterminate' options
+    parser_exterminate = subparsers.add_parser('exterminate', help = 'Kill ALL experiments matched by ID or name.')
+    parser_exterminate.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_exterminate.set_defaults(func = exterminate)
+
+    # 'dtk delete' options
+    parser_delete = subparsers.add_parser('delete', help = 'Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+    parser_delete.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_delete.add_argument('--hard', action = 'store_true', help = 'Additionally delete working directory or server entities for experiment.')
+    parser_delete.set_defaults(func = delete)
+
+    # 'dtk clean' options
+    parser_clean = subparsers.add_parser('clean', help = 'Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
+    parser_clean.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
+    parser_clean.set_defaults(func = clean)
 
     # 'dtk stdout' options
     parser_stdout = subparsers.add_parser('stdout', help = 'Print stdout from first simulation in selected experiment.')
