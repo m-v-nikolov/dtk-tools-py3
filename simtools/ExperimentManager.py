@@ -401,13 +401,27 @@ class LocalExperimentManager(object):
             exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
 
     @staticmethod
-    def print_status(states, msgs):
+    def print_status(calibMgr, states, msgs):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
             if 'Running' in state:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
+
+        # Output time info
+        current_time = datetime.now()
+        iteration_time_elapsed= current_time - calibMgr.iteration_start
+        calibration_time_elapsed = current_time - calibMgr.calibration_start
+
+        logger.info('Calibration: %s' % calibMgr.name)
+        logger.info('Calibration started: %s' % calibMgr.calibration_start)
+        logger.info('Current iteration: Iteration %s' % calibMgr.iteration)
+        logger.info('Current Iteration Started: %s', calibMgr.iteration_start)
+        ##logger.info('Time since iteration started: %s' % str(iteration_time_elapsed).split(".")[0])
+        ##logger.info('Time since calibration started: %s' % str(calibration_time_elapsed).split(".")[0])
+        logger.info('Time since iteration started: %s' % utils.verbose_timedelta(iteration_time_elapsed))
+        logger.info('Time since calibration started: %s' % utils.verbose_timedelta(calibration_time_elapsed))
 
         logger.info('Job states:')
         if len(long_states) < 20:
@@ -451,9 +465,10 @@ class LocalExperimentManager(object):
                 break
             else:
                 if verbose:
-                    self.print_status(states, msgs)
+                    self.print_status(self.calibMgr, states, msgs)
                 time.sleep(sleep_time)
-        self.print_status(states, msgs)
+
+        self.print_status(self.calbMgr, states, msgs)
 
     def get_output_parser(self, sim_id, filtered_analyses):
         return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),

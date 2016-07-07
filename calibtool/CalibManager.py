@@ -128,7 +128,13 @@ class CalibManager(object):
              and either truncating or generating next sample points.
         """
 
+
+        self.iteration_start = datetime.now().replace(microsecond=0)
+        self.calibration_start = datetime.now().replace(microsecond=0)
         while self.iteration < self.max_iterations:
+            if self.iteration > 0:
+                self.iteration_start = datetime.now().replace(microsecond=0)
+
             logger.info('---- Iteration %d ----', self.iteration)
             next_params = self.get_next_parameters()
 
@@ -189,6 +195,9 @@ class CalibManager(object):
 
             self.iteration_state.simulations = exp_manager.exp_data
             self.cache_iteration_state()
+
+        # make reference to current CalibrationManager class
+        exp_manager.calibMgr = self
 
         exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)
 
