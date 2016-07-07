@@ -231,6 +231,8 @@ class CalibManager(object):
                 time.sleep(sleep_time)
 
         # Print the status one more time
+        iteration_time_elapsed = current_time - self.iteration_start
+        logger.info("Iteration %s done (took %s)" % (self.iteration, utils.verbose_timedelta(iteration_time_elapsed)))
         self.exp_manager.print_status(states, msgs)
 
 
