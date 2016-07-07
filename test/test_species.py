@@ -23,8 +23,8 @@ class TestSpecies(unittest.TestCase):
         self.assertDictEqual(vs.get_species_param(self.cb, 'arabiensis', 'Larval_Habitat_Types'),
                              {'TEMPORARY_RAINFALL': 246, 'CONSTANT': 912})
 
-        farauti_swamp_habitat = vs.get_species_param(self.cb, 'funestus', 'Larval_Habitat_Types')['WATER_VEGETATION']
-        self.assertEqual(farauti_swamp_habitat, 4e7)
+        funestus_habitat = vs.get_species_param(self.cb, 'funestus', 'Larval_Habitat_Types')['WATER_VEGETATION']
+        self.assertEqual(funestus_habitat, 4e7)
 
 
 if __name__ == '__main__':
