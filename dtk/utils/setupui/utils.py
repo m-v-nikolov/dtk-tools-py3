@@ -21,6 +21,14 @@ def get_file_path(local):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "simtools", 'simtools.ini'))
 
 
+def cleanup_empty_file():
+    """
+    Delete the local simtools.ini file if empty.
+    """
+    if os.stat(get_file_path(True)).st_size == 0:
+        os.remove(get_file_path(True))
+
+
 def get_block(block):
     """
     Retrieve a block.

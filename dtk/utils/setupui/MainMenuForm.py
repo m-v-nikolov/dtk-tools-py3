@@ -3,7 +3,7 @@ import npyscreen
 from BlockSelectionPopup import BlockSelectionPopup
 from ConfigTypePopup import ConfigTypePopup
 from MenuForm import MenuForm
-from dtk.utils.setupui.utils import get_file_path
+from dtk.utils.setupui.utils import get_file_path, cleanup_empty_file
 
 
 class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
@@ -54,6 +54,7 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
         Function called when Ctrl+c pushed -> exit the program:
         """
         npyscreen.blank_terminal()
+        cleanup_empty_file()
         exit()
 
     def h_select_menu(self, item):
