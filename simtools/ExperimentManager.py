@@ -442,9 +442,7 @@ class LocalExperimentManager(object):
             time.sleep(init_sleep)
 
             # Reload the exp_data because job ids may have been added by the thread
-            self.reload_exp_data()
-
-            states, msgs = self.get_simulation_status()
+            states, msgs = self.get_simulation_status(reload=True)
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written
                 time.sleep(sleep_time)
@@ -453,6 +451,7 @@ class LocalExperimentManager(object):
                 if verbose:
                     self.print_status(states, msgs)
                 time.sleep(sleep_time)
+
         self.print_status(states, msgs)
 
     def get_output_parser(self, sim_id, filtered_analyses):
