@@ -2,10 +2,12 @@ import logging
 import math
 import re
 
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+
 logger = logging.getLogger(__name__)
 
 
-class ProgressAnalyzer():
+class ProgressAnalyzer(BaseAnalyzer):
     def __init__(self, simIds=None):
         self.filenames = ['StdOut.txt', 'status.txt']
         self.simIds = simIds
