@@ -11,6 +11,7 @@ from datetime import datetime
 import pandas as pd
 
 from IterationState import IterationState
+from simtools import utils
 from simtools.ExperimentManager import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
@@ -60,8 +61,10 @@ class CalibManager(object):
         self.location = self.setup.get('type')
         self.suite_id = None
         self.all_results = None
-
+        self.exp_manager = None
         self.plotters = plotters
+        self.calibration_start = None
+        self.iteration_start = None
 
     def run_calibration(self, **kwargs):
         """
@@ -127,13 +130,13 @@ class CalibManager(object):
            * updating the next-point algorithm with sample-point results
              and either truncating or generating next sample points.
         """
-
-
-        self.iteration_start = datetime.now().replace(microsecond=0)
+        # Start the calibration time
         self.calibration_start = datetime.now().replace(microsecond=0)
+
         while self.iteration < self.max_iterations:
-            if self.iteration > 0:
-                self.iteration_start = datetime.now().replace(microsecond=0)
+
+            # Restart the time for each iteration
+            self.iteration_start = datetime.now().replace(microsecond=0)
 
             logger.info('---- Iteration %d ----', self.iteration)
             next_params = self.get_next_parameters()
@@ -173,11 +176,11 @@ class CalibManager(object):
 
         if self.iteration_state.simulations:
             logger.info('Reloading simulation data from cached iteration state.')
-            exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations)
+            self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations)
         else:
-            exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
+            self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
             if not self.suite_id:
-                self.generate_suite_id(exp_manager)
+                self.generate_suite_id(self.exp_manager)
 
             exp_builder = ModBuilder.from_combos(
                 [ModBuilder.ModFn(self.config_builder.__class__.set_param, 'Run_Number', i)
@@ -187,19 +190,49 @@ class CalibManager(object):
                 [ModBuilder.ModFn(self.sample_point_fn(idx), sample_point)
                  for idx, sample_point in enumerate(next_params)])
 
-            exp_manager.run_simulations(
+            self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
                 exp_name='%s_iter%d' % (self.name, self.iteration),
                 exp_builder=exp_builder,
                 suite_id=self.suite_id)
 
-            self.iteration_state.simulations = exp_manager.exp_data
+            self.iteration_state.simulations = self.exp_manager.exp_data
             self.cache_iteration_state()
 
-        # make reference to current CalibrationManager class
-        exp_manager.calibMgr = self
+        self.wait_for_finished()
 
-        exp_manager.wait_for_finished(verbose=True, init_sleep=1.0)
+    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time = 3):
+        while True:
+            time.sleep(init_sleep)
+
+            # Output time info
+            current_time = datetime.now()
+            iteration_time_elapsed = current_time - self.iteration_start
+            calibration_time_elapsed = current_time - self.calibration_start
+
+            logger.info('\n\nCalibration: %s' % self.name)
+            logger.info('Calibration started: %s' % self.calibration_start)
+            logger.info('Current iteration: Iteration %s' % self.iteration)
+            logger.info('Current Iteration Started: %s', self.iteration_start)
+            logger.info('Time since iteration started: %s' % utils.verbose_timedelta(iteration_time_elapsed))
+            logger.info('Time since calibration started: %s\n' % utils.verbose_timedelta(calibration_time_elapsed))
+
+            # Retrieve simulation status and messages
+            states, msgs = self.exp_manager.get_simulation_status(reload=True)
+
+            # Test if we are all done
+            if self.exp_manager.status_finished(states):
+                # Wait when we are all done to make sure all the output files have time to get written
+                time.sleep(sleep_time)
+                break
+            else:
+                if verbose:
+                    self.exp_manager.print_status(states, msgs)
+                time.sleep(sleep_time)
+
+        # Print the status one more time
+        self.exp_manager.print_status(states, msgs)
+
 
     def analyze_iteration(self):
         """

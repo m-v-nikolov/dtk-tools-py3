@@ -401,27 +401,13 @@ class LocalExperimentManager(object):
             exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
 
     @staticmethod
-    def print_status(calibMgr, states, msgs):
+    def print_status(states, msgs):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
             if 'Running' in state:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
-
-        # Output time info
-        current_time = datetime.now()
-        iteration_time_elapsed= current_time - calibMgr.iteration_start
-        calibration_time_elapsed = current_time - calibMgr.calibration_start
-
-        logger.info('Calibration: %s' % calibMgr.name)
-        logger.info('Calibration started: %s' % calibMgr.calibration_start)
-        logger.info('Current iteration: Iteration %s' % calibMgr.iteration)
-        logger.info('Current Iteration Started: %s', calibMgr.iteration_start)
-        ##logger.info('Time since iteration started: %s' % str(iteration_time_elapsed).split(".")[0])
-        ##logger.info('Time since calibration started: %s' % str(calibration_time_elapsed).split(".")[0])
-        logger.info('Time since iteration started: %s' % utils.verbose_timedelta(iteration_time_elapsed))
-        logger.info('Time since calibration started: %s' % utils.verbose_timedelta(calibration_time_elapsed))
 
         logger.info('Job states:')
         if len(long_states) < 20:
@@ -456,19 +442,17 @@ class LocalExperimentManager(object):
             time.sleep(init_sleep)
 
             # Reload the exp_data because job ids may have been added by the thread
-            self.reload_exp_data()
-
-            states, msgs = self.get_simulation_status()
+            states, msgs = self.get_simulation_status(reload=True)
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written
                 time.sleep(sleep_time)
                 break
             else:
                 if verbose:
-                    self.print_status(self.calibMgr, states, msgs)
+                    self.print_status(states, msgs)
                 time.sleep(sleep_time)
 
-        self.print_status(self.calbMgr, states, msgs)
+        self.print_status(states, msgs)
 
     def get_output_parser(self, sim_id, filtered_analyses):
         return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
