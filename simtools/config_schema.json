@@ -16,7 +16,7 @@
       "name":"bin_staging_root",
       "label":"Binaries staging root",
       "help":"Folder used to store the executable used for the simulations.",
-      "type":"directory"
+      "type":"path"
     },
     {
       "name":"lib_staging_root",
