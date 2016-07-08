@@ -6,6 +6,8 @@ import subprocess
 import threading
 from time import sleep
 
+import utils
+
 
 class SimulationCommissioner(threading.Thread):
     """
@@ -84,10 +86,8 @@ class CompsSimulationCommissioner(threading.Thread):
     @staticmethod
     def create_suite(setup, suite_name):
 
-        from COMPS import Client
         from COMPS.Data import Suite
-
-        Client.Login(setup.get('server_endpoint'))
+        utils.COMPS_login(setup.get('server_endpoint'))
 
         logging.debug('suite_name - ' + str(suite_name))
 
@@ -98,10 +98,9 @@ class CompsSimulationCommissioner(threading.Thread):
 
     @staticmethod
     def create_experiment(setup, config_builder, exp_name, bin_path, input_args, suite_id=None):
-        from COMPS import Client
         from COMPS.Data import Configuration, HPCJob__Priority, Experiment, Suite
 
-        Client.Login(setup.get('server_endpoint'))
+        utils.COMPS_login(setup.get('server_endpoint'))
 
         bldr = Configuration.getBuilderInstance()
 

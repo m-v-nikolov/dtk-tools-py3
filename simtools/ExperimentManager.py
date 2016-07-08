@@ -549,11 +549,10 @@ class CompsExperimentManager(LocalExperimentManager):
         self.exp_data['sims'] = CompsSimulationCommissioner.get_sim_metadata_for_exp(self.exp_data['exp_id'])
 
     def cancel_all_simulations(self, states=None):
-        from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 
         if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
+            utils.COMPS_login(self.get_property('server_endpoint'))
             self.comps_logged_in = True
 
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
@@ -568,22 +567,20 @@ class CompsExperimentManager(LocalExperimentManager):
         self.soft_delete()
 
         # Mark experiment for deletion in COMPS.
-        from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 
         if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
+            utils.COMPS_login(self.get_property('server_endpoint'))
             self.comps_logged_in = True
 
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
-        from COMPS import Client
         from COMPS.Data import Simulation, QueryCriteria
 
         if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
+            utils.COMPS_login(self.get_property('server_endpoint'))
             self.comps_logged_in = True
 
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
