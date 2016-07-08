@@ -15,12 +15,11 @@ default_larvicides = {
         "Initial_Effect": 0.2,
         "class": "WaningEffectBoxExponential"
     },
-    "Spray_Kill_Target": "SpaceSpray_FemalesOnly",
     "class": "Larvicides"
 }
 
 
-def add_larvicides(config_builder, start, killing=None, blocking=None, habitat_target=None, waning=None, nodesIDs = None):
+def add_larvicides(config_builder, start, killing=None, reduction=None, habitat_target=None, waning=None, nodesIDs = None):
     # Create our event dictionary
     event = {
         "Start_Day": start,
@@ -43,8 +42,8 @@ def add_larvicides(config_builder, start, killing=None, blocking=None, habitat_t
     if killing:
         larvicides_event["Killing_Config"]["Initial_Effect"] = killing
 
-    if blocking:
-        larvicides_event["Blocking_Config"]["Initial_Effect"] = blocking
+    if reduction:
+        larvicides_event["Blocking_Config"]["Initial_Effect"] = reduction
 
     if habitat_target:
         larvicides_event["Habitat_Target"] = habitat_target

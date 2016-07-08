@@ -1,6 +1,8 @@
 import json
 import logging
 
+import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,10 +34,8 @@ class CompsSimulationMonitor(SimulationMonitor):
         self.server_endpoint = setup.get('server_endpoint')
 
     def query(self):
-        from COMPS import Client
         from COMPS.Data import Experiment, Suite, QueryCriteria
-
-        Client.Login(self.server_endpoint)
+        utils.COMPS_login(self.server_endpoint)
 
         def sims_from_experiment(e):
             # logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())

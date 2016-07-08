@@ -595,8 +595,7 @@ class CalibManager(object):
         calib_data = self.read_calib_data()
 
         if calib_data['location'] == 'HPC':
-            from COMPS import Client
-            Client.Login(self.setup.get('HPC', 'server_endpoint'))
+            utils.COMPS_login(self.setup.get('server_endpoint'))
 
         # Cleanup the LL_all.csv
         if os.path.exists(os.path.join(self.name, 'LL_all.csv')):

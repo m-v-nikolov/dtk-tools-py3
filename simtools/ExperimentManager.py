@@ -493,7 +493,6 @@ class CompsExperimentManager(LocalExperimentManager):
             setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='HPC')
 
         LocalExperimentManager.__init__(self, exe_path, exp_data, setup)
-        self.comps_logged_in = False
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
         self.commissioner = None
         self.sims_created = 0
@@ -549,12 +548,9 @@ class CompsExperimentManager(LocalExperimentManager):
         self.exp_data['sims'] = CompsSimulationCommissioner.get_sim_metadata_for_exp(self.exp_data['exp_id'])
 
     def cancel_all_simulations(self, states=None):
-        from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
 
-        if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
-            self.comps_logged_in = True
+        utils.COMPS_login(self.get_property('server_endpoint'))
 
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Cancel()
@@ -568,23 +564,15 @@ class CompsExperimentManager(LocalExperimentManager):
         self.soft_delete()
 
         # Mark experiment for deletion in COMPS.
-        from COMPS import Client
         from COMPS.Data import Experiment, QueryCriteria
-
-        if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
-            self.comps_logged_in = True
+        utils.COMPS_login(self.get_property('server_endpoint'))
 
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
-        from COMPS import Client
         from COMPS.Data import Simulation, QueryCriteria
-
-        if not self.comps_logged_in:
-            Client.Login(self.get_property('server_endpoint'))
-            self.comps_logged_in = True
+        utils.COMPS_login(self.get_property('server_endpoint'))
 
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()

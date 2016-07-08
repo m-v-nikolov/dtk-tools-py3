@@ -1,15 +1,48 @@
-import sys
-import os
+import contextlib
 import glob
-from hashlib import md5
 import logging
-import shutil
-from datetime import timedelta
+import os
 import re
+import shutil
+import sys
+from hashlib import md5
+
+import cStringIO
 
 from simtools.SetupParser import SetupParser
 
 logger = logging.getLogger(__name__)
+
+
+@contextlib.contextmanager
+def nostdout():
+    """
+    Context used to suppress any print/logging from block of code
+    """
+    # Save current state
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+
+    # Deactivate logging and stdout
+    logger.propagate = False
+    sys.stdout = sys.stderr = cStringIO.StringIO()
+
+    yield
+
+    # Restore
+    sys.stdout = save_stdout
+    sys.stderr = save_stderr
+    logger.propagate = True
+
+
+def COMPS_login(endpoint):
+    from COMPS import Client
+    with nostdout():
+        if not Client.getRemoteServer():
+            Client.Login(endpoint)
+
+    return Client
+
 
 path_translations = {}
 def translate_COMPS_path(path, setup=None):
@@ -50,8 +83,7 @@ def translate_COMPS_path(path, setup=None):
         environment = setup.get('environment')
 
         # Query COMPS to get the path corresponding to the variable
-        from COMPS import Client
-        Client.Login(setup.get('server_endpoint'))
+        Client = COMPS_login(setup.get('server_endpoint'))
         abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
 
         # Cache
