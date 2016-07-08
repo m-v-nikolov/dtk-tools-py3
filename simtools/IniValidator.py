@@ -3,6 +3,7 @@ import os
 import validators
 import types
 import sys
+import utils
 
 default_schema_file = os.path.join(os.path.dirname(__file__),
                                    'config_schema.json')
@@ -35,12 +36,16 @@ class IniValidator:
         self.schemaSection = self.schema["COMMON"]
         self.schemaSection += self.schema[self.section_name]
 
-    def validate(self, setup_parser):
+    def validate(self, setup_parser, ini):
 
         # print "Validating ini file: " + setupParser.ini_file + ", section: " \
         #           + self.section_name + " with schema: " + self.schema_file
 
         for rule in self.schemaSection:
+
+            if "optional" in rule and rule["optional"] == True and not setup_parser.has_option(rule["name"]):
+                print "optional"
+                continue
 
             val = setup_parser.get(rule["name"])
 
@@ -48,20 +53,40 @@ class IniValidator:
                 print "No section called: " + rule["name"]
             else:
                 method = getattr(self, "validate_" + rule["type"])
-                if not method(val, rule):
+                if not method(val, rule, ini):
                     print "Validation failed for " + rule["name"] + "=" + val + " as type: " + rule["type"]
                     sys.exit()
 
     @staticmethod
-    def validate_url(val, rule):
+    def validate_python_path(val, rule, ini):
+        if "optional" in rule and rule["optional"] is True and val is "":
+            return True
+
+        is_COMPS_path = "$COMPS_PATH(" in val
+
+        val = utils.translate_COMPS_path(val, ini)
+
+        res = os.path.exists(os.path.abspath(val))
+
+        if res is not True:
+            print "Path validation failed: " + val
+
+            # We don't want to fail if it's a COMPS path as we might not have access to the path
+            if is_COMPS_path:
+                return True
+
+        return res
+
+    @staticmethod
+    def validate_url(val, rule, ini):
         return validators.url(val)
 
     @staticmethod
-    def validate_string(val, rule):
+    def validate_string(val, rule, ini):
         return isinstance(val, types.StringType)
 
     @staticmethod
-    def validate_radio(val, rule):
+    def validate_radio(val, rule, ini):
         if "choices" not in rule:
             print "choices not found in rule: " + rule["name"]
             return False
@@ -69,27 +94,35 @@ class IniValidator:
         return val in rule["choices"]
 
     @staticmethod
-    def validate_int(val, rule):
+    def validate_int(val, rule, ini):
         return isinstance(int(val), types.IntType)
 
     @staticmethod
-    def validate_bool(val, rule):
+    def validate_bool(val, rule, ini):
         return val in boolean_values
 
     @staticmethod
-    def validate_directory(val, rule):
+    def validate_directory(val, rule, ini):
         if "optional" in rule and rule["optional"] is True and val is "":
             return True
+
+        is_COMPS_path = "$COMPS_PATH(" in val
+
+        val = utils.translate_COMPS_path(val, ini)
 
         res = os.path.isdir(os.path.abspath(val))
 
         if res is not True:
             print "Directory validation failed: " + val
 
+            # We don't want to fail if it's a COMPS path as we might not have access to the path
+            if is_COMPS_path:
+                return True
+
         return res
 
     @staticmethod
-    def validate_file(val, rule):
+    def validate_file(val, rule, ini):
         if "optional" in rule and rule["optional"] is True and val is "":
             return True
 

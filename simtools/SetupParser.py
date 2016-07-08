@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from ConfigParser import ConfigParser
-from IniValidator import IniValidator
+from simtools.IniValidator import IniValidator
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage
 
@@ -16,7 +16,7 @@ class SetupParser:
     setup_file = None
     default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=True):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=True, ):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -211,7 +211,6 @@ class SetupParser:
     def file_name(self):
         return self.ini_file
 
-    def validate(self, section_name, setup_parser):
+    def validate(self, section_name, ini):
         validator = IniValidator(section_name)
-        return validator.validate(setup_parser)
-
+        return validator.validate(self, ini)
