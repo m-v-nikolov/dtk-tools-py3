@@ -19,10 +19,20 @@ def nostdout():
     """
     Context used to suppress any print/logging from block of code
     """
+    # Save current state
     save_stdout = sys.stdout
-    sys.stdout = cStringIO.StringIO()
+    save_stderr = sys.stderr
+
+    # Deactivate logging and stdout
+    logger.propagate = False
+    sys.stdout = sys.stderr = cStringIO.StringIO()
+
     yield
+
+    # Restore
     sys.stdout = save_stdout
+    sys.stderr = save_stderr
+    logger.propagate = True
 
 
 def COMPS_login(endpoint):
