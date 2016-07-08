@@ -28,7 +28,8 @@ def nostdout():
 def COMPS_login(endpoint):
     from COMPS import Client
     with nostdout():
-        Client.Login(endpoint)
+        if not Client.getRemoteServer():
+            Client.Login(endpoint)
 
     return Client
 
