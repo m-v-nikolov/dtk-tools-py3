@@ -3,7 +3,6 @@ import os
 import validators
 import types
 import sys
-import utils
 
 default_schema_file = os.path.join(os.path.dirname(__file__),
                                    'config_schema.json')
@@ -58,12 +57,13 @@ class IniValidator:
                     sys.exit()
 
     @staticmethod
-    def validate_python_path(val, rule, ini):
+    def validate_path(val, rule, ini):
         if "optional" in rule and rule["optional"] is True and val is "":
             return True
 
         is_COMPS_path = "$COMPS_PATH(" in val
 
+        import utils
         val = utils.translate_COMPS_path(val, ini)
 
         res = os.path.exists(os.path.abspath(val))
@@ -108,7 +108,13 @@ class IniValidator:
 
         is_COMPS_path = "$COMPS_PATH(" in val
 
-        val = utils.translate_COMPS_path(val, ini)
+        import utils
+        try:
+            val = utils.translate_COMPS_path(val, ini)
+        except:
+            if is_COMPS_path:
+                print "Invalid COMPS variable: " + val
+                return True
 
         res = os.path.isdir(os.path.abspath(val))
 
