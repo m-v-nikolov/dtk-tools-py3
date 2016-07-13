@@ -13,7 +13,7 @@ import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.setupui.SetupApplication import SetupApplication
-from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
 from simtools.SetupParser import SetupParser
 
