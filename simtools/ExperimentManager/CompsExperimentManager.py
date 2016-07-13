@@ -1,19 +1,15 @@
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
-from simtools.ExperimentManager.LocalExperimentManager import LocalExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.OutputParser import CompsDTKOutputParser
-from simtools.SetupParser import SetupParser
 
-from COMPS.Data import Experiment, QueryCriteria, Simulation
 
 class CompsExperimentManager(BaseExperimentManager):
     """
     Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
     e.g. creation of Simulation, Experiment, Suite objects
     """
-
     location = 'HPC'
     monitorClass = CompsSimulationMonitor
     parserClass = CompsDTKOutputParser
@@ -75,7 +71,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def cancel_all_simulations(self, states=None):
         utils.COMPS_login(self.get_property('server_endpoint'))
-
+        from COMPS.Data import Experiment, QueryCriteria, Simulation
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Cancel()
 
@@ -83,26 +79,25 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         Delete local cache data for experiment and marks the server entity for deletion.
         """
-
         # Perform soft delete cleanup.
         self.soft_delete()
 
         # Mark experiment for deletion in COMPS.
         utils.COMPS_login(self.get_property('server_endpoint'))
-
+        from COMPS.Data import Experiment, QueryCriteria, Simulation
         e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
         utils.COMPS_login(self.get_property('server_endpoint'))
-
+        from COMPS.Data import Experiment, QueryCriteria, Simulation
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
 
     def analyze_simulations(self):
         if not self.assets_service:
             CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
-        if self.location == "HPC" and self.setup.getboolean('compress_assets'):
+        if self.setup.getboolean('compress_assets'):
             CompsDTKOutputParser.enableCompression()
 
-        LocalExperimentManager.analyze_simulations(self)
+        super(CompsExperimentManager, self).analyze_simulations()

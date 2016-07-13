@@ -44,9 +44,13 @@ class ExperimentManagerFactory(object):
         return cls.factory(exp_data['location'])('', exp_data)
 
     @classmethod
-    def from_file(cls, exp_data_path, suppressLogging=False):
-        if not suppressLogging:
+    def from_file(cls, exp_data_path, suppress_logging=False, force_block=False):
+        if not suppress_logging:
             logger.info('Reloading ExperimentManager from: %s', exp_data_path)
         with open(exp_data_path) as exp_data_file:
             exp_data = json.loads(exp_data_file.read())
+
+        if force_block:
+            SetupParser.selected_block = SetupParser.setup_file = None
+
         return cls.factory(exp_data['location'])('', exp_data)

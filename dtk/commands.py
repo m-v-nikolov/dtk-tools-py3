@@ -305,7 +305,7 @@ def reload_experiments(args=None):
         id = None
 
     # Attempt to read files 3 times.
-    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)])
+    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppress_logging=True, force_block=True) for file in utils.exp_files(id)])
     if result:
         return result
     

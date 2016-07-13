@@ -30,48 +30,10 @@ class LocalExperimentManager(BaseExperimentManager):
     def __init__(self, model_file, exp_data, setup=None):
         BaseExperimentManager.__init__(self, model_file, exp_data, setup)
 
-        self.exp_builder = None
-        self.staged_bin_path = None
-        self.config_builder = None
-        self.commandline = None
-        self.analyzers = []
-
-    def cancel_simulations(self, ids=[], killall=False):
-        """
-        Cancel currently some or all currently running simulations.
-
-        Keyword arguments:
-        ids -- a list of job ids to cancel
-        killall -- a Boolean flag to kill all running simulations (default: False)
-        """
-
-        states, msgs = self.get_simulation_status()
-
-        if killall:
-            self.cancel_all_simulations(states)
-            return
-
-        for id in ids:
-            if type(id) is str:
-                id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
-
-            state = states.get(id)
-            if not state:
-                logger.warning('No job in experiment with ID = %s' % id)
-                continue
-
-            if state not in ['Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown']:
-                self.kill_job(id)
-            else:
-                logger.warning("JobID %s is already in a '%s' state." % (str(id), state))
-
-
-
     def hard_delete(self):
         """
         Delete local cache data for experiment and output data for experiment.
         """
-
         # Perform soft delete cleanup.
         self.soft_delete()
 
@@ -105,48 +67,6 @@ class LocalExperimentManager(BaseExperimentManager):
                 self.resubmit_job(id)
             else:
                 logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
-
-    def analyze_simulations(self):
-        """
-        Apply one or more analyzers to the outputs of simulations.
-
-        A parser thread will be spawned for each simulation with filtered analyzers to run,
-        following which the combined outputs of all threads are reduced and displayed or saved.
-
-        The analyzer interface provides the following methods:
-           * filter -- based on the simulation meta-data return a Boolean to execute this analyzer
-           * apply -- parse simulation output files and emit a subset of data
-           * combine -- reduce the data emitted by each parser
-           * finalize -- plotting and saving output files
-        """
-
-        parsers = {}
-
-        for i, (sim_id, sim) in enumerate(self.exp_data['sims'].items()):
-
-            filtered_analyses = [a for a in self.analyzers if a.filter(sim)]
-            if not filtered_analyses:
-                logger.debug('Simulation did not pass filter on any analyzer.')
-                continue
-
-            if self.maxThreadSemaphore:
-                self.maxThreadSemaphore.acquire()
-                logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
-
-            parser = self.get_output_parser(sim_id, filtered_analyses)  # execute filtered analyzers on parser thread
-            parser.start()
-            parsers[parser.sim_id] = parser
-
-        for p in parsers.values():
-            p.join()
-
-        if not parsers:
-            logger.warn('No simulations passed analysis filters.')
-            return
-
-        for a in self.analyzers:
-            a.combine(parsers)
-            a.finalize()
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
@@ -208,35 +128,4 @@ class LocalExperimentManager(BaseExperimentManager):
         pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
         if pid:
             os.kill(pid, signal.SIGTERM)
-
-    def resubmit_job(self, job_id):
-        raise NotImplementedError('resubmit_job not implemented for %s jobs' % self.location)
-
-
-    @staticmethod
-    def status_succeeded(states):
-        return all(v in ['Finished', 'Succeeded'] for v in states.itervalues())
-
-    def succeeded(self):
-        return self.status_succeeded(self.get_simulation_status()[0])
-
-    @staticmethod
-    def status_failed(states):
-        return all(v in ['Failed'] for v in states.itervalues())
-
-    def failed(self):
-        return self.status_failed(self.get_simulation_status()[0])
-
-
-    def get_output_parser(self, sim_id, filtered_analyses):
-        return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
-                                             self.exp_data.get('exp_name', '') + '_' + self.exp_data.get('exp_id', '')),
-                                sim_id,
-                                self.exp_data['sims'][sim_id],
-                                filtered_analyses,
-                                self.maxThreadSemaphore)
-
-    def add_analyzer(self, analyzer):
-        self.analyzers.append(analyzer)
-
 
