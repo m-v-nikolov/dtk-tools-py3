@@ -62,6 +62,10 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
+    def create_suite(self, suite_name):
+        pass
+
+    @abstractmethod
     def complete_sim_creation(self,commissioners):
         pass
 
@@ -187,6 +191,32 @@ class BaseExperimentManager:
         cache_file_path = os.path.join(os.getcwd(), 'simulations',
                                        "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
         self.exp_data = json.load(open(cache_file_path))
+
+    def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
+        """
+        Resubmit some or all canceled or failed simulations.
+
+        Keyword arguments:
+        ids -- a list of job ids to resubmit
+        resubmit_all_failed -- a Boolean flag to resubmit all canceled/failed simulations (default: False)
+        """
+
+        states, msgs = self.get_simulation_status()
+
+        if resubmit_all_failed:
+            ids = [id for (id, state) in states.iteritems() if state in ['Failed', 'Canceled']]
+            logger.info('Resubmitting all failed simulations in experiment: ' + str(ids))
+
+        for id in ids:
+            state = states.get(id)
+            if not state:
+                logger.warning('No job in experiment with ID = %s' % id)
+                continue
+
+            if state in ['Failed', 'Canceled']:
+                self.resubmit_job(id)
+            else:
+                logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
 
     def print_status(self,states, msgs):
         long_states = copy.deepcopy(states)

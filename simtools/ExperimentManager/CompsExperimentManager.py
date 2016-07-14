@@ -21,6 +21,14 @@ class CompsExperimentManager(BaseExperimentManager):
         self.sims_created = 0
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
+    def analyze_simulations(self):
+        if not self.assets_service:
+            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
+        if self.setup.getboolean('compress_assets'):
+            CompsDTKOutputParser.enableCompression()
+
+        super(CompsExperimentManager, self).analyze_simulations()
+
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
 
@@ -93,11 +101,3 @@ class CompsExperimentManager(BaseExperimentManager):
         from COMPS.Data import Experiment, QueryCriteria, Simulation
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
-
-    def analyze_simulations(self):
-        if not self.assets_service:
-            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
-        if self.setup.getboolean('compress_assets'):
-            CompsDTKOutputParser.enableCompression()
-
-        super(CompsExperimentManager, self).analyze_simulations()
