@@ -77,3 +77,41 @@ class LikelihoodPlotter(BasePlotter):
                      linewidth=(iter + 1) / (n_iterations + 1.) * 2,
                      alpha=(iter + 1) / (n_iterations + 1.),
                      **kwargs)
+
+    def cleanup_plot(self, calib_manager):
+        """
+        cleanup the existing plots
+        :param calib_manager:
+        :return:
+        """
+        self.directory = calib_manager.iteration_directory()
+        self.param_names = calib_manager.param_names()
+        self.site_analyzer_names = calib_manager.site_analyzer_names()
+
+        if self.combine_sites:
+            self.cleanup_plot_by_parameter()
+        else:
+            self.cleanup_plot_by_parameter_and_site()
+
+    def cleanup_plot_by_parameter_and_site(self):
+        """
+        cleanup the existing plots
+        :return:
+        """
+        for site, analyzers in self.site_analyzer_names.items():
+            self.cleanup_plot_by_parameter(site=site)
+
+    def cleanup_plot_by_parameter(self, site=''):
+        """
+        cleanup the existing plots
+        :param site:
+        :return:
+        """
+        for param in self.param_names:
+            plot_path = os.path.join(self.directory, site, 'LL_%s.pdf' % param)
+            if os.path.exists(plot_path):
+                try:
+                    # logger.info("Try to delete %s" % plot_path)
+                    os.remove(plot_path)
+                except OSError:
+                    logger.error("Failed to delete %s" % plot_path)
