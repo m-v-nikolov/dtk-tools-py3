@@ -71,6 +71,8 @@ class CalibManager(object):
         Create and run a complete multi-iteration calibration suite.
         """
         self.location = self.setup.get('type')
+        if 'location' in kwargs:
+            kwargs.pop('location')
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -88,8 +90,8 @@ class CalibManager(object):
             sleep(0.5)
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
-            while var.upper() not in ('R', 'B', 'C', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [A]bort:  ')
+            while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [P]lotter, [A]bort:  ')
 
             # Abort
             if var == 'A':
@@ -104,6 +106,10 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
+            elif var == "P":
+                self.plotter_calibration(**kwargs)
+                exit()     # avoid calling self.run_iterations(**kwargs)
+
 
     @staticmethod
     def retrieve_iteration_state(iter_directory):
@@ -149,13 +155,16 @@ class CalibManager(object):
             if self.finished():
                 break
 
-            self.increment_iteration()
+            # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
+            if self.iteration + 1 < self.max_iterations:
+                self.increment_iteration()
+            else:
+                break
 
         # Print the calibration finish time
         current_time = datetime.now()
         calibration_time_elapsed = current_time - self.calibration_start
         logger.info("Calibration done (took %s)" % utils.verbose_timedelta(calibration_time_elapsed))
-
 
         self.finalize_calibration()
 
@@ -523,6 +532,82 @@ class CalibManager(object):
         self.next_point.set_current_state(self.iteration_state.next_point)
 
         self.run_iterations(**kwargs)
+
+    def plotter_calibration(self, **kwargs):
+        """
+        Cleanup the existing plots, then re-do the plottering
+        """
+        logger.info('Start Plotter Process!')
+
+        # make sure data exists for plottering
+        if not os.path.isdir(self.name):
+            raise Exception('Unable to find existing calibration in directory: %s' % self.name)
+
+        self.plotter_calibration_for_iteration(**kwargs)
+
+    def plotter_calibration_for_iteration(self, **kwargs):
+        """
+        start iteration loop
+        for each existing iteration, results all_results
+        """
+
+        # restore the existing calibration data
+        calib_data = self.read_calib_data()
+
+        # restore calibration results
+        results = calib_data.get('results')
+
+        latest_iteration = calib_data.get('iteration')
+        latest_iteration = self.get_last_iteration_validation(latest_iteration)
+        logger.info('latest_iteration = %s' % latest_iteration)
+
+        # before iteration loop
+        self.all_results = None
+
+        # re-do plottering for each of the iterations
+        for i in range(0, latest_iteration + 1):
+            logger.info('Re-plottering for iteration: %d' % i)
+
+            # restore iteration state
+            iter_directory = os.path.join(self.name, 'iter%d' % i)
+            self.iteration_state = self.retrieve_iteration_state(iter_directory)
+
+            # restore all_results for current iteration
+            self.restore_results_for_plotter(results, i)
+
+            # cleanup the existing plots of current iteration before generate new plots
+            map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
+
+            delete_only = kwargs.get('delete')
+
+            # Run all the plotters
+            if not delete_only:
+                map(lambda plotter: plotter.visualize(self), self.plotters)
+
+    def get_last_iteration_validation(self, iteration_count):
+        if iteration_count < self.max_iterations:
+            return iteration_count
+
+        else:
+            return self.max_iterations - 1
+
+    def restore_results_for_plotter(self, results, iteration):
+        """
+        Restore summary results from serialized state.
+        """
+
+        if not results:
+            logger.info('No iteration cached results to reload from CalibManager.')
+            return
+
+        # restore results as DataFrame
+        self.all_results = pd.DataFrame.from_dict(results, orient='columns')
+
+        # [TODO]: do we need to do this for plotter? I don't see any difference for generated plot pdf
+        # self.all_results.set_index('sample', inplace=True)
+
+        # finally restore all_results for current iteration
+        self.all_results = self.all_results[self.all_results.iteration <= iteration]
 
     def kill(self):
         """
