@@ -3,7 +3,7 @@ import stat
 import unittest
 
 from simtools import utils
-from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder
 from simtools.SetupParser import SetupParser
 from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder

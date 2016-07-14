@@ -12,7 +12,7 @@ import pandas as pd
 
 from IterationState import IterationState
 from simtools import utils
-from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
 

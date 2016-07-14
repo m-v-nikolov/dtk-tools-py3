@@ -13,7 +13,7 @@ import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.setupui.SetupApplication import SetupApplication
-from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
 from simtools.SetupParser import SetupParser
 
@@ -305,7 +305,7 @@ def reload_experiments(args=None):
         id = None
 
     # Attempt to read files 3 times.
-    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppressLogging = True) for file in utils.exp_files(id)])
+    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppress_logging=True, force_block=True) for file in utils.exp_files(id)])
     if result:
         return result
     

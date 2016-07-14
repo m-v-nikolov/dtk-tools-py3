@@ -44,6 +44,16 @@ def COMPS_login(endpoint):
     return Client
 
 
+def get_tools_revision():
+    # Get the tools revision
+    try:
+        import subprocess
+        revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n", "")
+    except:
+        revision = "Unknown"
+
+    return revision
+
 path_translations = {}
 def translate_COMPS_path(path, setup=None):
     """
