@@ -26,6 +26,9 @@ prior = MultiVariatePrior.by_param(
     Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
 
 plotters = [LikelihoodPlotter(True), SiteDataPlotter(True)]
+# plotters = [LikelihoodPlotter(True)]
+# plotters = [SiteDataPlotter(True)]
+# plotters = []
 
 def sample_point_fn(cb, param_values):
     '''
@@ -57,5 +60,20 @@ calib_manager = CalibManager(name='ExampleCalibration',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='LOCAL'))
-    calib_manager.run_calibration(**run_calib_args)
+    # run_calib_args.update(dict(location='LOCAL'))
+    # calib_manager.run_calibration(**run_calib_args)
+    # calib_manager.resume_from_iteration(**run_calib_args)
+    calib_manager.replot_calibration(**run_calib_args)
+    # setup = SetupParser(selected_block='HPC', force=True)
+    # setup = SetupParser(selected_block='HPC', force=True)
+    # print setup.get('type')
+
+    # from ConfigParser import ConfigParser
+    # setup = ConfigParser()
+    # setup.read('C:\\Projects\\dtk-tools-zdu\\simtools\\simtools.ini')
+    # print setup.get('HPC', 'type')
+
+
+
+
+    # exit()
