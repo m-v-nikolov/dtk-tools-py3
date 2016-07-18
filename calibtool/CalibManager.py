@@ -73,6 +73,12 @@ class CalibManager(object):
         self.location = self.setup.get('type')
         if 'location' in kwargs:
             kwargs.pop('location')
+
+        exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
+        logger.info(type(exp_manager))
+        # exit()
+
+
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -481,7 +487,11 @@ class CalibManager(object):
         self.all_results = pd.DataFrame.from_dict(results, orient='columns')
         self.all_results.set_index('sample', inplace=True)
 
-        last_iteration = iteration if not self.iteration_state.results else iteration - 1
+        # zdu: after restore state, self.iteration_state.results is not None any more
+        # last_iteration = iteration if not self.iteration_state.results else iteration - 1
+        # Fix
+        last_iteration = iteration
+
         self.all_results = self.all_results[self.all_results.iteration <= last_iteration]
         logger.info('Restored results from iteration %d', last_iteration)
         logger.debug(self.all_results)
@@ -539,6 +549,10 @@ class CalibManager(object):
         """
         logger.info('Start Plotter Process!')
 
+        logger.info('plotter_calibration')
+        logger.info(kwargs)
+        # exit()
+
         # make sure data exists for plottering
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
@@ -558,11 +572,13 @@ class CalibManager(object):
         results = calib_data.get('results')
 
         latest_iteration = calib_data.get('iteration')
-        latest_iteration = self.get_last_iteration_validation(latest_iteration)
         logger.info('latest_iteration = %s' % latest_iteration)
 
         # before iteration loop
         self.all_results = None
+
+        # consider delete plot option
+        delete_only = kwargs.get('delete') == 'DELETE'
 
         # re-do plottering for each of the iterations
         for i in range(0, latest_iteration + 1):
@@ -578,18 +594,9 @@ class CalibManager(object):
             # cleanup the existing plots of current iteration before generate new plots
             map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
 
-            delete_only = kwargs.get('delete')
-
             # Run all the plotters
             if not delete_only:
                 map(lambda plotter: plotter.visualize(self), self.plotters)
-
-    def get_last_iteration_validation(self, iteration_count):
-        if iteration_count < self.max_iterations:
-            return iteration_count
-
-        else:
-            return self.max_iterations - 1
 
     def restore_results_for_plotter(self, results, iteration):
         """
@@ -602,9 +609,6 @@ class CalibManager(object):
 
         # restore results as DataFrame
         self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-
-        # [TODO]: do we need to do this for plotter? I don't see any difference for generated plot pdf
-        # self.all_results.set_index('sample', inplace=True)
 
         # finally restore all_results for current iteration
         self.all_results = self.all_results[self.all_results.iteration <= iteration]
