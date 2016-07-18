@@ -73,11 +73,6 @@ class CalibManager(object):
         if 'location' in kwargs:
             kwargs.pop('location')
 
-        exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
-        logger.info(type(exp_manager))
-        # exit()
-
-
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -96,7 +91,7 @@ class CalibManager(object):
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [P]lotter, [A]bort:  ')
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [P]re-Plot, [A]bort:  ')
 
             # Abort
             if var == 'A':
