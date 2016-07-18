@@ -150,7 +150,7 @@ def add_block(block_type, local, fields):
 
         # For python path and node_group we want to accept blank values
         if widget_id in ("node_group", "python_path") or (widget.value and widget.value != 0):
-            value = widget.value
+            value = widget.value if widget.value else ''
 
             # Special case of widget.value (choices and checkboxes)
             if isinstance(widget.value, list):
