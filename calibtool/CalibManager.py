@@ -6,10 +6,9 @@ import pprint
 import re
 import shutil
 import time
-from datetime import datetime
-
 import pandas as pd
-
+from datetime import datetime
+from calibtool.plotters import SiteDataPlotter
 from IterationState import IterationState
 from simtools import utils
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -573,26 +572,37 @@ class CalibManager(object):
         # before iteration loop
         self.all_results = None
 
-        # consider delete plot option
+        # consider delete-only plot option
         delete_only = kwargs.get('delete') == 'DELETE'
 
         # re-do plottering for each of the iterations
         for i in range(0, latest_iteration + 1):
             logger.info('Re-plottering for iteration: %d' % i)
 
-            # restore iteration state
+            # restore current iteration state
             iter_directory = os.path.join(self.name, 'iter%d' % i)
             self.iteration_state = self.retrieve_iteration_state(iter_directory)
 
             # restore all_results for current iteration
             self.restore_results_for_replot(results, i)
 
-            # cleanup the existing plots of current iteration before generate new plots
+            # cleanup the existing plots of the current iteration before generate new plots
             map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
 
-            # Run all the plotters
+            # consider the delete-only option
             if not delete_only:
-                map(lambda plotter: plotter.visualize(self), self.plotters)
+                self.replot_for_iteration(i, latest_iteration)
+
+    def replot_for_iteration(self, iteration, latest_iteration):
+        """
+        for the iteration given,
+        re-plot and avoid duplicated re-plot
+        """
+        for plotter in self.plotters:
+            case1 = not isinstance(plotter, SiteDataPlotter.SiteDataPlotter)
+            case2 = isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration == latest_iteration
+            if case1 or case2:
+                plotter.visualize(self)
 
     def restore_results_for_replot(self, results, iteration):
         """
