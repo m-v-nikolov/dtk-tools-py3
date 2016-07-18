@@ -82,7 +82,7 @@ def kill(args, unknownArgs):
     manager.kill()
 
 
-def plotter(args, unknownArgs):
+def replot(args, unknownArgs):
     mod = load_config_module(args.config_name)
     manager = mod.calib_manager
     run_calib_args = mod.run_calib_args
@@ -95,7 +95,7 @@ def plotter(args, unknownArgs):
     else:
         raise Exception('Too many unknown arguments: please see help.')
 
-    manager.plotter_calibration(**run_calib_args)
+    manager.replot_calibration(**run_calib_args)
 
 
 def main():
@@ -139,9 +139,9 @@ def main():
     parser_cleanup.set_defaults(func=kill)
 
     # 'calibtool plotter' options
-    parser_resume = subparsers.add_parser('plotter', help='Plotter a calibration configured by plotter-options')
+    parser_resume = subparsers.add_parser('replot', help='Re-plot a calibration configured by plotter-options')
     parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_resume.set_defaults(func=plotter)
+    parser_resume.set_defaults(func=replot)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
