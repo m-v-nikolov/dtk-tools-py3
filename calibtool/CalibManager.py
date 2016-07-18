@@ -113,7 +113,7 @@ class CalibManager(object):
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
             elif var == "P":
-                self.plotter_calibration(**kwargs)
+                self.replot_calibration(**kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
 
@@ -543,23 +543,19 @@ class CalibManager(object):
 
         self.run_iterations(**kwargs)
 
-    def plotter_calibration(self, **kwargs):
+    def replot_calibration(self, **kwargs):
         """
         Cleanup the existing plots, then re-do the plottering
         """
-        logger.info('Start Plotter Process!')
-
-        logger.info('plotter_calibration')
-        logger.info(kwargs)
-        # exit()
+        logger.info('Start Re-Plot Process!')
 
         # make sure data exists for plottering
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        self.plotter_calibration_for_iteration(**kwargs)
+        self.replot_calibration_for_iteration(**kwargs)
 
-    def plotter_calibration_for_iteration(self, **kwargs):
+    def replot_calibration_for_iteration(self, **kwargs):
         """
         start iteration loop
         for each existing iteration, results all_results
@@ -589,7 +585,7 @@ class CalibManager(object):
             self.iteration_state = self.retrieve_iteration_state(iter_directory)
 
             # restore all_results for current iteration
-            self.restore_results_for_plotter(results, i)
+            self.restore_results_for_replot(results, i)
 
             # cleanup the existing plots of current iteration before generate new plots
             map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
@@ -598,7 +594,7 @@ class CalibManager(object):
             if not delete_only:
                 map(lambda plotter: plotter.visualize(self), self.plotters)
 
-    def restore_results_for_plotter(self, results, iteration):
+    def restore_results_for_replot(self, results, iteration):
         """
         Restore summary results from serialized state.
         """
