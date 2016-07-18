@@ -83,9 +83,19 @@ def kill(args, unknownArgs):
 
 
 def plotter(args, unknownArgs):
-    manager, calib_args = get_calib_manager_args(args, unknownArgs)
-    calib_args.update(dict(delete=bool(True if args.delete=='True' else False)))
-    manager.plotter_calibration(**calib_args)
+    mod = load_config_module(args.config_name)
+    manager = mod.calib_manager
+    run_calib_args = mod.run_calib_args
+
+    # Consider delete-only option
+    if len(unknownArgs) == 0:
+        run_calib_args['delete'] = None
+    elif len(unknownArgs) == 1:
+        run_calib_args['delete'] = unknownArgs[0][2:].upper()
+    else:
+        raise Exception('Too many unknown arguments: please see help.')
+
+    manager.plotter_calibration(**run_calib_args)
 
 
 def main():
@@ -131,10 +141,6 @@ def main():
     # 'calibtool plotter' options
     parser_resume = subparsers.add_parser('plotter', help='Plotter a calibration configured by plotter-options')
     parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_resume.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
-    parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_resume.add_argument('--delete', default=None, help='Delete existing plots only.')
     parser_resume.set_defaults(func=plotter)
 
     # run specified function passing in function-specific arguments
