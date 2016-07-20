@@ -1,7 +1,4 @@
-import os
-
 import npyscreen
-import sys
 
 from ConfigEditionForm import ConfigEditionForm
 from dtk.utils.setupui.MainMenuForm import MainMenuForm
@@ -19,6 +16,7 @@ class SetupApplication(npyscreen.NPSAppManaged):
     def onStart(self):
         self.addForm('MAIN', MainMenuForm, name='dtk-tools v0.3.5')
         self.addForm('EDIT', ConfigEditionForm, name='Block creation/edition form')
+
 
     def change_form(self, name):
         # Switch forms.  NB. Do *not* call the .edit() method directly (which
