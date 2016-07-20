@@ -91,7 +91,7 @@ class CalibManager(object):
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [P]re-Plot, [A]bort:  ')
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
 
             # Abort
             if var == 'A':
@@ -234,6 +234,14 @@ class CalibManager(object):
 
             # Retrieve simulation status and messages
             states, msgs = self.exp_manager.get_simulation_status(reload=True)
+
+            # If one or more simulation failed -> exit
+            if self.exp_manager.any_failed(states):
+                from dtk.utils.ioformat.OutputMessage import OutputMessage
+                # Kill the remaining simulations
+                map(self.exp_manager.kill_job, states.keys())
+                OutputMessage("One or more simulations failed. Calibration cannot continue. Exiting...")
+                exit()
 
             # Test if we are all done
             if self.exp_manager.status_finished(states):

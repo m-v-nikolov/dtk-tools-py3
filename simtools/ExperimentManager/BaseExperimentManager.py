@@ -352,6 +352,10 @@ class BaseExperimentManager:
     def status_failed(states):
         return all(v in ['Failed'] for v in states.itervalues())
 
+    @staticmethod
+    def any_failed(states):
+        return any(v in ['Failed'] for v in states.itervalues())
+
     def failed(self):
         return self.status_failed(self.get_simulation_status()[0])
 

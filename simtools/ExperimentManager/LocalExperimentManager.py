@@ -99,7 +99,22 @@ class LocalExperimentManager(BaseExperimentManager):
         shutil.rmtree(local_data_path)
 
     def kill_job(self, simId):
+        # if the status has not been set -> set it to Canceled
+        if 'status' not in self.exp_data['sims'][simId]:
+            self.exp_data['sims'][simId]['status'] = 'Canceled'
+            self.cache_experiment_data(verbose=False)
+            return
+
+        # No need of trying to kill simulation already done
+        if self.exp_data['sims'][simId]['status'] in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
+            return
+
         pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
         if pid:
-            os.kill(pid, signal.SIGTERM)
+            try:
+                self.exp_data['sims'][simId]['status'] = 'Canceled'
+                self.cache_experiment_data(verbose=False)
+                os.kill(pid, signal.SIGTERM)
+            except:
+                pass
 
