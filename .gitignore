@@ -42,3 +42,6 @@ test/tmp/
 
 # Helper
 *.ignore.*
+
+# User configuration
+simtools.ini
