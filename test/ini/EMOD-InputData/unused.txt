@@ -1,0 +1,1 @@
+This is a test file for the directory validator. The file exists because you cannot checkin a folder in git without a file.
