@@ -16,7 +16,7 @@ class SetupParser:
     setup_file = None
     default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=True):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=False):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
