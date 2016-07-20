@@ -6,10 +6,9 @@ import pprint
 import re
 import shutil
 import time
-from datetime import datetime
-
 import pandas as pd
-
+from datetime import datetime
+from calibtool.plotters import SiteDataPlotter
 from IterationState import IterationState
 from simtools import utils
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -71,6 +70,9 @@ class CalibManager(object):
         Create and run a complete multi-iteration calibration suite.
         """
         self.location = self.setup.get('type')
+        if 'location' in kwargs:
+            kwargs.pop('location')
+
         self.create_calibration(self.location, **kwargs)
         self.run_iterations(**kwargs)
 
@@ -88,8 +90,8 @@ class CalibManager(object):
             sleep(0.5)
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
-            while var.upper() not in ('R', 'B', 'C', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, [A]bort:  ')
+            while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
 
             # Abort
             if var == 'A':
@@ -104,6 +106,10 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
+            elif var == "P":
+                self.replot_calibration(**kwargs)
+                exit()     # avoid calling self.run_iterations(**kwargs)
+
 
     @staticmethod
     def retrieve_iteration_state(iter_directory):
@@ -149,13 +155,16 @@ class CalibManager(object):
             if self.finished():
                 break
 
-            self.increment_iteration()
+            # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
+            if self.iteration + 1 < self.max_iterations:
+                self.increment_iteration()
+            else:
+                break
 
         # Print the calibration finish time
         current_time = datetime.now()
         calibration_time_elapsed = current_time - self.calibration_start
         logger.info("Calibration done (took %s)" % utils.verbose_timedelta(calibration_time_elapsed))
-
 
         self.finalize_calibration()
 
@@ -225,6 +234,14 @@ class CalibManager(object):
 
             # Retrieve simulation status and messages
             states, msgs = self.exp_manager.get_simulation_status(reload=True)
+
+            # If one or more simulation failed -> exit
+            if self.exp_manager.any_failed(states):
+                from dtk.utils.ioformat.OutputMessage import OutputMessage
+                # Kill the remaining simulations
+                map(self.exp_manager.kill_job, states.keys())
+                OutputMessage("One or more simulations failed. Calibration cannot continue. Exiting...")
+                exit()
 
             # Test if we are all done
             if self.exp_manager.status_finished(states):
@@ -472,7 +489,11 @@ class CalibManager(object):
         self.all_results = pd.DataFrame.from_dict(results, orient='columns')
         self.all_results.set_index('sample', inplace=True)
 
-        last_iteration = iteration if not self.iteration_state.results else iteration - 1
+        # zdu: after restore state, self.iteration_state.results is not None any more
+        # last_iteration = iteration if not self.iteration_state.results else iteration - 1
+        # Fix
+        last_iteration = iteration
+
         self.all_results = self.all_results[self.all_results.iteration <= last_iteration]
         logger.info('Restored results from iteration %d', last_iteration)
         logger.debug(self.all_results)
@@ -523,6 +544,83 @@ class CalibManager(object):
         self.next_point.set_current_state(self.iteration_state.next_point)
 
         self.run_iterations(**kwargs)
+
+    def replot_calibration(self, **kwargs):
+        """
+        Cleanup the existing plots, then re-do the plottering
+        """
+        logger.info('Start Re-Plot Process!')
+
+        # make sure data exists for plottering
+        if not os.path.isdir(self.name):
+            raise Exception('Unable to find existing calibration in directory: %s' % self.name)
+
+        self.replot_calibration_for_iteration(**kwargs)
+
+    def replot_calibration_for_iteration(self, **kwargs):
+        """
+        start iteration loop
+        for each existing iteration, results all_results
+        """
+
+        # restore the existing calibration data
+        calib_data = self.read_calib_data()
+
+        # restore calibration results
+        results = calib_data.get('results')
+
+        latest_iteration = calib_data.get('iteration')
+        logger.info('latest_iteration = %s' % latest_iteration)
+
+        # before iteration loop
+        self.all_results = None
+
+        # consider delete-only plot option
+        delete_only = kwargs.get('delete') == 'DELETE'
+
+        # re-do plottering for each of the iterations
+        for i in range(0, latest_iteration + 1):
+            logger.info('Re-plottering for iteration: %d' % i)
+
+            # restore current iteration state
+            iter_directory = os.path.join(self.name, 'iter%d' % i)
+            self.iteration_state = self.retrieve_iteration_state(iter_directory)
+
+            # restore all_results for current iteration
+            self.restore_results_for_replot(results, i)
+
+            # cleanup the existing plots of the current iteration before generate new plots
+            map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
+
+            # consider the delete-only option
+            if not delete_only:
+                self.replot_for_iteration(i, latest_iteration)
+
+    def replot_for_iteration(self, iteration, latest_iteration):
+        """
+        for the iteration given,
+        re-plot and avoid duplicated re-plot
+        """
+        for plotter in self.plotters:
+            case1 = not isinstance(plotter, SiteDataPlotter.SiteDataPlotter)
+            case2 = isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration == latest_iteration
+            if case1 or case2:
+                plotter.visualize(self)
+
+    def restore_results_for_replot(self, results, iteration):
+        """
+        Restore summary results from serialized state.
+        """
+
+        if not results:
+            logger.info('No iteration cached results to reload from CalibManager.')
+            return
+
+        # restore results as DataFrame
+        self.all_results = pd.DataFrame.from_dict(results, orient='columns')
+
+        # finally restore all_results for current iteration
+        self.all_results = self.all_results[self.all_results.iteration <= iteration]
 
     def kill(self):
         """
