@@ -47,7 +47,7 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
         self.add(npyscreen.TitleText, editable=False, name="Global ini path", value=get_file_path(False), use_two_lines = True, begin_entry_at=0, rely=22)
 
         # Add warning
-        self.add(npyscreen.MultiLineEdit, editable=False, color='DANGER', rely=30, value=u"/!\\ This software is distributed as is, completely without warranty or service support.\r\n Institute for Disease Modeling and its employees are not liable for the condition or\r\n performance of the software.")
+        self.add(npyscreen.MultiLineEdit, editable=False, color='DANGER', rely=25, value=u"/!\\ This software is distributed as is, completely without warranty or service support.\r\n Institute for Disease Modeling and its employees are not liable for the condition or\r\n performance of the software.")
 
     def h_quit(self, item=None):
         """
@@ -55,7 +55,7 @@ class MainMenuForm(npyscreen.FormBaseNew, MenuForm):
         """
         npyscreen.blank_terminal()
         cleanup_empty_file()
-        exit()
+        self.parentApp.switchForm(None)
 
     def h_select_menu(self, item):
         """

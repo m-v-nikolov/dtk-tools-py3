@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 from importlib import import_module
 import json
 import logging
@@ -41,13 +42,18 @@ def load_config_module(config_name):
 
 
 def setup(args, unknownArgs):
-    # If we are on windows, resize the terminal
     if os.name == "nt":
-        os.system("mode con: cols=100 lines=35")
-    else:
-        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
+        # Get the current console size
+        output = subprocess.check_output("mode con", shell=True)
+        original_cols = output.split('\n')[3].split(':')[1].lstrip()
+        original_rows = output.split('\n')[4].split(':')[1].lstrip()
 
-    npyscreen.DISABLE_RESIZE_SYSTEM = True
+        # Resize only if needed
+        if int(original_cols) < 100 or int(original_rows) < 30:
+            os.system("mode con: cols=100 lines=30")
+    else:
+        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=30, cols=100))
+
     SetupApplication().run()
 
 
