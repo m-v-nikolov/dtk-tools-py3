@@ -208,4 +208,4 @@ class DemographicsTemplate(TaggedTemplate):
                     self.get_filename(), demog_filenames)
 
         self.set_params(params)
-        cb.add_input_file(self.filename.replace(".json", ""), self.get_contents())
+        cb.add_input_file(self.filename, self.get_contents())

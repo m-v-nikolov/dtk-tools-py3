@@ -355,11 +355,11 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
-        write_fn(self.config['parameters']['Campaign_Filename'].replace('.json', ''), dump(self.campaign))
+        write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
 
         if self.custom_reports:
             self.set_param('Custom_Reports_Filename', 'custom_reports.json')
-            write_fn('custom_reports', dump(format_reports(self.custom_reports)))
+            write_fn('custom_reports.json', dump(format_reports(self.custom_reports)))
 
         for name, content in self.demog_overlays.items():
             self.append_overlay('%s.json' % name)
@@ -368,6 +368,6 @@ class DTKConfigBuilder(SimConfigBuilder):
         for name, content in self.input_files.items():
             write_fn(name, dump(content))
 
-        write_fn('config', dump(self.config))
+        write_fn('config.json', dump(self.config))
 
-        write_fn('emodules_map', dump(self.emodules_map))
+        write_fn('emodules_map.json', dump(self.emodules_map))
