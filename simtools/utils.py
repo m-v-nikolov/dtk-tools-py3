@@ -48,7 +48,8 @@ def get_tools_revision():
     # Get the tools revision
     try:
         import subprocess
-        revision = subprocess.check_output(["git", "describe", "--tags"]).replace("\n", "")
+        file_dir = os.path.dirname(os.path.abspath(__file__))
+        revision = subprocess.check_output(["git", "describe", "--tags"], cwd=file_dir).replace("\n", "")
     except:
         revision = "Unknown"
 
