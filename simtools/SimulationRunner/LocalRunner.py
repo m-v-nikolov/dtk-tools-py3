@@ -22,6 +22,12 @@ class SimulationCommissioner(threading.Thread):
         self.lock = lock
 
     def run(self):
+        # Make sure the status is not set.
+        # If it is, dont touch this simulation
+        if self.check_state():
+            self.queue.get()
+            return
+
         with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
             with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
                 p = subprocess.Popen(self.eradication_command.split(),
@@ -43,7 +49,9 @@ class SimulationCommissioner(threading.Thread):
                 if "Done" in self.last_status_line():
                     self.change_state(status="Finished")
                 else:
-                    self.change_state(status="Failed")
+                    # If we exited with a Canceled status, dont update to Failed
+                    if not self.check_state() == 'Canceled':
+                        self.change_state(status="Failed")
 
                 # Free up an item in the queue
                 self.queue.get()
@@ -62,6 +70,30 @@ class SimulationCommissioner(threading.Thread):
 
         return msg if msg else ""
 
+    def check_state(self):
+        """
+        Returns the state of the simulation.
+        Returns: state of the simulation or None
+        """
+        # Acquire the lock
+        self.lock.acquire()
+
+        # Opeen the cache file
+        json_file = open(self.cache_path,'rb')
+        cache = json.load(json_file)
+
+        # Get the status
+        try:
+            status = cache['sims'][self.sim_id]['status']
+        except KeyError:
+            status = None
+
+        # Close the file and release the lock
+        json_file.close()
+        self.lock.release()
+
+        return status
+
     def change_state(self, status=None, message=None, pid = None):
         """
         Change either status, message or both for the simulation currently handled by the thread.
@@ -74,7 +106,8 @@ class SimulationCommissioner(threading.Thread):
         self.lock.acquire()
         try:
             # Open the metadata file
-            cache = json.load(open(self.cache_path, 'rb'))
+            json_file = open(self.cache_path, 'rb')
+            cache = json.load(json_file)
 
             # If we have a status, set it (same for message)
             if status:
@@ -92,6 +125,9 @@ class SimulationCommissioner(threading.Thread):
                 json.dump(cache, cache_file, indent=4)
 
         finally:
+            # Close the file
+            json_file.close()
+
             # To finish release the lock
             self.lock.release()
 

@@ -1,4 +1,6 @@
 import os
+import shutil
+
 from setuptools import setup, find_packages
 import platform
 
@@ -13,6 +15,9 @@ requirements = [
     'validators'
 ]
 
+current_directory = os.path.dirname(os.path.abspath(__file__))
+install_directory = os.path.join(current_directory, 'install')
+
 if platform.architecture() == ('64bit', 'WindowsPE'):
     # For windows + python x64 -> use the wheel
     import pip
@@ -20,16 +25,14 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     def install_package(package):
         pip.main(['install', package])
 
-    current = os.path.dirname(os.path.abspath(__file__))
-    install = os.path.join(current, 'install')
-    install_package(os.path.join(install, 'scipy-0.17.0-cp27-none-win_amd64.whl'))
-    install_package(os.path.join(install, 'numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl'))
-    install_package(os.path.join(install, 'matplotlib-1.5.1-cp27-none-win_amd64.whl'))
-    install_package(os.path.join(install, 'pandas-0.18.0-cp27-cp27m-win_amd64.whl'))
-    install_package(os.path.join(install, 'seaborn-0.7.0-py2.py3-none-any.whl'))
-    install_package(os.path.join(install, 'statsmodels-0.6.1-cp27-none-win_amd64.whl'))
-    install_package(os.path.join(install, 'npyscreen-4.10.5.tar.gz'))
-    install_package(os.path.join(install, 'curses-2.2-cp27-none-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'scipy-0.17.0-cp27-none-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'matplotlib-1.5.1-cp27-none-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'pandas-0.18.0-cp27-cp27m-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'seaborn-0.7.0-py2.py3-none-any.whl'))
+    install_package(os.path.join(install_directory, 'statsmodels-0.6.1-cp27-none-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'npyscreen-4.10.5.tar.gz'))
+    install_package(os.path.join(install_directory, 'curses-2.2-cp27-none-win_amd64.whl'))
     install_package('validators')
 
 if platform.architecture() == ('64bit', ''):
@@ -50,3 +53,7 @@ setup(name='dtk-tools',
       },
       package_data={'': ['simtools/simtools.ini']},
       zip_safe=False)
+
+# Copy the default.ini into the right directory if not already present
+if not os.path.exists(os.path.join(current_directory,'simtools','simtools.ini')):
+    shutil.copyfile(os.path.join(install_directory,'default.ini'), os.path.join(current_directory,'simtools','simtools.ini'))
