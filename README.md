@@ -1,3 +1,5 @@
+Documentation available: http://institutefordiseasemodeling.github.io/dtk-tools
+
 The `dtk` package is intended to strengthen and simplify the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
 
 Modules contained in this package are intended to:
