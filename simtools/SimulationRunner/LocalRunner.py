@@ -49,7 +49,9 @@ class SimulationCommissioner(threading.Thread):
                 if "Done" in self.last_status_line():
                     self.change_state(status="Finished")
                 else:
-                    self.change_state(status="Failed")
+                    # If we exited with a Canceled status, dont update to Failed
+                    if not self.check_state() == 'Canceled':
+                        self.change_state(status="Failed")
 
                 # Free up an item in the queue
                 self.queue.get()
