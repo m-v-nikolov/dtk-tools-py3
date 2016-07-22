@@ -198,7 +198,7 @@ class BaseTemplate(ITemplate):
         # Handle the case where we have a path like finishing by an indexed params (example: Events[1])
         groups = re.match(pattern, path_steps[-1]).groups()
         if not groups[1]:
-            return contents, path_steps[-1]
+            return contents, self.cast_value(path_steps[-1])
         return contents[self.cast_value(groups[0])], self.cast_value(groups[1])
 
     def cast_value(self, value):
