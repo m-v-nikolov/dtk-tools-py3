@@ -105,14 +105,21 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
 
         return sim_tags
 
-    def expand_tag(self, param):
+    def expand_tag(self, tag):
+        """
+        For a given tag, returns the list of all the paths where it is present
 
-        if '.' in param:
-            tokens = param.split('.')
+        Args:
+            tag: The tag we want to expand
+
+        Returns: an array containing all the paths for this tag or empty list if nowhere to be found
+        """
+        if '.' in tag:
+            tokens = tag.split('.')
             first_tok = tokens[0]
         else:
             tokens = []
-            first_tok = param
+            first_tok = tag
 
         if self.tag in first_tok:
             key = self.__extractKey(first_tok)

@@ -4,6 +4,7 @@ import unittest
 import sys
 from dtk.utils.builders.BaseTemplate import BaseTemplate
 from dtk.utils.builders.ConfigTemplate import ConfigTemplate
+from dtk.utils.builders.TaggedTemplate import TaggedTemplate
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 
 
@@ -115,6 +116,66 @@ class TestConfigTemplate(unittest.TestCase):
 
         self.assertEqual(self.ct.contents['Demographics_Filenames'][0], "test.json")
         self.assertEqual(cb.get_param('Demographics_Filenames')[0], "test.json")
+
+
+class TestTaggedTemplate(unittest.TestCase):
+    def setUp(self):
+        self.campaign_tpl = 'input/templates/campaign_template_simple.json'
+        self.tt = TaggedTemplate.from_file(self.campaign_tpl)
+
+    def test_basics(self):
+        # The tag is defaulted properly
+        self.assertEqual(self.tt.tag,"__KP")
+        # We found the correct ones
+        self.assertEqual(self.tt.tag_dict.keys()[0],'_Seeding_15_24_Male')
+        self.assertEqual(self.tt.tag_dict.keys()[1],'_Seeding_Year')
+        self.assertEqual(self.tt.tag_dict.keys()[2],'_STI_CoInfection_At_Debut')
+        # The file has been correctly read
+        campaign = json.load(open(self.campaign_tpl,'rb'))
+        self.assertEqual(self.tt.contents,campaign)
+        self.assertEqual(self.tt.filename,'campaign_template_simple.json')
+
+    def test_get_param(self):
+        # Test that the tags are actually retrieved properly
+        kpyears = self.tt.get_param('Start_Year__KP_Seeding_Year')
+        self.assertEqual(kpyears[1], [1981, 1982, 1983, 1984])
+        self.assertEqual(kpyears[0], ['Events.0.Start_Year', 'Events.1.Start_Year', 'Events.2.Start_Year', 'Events.3.Start_Year'])
+
+        kpdemcov = self.tt.get_param('Demographic_Coverage__KP_Seeding_15_24_Male')
+        self.assertEqual(kpdemcov[1], [0.03,0.05])
+        self.assertEqual(kpdemcov[0], ['Events.0.Event_Coordinator_Config.Demographic_Coverage', 'Events.2.Event_Coordinator_Config.Demographic_Coverage'])
+
+        kpintconf = self.tt.get_param('Intervention_Config__KP_STI_CoInfection_At_Debut')
+        self.assertEqual(kpintconf[1], [{"class": "NodeLevelHealthTriggeredIV","Actual_IndividualIntervention_Config":{"New_STI_CoInfection_Status": 1}}])
+        self.assertEqual(kpintconf[0], ['Events.4.Event_Coordinator_Config.Intervention_Config'])
+
+    def test_set_param(self):
+        # Test setting tag values
+        self.tt.set_param('Start_Year__KP_Seeding_Year',100)
+        self.assertEqual(self.tt.contents['Events'][0]['Start_Year'], 100)
+        self.assertEqual(self.tt.contents['Events'][1]['Start_Year'], 100)
+        self.assertEqual(self.tt.contents['Events'][2]['Start_Year'], 100)
+        self.assertEqual(self.tt.contents['Events'][3]['Start_Year'], 100)
+
+        # Lets try setting a more complicated value
+        self.tt.set_param('Start_Year__KP_Seeding_Year', [1,2,3])
+        self.assertEqual(self.tt.contents['Events'][0]['Start_Year'], [1,2,3])
+        self.assertEqual(self.tt.contents['Events'][1]['Start_Year'], [1,2,3])
+        self.assertEqual(self.tt.contents['Events'][2]['Start_Year'], [1,2,3])
+        self.assertEqual(self.tt.contents['Events'][3]['Start_Year'], [1,2,3])
+
+        # Lets try setting an even more complicated value
+        self.tt.set_param('Start_Year__KP_Seeding_Year', {'a':{'b':{'c':[1,2,3]}}})
+        self.assertEqual(self.tt.contents['Events'][0]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
+        self.assertEqual(self.tt.contents['Events'][1]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
+        self.assertEqual(self.tt.contents['Events'][2]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
+        self.assertEqual(self.tt.contents['Events'][3]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
+
+    def test_expand_tag(self):
+        self.assertEqual(self.tt.expand_tag('Start_Year__KP_Seeding_Year'), ['Events.0.Start_Year', 'Events.1.Start_Year', 'Events.2.Start_Year', 'Events.3.Start_Year'])
+        self.assertEqual(self.tt.expand_tag('Demographic_Coverage__KP_Seeding_15_24_Male'), ['Events.0.Event_Coordinator_Config.Demographic_Coverage', 'Events.2.Event_Coordinator_Config.Demographic_Coverage'])
+        self.assertEqual(self.tt.expand_tag('Intervention_Config__KP_STI_CoInfection_At_Debut'), ['Events.4.Event_Coordinator_Config.Intervention_Config'])
+        self.assertEqual(self.tt.expand_tag('doesnt_exist'), [])
 
 
 if __name__ == '__main__':
