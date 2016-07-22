@@ -75,7 +75,7 @@ class CompsSimulationCommissioner(threading.Thread):
                 s.SetTags(m)
 
                 for name, content in sim.items():
-                    s.AddFile(SimulationFile('%s.json' % name, 'input', 'The %s configuration file' % name), content)
+                    s.AddFile(SimulationFile('%s' % name, 'input', 'The %s configuration file' % name), content)
 
             Simulation.SaveAll()  # Batch save after all sims in list have been added
             self.sims = []

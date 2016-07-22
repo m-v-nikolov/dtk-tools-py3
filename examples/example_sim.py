@@ -1,6 +1,6 @@
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from simtools.ExperimentManager import ExperimentManagerFactory
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')

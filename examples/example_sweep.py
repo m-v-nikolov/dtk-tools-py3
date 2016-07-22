@@ -12,7 +12,7 @@ cb = DTKConfigBuilder.from_defaults('MALARIA_SIM',
                                     Num_Cores=1,
                                     Base_Population_Scale_Factor=0.1,
                                     x_Temporary_Larval_Habitat=0.05,
-                                    Simulation_Duration=365*5)
+                                    Simulation_Duration=365*20)
 
 run_sim_args =  {'config_builder': cb,
                  'exp_name': exp_name,
@@ -22,7 +22,7 @@ run_sim_args =  {'config_builder': cb,
 if __name__ == "__main__":
 
     from simtools.SetupParser import SetupParser
-    from simtools.ExperimentManager import ExperimentManagerFactory
+    from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
     sm = ExperimentManagerFactory.from_model(SetupParser().get('exe_path'), 'LOCAL')
     sm.run_simulations(**run_sim_args)

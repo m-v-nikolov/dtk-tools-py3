@@ -69,7 +69,7 @@ class SimConfigBuilder(object):
             os.makedirs(working_directory)
 
         def write_file(name, content):
-            filename = os.path.join(working_directory, '%s.json' % name)
+            filename = os.path.join(working_directory, '%s' % name)
             with open(filename, 'w') as f:
                 f.write(content)
 
@@ -86,7 +86,7 @@ class SimConfigBuilder(object):
 
     def file_writer(self, write_fn):
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
-        write_fn('config', dump(self.config))
+        write_fn('config.json', dump(self.config))
 
 
 class PythonConfigBuilder(SimConfigBuilder):
