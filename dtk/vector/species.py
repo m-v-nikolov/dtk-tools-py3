@@ -19,7 +19,7 @@ param_block = {
     "Indoor_Feeding_Fraction": 0.5,
     "Egg_Batch_Size": 100,
 
-    "Acquire_Modifier": 0.2, # VECTOR_SIM uses a factor here for human-to-mosquito infectiousness, while MALARIA_SIM explicitly models gametocytes
+    "Acquire_Modifier": 0.2,  # VECTOR_SIM uses a factor here for human-to-mosquito infectiousness, while MALARIA_SIM explicitly models gametocytes
     "Infected_Arrhenius_1": 117000000000,
     "Infected_Arrhenius_2": 8336,
     "Infected_Egg_Batch_Factor": 0.8,

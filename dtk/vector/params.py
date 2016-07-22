@@ -26,7 +26,7 @@ cohort_params = {
 
     "Enable_Temperature_Dependent_Feeding_Cycle": 0,
     "Enable_Vector_Aging": 0,
-    "Enable_Vector_Mortality": 0,
+    "Enable_Vector_Mortality": 1,
     "Enable_Vector_Migration": 0,
     "Enable_Vector_Migration_Human": 0,
     "Enable_Vector_Migration_Local": 0,

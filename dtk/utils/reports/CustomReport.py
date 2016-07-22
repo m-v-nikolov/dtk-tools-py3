@@ -22,7 +22,11 @@ class BaseReport(object):
         self.type = type
 
     def to_dict(self):
-        return {}
+        try:
+            d = dict(Pretty_Format=self.pretty_format)
+        except AttributeError:
+            d = dict()
+        return d
 
     def get_dll_path(self):
         dll = self.dlls.get(self.type, None)
@@ -53,11 +57,13 @@ class BaseEventReport(BaseReport):
         self.event_trigger_list = event_trigger_list
 
     def to_dict(self):
-        return {"Start_Day": self.start_day,
-                "Duration_Days": self.duration_days,
-                "Report_Description": self.report_description,
-                "Nodeset_Config": self.nodeset_config,
-                "Event_Trigger_List": self.event_trigger_list}
+        d = super(BaseEventReport, self).to_dict()
+        d.update({"Start_Day": self.start_day,
+                  "Duration_Days": self.duration_days,
+                  "Report_Description": self.report_description,
+                  "Nodeset_Config": self.nodeset_config,
+                  "Event_Trigger_List": self.event_trigger_list})
+        return d
 
 
 class BaseEventReportIntervalOutput(BaseEventReport):
