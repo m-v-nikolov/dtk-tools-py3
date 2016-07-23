@@ -126,10 +126,7 @@ class TestTaggedTemplate(unittest.TestCase):
     def test_basics(self):
         # The tag is defaulted properly
         self.assertEqual(self.tt.tag,"__KP")
-        # We found the correct ones
-        self.assertEqual(self.tt.tag_dict.keys()[0],'_Seeding_15_24_Male')
-        self.assertEqual(self.tt.tag_dict.keys()[1],'_Seeding_Year')
-        self.assertEqual(self.tt.tag_dict.keys()[2],'_STI_CoInfection_At_Debut')
+
         # The file has been correctly read
         campaign = json.load(open(self.campaign_tpl,'rb'))
         self.assertEqual(self.tt.contents,campaign)
@@ -171,11 +168,37 @@ class TestTaggedTemplate(unittest.TestCase):
         self.assertEqual(self.tt.contents['Events'][2]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
         self.assertEqual(self.tt.contents['Events'][3]['Start_Year'], {'a':{'b':{'c':[1,2,3]}}})
 
+    def test_set_params(self):
+        params = {
+            'Start_Year__KP_Seeding_Year': 3,
+            'Campaign_Name': 'test2',
+            'Events[4]': [1, 2, 3]
+
+        }
+        self.tt.set_params(params)
+        self.assertEqual(self.tt.contents['Campaign_Name'], 'test2')
+        self.assertEqual(self.tt.contents['Events'][4], [1, 2, 3])
+        self.assertEqual(self.tt.contents['Events'][0]['Start_Year'], 3)
+        self.assertEqual(self.tt.contents['Events'][1]['Start_Year'], 3)
+        self.assertEqual(self.tt.contents['Events'][2]['Start_Year'], 3)
+
     def test_expand_tag(self):
         self.assertEqual(self.tt.expand_tag('Start_Year__KP_Seeding_Year'), ['Events.0.Start_Year', 'Events.1.Start_Year', 'Events.2.Start_Year', 'Events.3.Start_Year'])
         self.assertEqual(self.tt.expand_tag('Demographic_Coverage__KP_Seeding_15_24_Male'), ['Events.0.Event_Coordinator_Config.Demographic_Coverage', 'Events.2.Event_Coordinator_Config.Demographic_Coverage'])
         self.assertEqual(self.tt.expand_tag('Intervention_Config__KP_STI_CoInfection_At_Debut'), ['Events.4.Event_Coordinator_Config.Intervention_Config'])
         self.assertEqual(self.tt.expand_tag('doesnt_exist'), [])
+
+    def test_findKeyPaths(self):
+        # The function is automatically called in the constructor
+        # Just check the tag_dict
+        paths = self.tt.tag_dict
+        self.assertEqual(paths.keys()[0], '_Seeding_15_24_Male')
+        self.assertEqual(paths.keys()[1], '_Seeding_Year')
+        self.assertEqual(paths.keys()[2], '_STI_CoInfection_At_Debut')
+        self.assertEqual(paths['_Seeding_Year'],['Events.0.Start_Year', 'Events.1.Start_Year', 'Events.2.Start_Year', 'Events.3.Start_Year'])
+        self.assertEqual(paths['_Seeding_15_24_Male'], ['Events.0.Event_Coordinator_Config.Demographic_Coverage', 'Events.2.Event_Coordinator_Config.Demographic_Coverage'])
+        self.assertEqual(paths['_STI_CoInfection_At_Debut'], ['Events.4.Event_Coordinator_Config.Intervention_Config'])
+
 
 
 if __name__ == '__main__':
