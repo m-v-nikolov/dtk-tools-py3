@@ -80,11 +80,10 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
         values = []
         expanded_params = self.expand_tag(param)
         for expanded_param in expanded_params:
-            # value = self.__get_expanded_param(expanded_param)
-            (_, value) = super(TaggedTemplate, self).get_param(expanded_param)
+            (param, value) = super(TaggedTemplate, self).get_param(expanded_param)
             values.append(value)
 
-        return (expanded_params, values)
+        return expanded_params, values
 
     def set_param(self, param, value):
         """
@@ -97,22 +96,34 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
         :return: Simulation tags
         """
         sim_tags = {}
-        for expanded_param in self.expand_tag(param):
-            tag = super(TaggedTemplate, self).set_param(expanded_param, value)
-            assert (len(tag) == 1)
-            sim_tags[tag.keys()[0]] = tag.values()[0]
-            sim_tags["[BUILDER] " + param] = value
+        expanded_tag = self.expand_tag(param)
+        if len(expanded_tag) != 0:
+            for expanded_param in expanded_tag:
+                tag = super(TaggedTemplate, self).set_param(expanded_param, value)
+                assert (len(tag) == 1)
+                sim_tags[tag.keys()[0]] = tag.values()[0]
+                sim_tags["[BUILDER] " + param] = value
+        else:
+            # If we try to set something other than a tag -> use the old method
+            sim_tags = super(TaggedTemplate,self).set_param(param, value)
 
         return sim_tags
 
-    def expand_tag(self, param):
+    def expand_tag(self, tag):
+        """
+        For a given tag, returns the list of all the paths where it is present
 
-        if '.' in param:
-            tokens = param.split('.')
+        Args:
+            tag: The tag we want to expand
+
+        Returns: an array containing all the paths for this tag or empty list if nowhere to be found
+        """
+        if '.' in tag:
+            tokens = tag.split('.')
             first_tok = tokens[0]
         else:
             tokens = []
-            first_tok = param
+            first_tok = tag
 
         if self.tag in first_tok:
             key = self.__extractKey(first_tok)

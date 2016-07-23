@@ -1,6 +1,8 @@
 import abc
 import os
 import logging
+
+import re
 from dtk.utils.parsers.JSON import json2dict
 
 logger = logging.getLogger(__name__)
@@ -88,7 +90,7 @@ class BaseTemplate(ITemplate):
         :param template_file: Path to the file on disk.
         """
         # Read in template
-        logger.info("Reading config template from file:", template_filepath)
+        logger.info("Reading config template from file: %s" % template_filepath)
         contents = json2dict(template_filepath)
 
         # Get the filename and create a ConfigTemplate
@@ -112,7 +114,7 @@ class BaseTemplate(ITemplate):
 
         # First time looking for this parameter.  Try to find it and add to list of known parameters
         try:
-            value = self.get_param(param)
+            self.get_param(param)
             is_param = True
         except (KeyError, TypeError, IndexError) as e:
             is_param = False
@@ -126,23 +128,24 @@ class BaseTemplate(ITemplate):
         :param param: The parameter, may contain '.' and numeric indices, '[0]',  e.g. Events[3].Start_Day
         :return: A tuple of (value, param)
         """
+        contents, key = self.get_param_handle(param)
 
-        path_steps = param.split('.')
-        value = self.contents
+        return param, contents[key]
 
-        for path_step in path_steps:
-            if '[' in path_step:
-                subpaths = path_step.split('[')
-                assert (subpaths[1][-1] == ']')
-                path_step = subpaths[0]
-                index = int(float(subpaths[1][:-1]))
-                value = value[self.cast_value(path_step)]
-                value = value[index]
-            else:
-                # If the step is a number, we are in a list, we need to cast the step to int
-                value = value[self.cast_value(path_step)]
+    def set_param(self, param, value):
+        """
+        Call set_param to set a parameter in the template file.  List indices can be provided via brackets or dots, e.g.
+        * Events[3].Whatever
+        * Events.3.Whatever
 
-        return (param, value)
+        :param param: The parameter to set, e.g. Base_Infectivity
+        :param value: The value to place at expanded parameter loci.
+        :return: Simulation tags
+        """
+        contents, key = self.get_param_handle(param)
+        contents[key] = self.cast_value(value)
+
+        return {"[" + self.get_filename() + "] " + param: value}
 
     def set_params(self, params):
         """
@@ -159,35 +162,44 @@ class BaseTemplate(ITemplate):
 
         return sim_tags
 
-    def set_param(self, param, value):
+    def get_param_handle(self,path):
         """
-        Call set_param to set a parameter in the template file.  List indices can be provided via brackets or dots, e.g.
-        * Events[3].Whatever
-        * Events.3.Whatever
+        Get the parameter handle.
+        This function basically returns the dictionary pointer and parameter depending on the path passed.
 
-        :param param: The parameter to set, e.g. Base_Infectivity
-        :param value: The value to place at expanded parameter loci.
-        :return: Simulation tags
+        Examples:
+            contents, key = self.get_param_handle('Events[0].class')
+            print contents[key] # prints CampaignEventByYear
+            contents[key] = 'test'
+            # Now contents['Events'][0]['class'] is set to 'test'
+
+        Args:
+            path: path to the parameter
+
+        Returns:
+            contents: the dictionary 'pointer'
+            key: the key corresponding to the parameter
+
         """
+        path_steps = path.split('.')
+        contents = self.contents
+        pattern = '(\w+)\[*(\d*)\]*'
 
-        path_steps = param.split('.')
-        current_parameter = self.contents
+        # Traverse until we reach the last parameter
+        for path_step_index in range(len(path_steps) - 1):
+            path_step = path_steps[path_step_index]
+            # Match either something or something[digit]
+            groups = re.match(pattern, path_step).groups()
+            # Always traverse the first group
+            contents = contents[self.cast_value(groups[0])]
+            # And traverse the rest if it exists
+            contents = contents[self.cast_value(groups[1])] if groups[1] else contents
 
-        for path_step in path_steps[:-1]:
-            if '[' in path_step:
-                subpaths = path_step.split('[')
-                assert (subpaths[1][-1] == ']')
-                path_step = subpaths[0]
-                index = int(float(subpaths[1][:-1]))
-                current_parameter = current_parameter[self.cast_value(path_step)]
-                current_parameter = current_parameter[index]
-            else:
-                # If the step is a number, we are in a list, we need to cast the step to int
-                current_parameter = current_parameter[self.cast_value(path_step)]
-
-        current_parameter[path_steps[-1]] = self.cast_value(value)
-
-        return {"[" + self.get_filename() + "] " + param: value}
+        # Handle the case where we have a path like finishing by an indexed params (example: Events[1])
+        groups = re.match(pattern, path_steps[-1]).groups()
+        if not groups[1]:
+            return contents, self.cast_value(path_steps[-1])
+        return contents[self.cast_value(groups[0])], self.cast_value(groups[1])
 
     def cast_value(self, value):
         """
@@ -209,3 +221,6 @@ class BaseTemplate(ITemplate):
                 casted_value = value
 
         return casted_value
+
+    def set_params_and_modify_cb(self, params, cb):
+        pass

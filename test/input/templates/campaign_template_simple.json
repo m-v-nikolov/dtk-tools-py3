@@ -1,0 +1,50 @@
+{
+    "Campaign_Name": "4E_Health_Care_Model_Baseline", 
+    "Default_Campaign_Path": "defaults/hiv_default_campaign.json", 
+    "Use_Defaults": 1,
+    "Events":
+    [
+        {
+            "Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1981,
+            "Event_Coordinator_Config":
+            {
+                "Demographic_Coverage__KP_Seeding_15_24_Male": "<-- MARKER",
+                "Demographic_Coverage": 0.03
+            }
+        },
+        {
+            "Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1982
+        },
+        {
+            "Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1983,
+            "Event_Coordinator_Config":
+            {
+                "Demographic_Coverage__KP_Seeding_15_24_Male": "<-- MARKER",
+                "Demographic_Coverage": 0.05
+            }
+        },
+        {
+            "Start_Year__KP_Seeding_Year": "<-- MARKER",
+            "Start_Year": 1984
+        },
+        {
+            "class": "CampaignEvent",
+            "Event_Coordinator_Config":
+            {
+                "class": "StandardInterventionDistributionEventCoordinator",
+                "Intervention_Config__KP_STI_CoInfection_At_Debut": "<-- MARKER",
+                "Intervention_Config":
+                {
+                    "class": "NodeLevelHealthTriggeredIV",
+                    "Actual_IndividualIntervention_Config":
+                    {
+                        "New_STI_CoInfection_Status": 1
+                    }
+                }
+            }
+        }
+    ]
+}
