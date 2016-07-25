@@ -22,11 +22,11 @@ from dtk.utils.analyzers.select import example_selection
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
     'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
 }
-
 
 def load_config_module(config_name):
     # Support of relative paths
@@ -279,6 +279,8 @@ def analyze(args, unknownArgs):
     import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
     plt.show()
 
+def analyze_list(args, unknownArgs):
+    logging.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -402,10 +404,14 @@ def main():
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
+    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script or builtin analyzer name for custom analysis of simulations.')
     parser_analyze.add_argument('-c', '--comps', action = 'store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func = analyze)
+
+    # 'dtk analyze-list' options
+    parser_analyze_list = subparsers.add_parser('analyze-list', help = 'AList the available builtin analyzers.')
+    parser_analyze_list.set_defaults(func = analyze_list)
 
     # 'dtk setup' options
     parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
