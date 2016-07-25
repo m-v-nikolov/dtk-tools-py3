@@ -190,7 +190,7 @@ class CalibManager(object):
         """
 
         if self.iteration_state.simulations:
-            logger.info('Reloading simulation data from cached iteration state.')
+            logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration_state.iteration)
             self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations)
         else:
             self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
@@ -489,10 +489,7 @@ class CalibManager(object):
         self.all_results = pd.DataFrame.from_dict(results, orient='columns')
         self.all_results.set_index('sample', inplace=True)
 
-        # zdu: after restore state, self.iteration_state.results is not None any more
-        # last_iteration = iteration if not self.iteration_state.results else iteration - 1
-        # Fix
-        last_iteration = iteration
+        last_iteration = iteration if self.iteration_state and self.iteration_state.results else iteration - 1
 
         self.all_results = self.all_results[self.all_results.iteration <= last_iteration]
         logger.info('Restored results from iteration %d', last_iteration)
@@ -530,6 +527,16 @@ class CalibManager(object):
 
         iter_directory = os.path.join(self.name, 'iter%d' % iteration)
         self.iteration_state = self.retrieve_iteration_state(iter_directory)
+
+        # Empty the results and ...
+        self.iteration_state.results = {}
+        if self.iteration == 0:
+            self.iteration_state.next_point["gaussian_covariances"] = []
+            self.iteration_state.next_point["gaussian_probs"] = []
+            self.iteration_state.next_point["gaussian_centers"] = []
+            self.iteration_state.next_point["priors"] = []
+            self.iteration_state.next_point["results"] = []
+
         self.restore_results(calib_data.get('results'), iteration)
         if iter_step:
             self.iteration_state.reset_to_step(iter_step)
