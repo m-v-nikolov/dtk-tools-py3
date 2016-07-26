@@ -240,6 +240,34 @@ drug_params = {
     "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 9, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 14, "Fraction_Of_Adult_Dose": 0.67}]
   },
 
+  "Abstract": { # abstracted drug
+     # Drug PkPd
+    "Drug_Cmax": 100, 
+    "Drug_Decay_T1": 10, 
+    "Drug_Decay_T2": 10, 
+    "Drug_Vd": 1, 
+    "Drug_PKPD_C50": 10, 
+
+    # Treatment regimen
+    "Drug_Fulltreatment_Doses": 3, 
+    "Drug_Dose_Interval": 1, 
+
+    # These are daily parasite killing rates for:
+    "Drug_Gametocyte02_Killrate": 0.0,   # ... gametocyte - early stages
+    "Drug_Gametocyte34_Killrate": 0.0,   # ...            - late stages
+    "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
+    "Drug_Hepatocyte_Killrate":   0.0,   # ... hepatocytes
+    "Max_Drug_IRBC_Kill":         4.8,   # ... asexual parasites
+
+    # Adherence rate for subsequent doses
+    "Drug_Adherence_Rate" : 1.0,
+
+    # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+    "Bodyweight_Exponent": 1,
+    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 3, "Fraction_Of_Adult_Dose": 0.25},{"Upper_Age_In_Years": 6, "Fraction_Of_Adult_Dose": 0.5},{"Upper_Age_In_Years": 10, "Fraction_Of_Adult_Dose": 0.75}]
+  },
+
+
     "Vehicle": { #empty drug
      # Drug PkPd
     "Drug_Cmax": 10,
@@ -311,6 +339,14 @@ drug_cfg = {
     "MDA_DP": {
         "dosing" : "FullTreatmentCourse",
         "drugs" : ["DHA", "Piperaquine"]
+    },
+    "MDA_DA": {
+        "dosing" : "FullTreatmentCourse",
+        "drugs" : ["DHA", "Abstract"]
+    },
+    "MDA_DHA": {
+        "dosing" : "FullTreatmentCourse",
+        "drugs" : ["DHA"]
     },
     "MDA_PPQ": {
         "dosing" : "FullTreatmentCourse",

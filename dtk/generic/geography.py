@@ -341,11 +341,11 @@ geographies = {
                   "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive',
                                     'Give_Drugs', 'Spray_IRS', 'Drug_Campaign_Blackout', 'IRS_Blackout', 'Node_Sprayed',
                                     'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle',
-                                    'Received_Test', 'Received_RCD_Drugs'] + ["Diagnostic_Survey_%d" % x for x in
+                                    'Received_Test', 'Received_RCD_Drugs', 'Received_Survey'] + ["Diagnostic_Survey_%d" % x for x in
                                                                               range(5)],
                   "Report_Event_Recorder_Events": ["NewClinicalCase", 'Received_Campaign_Drugs', 'Received_RCD_Drugs',
                                                    'Received_Treatment', 'TestedPositive', 'Received_ITN',
-                                                   'Received_Test', 'Node_Sprayed'],
+                                                   'Received_Test', 'Node_Sprayed', 'Received_Survey'],
 
                   "Enable_Climate_Stochasticity": 0,  # daily in raw data series
                   "Climate_Model": "CLIMATE_BY_DATA",
@@ -359,6 +359,7 @@ geographies = {
                   "Enable_Migration_Heterogeneity": 1,
                   "Migration_Model": "FIXED_RATE_MIGRATION",
                   "Enable_Local_Migration": 1,
+                  "Enable_Regional_Migration": 0,
                   "Migration_Pattern": "SINGLE_ROUND_TRIPS",
                   "Local_Migration_Roundtrip_Duration": 3.0,
                   "Local_Migration_Roundtrip_Probability": 1.0,
