@@ -53,7 +53,7 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     for coverage_by_age in coverage_by_ages:
 
         ITN_event = { "class" : "CampaignEvent",
-                      "Start_Day": start,
+                      "Start_Day": int(start),
                       "Event_Coordinator_Config": {
                           "class": "StandardInterventionDistributionEventCoordinator",
                           "Target_Residents_Only" : 1,
