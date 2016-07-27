@@ -227,10 +227,12 @@ class CommandlineGenerator(object):
     def Options(self):
         options = []
         for k, v in self._options.items():
+            # Handles spaces
+            value = '"%s"' % v if ' ' in v else v
             if k[-1] == ':':
-                options.append(k + v)  # if the option ends in ':', don't insert a space
+                options.append(k + value)  # if the option ends in ':', don't insert a space
             else:
-                options.extend([k, v])  # otherwise let join (below) add a space
+                options.extend([k, value])  # otherwise let join (below) add a space
 
         return ' '.join(options)
 
