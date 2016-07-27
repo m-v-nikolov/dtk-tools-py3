@@ -1,44 +1,10 @@
-from datetime import datetime
 import logging
 import os
 import re
-import subprocess
 import threading
-from time import sleep
+from datetime import datetime
 
 import utils
-
-
-class SimulationCommissioner(threading.Thread):
-    """
-    A class to commission a local simulation.
-    Threads are spawned for each simulation to run on the local machine.
-    """
-
-    def __init__(self, sim_dir=None, eradication_command=None, queue=None):
-        threading.Thread.__init__(self)
-        self.sim_dir = sim_dir
-        self.eradication_command = eradication_command
-        self.sim_id = os.path.basename(self.sim_dir) if sim_dir else None
-        self.queue = queue
-        self._job_id= None
-
-    def run(self):
-        with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
-            with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
-                p = subprocess.Popen(self.eradication_command.Commandline.split(),
-                                     cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
-                self._job_id = p.pid
-                p.wait()
-                self.queue.get()
-
-    @property
-    def job_id(self):
-        timeout = 10
-        while not self._job_id and timeout > 0:
-            sleep(0.01)
-            timeout-=1
-        return self._job_id
 
 
 class CompsSimulationCommissioner(threading.Thread):
@@ -98,7 +64,7 @@ class CompsSimulationCommissioner(threading.Thread):
 
     @staticmethod
     def create_experiment(setup, config_builder, exp_name, bin_path, input_args, suite_id=None):
-        from COMPS.Data import Configuration, HPCJob__Priority, Experiment, Suite
+        from COMPS.Data import Configuration, HPCJob__Priority, Experiment
 
         utils.COMPS_login(setup.get('server_endpoint'))
 
