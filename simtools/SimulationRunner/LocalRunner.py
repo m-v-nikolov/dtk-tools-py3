@@ -32,7 +32,7 @@ class SimulationCommissioner(threading.Thread):
         with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
             with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
                 # Use of shlex to smartly split the command (and handles spaces in parameters)
-                p = subprocess.Popen(shlex.split(shlex.split(self.eradication_command, posix= not os.name == 'nt')),
+                p = subprocess.Popen(shlex.split(self.eradication_command, posix=(not os.name == 'nt')),
                                      cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
