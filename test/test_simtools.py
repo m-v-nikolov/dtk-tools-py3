@@ -33,8 +33,8 @@ class TestConfigBuilder(unittest.TestCase):
 
     def test_dump_to_string(self):
         s = self.cb.dump_files_to_string()
-        self.assertListEqual(s.keys(), ['config'])
-        self.assertDictEqual(eval(s['config']), dict(Simulation_Type='DUMMY'))
+        self.assertListEqual(s.keys(), ['config.json'])
+        self.assertDictEqual(eval(s['config.json']), dict(Simulation_Type='DUMMY'))
 
     def test_dump_to_file(self):
         self.cb.dump_files(os.getcwd())

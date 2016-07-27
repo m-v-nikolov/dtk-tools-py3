@@ -6,8 +6,8 @@ from COMPS import Client
 
 
 class TestIniFile(unittest.TestCase):
-    # def setUp(self):
-    #     print "Successfully loaded ini file"
+    def tearDown(self):
+        SetupParser.selected_block = SetupParser.setup_file = None
 
     def test_get_attributes(self):
         ini = SetupParser(None, 'ini\\test_simtools.ini', False)
