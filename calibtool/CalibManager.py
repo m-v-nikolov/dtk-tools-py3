@@ -191,7 +191,7 @@ class CalibManager(object):
 
         if self.iteration_state.simulations:
             logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration_state.iteration)
-            self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations)
+            self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations, self.location)
         else:
             self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
             if not self.suite_id:
@@ -270,7 +270,7 @@ class CalibManager(object):
             return self.iteration_state.results['total']
 
         exp_data = self.iteration_state.simulations
-        exp_manager = ExperimentManagerFactory.from_data(exp_data)
+        exp_manager = ExperimentManagerFactory.from_data(exp_data, self.location)
         for site in self.sites:
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
@@ -530,6 +530,7 @@ class CalibManager(object):
 
         # Empty the results and ...
         self.iteration_state.results = {}
+        self.iteration_state.simulations = {}
         if self.iteration == 0:
             self.iteration_state.next_point["gaussian_covariances"] = []
             self.iteration_state.next_point["gaussian_probs"] = []
@@ -641,7 +642,7 @@ class CalibManager(object):
         it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
 
         # Retrieve the experiment manager and cancel all
-        exp_manager = ExperimentManagerFactory.from_data(it.simulations)
+        exp_manager = ExperimentManagerFactory.from_data(it.simulations, self.location)
 
         if self.location == "LOCAL":
             # LOCAL calibration

@@ -39,9 +39,9 @@ class ExperimentManagerFactory(object):
         return cls.factory(location)(setup.get('exe_path'), {}, setup)
 
     @classmethod
-    def from_data(cls, exp_data):
+    def from_data(cls, exp_data, location='LOCAL'):
         logger.info('Reloading ExperimentManager from experiment data')
-        return cls.factory(exp_data['location'])('', exp_data)
+        return cls.factory(location)('', exp_data)
 
     @classmethod
     def from_file(cls, exp_data_path, suppress_logging=False, force_block=False):
