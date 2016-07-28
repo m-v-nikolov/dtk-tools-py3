@@ -3,10 +3,8 @@ import os
 import shlex
 import subprocess
 import threading
-
-from multiprocessing import Queue
-
 import time
+from multiprocessing import Queue
 
 
 class SimulationCommissioner(threading.Thread):
@@ -31,9 +29,16 @@ class SimulationCommissioner(threading.Thread):
 
         with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
             with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
-                # Use of shlex to smartly split the command (and handles spaces in parameters)
-                p = subprocess.Popen(shlex.split(self.eradication_command, posix=(not os.name == 'nt')),
-                                     cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
+                # On windows we want to pass the command to popen as a string
+                # On Unix, we want to pass it as a sequence
+                # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
+                if os.name == "nt":
+                    command = self.eradication_command
+                else:
+                    command = shlex.split(self.eradication_command)
+
+                # Launch the command
+                p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
                 self.change_state(status="Running", pid = p.pid)
@@ -45,7 +50,7 @@ class SimulationCommissioner(threading.Thread):
                     self.change_state(message=self.last_status_line())
 
                 # Remove "pid" from cached json file.
-                self.change_state(pid = -1)
+                self.change_state(pid=-1)
 
                 # When poll returns None, the process is done, test if succeeded or failed
                 if "Done" in self.last_status_line():
