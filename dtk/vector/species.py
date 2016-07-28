@@ -66,16 +66,25 @@ farauti_param_block.update(mod_farauti_params)
 # An. maculatus
 # http://www.bioone.org/doi/full/10.3376/038.034.0108
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-maculatus/
+# previous to 160722, maculatus block had
+#    "Larval_Habitat_Types": {
+#        "WATER_VEGETATION": 1e7
+#    },
+#    "Anthropophily": 0.3,
+#    "Indoor_Feeding_Fraction": 0.4,
+# on 160722, modified to Trung Trop Med Intl Health 2005 data from Ratanakiri
+# maculatus seasonal with rainfall (Durnez Malar J 2013)
 maculatus_param_block = copy.deepcopy(param_block)
 mod_maculatus_params = {
 
     "Larval_Habitat_Types": {
-        "WATER_VEGETATION": 1e7
+        "TEMPORARY_RAINFALL": 1e7,
+        "CONSTANT": 1e6
     },
     "Adult_Life_Expectancy": 7,
     "Days_Between_Feeds": 3,
-    "Anthropophily": 0.3,
-    "Indoor_Feeding_Fraction": 0.4,
+    "Anthropophily": 0.5,
+    "Indoor_Feeding_Fraction": 0.05,
     "Egg_Batch_Size": 70,
     "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
@@ -85,21 +94,70 @@ maculatus_param_block.update(mod_maculatus_params)
 # An. minimus
 # http://www.bioone.org/doi/abs/10.1603/033.046.0511
 # http://www.map.ox.ac.uk/explore/mosquito-malaria-vectors/bionomics/anopheles-minimus/
+# previous to 160722, minimus block had
+#    "Larval_Habitat_Types": {
+#        "WATER_VEGETATION": 1e7
+#    },
+#    "Anthropophily": 0.93,
+#    "Indoor_Feeding_Fraction": 0.95,
+# on 160722, modified to Trung Trop Med Intl Health 2005 data from Ratanakiri
+# minimus more present during drier periods after rainy season
 minimus_param_block = copy.deepcopy(param_block)
 mod_minimus_params = {
 
     "Larval_Habitat_Types": {
-        "WATER_VEGETATION": 1e7
+        "WATER_VEGETATION": 1e7 # update habitat type?
     },
     "Adult_Life_Expectancy": 7,
     "Days_Between_Feeds": 3,
-    "Anthropophily": 0.93,
-    "Indoor_Feeding_Fraction": 0.95,
+    "Anthropophily": 0.5,
+    "Indoor_Feeding_Fraction": 0.5,
     "Egg_Batch_Size": 70,
     "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
 }
 minimus_param_block.update(mod_minimus_params)
+
+# An. dirus
+# Trung Trop Med Intl Health 2005
+# Durnez Malar J 2013
+# dirus more abundant during rainy season but also some constant portion in forest
+dirus_param_block = copy.deepcopy(param_block)
+mod_dirus_params = {
+
+    "Larval_Habitat_Types": {
+        "TEMPORARY_RAINFALL": 1e7,
+        "CONSTANT": 1e6
+    },
+    "Adult_Life_Expectancy": 7,
+    "Days_Between_Feeds": 3,
+    "Anthropophily": 0.95,
+    "Indoor_Feeding_Fraction": 0.3,
+    "Egg_Batch_Size": 70,
+    "Acquire_Modifier": 0.2,
+    "Transmission_Rate": 0.8
+}
+dirus_param_block.update(mod_dirus_params)
+
+
+# An. albimanus
+# CDC Malar J 2016 review
+albimanus_param_block = copy.deepcopy(param_block)
+mod_albimanus_params = {
+
+    "Larval_Habitat_Types": { # seasonal with rainfall
+        "TEMPORARY_RAINFALL": 1e7,
+        "CONSTANT": 1e6
+    },
+    "Adult_Life_Expectancy": 5, # daily survival rate somewhere between 0.7 and 0.9
+    "Days_Between_Feeds": 3, # observed 2.6 to 5.2
+    "Anthropophily": 0.5,
+    "Indoor_Feeding_Fraction": 0.1,
+    "Egg_Batch_Size": 70,
+    "Acquire_Modifier": 0.2, # ?
+    "Transmission_Rate": 0.8 # ?
+}
+albimanus_param_block.update(mod_albimanus_params)
 
 # Dictionary of params by species name
 vector_params_by_species = {
@@ -108,7 +166,9 @@ vector_params_by_species = {
     "farauti": farauti_param_block,
     "gambiae": gambiae_param_block,
     "maculatus": maculatus_param_block,
-    "minimus": minimus_param_block
+    "minimus": minimus_param_block,
+    "dirus": dirus_param_block,
+    "albimanus": albimanus_param_block
 }
 
 

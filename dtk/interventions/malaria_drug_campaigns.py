@@ -3,7 +3,7 @@ from dtk.interventions.malaria_diagnostic import add_diagnostic_survey, add_trig
 from copy import deepcopy
 
 def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, interval=60, diagnostic_threshold=40, node_selection_type='DISTANCE_ONLY',
-                      trigger_coverage=1.0, snowballs=0, delay=0, nodes={"class": "NodeSetAll"}, target_group='Everyone'):
+                      trigger_coverage=1.0, snowballs=0, delay=0, nodes={"class": "NodeSetAll"}, target_group='Everyone', dosing=''):
     """
     Add a drug campaign defined by the parameters to the config builder.
 
@@ -26,6 +26,9 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
     campaign_type = drug_code.split('_')[0]
     drugs = drug_code.split('_')[-1]
     drug_configs = drug_configs_from_code(cb,'MDA_' + drugs)
+    if dosing != '' :
+        for i in range(len(drug_configs)) :
+            drug_configs[i]['Dosing_Type'] = dosing
 
     receiving_drugs_event = {
             "class": "BroadcastEvent",
@@ -66,6 +69,26 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
             add_diagnostic_survey(cb, coverage=coverage, repetitions=repetitions, tsteps_btwn=interval, target=target_group, start_day=start_day, 
                                     diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
                                     nodes=nodes, positive_diagnosis_configs= drug_configs + [receiving_drugs_event] )
+
+    elif campaign_type == 'SMC' :
+        for start_day in start_days:
+            drug_event = {
+                "class": "CampaignEvent",
+                "Start_Day": start_day,
+                "Event_Coordinator_Config": {
+                    "class": "MultiInterventionEventCoordinator",
+                    "Target_Demographic": "ExplicitAgeRanges",  # Otherwise default is Everyone
+                    "Target_Age_Min": target['agemin'],
+                    "Target_Age_Max": target['agemax'],
+                    "Demographic_Coverage": coverage,
+                    "Intervention_Configs": drug_configs + [receiving_drugs_event],
+                    "Number_Repetitions": repetitions,
+                    "Timesteps_Between_Repetitions": interval
+                    }, 
+                "Nodeset_Config": nodes
+                }
+
+            cb.add_event(drug_event)
 
     elif campaign_type == 'rfMSAT' :
 
@@ -172,7 +195,12 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
         cb.add_event(fmda_distribute_drugs)
 
     else :
-        return
+        pass
+    return { 'drug_campaign.type' : drug_code,
+             'drug_campaign.trigger_coverage' : trigger_coverage,
+             'drug_campaign.coverage' : coverage
+             }
+
     """ think more about how to set this up
     elif campaign_type in ['borderscreen'] :
         drug_configs = drug_configs_from_code(cb,'MDA_' + drugs)

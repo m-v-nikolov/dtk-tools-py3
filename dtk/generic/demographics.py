@@ -14,6 +14,7 @@ params = {
     "Enable_Demographics_Initial": 1,
     "Enable_Demographics_Other": 1,
     "Enable_Demographics_Reporting": 0,
+    "Enable_Demographics_Builtin":0,
 
     "Enable_Immunity_Initialization_Distribution": 0,  # compatibility with EMOD v2.0 and earlier
     "Immunity_Initialization_Distribution_Type": "DISTRIBUTION_OFF",
@@ -197,6 +198,9 @@ def set_static_demographics(cb, use_existing=False):
     }
 
     def set_attributes(d):
+        if not 'IndividualAttributes' in d:
+            d['IndividualAttributes'] = {}
+
         d['IndividualAttributes'].update(
             {"MortalityDistribution": mod_mortality,
              "AgeDistributionFlag": distribution_types["EXPONENTIAL_DISTRIBUTION"],

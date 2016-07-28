@@ -38,10 +38,10 @@ class PrevalenceByRoundAnalyzer(BaseAnalyzer):
         except KeyError :
             raise Exception('%s requires \'testdays\' input in site setup' % self.name)
 
-        self.filenames = ['ReportMalariaFiltered.json']
+        self.filenames = ['output/ReportMalariaFiltered.json']
         if 'regions' in self.setup :
             self.regions = self.setup['regions']
-            filenames = ['ReportMalariaFiltered' + x + '.json' for x in self.regions if x != 'all']
+            filenames = ['output/ReportMalariaFiltered' + x + '.json' for x in self.regions if x != 'all']
             if 'all' in self.regions :
                 self.filenames += filenames
                 self.regions.insert(0, self.regions.pop(self.regions.index('all')))

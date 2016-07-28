@@ -1,3 +1,5 @@
+import copy
+
 ''' OLD
 # IRS parameters
 irs_housingmod = {"class": "IRSHousingModification",
@@ -33,8 +35,8 @@ node_irs_config = { "Reduction_Config": {
                     "Cost_To_Consumer": 1.0, 
                     "Habitat_Target": "ALL_HABITATS", 
                     "Killing_Config": {
-                        "Decay_Time_Constant": 365, 
-                        "Initial_Effect": 0.7, 
+                        "Decay_Time_Constant": 90, 
+                        "Initial_Effect": 0.5, 
                         "class": "WaningEffectExponential"
                     }, 
                     "Spray_Kill_Target": "SpaceSpray_Indoor", 
@@ -81,7 +83,7 @@ def add_IRS(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
         
 
         IRS_event = {"class": "CampaignEvent",
-                     "Start_Day": start,
+                     "Start_Day": int(start),
                      "Event_Coordinator_Config": {
                          "class": "StandardInterventionDistributionEventCoordinator",
                          "Demographic_Coverage": coverage_by_age["coverage"],
@@ -130,7 +132,7 @@ def add_node_IRS(config_builder, start, coverage=1.0, initial_killing=0.7, box_d
                     "Nodeset_Config": {
                         "class": "NodeSetAll"
                     }, 
-                    "Start_Day": start, 
+                    "Start_Day": int(start), 
                     "Event_Name": "Node Level IRS",
                     "class": "CampaignEvent"
                 }
