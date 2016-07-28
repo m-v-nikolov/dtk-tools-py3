@@ -188,9 +188,12 @@ class BaseExperimentManager:
         Refresh the exp_data with what is in the json metadata
         :return:
         """
-        cache_file_path = os.path.join(os.getcwd(), 'simulations',
-                                       "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
-        self.exp_data = json.load(open(cache_file_path))
+        cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
+
+        try:
+            self.exp_data = json.load(open(cache_file_path))
+        except:
+            logger.info('Experiment data file locked.')
 
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
