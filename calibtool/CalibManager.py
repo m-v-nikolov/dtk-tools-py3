@@ -14,6 +14,7 @@ from simtools import utils
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
+from core.utils.time import verbose_timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +165,7 @@ class CalibManager(object):
         # Print the calibration finish time
         current_time = datetime.now()
         calibration_time_elapsed = current_time - self.calibration_start
-        logger.info("Calibration done (took %s)" % utils.verbose_timedelta(calibration_time_elapsed))
+        logger.info("Calibration done (took %s)" % verbose_timedelta(calibration_time_elapsed))
 
         self.finalize_calibration()
 
@@ -229,8 +230,8 @@ class CalibManager(object):
             logger.info('Calibration started: %s' % self.calibration_start)
             logger.info('Current iteration: Iteration %s' % self.iteration)
             logger.info('Current Iteration Started: %s', self.iteration_start)
-            logger.info('Time since iteration started: %s' % utils.verbose_timedelta(iteration_time_elapsed))
-            logger.info('Time since calibration started: %s\n' % utils.verbose_timedelta(calibration_time_elapsed))
+            logger.info('Time since iteration started: %s' % verbose_timedelta(iteration_time_elapsed))
+            logger.info('Time since calibration started: %s\n' % verbose_timedelta(calibration_time_elapsed))
 
             # Retrieve simulation status and messages
             states, msgs = self.exp_manager.get_simulation_status(reload=True)
@@ -255,7 +256,7 @@ class CalibManager(object):
 
         # Print the status one more time
         iteration_time_elapsed = current_time - self.iteration_start
-        logger.info("Iteration %s done (took %s)" % (self.iteration, utils.verbose_timedelta(iteration_time_elapsed)))
+        logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
         self.exp_manager.print_status(states, msgs)
 
 
