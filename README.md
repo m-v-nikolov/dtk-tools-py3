@@ -64,3 +64,5 @@ Simulation job management is handled through the various `dtk` command-line opti
 All dependencies are automatically installed by the `pip install -e .` command but you 64-bit Windows binaries may be downloaded [here](http://www.lfd.uci.edu/~gohlke/pythonlibs).
 
 Interoperability with the Java layer of COMPS requires installation of the pyCOMPS package.  [More detailed instructions](https://github.com/InstituteforDiseaseModeling/pyCOMPS/blob/master/README.md) can be found within the [`pyCOMPS`](https://github.com/InstituteforDiseaseModeling/pyCOMPS) repository.
+
+<a href="https://zenhub.com"><img src="https://raw.githubusercontent.com/ZenHubIO/support/master/zenhub-badge.png"></a>
