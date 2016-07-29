@@ -2,7 +2,7 @@
 *.py[cod]
 
 # Visual Studio
-*.pyproj
+*.pyproj*
 *.sln
 *.suo
 *.vscode*

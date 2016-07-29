@@ -22,11 +22,15 @@ from dtk.utils.analyzers.select import example_selection
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
     'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
 }
 
+class objectview(object):
+    def __init__(self, d):
+        self.__dict__ = d
 
 def load_config_module(config_name):
     # Support of relative paths
@@ -69,8 +73,17 @@ def run(args, unknownArgs):
     else:
         raise Exception('Too many unknown arguments: please see help.')
 
-    # run the simulation
+    # Parse setup.
     setup = SetupParser(selected_block=selected_block, setup_file=args.ini, force=True)
+
+    # Assess arguments.
+    if args.analyzer:
+        args.blocking = True
+    if args.blocking:
+        setup.set('blocking', '1')
+    if args.quiet:
+        setup.set('quiet', '1')
+
     additional_args = {}
     if setup.get('type') == 'HPC':
         if args.priority:
@@ -78,15 +91,13 @@ def run(args, unknownArgs):
         if args.node_group:
             additional_args['node_group'] = args.node_group
 
-    if args.blocking:
-        setup.set('blocking', '1')
-
-    if args.quiet:
-        setup.set('quiet', '1')
-
-    # Create the experiment manager based on the setup
+    # Create the experiment manager based on the setup and run simulation.
     sm = ExperimentManagerFactory.from_setup(setup, location=setup.get('type'), **additional_args)
     sm.run_simulations(**mod.run_sim_args)
+
+    # Perform analyze, if requested.
+    if args.analyzer:
+        analyze(objectview({ 'expId': None, 'config_name': args.analyzer, 'force': False, 'comps': True }), None);
 
 
 def status(args, unknownArgs):
@@ -279,6 +290,8 @@ def analyze(args, unknownArgs):
     import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
     plt.show()
 
+def analyze_list(args, unknownArgs):
+    logging.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -344,6 +357,7 @@ def main():
     parser_run.add_argument('--node_group', default = None, help = 'Specify node group of COMPS simulation (only for HPC).')
     parser_run.add_argument('-b', '--blocking', action = 'store_true', help = 'Block the thread until the simulations are done.')
     parser_run.add_argument('-q', '--quiet', action = 'store_true', help = 'Runs quietly.')
+    parser_run.add_argument('-a', '--analyzer', default = None, help = 'Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
     parser_run.set_defaults(func = run)
 
     # 'dtk status' options
@@ -402,10 +416,14 @@ def main():
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script for custom analysis of simulations.')
+    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script or builtin analyzer name for custom analysis of simulations.')
     parser_analyze.add_argument('-c', '--comps', action = 'store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func = analyze)
+
+    # 'dtk analyze-list' options
+    parser_analyze_list = subparsers.add_parser('analyze-list', help = 'List the available builtin analyzers.')
+    parser_analyze_list.set_defaults(func = analyze_list)
 
     # 'dtk setup' options
     parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
