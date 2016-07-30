@@ -2,26 +2,16 @@ import logging
 import math
 import re
 
+from datetime import timedelta
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from core.utils.time import verbose_timedelta
 
 logger = logging.getLogger(__name__)
-
 
 class ProgressAnalyzer(BaseAnalyzer):
     def __init__(self, simIds=None):
         self.filenames = ['StdOut.txt', 'status.txt']
         self.simIds = simIds
-
-    @staticmethod
-    def getFormattedTime(seconds):
-        flooredSeconds = int(math.floor(seconds))
-        decimal = 100 * (round(seconds, 2) - float(flooredSeconds))
-
-        m, s = divmod(flooredSeconds, 60)
-        h, m = divmod(m, 60)
-        d, h = divmod(h, 24)
-
-        return '%d:%02d:%02d:%02d.%02d' % (d, h, m, s, decimal)
 
     def filter(self, sim_metadata):
         return lambda x: True
@@ -77,12 +67,12 @@ class ProgressAnalyzer(BaseAnalyzer):
                 timeRemaining = timeElapsed * ((100.0 / progress) - 1)
             else:
                 timeRemaining = None
-
+            
             self.data += 'Simulation ' + str(k) + ':\n'
             self.data += '    ' + '{0:.2f}'.format(
-                round(progress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(timeElapsed) + '.\n'
+                round(progress, 2)) + '% complete in ' + verbose_timedelta(timedelta(seconds = timeElapsed)) + '.\n'
             if timeRemaining:
-                self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(timeRemaining) + ' remaining.\n'
+                self.data += '    Approximately ' + verbose_timedelta(timedelta(seconds = timeRemaining)) + ' remaining.\n'
 
         # Compute and print the total progress.
         averageProgress = totalProgress / len(selected)
@@ -93,12 +83,9 @@ class ProgressAnalyzer(BaseAnalyzer):
             averageTimeRemaining = None
 
         self.data += 'Overall:\n'
-        self.data += '    ' + '{0:.2f}'.format(
-            round(averageProgress, 2)) + '% complete in ' + ProgressAnalyzer.getFormattedTime(
-            timeElapsed) + ' (on average).\n'
+        self.data += '    ' + '{0:.2f}'.format(round(averageProgress, 2)) + '% complete in ' + verbose_timedelta(timedelta(seconds = timeElapsed)) + ' (on average).\n'
         if averageTimeRemaining:
-            self.data += '    Approximately ' + ProgressAnalyzer.getFormattedTime(
-                averageTimeRemaining) + ' remaining.\n'
+            self.data += '    Approximately ' + verbose_timedelta(timedelta(seconds = averageTimeRemaining)) + ' remaining.\n'
 
     def finalize(self):
         print self.data
