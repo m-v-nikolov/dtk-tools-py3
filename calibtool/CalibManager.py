@@ -666,6 +666,10 @@ class CalibManager(object):
         for i in range(0, iter_count + 1):
             # Get the iteration state
             it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
+            # Check if simulations exit
+            if not self.validate_simulations(it):
+                continue
+
             # Extract the path where the simulations are stored
             sim_path = os.path.join(it.simulations['sim_root'],
                                     "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
@@ -693,6 +697,15 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
+
+    def validate_simulations(self, it_state):
+        if (it_state is None) or (it_state.simulations is None):
+            return False
+
+        for att in ['sim_root', 'exp_name', 'exp_id']:
+            if it_state.simulations.get(att, None) is None:
+                return False
+        return True
 
     def reanalyze(self):
         """
