@@ -134,6 +134,18 @@ def exp_files(idOrName=None):
 
 
 def exp_file(idOrName=None):
+    if not idOrName:
+        # If the most_recent doesnt exist -> use fallback method
+        most_recent = 'simulations/most_recent.txt'
+        if os.path.exists(most_recent):
+            # Look into the most recent
+            with open(os.path.join(most_recent), 'r') as most_recent:
+                exp_path = 'simulations/%s' % most_recent.readline()
+                # Make sure the path exists.
+                if os.path.exists(exp_path):
+                    return exp_path
+
+    # Fallback method
     return max(exp_files(idOrName), key=os.path.getctime)
 
 

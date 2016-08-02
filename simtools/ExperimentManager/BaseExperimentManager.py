@@ -42,6 +42,7 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.location = self.setup.get('type')
+        self.cache_path = os.path.join(os.getcwd(), 'simulations')
 
 
     @abstractmethod
@@ -167,21 +168,27 @@ class BaseExperimentManager:
                 commissioners.append(commissioner)
 
         self.complete_sim_creation(commissioners)
-        self.cache_experiment_data(verbose=verbose)
+        experiment_cache_file = self.cache_experiment_data(verbose=verbose)
+
+        # Write the cache file to the most recent file
+        with (open(os.path.join(self.cache_path, 'most_recent.txt'), 'w')) as most_recent:
+            most_recent.writelines(experiment_cache_file)
 
     def cache_experiment_data(self, verbose=True):
 
-        cache_path = os.path.join(os.getcwd(), 'simulations')
+        if not os.path.exists(self.cache_path):
+            os.mkdir(self.cache_path)
 
-        if not os.path.exists(cache_path):
-            os.mkdir(cache_path)
+        # Create the filename
+        cache_file = self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'
 
-        with open(os.path.join(cache_path, self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'),
-                  'w') as exp_file:
+        with open(os.path.join(self.cache_path, cache_file), 'w') as exp_file:
             if verbose:
                 logger.info('Saving meta-data for experiment:')
                 logger.info(json.dumps(self.exp_data, sort_keys=True, indent=4))
             exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
+
+        return cache_file
 
     def reload_exp_data(self):
         """
