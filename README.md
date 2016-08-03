@@ -22,6 +22,8 @@ From a command-prompt (as admin), run the following from the **dtk-tools** direc
 python -m pip install --upgrade pip
 pip install -e . 
 ```
+**Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default: `C:\Python27\Scripts`) 
+to your `PATH` environment variable.
 
 To test if dtk-tools is correctly installed on your machine issue a:
 ```
