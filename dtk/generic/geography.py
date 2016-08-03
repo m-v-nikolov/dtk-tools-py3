@@ -13,16 +13,11 @@ def convert_filepaths(params):
     :param params: The config parameters
     :return: Nothing
 
-    .. deprecated:: 0.3.5
-        0.4.0 will stop support of Demographics_Filename. Use Demographics_Filenames instead.
-
     """
     g = params.pop('Geography', None)
     if not g: return
     for k, v in params.items():
-        if k == 'Demographics_Filename':
-            params['Demographics_Filenames'] = [os.path.join(g, fn) for fn in params.pop(k).split(';')]
-        elif k == 'Demographics_Filenames':
+        if k == 'Demographics_Filenames':
             params[k] = [os.path.join(g, fn) for fn in v]
         elif k == 'Campaign_Filename':
             continue
@@ -40,19 +35,10 @@ def get_converted_paths_for_geography(geography):
     :param geography: The selected geography
     :return: parameters with the correct path
 
-    .. deprecated:: 0.3.5
-        0.4.0 will stop support of Demographics_Filename. Use Demographics_Filenames instead.
-
     """
     params = geographies.get(geography).copy()
     if not params:
         raise Exception('%s geography not yet implemented' % geography)
-
-    if "Demographics_Filename" in params.keys():
-        OutputMessage("'Demographic_Filename' in geographies will not be supported anymore with the dtk-tools 0.4.0 "
-                      "release.\r\nPlease update the geography to use 'Demographic_Filenames' instead.\r\n"
-                      "See http://idmod.org/emoddoc/#EMOD/ParameterReference/Input%20Files.htm?Highlight=demographics_filenames"
-                      , 'deprecate')
 
     convert_filepaths(params)
 
@@ -103,7 +89,7 @@ geographies = {
 
     "Garki_Single": {"Geography": "Garki_Single",
                      "Air_Temperature_Filename": "Garki_single_temperature.bin",
-                     "Demographics_Filename": "Garki_single_demographics.compiled.json",
+                     "Demographics_Filenames": ["Garki_single_demographics.compiled.json"],
                      "Land_Temperature_Filename": "Garki_single_temperature.bin",
                      "Rainfall_Filename": "Garki_single_rainfall.bin",
                      "Relative_Humidity_Filename": "Garki_single_humidity.bin",
@@ -113,7 +99,7 @@ geographies = {
 
     "Namawala": {"Geography": "Namawala",
                  "Air_Temperature_Filename": "Namawala_single_node_air_temperature_daily.bin",
-                 "Demographics_Filename": "Namawala_single_node_demographics.compiled.json",
+                 "Demographics_Filenames": ["Namawala_single_node_demographics.compiled.json"],
                  "Land_Temperature_Filename": "Namawala_single_node_land_temperature_daily.bin",
                  "Rainfall_Filename": "Namawala_single_node_rainfall_daily.bin",
                  "Relative_Humidity_Filename": "Namawala_single_node_relative_humidity_daily.bin",
@@ -122,7 +108,7 @@ geographies = {
                  },
 
     "Sinamalima": {"Geography": "Zambia/Sinamalima_1_node",
-                   "Demographics_Filename": "sinamalima_30arcsec_demographics_alt_600.json",
+                   "Demographics_Filenames": ["sinamalima_30arcsec_demographics_alt_600.json"],
                    "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                    "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                    "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
@@ -131,7 +117,7 @@ geographies = {
                    },
 
     "Munyumbwe": {"Geography": "Zambia/Munyumbwe_1_node",
-                  "Demographics_Filename": "munyumbwe_30arcsec_demographics_alt_800.json",
+                  "Demographics_Filenames": ["munyumbwe_30arcsec_demographics_alt_800.json"],
                   "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                   "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                   "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
@@ -140,7 +126,7 @@ geographies = {
                   },
 
     "Lukonde": {"Geography": "Zambia/Lukonde_1_node",
-                "Demographics_Filename": "lukonde_30arcsec_demographics_alt_1000.json",
+                "Demographics_Filenames": ["lukonde_30arcsec_demographics_alt_1000.json"],
                 "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                 "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                 "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
@@ -149,7 +135,7 @@ geographies = {
                 },
 
     "Gwembe": {"Geography": "Zambia/Gwembe_1_node",
-               "Demographics_Filename": "gwembe_30arcsec_demographics_alt_1300.json",
+               "Demographics_Filenames": ["gwembe_30arcsec_demographics_alt_1300.json"],
                "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
@@ -159,7 +145,7 @@ geographies = {
 
     "Sinazongwe": {"Geography": "Zambia/Sinamalima_single_node",
                    "Air_Temperature_Filename": "Zambia_Sinamalima_2_5arcmin_air_temperature_daily.bin",
-                   "Demographics_Filename": "Zambia_Sinamalima_single_node_demographics.compiled.json",
+                   "Demographics_Filenames": ["Zambia_Sinamalima_single_node_demographics.compiled.json"],
                    "Land_Temperature_Filename": "Zambia_Sinamalima_2_5arcmin_land_temperature_daily.bin",
                    "Rainfall_Filename": "Zambia_Sinamalima_2_5arcmin_rainfall_daily.bin",
                    "Relative_Humidity_Filename": "Zambia_Sinamalima_2_5arcmin_relative_humidity_daily.bin",
@@ -168,7 +154,7 @@ geographies = {
 
     "Sinamalima_1_node": {"Geography": "Zambia/Sinamalima_1_node",
                           "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
-                          "Demographics_Filename": "sinamalima_30arcsec_demographics_alt_600.json",
+                          "Demographics_Filenames": ["sinamalima_30arcsec_demographics_alt_600.json"],
                           "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                           "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
                           "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
@@ -177,7 +163,7 @@ geographies = {
 
     "Gwembe_1_node": {"Geography": "Zambia/Gwembe_1_node",
                       "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
-                      "Demographics_Filename": "gwembe_30arcsec_demographics_alt_1300.json",
+                      "Demographics_Filenames": ["gwembe_30arcsec_demographics_alt_1300.json"],
                       "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                       "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
                       "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
@@ -186,7 +172,7 @@ geographies = {
 
     "Lukonde_1_node": {"Geography": "Zambia/Lukonde_1_node",
                        "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
-                       "Demographics_Filename": "lukonde_30arcsec_demographics_alt_1000.json",
+                       "Demographics_Filenames": ["lukonde_30arcsec_demographics_alt_1000.json"],
                        "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                        "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
                        "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
@@ -195,7 +181,7 @@ geographies = {
 
     "Munumbwe_1_node": {"Geography": "Zambia/Munumbwe_1_node",
                         "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
-                        "Demographics_Filename": "munumbwe_30arcsec_demographics_alt_800.json",
+                        "Demographics_Filenames": ["munumbwe_30arcsec_demographics_alt_800.json"],
                         "Land_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",
                         "Rainfall_Filename": "Zambia_30arcsec_rainfall_daily.bin",
                         "Relative_Humidity_Filename": "Zambia_30arcsec_relative_humidity_daily.bin",
@@ -213,7 +199,7 @@ geographies = {
         # "x_Local_Migration": 0 ,
         # "Local_Migration_Filename":   "Zambia_Gwembe_Sinazongwe_115_nodes_local_migration.bin",
         # "Node_Grid_Size": 0.00833,    ## 30arcsec/3600
-        # "Demographics_Filename": "Zambia_30arcsec_demographics.json",
+        # "Demographics_Filenames": ["Zambia_30arcsec_demographics.json"],
     },
 
     "GwembeSinazongwePopCluster": {
@@ -226,12 +212,12 @@ geographies = {
         "Enable_Local_Migration": 1,
         "Local_Migration_Filename": "Zambia_Gwembe_Sinazongwe_121_nodes_local_migration.bin"
         # "Node_Grid_Size": 0.00833,    ## 30arcsec/3600
-        # "Demographics_Filename":      "Zambia_30arcsec_demographics.json",
+        # "Demographics_Filenames":      ["Zambia_30arcsec_demographics.json"],
     },
 
     "Dielmo": {"Geography": "Senegal_Gambia/Dielmo_Ndiop",
                "Air_Temperature_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_air_temperature_daily.bin",
-               "Demographics_Filename": "Senegal_Dielmo_single_node_demographics.static.compiled.json",
+               "Demographics_Filenames": ["Senegal_Dielmo_single_node_demographics.static.compiled.json"],
                "Land_Temperature_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_land_temperature_daily.bin",
                "Rainfall_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_rainfall_daily.bin",
                "Relative_Humidity_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_relative_humidity_daily.bin",
@@ -240,7 +226,7 @@ geographies = {
 
     "Ndiop": {"Geography": "Senegal_Gambia/Dielmo_Ndiop",
               "Air_Temperature_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_air_temperature_daily.bin",
-              "Demographics_Filename": "Senegal_Ndiop_single_node_demographics.static.compiled.json",
+              "Demographics_Filenames": ["Senegal_Ndiop_single_node_demographics.static.compiled.json"],
               "Land_Temperature_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_land_temperature_daily.bin",
               "Rainfall_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_rainfall_daily.bin",
               "Relative_Humidity_Filename": "Senegal_Dielmo_Ndiop_2_5arcmin_relative_humidity_daily.bin",
@@ -249,7 +235,7 @@ geographies = {
 
     "Thies": {"Geography": "Senegal_Gambia/Thies",
               "Air_Temperature_Filename": "Senegal_Thies_2_5arcmin_air_temperature_daily.bin",
-              "Demographics_Filename": "Senegal_Thies_single_node_demographics.static.compiled.json",
+              "Demographics_Filenames": ["Senegal_Thies_single_node_demographics.static.compiled.json"],
               "Land_Temperature_Filename": "Senegal_Thies_2_5arcmin_land_temperature_daily.bin",
               "Rainfall_Filename": "Senegal_Thies_2_5arcmin_rainfall_daily.bin",
               "Relative_Humidity_Filename": "Senegal_Thies_2_5arcmin_relative_humidity_daily.bin",
@@ -258,7 +244,7 @@ geographies = {
 
     "Mocuba": {"Geography": "Mozambique_Zambezia",
                "Air_Temperature_Filename": "Mozambique_Zambezia_2_5arcmin_air_temperature_daily.bin",
-               "Demographics_Filename": "Mozambique_Zambezia_Mocuba_single_node_demographics.compiled.json",
+               "Demographics_Filenames": ["Mozambique_Zambezia_Mocuba_single_node_demographics.compiled.json"],
                "Land_Temperature_Filename": "Mozambique_Zambezia_2_5arcmin_land_temperature_daily.bin",
                "Rainfall_Filename": "Mozambique_Zambezia_2_5arcmin_rainfall_daily.bin",
                "Relative_Humidity_Filename": "Mozambique_Zambezia_2_5arcmin_relative_humidity_daily.bin",
@@ -268,7 +254,7 @@ geographies = {
     "West_Kenya": {"Geography": "Kenya_Nyanza",
                    "Node_Grid_Size": 0.009,  ##
                    "Air_Temperature_Filename": "Kenya_Nyanza_30arcsec_air_temperature_daily.bin",
-                   "Demographics_Filename": "Kenya_Nyanza_2node_demographics.compiled.json",
+                   "Demographics_Filenames": ["Kenya_Nyanza_2node_demographics.compiled.json"],
                    "Enable_Local_Migration": 1,
                    "Local_Migration_Filename": "Kenya_Nyanza_2node_local_migration.bin",
                    "Land_Temperature_Filename": "Kenya_Nyanza_30arcsec_land_temperature_daily.bin",
@@ -280,7 +266,7 @@ geographies = {
     "Solomon_Islands": {"Geography": "Solomon_Islands/Honiara",
                         "Node_Grid_Size": 0.009,  ##
                         "Air_Temperature_Filename": "Honiara_temperature_daily10y.bin",
-                        "Demographics_Filename": "Honiara_single_node_demographics.compiled.json",
+                        "Demographics_Filenames": ["Honiara_single_node_demographics.compiled.json"],
                         "Land_Temperature_Filename": "Honiara_temperature_daily10y.bin",
                         "Rainfall_Filename": "Honiara_rainfall_daily10y.bin",
                         "Relative_Humidity_Filename": "Honiara_humidity_daily10y.bin",
@@ -290,7 +276,7 @@ geographies = {
     "Solomon_Islands_2Node": {"Geography": "Solomon_Islands/Honiara _Haleta",
                               "Node_Grid_Size": 0.009,  ##
                               "Air_Temperature_Filename": "Honiara_Haleta_temperature_daily10y.bin",
-                              "Demographics_Filename": "Honiara_Haleta_two_node_demographics.compiled.json",
+                              "Demographics_Filenames": ["Honiara_Haleta_two_node_demographics.compiled.json"],
                               "Enable_Local_Migration": 1,
                               "Local_Migration_Filename": "Honiara_Haleta_two_node_local_migration.bin",
                               "Land_Temperature_Filename": "Honiara_Haleta_temperature_daily10y.bin",
@@ -302,7 +288,7 @@ geographies = {
     "Nabang": {"Geography": "UCIrvine/Nabang",
                "Node_Grid_Size": 0.009,  ##
                "Air_Temperature_Filename": "China_Nabang_2_5arcmin_air_temperature_daily.bin",
-               "Demographics_Filename": "Nabang_two_node_demographics.compiled.json",
+               "Demographics_Filenames": ["Nabang_two_node_demographics.compiled.json"],
                "Enable_Local_Migration": 1,
                "Local_Migration_Filename": "Nabang_two_node_local_migration.bin",
                "Land_Temperature_Filename": "China_Nabang_2_5arcmin_air_temperature_daily.bin",
@@ -314,7 +300,7 @@ geographies = {
     "Tha_Song_Yang": {"Geography": "Tha_Song_Yang",
                       "Node_Grid_Size": 0.009,  ##
                       "Air_Temperature_Filename": "Thailand_Tha_Song_Yang_2_5arcmin_air_temperature_daily.bin",
-                      "Demographics_Filename": "TSY_two_node_demographics.compiled.json",
+                      "Demographics_Filenames": ["TSY_two_node_demographics.compiled.json"],
                       "Enable_Local_Migration": 1,
                       "Local_Migration_Filename": "TSY_two_node_local_migration.bin",
                       "Land_Temperature_Filename": "Thailand_Tha_Song_Yang_2_5arcmin_air_temperature_daily.bin",
@@ -324,14 +310,14 @@ geographies = {
                       },
 
     "Malariatherapy": {"Geography": "Calibration",
-                       "Demographics_Filename": "Malariatherapy_demographics.compiled.json",
+                       "Demographics_Filenames": ["Malariatherapy_demographics.compiled.json"],
                        "Base_Population_Scale_Factor": 2,
                        "Enable_Vital_Dynamics": 0,
                        "Climate_Model": "CLIMATE_CONSTANT"  # no mosquitoes in challenge trial setting
                        },
 
     "Birth_Cohort": {"Geography": "Calibration",
-                     "Demographics_Filename": "birth_cohort_demographics.compiled.json",
+                     "Demographics_Filenames": ["birth_cohort_demographics.compiled.json"],
                      'Base_Population_Scale_Factor': 10,
                      'Enable_Vital_Dynamics': 0,  # No births/deaths.  Just following a birth cohort.
                      "Climate_Model": "CLIMATE_CONSTANT"  # no mosquitoes
