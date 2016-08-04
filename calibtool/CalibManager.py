@@ -678,7 +678,7 @@ class CalibManager(object):
             # Get the iteration state
             it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
             # Check if simulations exit
-            if not self.validate_simulations(it):
+            if not self.simulation_exists(it):
                 continue
 
             # Extract the path where the simulations are stored
@@ -709,7 +709,10 @@ class CalibManager(object):
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
 
-    def validate_simulations(self, it_state):
+    def simulation_exists(self, it_state):
+        """
+        Check if simulation exists
+        """
         if (it_state is None) or (it_state.simulations is None):
             return False
 
