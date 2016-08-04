@@ -671,36 +671,42 @@ class CalibManager(object):
         - Delete the result directory
         - If LOCAL -> also delete the simulations
         """
-        calib_data = self.read_calib_data()
-        iter_count = calib_data.get('iteration')
-        # Delete the simulations too
-        logger.info('Deleting local simulations')
-        for i in range(0, iter_count + 1):
-            # Get the iteration state
-            it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
-            # Check if simulations exit
-            if not self.simulation_exists(it):
-                continue
+        try:
+            calib_data = self.read_calib_data()
+            iter_count = calib_data.get('iteration')
+        except Exception:
+            calib_data = None
+            logger.info('Calib data cannot be read -> skip')
 
-            # Extract the path where the simulations are stored
-            sim_path = os.path.join(it.simulations['sim_root'],
-                                    "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
+        if calib_data:
+            # Delete the simulations too
+            logger.info('Deleting local simulations')
+            for i in range(0, iter_count + 1):
+                # Get the iteration state
+                it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
+                # Check if simulations exit
+                if not self.simulation_exists(it):
+                    continue
 
-            # If exist -> delete
-            if os.path.exists(sim_path):
-                try:
-                    shutil.rmtree(sim_path)
-                except OSError:
-                    logger.error("Failed to delete %s" % sim_path)
+                # Extract the path where the simulations are stored
+                sim_path = os.path.join(it.simulations['sim_root'],
+                                        "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
 
-            # If the json exist too -> delete
-            json_path = os.path.join('simulations',
-                                     '%s_%s.json' % (it.simulations['exp_name'], it.simulations['exp_id']))
-            if os.path.exists(json_path):
-                try:
-                    os.remove(json_path)
-                except OSError:
-                    logger.error("Failed to delete %s" % json_path)
+                # If exist -> delete
+                if os.path.exists(sim_path):
+                    try:
+                        shutil.rmtree(sim_path)
+                    except OSError:
+                        logger.error("Failed to delete %s" % sim_path)
+
+                # If the json exist too -> delete
+                json_path = os.path.join('simulations',
+                                         '%s_%s.json' % (it.simulations['exp_name'], it.simulations['exp_id']))
+                if os.path.exists(json_path):
+                    try:
+                        os.remove(json_path)
+                    except OSError:
+                        logger.error("Failed to delete %s" % json_path)
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
