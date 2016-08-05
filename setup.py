@@ -4,6 +4,8 @@ import shutil
 from setuptools import setup, find_packages
 import platform
 
+# Make sur
+
 requirements = [
     'matplotlib',
     'pandas',
@@ -28,7 +30,7 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     install_package(os.path.join(install_directory, 'scipy-0.17.0-cp27-none-win_amd64.whl'))
     install_package(os.path.join(install_directory, 'numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl'))
     install_package(os.path.join(install_directory, 'matplotlib-1.5.1-cp27-none-win_amd64.whl'))
-    install_package(os.path.join(install_directory, 'pandas-0.18.0-cp27-cp27m-win_amd64.whl'))
+    install_package(os.path.join(install_directory, 'pandas-0.18.1-cp27-cp27m-win_amd64.whl'))
     install_package(os.path.join(install_directory, 'seaborn-0.7.0-py2.py3-none-any.whl'))
     install_package(os.path.join(install_directory, 'statsmodels-0.6.1-cp27-none-win_amd64.whl'))
     install_package(os.path.join(install_directory, 'npyscreen-4.10.5.tar.gz'))
