@@ -20,7 +20,7 @@ Make sure you have Python 2.7 installed (available [here](https://www.python.org
 From a command-prompt (as admin), run the following from the **dtk-tools** directory:
 ```
 python -m pip install --upgrade pip
-pip install -e . 
+python setup.py 
 ```
 **Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default: `C:\Python27\Scripts`) 
 to your `PATH` environment variable.

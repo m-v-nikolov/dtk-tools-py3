@@ -3,12 +3,26 @@ import os
 import shutil
 
 import re
+
+import sys
 from setuptools import setup, find_packages
 import platform
+
+# First thing -> test if we have python x64
+import ctypes
+if ctypes.sizeof(ctypes.c_voidp) != 8 :
+    print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+    - Windows: https://www.python.org/downloads/windows/
+    - Mac OSX: https://www.python.org/downloads/mac-osx/
+    - Linux: https://www.python.org/downloads/source/\n
+    Installation is now exiting..."""
+    exit()
 
 # Set the list of requirements here
 # Can either take package==version or package
 # For Windows, the wheel can be provided in either tar.gz or whl format
+from simtools.utils import nostdout
+
 requirements = [
     'matplotlib==1.5.1',
     'pandas==0.18.1',
@@ -80,21 +94,29 @@ if platform.architecture() == ('64bit', ''):
     # Removes curses for MacOSx (built-in)
     requirements.remove('curses==2.2')
 
+# Add the develop by default
+sys.argv.append('develop')
 
-setup(name='dtk-tools',
-      version='0.3.5',
-      description='Facilitating submission and analysis of simulations',
-      url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
-      author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
-      author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
-      packages=find_packages(),
-      install_requires=requirements,
-      entry_points={
-          'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
-      },
-      package_data={'': ['simtools/simtools.ini']},
-      zip_safe=False)
+# Suppress the outputs except the errors
+with nostdout(stderr=True):
+    setup(name='dtk-tools',
+          version='0.3.5',
+          description='Facilitating submission and analysis of simulations',
+          url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
+          author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
+          author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
+          packages=find_packages(),
+          install_requires=requirements,
+          entry_points={
+              'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
+          },
+          package_data={'': ['simtools/simtools.ini']},
+          zip_safe=False)
 
 # Copy the default.ini into the right directory if not already present
 if not os.path.exists(os.path.join(current_directory,'simtools','simtools.ini')):
     shutil.copyfile(os.path.join(install_directory,'default.ini'), os.path.join(current_directory,'simtools','simtools.ini'))
+
+print "\n======================================================="
+print "| Dtk-Tools and dependencies installed successfully.  |"
+print "======================================================="
