@@ -15,23 +15,35 @@ logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def nostdout():
+def nostdout(stdout = False, stderr=False):
     """
     Context used to suppress any print/logging from block of code
-    """
-    # Save current state
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
 
-    # Deactivate logging and stdout
+    Args:
+        stdout: If False, hides. If True Shows. False by default
+        stderr: If False, hides. If True Shows. False by default
+
+    Returns:
+
+    """
+    # Save current state and disable outut
+    if not stdout:
+        save_stdout = sys.stdout
+        sys.stdout  = cStringIO.StringIO()
+    if not stderr:
+        save_stderr = sys.stderr
+        sys.stderr = cStringIO.StringIO()
+
+    # Deactivate logging
     logger.propagate = False
-    sys.stdout = sys.stderr = cStringIO.StringIO()
 
     yield
 
     # Restore
-    sys.stdout = save_stdout
-    sys.stderr = save_stderr
+    if not stdout:
+        sys.stdout = save_stdout
+    if not stderr:
+        sys.stderr = save_stderr
     logger.propagate = True
 
 

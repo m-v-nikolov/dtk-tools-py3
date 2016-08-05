@@ -5,6 +5,8 @@ import shutil
 import re
 
 import sys
+from ConfigParser import ConfigParser
+
 from setuptools import setup, find_packages
 import platform
 
@@ -114,8 +116,23 @@ with nostdout(stderr=True):
           zip_safe=False)
 
 # Copy the default.ini into the right directory if not already present
-if not os.path.exists(os.path.join(current_directory,'simtools','simtools.ini')):
-    shutil.copyfile(os.path.join(install_directory,'default.ini'), os.path.join(current_directory,'simtools','simtools.ini'))
+current_simtools = os.path.join(current_directory,'simtools','simtools.ini')
+default_ini = os.path.join(install_directory,'default.ini')
+if not os.path.exists(current_simtools):
+    shutil.copyfile(default_ini, current_simtools)
+else:
+    # A simtools was already present, merge the best we can
+    print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
+    merge_cp = ConfigParser()
+    merge_cp.read([current_simtools, default_ini])
+
+    # Backup copy the current
+    print "Backup copy your current simtools.ini to simtools.ini.bak"
+    shutil.copy(current_simtools, current_simtools+".bak")
+
+    # Write the merged one
+    merge_cp.write(open(current_simtools,'w'))
+    print "Merged simtools.ini written!\n"
 
 print "\n======================================================="
 print "| Dtk-Tools and dependencies installed successfully.  |"
