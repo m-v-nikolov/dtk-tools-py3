@@ -252,6 +252,8 @@ class CalibManager(object):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
                 # Kill the remaining simulations
                 map(self.exp_manager.kill_job, states.keys())
+                # Show a last status
+                self.exp_manager.print_status(states, msgs)
                 OutputMessage("One or more simulations failed. Calibration cannot continue. Exiting...")
                 exit()
 
