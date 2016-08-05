@@ -45,6 +45,18 @@ def load_config_module(config_name):
     return import_module(module_name)
 
 
+def test(args, unknownArgs):
+    # Get to the test dir
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    test_dir = os.path.abspath(os.path.join(current_dir,'..','test' ))
+
+    # Create the test command
+    command = ['nosetests']
+    command.extend(unknownArgs)
+
+    # Run
+    subprocess.Popen(command, cwd=test_dir).wait()
+
 def setup(args, unknownArgs):
     if os.name == "nt":
         # Get the current console size
@@ -428,6 +440,10 @@ def main():
     # 'dtk setup' options
     parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
     parser_setup.set_defaults(func=setup)
+
+    # 'dtk test' options
+    parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
+    parser_test.set_defaults(func=test)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()

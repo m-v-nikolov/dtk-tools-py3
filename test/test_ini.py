@@ -23,15 +23,15 @@ class TestIniFile(unittest.TestCase):
         except:
             self.assertIsNone(none)
 
-    def test_comps_attribute_validation(self):
-        ini = SetupParser("HPC", 'ini\\test_simtools.ini', True, "HPC", False)
-        Client.Login(ini.get('server_endpoint'))
-
-        ini.validate("HPC", ini)
-
-    def test_local_section_attribute_validation(self):
-        ini = SetupParser("LOCAL", 'ini\\test_simtools.ini', True, None, False)
-        ini.validate("LOCAL", ini)
+    # def test_comps_attribute_validation(self):
+    #     ini = SetupParser("HPC", 'ini\\test_simtools.ini', True, "HPC", False)
+    #     Client.Login(ini.get('server_endpoint'))
+    #
+    #     ini.validate("HPC", ini)
+    #
+    # def test_local_section_attribute_validation(self):
+    #     ini = SetupParser("LOCAL", 'ini\\test_simtools.ini', True, None, False)
+    #     ini.validate("LOCAL", ini)
 
 if __name__ == '__main__':
     unittest.main()
