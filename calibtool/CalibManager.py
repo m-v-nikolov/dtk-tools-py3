@@ -236,6 +236,17 @@ class CalibManager(object):
             # Retrieve simulation status and messages
             states, msgs = self.exp_manager.get_simulation_status(reload=True)
 
+            # Separate Failed from Canceled case, so that we can handle the following situation later:
+            #   If some simulations failed, we may continue...
+
+            # If Calibration has been canceled -> exit
+            if self.exp_manager.any_canceled(states):
+                from dtk.utils.ioformat.OutputMessage import OutputMessage
+                # Kill the remaining simulations
+                map(self.exp_manager.kill_job, states.keys())
+                OutputMessage("Calibration got canceled. Exiting...")
+                exit()
+
             # If one or more simulation failed -> exit
             if self.exp_manager.any_failed(states):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
@@ -667,6 +678,10 @@ class CalibManager(object):
         for i in range(0, iter_count + 1):
             # Get the iteration state
             it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
+            # Check if simulations exit
+            if not self.simulation_exists(it):
+                continue
+
             # Extract the path where the simulations are stored
             sim_path = os.path.join(it.simulations['sim_root'],
                                     "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
@@ -694,6 +709,18 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
+
+    def simulation_exists(self, it_state):
+        """
+        Check if simulation exists
+        """
+        if (it_state is None) or (it_state.simulations is None):
+            return False
+
+        for att in ['sim_root', 'exp_name', 'exp_id']:
+            if it_state.simulations.get(att, None) is None:
+                return False
+        return True
 
     def reanalyze(self):
         """
