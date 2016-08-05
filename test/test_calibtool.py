@@ -1,4 +1,5 @@
 import copy
+import glob
 import json
 import os
 import shutil
@@ -33,13 +34,16 @@ class TestCommands(unittest.TestCase):
 
         # Get the JSONs to find the simulations
         simulation_dir = os.path.join(self.calibration_dir, 'simulations')
-        simulation_files = os.listdir(simulation_dir)
+        simulation_files = glob.glob(simulation_dir+'/*.json')
 
         # For each file, look for the experiment dir and erase
         for simulation_file in simulation_files:
-            siminfo = json.load(open(os.path.join(simulation_dir, simulation_file), 'rb'))
-            exp_dir = os.path.join(siminfo['sim_root'], "%s_%s" % (siminfo['exp_name'], siminfo['exp_id']))
-            shutil.rmtree(exp_dir)
+            try:
+                siminfo = json.load(open(os.path.join(simulation_dir, simulation_file), 'rb'))
+                exp_dir = os.path.join(siminfo['sim_root'], "%s_%s" % (siminfo['exp_name'], siminfo['exp_id']))
+                shutil.rmtree(exp_dir)
+            except ValueError: # JSON cannot be decoded, just move on
+                continue
 
         # Clear the dir
         shutil.rmtree(self.calibration_dir)
@@ -91,12 +95,15 @@ class TestCommands(unittest.TestCase):
 
         # Get the sim paths
         simulation_dir = os.path.join(self.current_cwd, 'calibration', 'simulations')
-        simulation_files = os.listdir(simulation_dir)
+        simulation_files = glob.glob(simulation_dir+'/*.json')
         simulation_paths = []
 
         for sfile in simulation_files:
-            info = json.load(open(os.path.join(simulation_dir, sfile), 'rb'))
-            simulation_paths.append(os.path.join(info['sim_root'], "%s_%s" % (info['exp_name'], info['exp_id'])))
+            try:
+                info = json.load(open(os.path.join(simulation_dir, sfile), 'rb'))
+                simulation_paths.append(os.path.join(info['sim_root'], "%s_%s" % (info['exp_name'], info['exp_id'])))
+            except ValueError: # JSON cannot be decoded, just move on
+                continue
 
         # Cleanup
         ctool = Popen(['calibtool', 'cleanup', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
@@ -104,7 +111,7 @@ class TestCommands(unittest.TestCase):
 
         # Make sure everything disappeared
         self.assertFalse(os.path.exists('ExampleCalibration'))
-        self.assertFalse(os.listdir('simulations'))
+        self.assertEqual(glob.glob('simulations/*.json'), [])
         for path in simulation_paths:
             self.assertFalse(os.path.exists(path))
 

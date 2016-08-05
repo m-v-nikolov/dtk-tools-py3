@@ -173,6 +173,7 @@ class BaseExperimentManager:
         # Write the cache file to the most recent file
         with (open(os.path.join(self.cache_path, 'most_recent.txt'), 'w')) as most_recent:
             most_recent.writelines(experiment_cache_file)
+            most_recent.close()
 
     def cache_experiment_data(self, verbose=True):
 

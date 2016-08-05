@@ -55,8 +55,10 @@ class LocalExperimentManager(BaseExperimentManager):
                                   self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
+        # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
+        # to the sub processes.
         subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
-                          self.commandline.Commandline, str(max_local_sims), cache_path], shell=False)
+                          self.commandline.Commandline, str(max_local_sims), cache_path], shell=False, creationflags=512)
 
         super(LocalExperimentManager,self).commission_simulations()
 
