@@ -38,7 +38,7 @@ def update_calib_args(args, unknownArgs, calib_args):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        selected_block = 'LOCAL'
+        selected_block = 'LOCAL' if 'override_block' not in calib_args else calib_args['override_block']
     elif len(unknownArgs) == 1:
         selected_block = unknownArgs[0][2:].upper()
     else:

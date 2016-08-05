@@ -20,6 +20,9 @@ from dtk.utils.builders.TaggedTemplate import CampaignTemplate, DemographicsTemp
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.ModBuilder import ModBuilder
 
+# For example only -- Force the selected block to be EXAMPLE
+SetupParser("EXAMPLE")
+
 # The following directory holds the plugin files for this example.
 plugin_files_dir = 'Templates'
 

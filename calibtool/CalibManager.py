@@ -82,7 +82,6 @@ class CalibManager(object):
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
         """
-
         try:
             os.mkdir(self.name)
             self.cache_calibration()

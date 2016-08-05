@@ -28,12 +28,12 @@ prior = MultiVariatePrior.by_param(
 plotters = [LikelihoodPlotter(True), SiteDataPlotter(True)]
 
 def sample_point_fn(cb, param_values):
-    '''
+    """
     A simple example function that takes a list of sample-point values
     and sets parameters accordingly using the parameter names from the prior.
     Note that more complicated logic, e.g. setting campaign event coverage or habitat abundance by species,
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
-    '''
+    """
     params_dict = dict(zip(prior.params, param_values))
     params_dict['Simulation_Duration'] = 365  # shorter for quick test
     return cb.update_params(params_dict)
@@ -54,7 +54,7 @@ calib_manager = CalibManager(name='ExampleCalibration',
                              num_to_plot=5,
                              plotters=plotters)
 
-run_calib_args = {}
+run_calib_args = {'override_block':"EXAMPLE"}
 
 if __name__ == "__main__":
     run_calib_args.update(dict(location='LOCAL'))
