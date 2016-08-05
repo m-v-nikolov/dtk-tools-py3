@@ -3,6 +3,10 @@
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import GenericSweepBuilder
+from simtools.SetupParser import SetupParser
+
+# For example only -- Force the selected block to be EXAMPLE
+SetupParser("EXAMPLE")
 
 exp_name  = 'ExampleSweep'
 builder = GenericSweepBuilder.from_dict({'Run_Number': range(3),

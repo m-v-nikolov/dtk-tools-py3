@@ -134,6 +134,26 @@ else:
     merge_cp.write(open(current_simtools,'w'))
     print "Merged simtools.ini written!\n"
 
+
+# Create the EXAMPLE block for the examples
+example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+
+# Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
+open(example_simtools, 'a').close()
+
+# Check if we have the EXAMPLE block
+cp = ConfigParser()
+cp.read(example_simtools)
+
+if not cp.has_section('EXAMPLE'):
+    # EXAMPLE section is not here -> create it
+    cp.add_section('EXAMPLE')
+    cp.set('EXAMPLE','type','LOCAL')
+    cp.set('EXAMPLE','input_root', os.path.join(current_directory,'examples','inputs'))
+
+cp.write(open(example_simtools,'w'))
+
+# Success !
 print "\n======================================================="
 print "| Dtk-Tools and dependencies installed successfully.  |"
 print "======================================================="

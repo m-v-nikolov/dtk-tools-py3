@@ -3,6 +3,9 @@ from dtk.vector.study_sites import configure_site
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
+# For example only -- Force the selected block to be EXAMPLE
+SetupParser("EXAMPLE")
+
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 configure_site(cb, 'Namawala')
 
