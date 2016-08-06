@@ -182,8 +182,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         for filename in filenames:
             paths.add(filename.replace('\\', '/'))
 
-        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression,
-                                           None)
+        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
         asset_byte_arrays = assets.toArray() if assets else []
 
         # print('done retrieving files; starting load')
@@ -197,6 +196,23 @@ class CompsDTKOutputParser(SimulationOutputParser):
         else:
             jsonstr = args[0].tostring()
             self.raw_data[filename] = json.loads(jsonstr)
+
+    def load_csv_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_csv_file(filename)
+        else:
+            from StringIO import StringIO
+            csvstr = StringIO(args[0].tostring())
+            self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
+            #self.raw_data[filename] = args[0].tostring()
+
+    def load_xlsx_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_xlsx_file(filename)
+        else:
+            excel_file = pd.ExcelFile( self.get_path(filename) )
+            self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name) 
+              for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, *args):
         if self.sim_dir_map is not None:
