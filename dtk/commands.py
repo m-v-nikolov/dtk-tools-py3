@@ -65,7 +65,9 @@ def setup(args, unknownArgs):
         original_rows = output.split('\n')[4].split(':')[1].lstrip()
 
         # Resize only if needed
-        if int(original_cols) < 100 or int(original_rows) < 30:
+        print original_cols
+        print original_rows
+        if int(original_cols) < 300 or int(original_rows) < 100:
             os.system("mode con: cols=100 lines=30")
     else:
         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=30, cols=100))
