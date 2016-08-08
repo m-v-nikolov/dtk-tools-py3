@@ -77,7 +77,7 @@
     {
       "name":"node_group",
       "label":"Node group",
-      "help":"Nodegroup to use.",
+      "help":"Nodegroup to use. (Leave blank if running in cloud environment)",
       "type":"string",
       "default":"emod_abcd"
     },
