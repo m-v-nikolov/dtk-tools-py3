@@ -194,6 +194,9 @@ class CalibManager(object):
             logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration_state.iteration)
             self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations, self.location)
         else:
+            if 'location' in kwargs:
+                kwargs.pop('location')
+
             self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
             if not self.suite_id:
                 self.generate_suite_id(self.exp_manager)
