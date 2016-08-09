@@ -107,7 +107,7 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
-                exit()  # avoid calling self.run_iterations(**kwargs)
+                exit()     # avoid calling self.run_iterations(**kwargs)
             elif var == "P":
                 self.replot_calibration(**kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
