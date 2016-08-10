@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -23,13 +24,11 @@ class LocalExperimentManager(BaseExperimentManager):
     """
 
     location = 'LOCAL'
+    monitorClass = SimulationMonitor
     parserClass = SimulationOutputParser
 
     def __init__(self, model_file, exp_data, setup=None):
         BaseExperimentManager.__init__(self, model_file, exp_data, setup)
-
-    def get_monitor(self):
-        return SimulationMonitor(self.exp_data)
 
     def cancel_all_simulations(self, states=None):
 
@@ -44,14 +43,21 @@ class LocalExperimentManager(BaseExperimentManager):
         return  # no batching in LOCAL
 
     def commission_simulations(self):
-        # Prepare the info to pass to the localrunner
+        # Retrieve the experiment dirs and the sim ids that we have to run
+        exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
+        sim_ids = self.exp_data['sims'].keys()
         max_local_sims = int(self.get_property('max_local_sims'))
+
+        # Create the paths
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","SimulationRunner", "LocalRunner.py")
+        cache_path = os.path.join(os.getcwd(), 'simulations',
+                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.exp_data['exp_id']], shell=False, creationflags=512)
+        subprocess.Popen([sys.executable, local_runner_path, self.commandline.Commandline,
+                          str(max_local_sims), cache_path], shell=False, creationflags=512)
 
         super(LocalExperimentManager,self).commission_simulations()
 
@@ -63,7 +69,7 @@ class LocalExperimentManager(BaseExperimentManager):
         sim_path = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + exp_id)
         if not os.path.exists(sim_path):
             os.makedirs(sim_path)
-        self.exp_data['simulations'] = []
+        self.exp_data['sims'] = {}
         return exp_id
 
     def create_simulation(self):
@@ -74,7 +80,7 @@ class LocalExperimentManager(BaseExperimentManager):
                                sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
-        self.exp_data['simulations'].append(self.data_store.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
+        self.exp_data['sims'][sim_id] = self.exp_builder.metadata
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
