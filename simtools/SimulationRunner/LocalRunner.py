@@ -41,7 +41,7 @@ class SimulationCommissioner(threading.Thread):
                 p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
-                self.change_state(status="Running", pid = p.pid)
+                self.change_state(status="Running", pid=p.pid)
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
@@ -142,17 +142,24 @@ if __name__ == "__main__":
     import sys
 
     # Retrieve the info from the command line
-    paths = sys.argv[1].split(',')
-    command = sys.argv[2]
-    queue_size = int(sys.argv[3])
-    cache_path = sys.argv[4]
+    command = sys.argv[1]
+    queue_size = int(sys.argv[2])
+    cache_path = sys.argv[3]
 
     # Create the queue and the re-entrant lock
     queue = Queue(maxsize=queue_size)
     lock = threading.RLock()
 
+
+    # Open the json from the cache
+    json_cache = open(cache_path,'rb')
+    cache = json.load(json_cache)
+    json_cache.close()
+
     # Go through the paths and commission
-    for path in paths:
+    for sim in cache['sims']:
+        path = os.path.join(cache['sim_root'],'%s_%s'%(cache['exp_name'], cache['exp_id']), sim)
         queue.put('run1')
         t = SimulationCommissioner(path, command, queue, cache_path, lock)
         t.start()
+
