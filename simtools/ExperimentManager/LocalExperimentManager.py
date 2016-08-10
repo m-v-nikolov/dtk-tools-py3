@@ -49,7 +49,6 @@ class LocalExperimentManager(BaseExperimentManager):
         max_local_sims = int(self.get_property('max_local_sims'))
 
         # Create the paths
-        paths = [os.path.join(exp_dir, sim_id) for sim_id in sim_ids]
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","SimulationRunner", "LocalRunner.py")
         cache_path = os.path.join(os.getcwd(), 'simulations',
                                   self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
@@ -57,8 +56,8 @@ class LocalExperimentManager(BaseExperimentManager):
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
-                          self.commandline.Commandline, str(max_local_sims), cache_path], shell=False, creationflags=512)
+        subprocess.Popen([sys.executable, local_runner_path, self.commandline.Commandline,
+                          str(max_local_sims), cache_path], shell=False, creationflags=512)
 
         super(LocalExperimentManager,self).commission_simulations()
 
