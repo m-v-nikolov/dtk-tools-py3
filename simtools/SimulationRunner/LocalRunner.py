@@ -150,7 +150,6 @@ if __name__ == "__main__":
     queue = Queue(maxsize=queue_size)
     lock = threading.RLock()
 
-
     # Open the json from the cache
     json_cache = open(cache_path,'rb')
     cache = json.load(json_cache)

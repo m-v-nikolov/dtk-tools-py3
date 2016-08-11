@@ -3,15 +3,14 @@ import json
 import logging
 import os
 import threading
+import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
 
-import time
-
 from simtools import utils
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.SetupParser import SetupParser
-
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,6 +42,7 @@ class BaseExperimentManager:
         self.commandline = None
         self.location = self.setup.get('type')
         self.cache_path = os.path.join(os.getcwd(), 'simulations')
+        self.data_store = DataStore()
 
 
     @abstractmethod
@@ -78,6 +78,10 @@ class BaseExperimentManager:
     def hard_delete(self):
         pass
 
+    @abstractmethod
+    def get_monitor(self):
+        pass
+
     def get_property(self, prop):
         return self.setup.get(prop)
 
@@ -94,7 +98,7 @@ class BaseExperimentManager:
             self.reload_exp_data()
 
         logger.debug("Status of simulations run on '%s':" % self.location)
-        states, msgs = self.monitorClass(self.exp_data, self.get_setup()).query()
+        states, msgs = self.get_monitor().query()
         return states, msgs
 
     def get_output_parser(self, sim_id, filtered_analyses):
@@ -112,7 +116,7 @@ class BaseExperimentManager:
         """
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
-        self.cache_experiment_data(verbose=False)  # now we have job IDs
+        self.data_store.cache_experiment_data(self.exp_data, verbose=False)
 
     def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
         """
@@ -137,9 +141,10 @@ class BaseExperimentManager:
                               'exp_name': exp_name,
                               'location': self.location,
                               'sim_type': self.config_builder.get_param('Simulation_Type'),
-                              'dtk-tools_revision': utils.get_tools_revision(),
+                              'dtk_tools_revision': utils.get_tools_revision(),
                               'selected_block': self.setup.selected_block,
-                              'setup_overlay_file': self.setup.setup_file})
+                              'setup_overlay_file': self.setup.setup_file,
+                              'command_line':self.commandline.Commandline})
 
         self.exp_data['exp_id'] = self.create_experiment(suite_id)
 
@@ -168,28 +173,7 @@ class BaseExperimentManager:
                 commissioners.append(commissioner)
 
         self.complete_sim_creation(commissioners)
-        experiment_cache_file = self.cache_experiment_data(verbose=verbose)
-
-        # Write the cache file to the most recent file
-        with (open(os.path.join(self.cache_path, 'most_recent.txt'), 'w')) as most_recent:
-            most_recent.writelines(experiment_cache_file)
-            most_recent.close()
-
-    def cache_experiment_data(self, verbose=True):
-
-        if not os.path.exists(self.cache_path):
-            os.mkdir(self.cache_path)
-
-        # Create the filename
-        cache_file = self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'
-
-        with open(os.path.join(self.cache_path, cache_file), 'w') as exp_file:
-            if verbose:
-                logger.info('Saving meta-data for experiment:')
-                logger.info(json.dumps(self.exp_data, sort_keys=True, indent=4))
-            exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
-
-        return cache_file
+        self.data_store.cache_experiment_data(self.exp_data, verbose=verbose)
 
     def reload_exp_data(self):
         """
