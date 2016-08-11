@@ -124,6 +124,12 @@ class DTKConfigBuilder(SimConfigBuilder):
             config["parameters"].update(vector_params)
             config["parameters"].update(vector_params.vivax_chesson_params)
             sim_type = "VECTOR_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIR":
+            config["parameters"].update(sir_params.params)
+            campaign = sir_campaign
+            sim_type = "GENERIC_SIM"
+
         else:
             raise Exception("Don't recognize sim_type argument = %s" % sim_type)
 
@@ -335,11 +341,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.emodules_map[dll_type].append(staged_dll)
 
     def check_custom_events(self):
-        """
-        Pass type = Listed_Events to get merged list of broadcast_list and event_triggers
+        # Return difference between config and campaign
 
-        Return difference between config and campaign
-        """
         broadcast_events_from_campaign = re.findall(r"['\"]Broadcast_Event['\"]:\s['\"](.*?)['\"]",
                                                     str(json.dumps(self.campaign)), re.DOTALL)
 
@@ -348,8 +351,6 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         return list(set(event_triggers_from_campaign + broadcast_events_from_campaign)
                     - set(self.config['parameters']['Listed_Events']))
-
-
 
     def file_writer(self, write_fn):
         """
