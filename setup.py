@@ -1,17 +1,14 @@
+import ctypes
 import glob
 import os
-import shutil
-
+import platform
 import re
-
+import shutil
 import sys
 from ConfigParser import ConfigParser
 
 from setuptools import setup, find_packages
-import platform
 
-# First thing -> test if we have python x64
-import ctypes
 if ctypes.sizeof(ctypes.c_voidp) != 8 :
     print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
     - Windows: https://www.python.org/downloads/windows/
@@ -33,7 +30,8 @@ requirements = [
     'npyscreen==4.10.5',
     'curses==2.2',
     'scipy==0.17.0',
-    'validators'
+    'validators',
+    'sqlalchemy==1.1.0b3'
 ]
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -62,6 +60,9 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
         return cmp(normalize(version1), normalize(version2))
 
     def test_package(name, version=None, package=None):
+        if package is None:
+            package = name
+
         if name in installed_packages:
             if version and mycmp(version, installed_packages[name]) > 0:
                 print "Package: %s installed but with version %s. Upgrading to %s..." % (name, installed_packages[name], version)
@@ -72,8 +73,6 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
         else:
             print "Package: %s (%s) not installed. Installing..." % (name,version)
             # No version found -> install
-            if package is None:
-                package = name
             install_package(package)
 
     # Go through the requirements
