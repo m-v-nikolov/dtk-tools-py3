@@ -1,11 +1,14 @@
 import json
 import logging
 import os
+import re # find listed events by regex
 
 import dtk.generic.params as generic_params
+import dtk.generic.sir as sir_params
 import dtk.malaria.params as malaria_params
 import dtk.vector.params as vector_params
 from dtk.interventions.empty_campaign import empty_campaign
+from dtk.interventions.sir_initial_seeding import sir_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools import utils
@@ -103,6 +106,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                 "Instantiating DTKConfigBuilder from defaults requires a sim_type argument, e.g. 'MALARIA_SIM'.")
 
         config = {"parameters": generic_params.params}
+        campaign = empty_campaign
 
         if sim_type == "MALARIA_SIM":
             config["parameters"].update(vector_params.params)
@@ -120,13 +124,12 @@ class DTKConfigBuilder(SimConfigBuilder):
             config["parameters"].update(vector_params)
             config["parameters"].update(vector_params.vivax_chesson_params)
             sim_type = "VECTOR_SIM"
-
         else:
             raise Exception("Don't recognize sim_type argument = %s" % sim_type)
 
         config["parameters"]["Simulation_Type"] = sim_type
 
-        return cls(config, empty_campaign, **kwargs)
+        return cls(config, campaign, **kwargs)
 
     @classmethod
     def from_files(cls, config_name, campaign_name=None, **kwargs):
@@ -331,6 +334,23 @@ class DTKConfigBuilder(SimConfigBuilder):
             # Add the dll to the emodules_map
             self.emodules_map[dll_type].append(staged_dll)
 
+    def check_custom_events(self):
+        """
+        Pass type = Listed_Events to get merged list of broadcast_list and event_triggers
+
+        Return difference between config and campaign
+        """
+        broadcast_events_from_campaign = re.findall(r"['\"]Broadcast_Event['\"]:\s['\"](.*?)['\"]",
+                                                    str(json.dumps(self.campaign)), re.DOTALL)
+
+        event_triggers_from_campaign = re.findall(r"['\"]Event_Trigger['\"]:\s['\"](.*?)['\"]",
+                                                  str(json.dumps(self.campaign)), re.DOTALL)
+
+        return list(set(event_triggers_from_campaign + broadcast_events_from_campaign)
+                    - set(self.config['parameters']['Listed_Events']))
+
+
+
     def file_writer(self, write_fn):
         """
         Dump all the files needed for the simulation in the simulation directory.
@@ -356,7 +376,6 @@ class DTKConfigBuilder(SimConfigBuilder):
                         f.write(content)
         """
 
-
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
         write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
@@ -371,6 +390,9 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         for name, content in self.input_files.items():
             write_fn(name, dump(content))
+
+        # Add missing item from campaign individual events into Listed_Events
+        self.config['parameters']['Listed_Events'].extend(self.check_custom_events())
 
         write_fn('config.json', dump(self.config))
 
