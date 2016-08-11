@@ -12,7 +12,7 @@ class SimulationMonitor(object):
     Threads are spawned to query each simulation in parallel.
     """
 
-    def __init__(self, exp_data, setup):
+    def __init__(self, exp_data):
         self.exp_data = exp_data
 
     def query(self):
@@ -29,9 +29,9 @@ class CompsSimulationMonitor(SimulationMonitor):
     Note that only a single thread is spawned as the COMPS query is based on the experiment ID
     """
 
-    def __init__(self, exp_data, setup):
+    def __init__(self, exp_data, endpoint):
         self.exp_data = exp_data
-        self.server_endpoint = setup.get('server_endpoint')
+        self.server_endpoint = endpoint
 
     def query(self):
         from COMPS.Data import Experiment, Suite, QueryCriteria
