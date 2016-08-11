@@ -140,5 +140,26 @@ class TestBuilders(unittest.TestCase):
             ngenerated += 1
         self.assertEqual(ngenerated, 4)
 
+    def test_listed_events(self):
+        # Create a builder based on the files
+        builder = DTKConfigBuilder.from_files('input/customevents/configbad.json','input/customevents/campaign.json')
+
+        # Call the file writter
+        def fake_write(name,content):
+            return
+        builder.file_writer(fake_write)
+
+        # Try if the listed events worked
+        self.assertEqual(set(builder.config['parameters']['Listed_Events']), set([
+            "Received_ITN",
+            "TestedPositive",
+            "Received_Campaign_Drugs",
+            "Received_Treatment",
+            "Received_Test",
+            "Received_Survey",
+            "Diagnostic_Survey_5",
+            "Give_Drugs"
+        ]))
+
 if __name__ == '__main__':
     unittest.main()
