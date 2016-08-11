@@ -10,8 +10,8 @@ class CompsExperimentManager(BaseExperimentManager):
     Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
     e.g. creation of Simulation, Experiment, Suite objects
     """
+
     location = 'HPC'
-    monitorClass = CompsSimulationMonitor
     parserClass = CompsDTKOutputParser
 
     def __init__(self, exe_path, exp_data, setup=None):
@@ -20,6 +20,9 @@ class CompsExperimentManager(BaseExperimentManager):
         self.commissioner = None
         self.sims_created = 0
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
+
+    def get_monitor(self):
+        return CompsSimulationMonitor(self.exp_data, self.setup.get('server_endpoint'))
 
     def analyze_simulations(self):
         if not self.assets_service:

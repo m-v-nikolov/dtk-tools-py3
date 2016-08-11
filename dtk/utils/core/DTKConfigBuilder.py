@@ -331,6 +331,7 @@ class DTKConfigBuilder(SimConfigBuilder):
             # Add the dll to the emodules_map
             self.emodules_map[dll_type].append(staged_dll)
 
+
     def file_writer(self, write_fn):
         """
         Dump all the files needed for the simulation in the simulation directory.
@@ -355,7 +356,6 @@ class DTKConfigBuilder(SimConfigBuilder):
                     with open(filename, 'w') as f:
                         f.write(content)
         """
-
 
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
 
