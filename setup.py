@@ -17,6 +17,10 @@ if ctypes.sizeof(ctypes.c_voidp) != 8 :
     Installation is now exiting..."""
     exit()
 
+import site
+print site._script()
+exit()
+
 # Set the list of requirements here
 # Can either take package==version or package
 # For Windows, the wheel can be provided in either tar.gz or whl format
