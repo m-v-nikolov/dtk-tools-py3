@@ -100,14 +100,14 @@ class CalibManager(object):
                 tstamp = re.sub('[ :.-]', '_', str(datetime.now()))
                 shutil.move(self.name, "%s_backup_%s" % (self.name, tstamp))
                 self.create_calibration(location)
-            elif var == "C":
+            elif var == 'C':
                 self.cleanup()
                 time.sleep(1)
                 self.create_calibration(location)
-            elif var == "R":
+            elif var == 'R':
                 self.resume_from_iteration(location=location, **kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
-            elif var == "P":
+            elif var == 'P':
                 self.replot_calibration(**kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
@@ -237,7 +237,12 @@ class CalibManager(object):
             logger.info('Time since calibration started: %s\n' % verbose_timedelta(calibration_time_elapsed))
 
             # Retrieve simulation status and messages
-            states, msgs = self.exp_manager.get_simulation_status(reload=True)
+            try:
+                states, msgs = self.exp_manager.get_simulation_status(reload=True)
+            except Exception as ex:
+                # logger.info(ex)
+                logger.info('[%s] cannot get simulation status. Calibration cannot continue. Exiting...' % self.location)
+                exit()
 
             # Separate Failed from Canceled case, so that we can handle the following situation later:
             #   If some simulations failed, we may continue...
