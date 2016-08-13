@@ -2,6 +2,7 @@ import json
 import logging
 
 import utils
+from simtools.DataAccess.DataStore import DataStore
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,10 @@ class SimulationMonitor(object):
 
     def query(self):
         states, msgs = {}, {}
-        for sim_id, sim in self.exp_data['sims'].items():
-            states[sim_id] = sim["status"] if "status" in sim else "Waiting"
-            msgs[sim_id] = sim["message"] if "message" in sim else ""
+        experiment = DataStore.get_experiment(self.exp_data['exp_id'])
+        for sim in experiment.simulations:
+            states[sim.id] = sim.status if sim.status else "Waiting"
+            msgs[sim.id] = sim.message if sim.message else ""
         return states, msgs
 
 

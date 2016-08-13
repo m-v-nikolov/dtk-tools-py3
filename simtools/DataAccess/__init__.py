@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
-engine = create_engine('sqlite:///%s/db.sqlite' % current_dir, echo=True)
+engine = create_engine('sqlite:///%s/db.sqlite' % current_dir, echo=False)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
