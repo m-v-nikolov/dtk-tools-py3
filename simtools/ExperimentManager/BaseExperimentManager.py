@@ -88,15 +88,11 @@ class BaseExperimentManager:
     def get_setup(self):
         return dict(self.setup.items())
 
-    def get_simulation_status(self, reload=False):
+    def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
-        :param reload: Reload the exp_data (used in case of repeating poll with local simulations)
         """
-        if reload:
-            self.reload_exp_data()
-
         logger.debug("Status of simulations run on '%s':" % self.location)
         states, msgs = self.get_monitor().query()
         return states, msgs
@@ -175,18 +171,6 @@ class BaseExperimentManager:
         self.complete_sim_creation(commissioners)
         self.data_store.cache_experiment_data(self.exp_data, verbose=verbose)
 
-    def reload_exp_data(self):
-        """
-        Refresh the exp_data with what is in the json metadata
-        :return:
-        """
-        cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
-
-        try:
-            self.exp_data = json.load(open(cache_file_path))
-        except:
-            logger.info('Experiment data file locked.')
-
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
         Resubmit some or all canceled or failed simulations.
@@ -249,7 +233,7 @@ class BaseExperimentManager:
             time.sleep(init_sleep)
 
             # Reload the exp_data because job ids may have been added by the thread
-            states, msgs = self.get_simulation_status(reload=True)
+            states, msgs = self.get_simulation_status()
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written
                 time.sleep(sleep_time)

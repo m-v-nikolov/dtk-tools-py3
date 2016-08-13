@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 
 from sqlalchemy import Column
 from sqlalchemy import Date
@@ -21,12 +22,16 @@ class Simulation(Base):
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     tags = Column(PickleType(pickler=json))
+    pid = Column(String)
 
     def __repr__(self):
         return "Simulation %s (%s - %s)" % (self.id, self.status, self.message)
 
     def toJSON(self):
         return {'id': self.id, 'tags': self.tags}
+
+    def get_path(self,experiment):
+        return os.path.join(experiment.sim_root, '%s_%s' % (experiment.exp_name, experiment.exp_id), self.id)
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -46,4 +51,4 @@ class Experiment(Base):
     simulations = relationship("Simulation", back_populates='experiment')
 
     def __repr__(self):
-        return "Experiment %s" % (self.id)
+        return "Experiment %s" % (self.exp_id)

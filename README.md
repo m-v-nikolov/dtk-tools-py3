@@ -22,6 +22,9 @@ From a command-prompt (as admin), run the following from the **dtk-tools** direc
 python -m pip install --upgrade pip
 python setup.py 
 ```
+
+Add the path to `dtk_tools` to your `PYTHONPATH` environment variable.
+
 **Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default: `C:\Python27\Scripts`) 
 to your `PATH` environment variable.
 
