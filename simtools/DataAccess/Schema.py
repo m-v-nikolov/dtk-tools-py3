@@ -11,6 +11,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import func
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from simtools.DataAccess import Base, engine
@@ -55,13 +56,14 @@ class Experiment(Base):
     simulations = relationship("Simulation", back_populates='experiment')
 
     def __repr__(self):
-        return "Experiment %s" % self.get_full_id()
+        return "Experiment %s" % self.id
 
-    def get_full_id(self):
-        return "%s_%s" % (self.exp_name,self.exp_id)
+    @hybrid_property
+    def id(self):
+        return self.exp_name + "_" + self.exp_id
 
     def get_path(self):
-        return os.path.join(self.sim_root, self.get_full_id())
+        return os.path.join(self.sim_root, self.id)
 
     def toJSON(self):
         ret = {}

@@ -96,7 +96,7 @@ class BaseExperimentManager:
         return states, msgs
 
     def get_output_parser(self, sim_id, filtered_analyses):
-        return self.parserClass(self.experiment.get_path(),
+        return self.parserClass(self.experiment.get_path,
                                 sim_id,
                                 DataStore.get_simulation(sim_id).toJSON(),
                                 filtered_analyses,
@@ -195,7 +195,7 @@ class BaseExperimentManager:
                 logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
 
 
-    def print_status(self,states, msgs):
+    def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
             if 'Running' in state:
@@ -204,7 +204,7 @@ class BaseExperimentManager:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         logger.info('Job states:')
-        if len(long_states) < 20:
+        if len(long_states) < 20 and verbose:
             # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
         # Display the counter no matter the number of simulations

@@ -1,6 +1,7 @@
 import json
 import logging
 
+from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 from simtools.DataAccess import engine, session_scope
@@ -73,3 +74,21 @@ class DataStore:
 
             session.expunge_all()
         return experiment
+
+    @classmethod
+    def get_active_experiments(cls):
+        with session_scope() as session:
+            experiments = session.query(Experiment).join(Experiment.simulations, aliased=True).filter_by(status="Running")
+            session.expunge_all()
+
+        return experiments
+
+    @classmethod
+    def get_experiments(cls, id_or_name):
+        print id_or_name
+        id_or_name = '' if not id_or_name else id_or_name
+        with session_scope() as session:
+            experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name))
+            session.expunge_all()
+
+        return experiments

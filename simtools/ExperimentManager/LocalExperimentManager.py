@@ -66,7 +66,7 @@ class LocalExperimentManager(BaseExperimentManager):
         self.experiment.exp_id = exp_id
 
         # Get the path and create it if needed
-        experiment_path = self.experiment.get_path()
+        experiment_path = self.experiment.get_path
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
 
@@ -76,7 +76,7 @@ class LocalExperimentManager(BaseExperimentManager):
         time.sleep(0.01)  # to avoid identical datetime
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
+        sim_dir = os.path.join(self.experiment.get_path, sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
         self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
