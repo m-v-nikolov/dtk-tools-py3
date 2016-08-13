@@ -14,6 +14,8 @@ def dumper(obj):
     try:
         return obj.toJSON()
     except:
+        if isinstance(obj, set):
+            return list(obj)
         return obj.__dict__
 
 
@@ -21,17 +23,13 @@ class DataStore:
     def __init__(self):
         Base.metadata.create_all(engine)
 
-    def cache_experiment_data(self, experiment_data, verbose=True):
-        if verbose:
-            logger.info('Saving meta-data for experiment:')
-            logger.info(json.dumps(experiment_data, indent=3, default=dumper, sort_keys=True))
+    @classmethod
+    def create_simulation(cls, **kwargs):
+        return Simulation(**kwargs)
 
-        experiment = Experiment(**experiment_data)
-        with session_scope() as session:
-            session.merge(experiment)
-
-    def create_simulation(self, id, tags):
-        return Simulation(id=id, tags=tags)
+    @classmethod
+    def create_experiment(cls, **kwargs):
+        return Experiment(**kwargs)
 
     @classmethod
     def get_experiment(cls, exp_id):
@@ -49,6 +47,15 @@ class DataStore:
     def save_simulation(cls,simulation):
         with session_scope() as session:
             session.merge(simulation)
+
+    @classmethod
+    def save_experiment(cls, experiment, verbose=True):
+        if verbose:
+            logger.info('Saving meta-data for experiment:')
+            logger.info(json.dumps(experiment, indent=3, default=dumper, sort_keys=True))
+
+        with session_scope() as session:
+            session.merge(experiment)
 
     @classmethod
     def get_simulation(cls,sim_id):
