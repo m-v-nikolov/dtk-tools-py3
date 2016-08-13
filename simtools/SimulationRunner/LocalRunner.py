@@ -46,7 +46,7 @@ class SimulationCommissioner(threading.Thread):
                 # Wait the end of the process
                 # We use poll to be able to update the status
                 while p.poll() is None:
-                    time.sleep(1)
+                    time.sleep(3)
                     self.change_state(message=self.last_status_line())
 
                 # Remove "pid" from cached json file.
