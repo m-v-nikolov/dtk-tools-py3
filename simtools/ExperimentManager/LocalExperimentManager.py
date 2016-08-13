@@ -8,6 +8,7 @@ import sys
 import time
 from datetime import datetime
 
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
@@ -29,7 +30,7 @@ class LocalExperimentManager(BaseExperimentManager):
         BaseExperimentManager.__init__(self, model_file, exp_data, setup)
 
     def get_monitor(self):
-        return SimulationMonitor(self.exp_data)
+        return SimulationMonitor(self.experiment.exp_id)
 
     def cancel_all_simulations(self, states=None):
 
@@ -51,7 +52,7 @@ class LocalExperimentManager(BaseExperimentManager):
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.exp_data['exp_id']], shell=False, creationflags=512)
+        subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims),self.experiment.exp_id], shell=False, creationflags=512)
 
         super(LocalExperimentManager,self).commission_simulations()
 
@@ -60,21 +61,25 @@ class LocalExperimentManager(BaseExperimentManager):
     def create_experiment(self, suite_id=None):
         exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating exp_id = " + exp_id)
-        sim_path = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + exp_id)
-        if not os.path.exists(sim_path):
-            os.makedirs(sim_path)
-        self.exp_data['simulations'] = []
+
+        # Needed to get the path
+        self.experiment.exp_id = exp_id
+
+        # Get the path and create it if needed
+        experiment_path = self.experiment.get_path()
+        if not os.path.exists(experiment_path):
+            os.makedirs(experiment_path)
+
         return exp_id
 
     def create_simulation(self):
         time.sleep(0.01)  # to avoid identical datetime
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'],
-                               sim_id)
+        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
-        self.exp_data['simulations'].append(self.data_store.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
+        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))

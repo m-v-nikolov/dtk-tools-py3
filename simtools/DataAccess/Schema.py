@@ -1,4 +1,5 @@
 import datetime
+import inspect
 import json
 import os
 
@@ -28,10 +29,11 @@ class Simulation(Base):
         return "Simulation %s (%s - %s)" % (self.id, self.status, self.message)
 
     def toJSON(self):
-        return {'id': self.id, 'tags': self.tags}
+        return {self.id: self.tags}
 
     def get_path(self,experiment):
         return os.path.join(experiment.sim_root, '%s_%s' % (experiment.exp_name, experiment.exp_id), self.id)
+
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -50,5 +52,28 @@ class Experiment(Base):
 
     simulations = relationship("Simulation", back_populates='experiment')
 
-    def __repr__(self):
-        return "Experiment %s" % (self.exp_id)
+    def get_full_id(self):
+        return "%s_%s" % (self.exp_name,self.exp_id)
+
+    def get_path(self):
+        return os.path.join(self.sim_root, self.get_full_id())
+
+    def toJSON(self):
+        ret = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            # Weed out the internal parameters/methods
+            if name.startswith('_') or name in ('metadata',) or inspect.ismethod(value):
+                continue
+
+            # Special case for the simulations
+            if name == 'simulations':
+                ret['simulations'] = {}
+                for sim in value:
+                    ret['simulations'][sim.id] = sim.tags
+                continue
+
+            # By default just add to the dict
+            ret[name] = value
+
+        return ret

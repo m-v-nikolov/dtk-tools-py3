@@ -13,12 +13,12 @@ class SimulationMonitor(object):
     Threads are spawned to query each simulation in parallel.
     """
 
-    def __init__(self, exp_data):
-        self.exp_data = exp_data
+    def __init__(self, exp_id):
+        self.exp_id = exp_id
 
     def query(self):
         states, msgs = {}, {}
-        experiment = DataStore.get_experiment(self.exp_data['exp_id'])
+        experiment = DataStore.get_experiment(self.exp_id)
         for sim in experiment.simulations:
             states[sim.id] = sim.status if sim.status else "Waiting"
             msgs[sim.id] = sim.message if sim.message else ""

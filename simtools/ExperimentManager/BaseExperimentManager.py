@@ -19,17 +19,17 @@ logger = logging.getLogger(__name__)
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
 
-    def __init__(self, model_file, exp_data, setup=None):
+    def __init__(self, model_file, experiment, setup=None):
         # If no setup is passed -> create it
         if setup is None:
-            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
-            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
+            selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
+            setup_file = experiment.setup_overlay_file
             self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL')
         else:
             self.setup = setup
 
         self.model_file = model_file
-        self.exp_data = exp_data
+        self.experiment = experiment if experiment else DataStore.create_experiment()
         max_threads = int(self.setup.get('max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
         self.assets_service = False
@@ -42,8 +42,6 @@ class BaseExperimentManager:
         self.commandline = None
         self.location = self.setup.get('type')
         self.cache_path = os.path.join(os.getcwd(), 'simulations')
-        self.data_store = DataStore()
-
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -98,10 +96,9 @@ class BaseExperimentManager:
         return states, msgs
 
     def get_output_parser(self, sim_id, filtered_analyses):
-        return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
-                                             self.exp_data.get('exp_name', '') + '_' + self.exp_data.get('exp_id', '')),
+        return self.parserClass(self.experiment.get_path(),
                                 sim_id,
-                                self.exp_data['sims'][sim_id],
+                                DataStore.get_simulation(sim_id).toJSON(),
                                 filtered_analyses,
                                 self.maxThreadSemaphore)
 
@@ -112,7 +109,6 @@ class BaseExperimentManager:
         """
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
-        self.data_store.cache_experiment_data(self.exp_data, verbose=False)
 
     def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
         """
@@ -132,17 +128,18 @@ class BaseExperimentManager:
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
         # Set the meta data
-        self.exp_data.update({'sim_root': self.get_property('sim_root'),
-                              'exe_name': self.commandline.Executable,
-                              'exp_name': exp_name,
-                              'location': self.location,
-                              'sim_type': self.config_builder.get_param('Simulation_Type'),
-                              'dtk_tools_revision': utils.get_tools_revision(),
-                              'selected_block': self.setup.selected_block,
-                              'setup_overlay_file': self.setup.setup_file,
-                              'command_line':self.commandline.Commandline})
+        self.experiment = DataStore.create_experiment(sim_root=self.get_property('sim_root'),
+                                                      exe_name=self.commandline.Executable,
+                                                      exp_name=exp_name,
+                                                      location=self.location,
+                                                      sim_type=self.config_builder.get_param('Simulation_Type'),
+                                                      dtk_tools_revision=utils.get_tools_revision(),
+                                                      selected_block=self.setup.selected_block,
+                                                      setup_overlay_file=self.setup.setup_file,
+                                                      command_line=self.commandline.Commandline)
 
-        self.exp_data['exp_id'] = self.create_experiment(suite_id)
+        # Add the experiment id established during creation
+        self.experiment.exp_id = self.create_experiment(suite_id)
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
@@ -169,7 +166,7 @@ class BaseExperimentManager:
                 commissioners.append(commissioner)
 
         self.complete_sim_creation(commissioners)
-        self.data_store.cache_experiment_data(self.exp_data, verbose=verbose)
+        DataStore.save_experiment(self.experiment, verbose=verbose)
 
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
@@ -196,6 +193,7 @@ class BaseExperimentManager:
                 self.resubmit_job(id)
             else:
                 logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
+
 
     def print_status(self,states, msgs):
         long_states = copy.deepcopy(states)
@@ -232,7 +230,7 @@ class BaseExperimentManager:
         while True:
             time.sleep(init_sleep)
 
-            # Reload the exp_data because job ids may have been added by the thread
+            # Get the new status
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written

@@ -1,27 +1,22 @@
 import argparse
-import subprocess
-from importlib import import_module
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
-
-import npyscreen
+from importlib import import_module
 
 import simtools.utils as utils
-
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
-from dtk.utils.setupui.SetupApplication import SetupApplication
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-
-from simtools.SetupParser import SetupParser
-
-from dtk.utils.analyzers.select import example_selection
+from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
-from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+from dtk.utils.analyzers.select import example_selection
+from dtk.utils.setupui.SetupApplication import SetupApplication
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.SetupParser import SetupParser
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
