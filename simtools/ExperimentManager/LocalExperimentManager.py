@@ -26,8 +26,8 @@ class LocalExperimentManager(BaseExperimentManager):
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
-    def __init__(self, model_file, exp_data, setup=None):
-        BaseExperimentManager.__init__(self, model_file, exp_data, setup)
+    def __init__(self, model_file, experiment, setup=None):
+        BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def get_monitor(self):
         return SimulationMonitor(self.experiment.exp_id)
