@@ -20,8 +20,6 @@ def dumper(obj):
 
 
 class DataStore:
-    def __init__(self):
-        Base.metadata.create_all(engine)
 
     @classmethod
     def create_simulation(cls, **kwargs):
@@ -64,3 +62,14 @@ class DataStore:
             session.expunge_all()
 
         return simulation
+
+    @classmethod
+    def get_most_recent_experiment(cls, id_or_name):
+        id_or_name = '' if not id_or_name else id_or_name
+        with session_scope() as session:
+            experiment = session.query(Experiment)\
+                .filter(Experiment.exp_name.like('%%%s%%' % id_or_name))\
+                .order_by(Experiment.date_created.desc()).first()
+
+            session.expunge_all()
+        return experiment

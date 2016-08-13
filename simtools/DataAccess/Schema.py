@@ -5,13 +5,15 @@ import os
 
 from sqlalchemy import Column
 from sqlalchemy import Date
+from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import PickleType
 from sqlalchemy import String
+from sqlalchemy import func
 from sqlalchemy.orm import relationship
 
-from simtools.DataAccess import Base
+from simtools.DataAccess import Base, engine
 
 
 class Simulation(Base):
@@ -48,9 +50,12 @@ class Experiment(Base):
     sim_root = Column(String)
     sim_type = Column(String)
     command_line = Column(String)
-    date_created = Column(Date, default=datetime.datetime.now())
+    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
     simulations = relationship("Simulation", back_populates='experiment')
+
+    def __repr__(self):
+        return "Experiment %s" % self.get_full_id()
 
     def get_full_id(self):
         return "%s_%s" % (self.exp_name,self.exp_id)
@@ -63,7 +68,7 @@ class Experiment(Base):
         for name in dir(self):
             value = getattr(self, name)
             # Weed out the internal parameters/methods
-            if name.startswith('_') or name in ('metadata',) or inspect.ismethod(value):
+            if name.startswith('_') or name in ('metadata','date_created') or inspect.ismethod(value):
                 continue
 
             # Special case for the simulations
@@ -77,3 +82,5 @@ class Experiment(Base):
             ret[name] = value
 
         return ret
+
+Base.metadata.create_all(engine)

@@ -15,6 +15,7 @@ from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.analyzers.select import example_selection
 from dtk.utils.setupui.SetupApplication import SetupApplication
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
@@ -120,7 +121,7 @@ def status(args, unknownArgs):
 
     sm = reload_experiment(args)
     while True:
-        states, msgs = sm.get_simulation_status(args.repeat)
+        states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
         if not args.repeat or sm.finished():
             break
@@ -317,13 +318,7 @@ def reload_experiment(args=None):
     else:
         id = None
 
-    # Attempt to read file 3 times.
-    result = try_loop(lambda: ExperimentManagerFactory.from_file(utils.exp_file(id)))
-    if result:
-        return result
-            
-    logging.error('Could not successfully load any experiment files.')
-    sys.exit()
+    return ExperimentManagerFactory.from_experiment(DataStore.get_most_recent_experiment(id))
 
 
 def reload_experiments(args=None):

@@ -21,6 +21,11 @@ class ExperimentManagerFactory(object):
         raise Exception("ExperimentManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
+    def from_experiment(cls, experiment):
+        logger.info("Reloading ExperimentManager from %s" % experiment)
+        return cls.factory(experiment.location)('', experiment)
+
+    @classmethod
     def from_model(cls, model_file, location='LOCAL', setup=None, **kwargs):
         logger.info('Initializing %s ExperimentManager from: %s', location, model_file)
         if not setup:
