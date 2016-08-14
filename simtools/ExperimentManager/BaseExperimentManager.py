@@ -96,9 +96,9 @@ class BaseExperimentManager:
         return states, msgs
 
     def get_output_parser(self, sim_id, filtered_analyses):
-        return self.parserClass(self.experiment.get_path,
+        return self.parserClass(self.experiment.get_path(),
                                 sim_id,
-                                DataStore.get_simulation(sim_id).toJSON(),
+                                DataStore.get_simulation(sim_id).tags,
                                 filtered_analyses,
                                 self.maxThreadSemaphore)
 
@@ -194,7 +194,6 @@ class BaseExperimentManager:
             else:
                 logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
 
-
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
@@ -225,7 +224,6 @@ class BaseExperimentManager:
 
         # Delete experiment
         DataStore.delete_experiment(self.experiment)
-
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
@@ -258,21 +256,19 @@ class BaseExperimentManager:
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
         """
-
         parsers = {}
 
-        for i, (sim_id, sim) in enumerate(self.exp_data['sims'].items()):
-
-            filtered_analyses = [a for a in self.analyzers if a.filter(sim)]
+        for i, sim in enumerate(list(self.experiment.simulations)):
+            filtered_analyses = [a for a in self.analyzers if a.filter(sim.tags)]
             if not filtered_analyses:
                 logger.debug('Simulation did not pass filter on any analyzer.')
                 continue
 
             if self.maxThreadSemaphore:
                 self.maxThreadSemaphore.acquire()
-                logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
+                logger.debug('Thread-%d: sim_id=%s', i, str(sim.id))
 
-            parser = self.get_output_parser(sim_id, filtered_analyses)  # execute filtered analyzers on parser thread
+            parser = self.get_output_parser(sim.id, filtered_analyses)  # execute filtered analyzers on parser thread
             parser.start()
             parsers[parser.sim_id] = parser
 
