@@ -1,5 +1,6 @@
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.OutputParser import CompsDTKOutputParser
@@ -14,15 +15,15 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, exe_path, exp_data, setup=None):
-        BaseExperimentManager.__init__(self, exe_path, exp_data, setup)
+    def __init__(self, experiment, exp_data, setup=None):
+        BaseExperimentManager.__init__(self, experiment, exp_data, setup)
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
         self.commissioner = None
         self.sims_created = 0
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
     def get_monitor(self):
-        return CompsSimulationMonitor(self.exp_data, self.setup.get('server_endpoint'))
+        return CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id, self.setup.get('server_endpoint'))
 
     def analyze_simulations(self):
         if not self.assets_service:
@@ -38,8 +39,9 @@ class CompsExperimentManager(BaseExperimentManager):
     def create_experiment(self, suite_id=None):
         self.sims_created = 0
         return CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
-                                                             self.exp_data['exp_name'], self.staged_bin_path,
+                                                             self.experiment.exp_name, self.staged_bin_path,
                                                              self.commandline.Options, suite_id)
+
 
     def create_simulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
@@ -47,7 +49,7 @@ class CompsExperimentManager(BaseExperimentManager):
             # until it can actually go, but asymmetrical acquire()/release() is not
             # ideal...
 
-            self.commissioner = CompsSimulationCommissioner(self.exp_data['exp_id'], self.maxThreadSemaphore)
+            self.commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore)
             ret = self.commissioner
         else:
             ret = None
@@ -75,17 +77,21 @@ class CompsExperimentManager(BaseExperimentManager):
         self.collect_sim_metadata()
 
     def commission_simulations(self):
-        CompsSimulationCommissioner.commission_experiment(self.exp_data['exp_id'])
+        CompsSimulationCommissioner.commission_experiment(self.experiment.exp_id)
         super(CompsExperimentManager, self).commission_simulations()
         return True
 
     def collect_sim_metadata(self):
-        self.exp_data['sims'] = CompsSimulationCommissioner.get_sim_metadata_for_exp(self.exp_data['exp_id'])
+        for simid, simdata in  CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
+            sim = DataStore.create_simulation(id=simid, tags=simdata)
+            self.experiment.simulations.append(sim)
+
+        DataStore.save_experiment(self.experiment)
 
     def cancel_all_simulations(self, states=None):
         utils.COMPS_login(self.get_property('server_endpoint'))
         from COMPS.Data import Experiment, QueryCriteria, Simulation
-        e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
+        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Cancel()
 
     def hard_delete(self):
@@ -98,7 +104,7 @@ class CompsExperimentManager(BaseExperimentManager):
         # Mark experiment for deletion in COMPS.
         utils.COMPS_login(self.get_property('server_endpoint'))
         from COMPS.Data import Experiment, QueryCriteria, Simulation
-        e = Experiment.GetById(self.exp_data['exp_id'], QueryCriteria().Select('Id'))
+        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
