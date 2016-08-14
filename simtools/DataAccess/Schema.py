@@ -4,13 +4,11 @@ import json
 import os
 
 from sqlalchemy import Column
-from sqlalchemy import Date
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import PickleType
 from sqlalchemy import String
-from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -42,6 +40,7 @@ class Experiment(Base):
     __tablename__ = "experiments"
 
     exp_id = Column(String, primary_key=True)
+    suite_id = Column(String)
     dtk_tools_revision = Column(String)
     exe_name = Column(String)
     exp_name = Column(String)
