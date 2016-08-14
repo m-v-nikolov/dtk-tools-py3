@@ -41,50 +41,24 @@ class SimulationCommissioner(threading.Thread):
                 p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
-                self.change_state(status="Running", pid=p.pid)
+                DataStore.change_simulation_state(self.simulation, status="Running", pid=p.pid)
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
                 while p.poll() is None:
+                    DataStore.change_simulation_state(self.simulation, message=self.last_status_line())
                     time.sleep(3)
-                    self.change_state(message=self.last_status_line())
-
-                # Remove "pid" from cached json file.
-                self.change_state(pid=-1)
 
                 # When poll returns None, the process is done, test if succeeded or failed
                 if "Done" in self.last_status_line():
-                    self.change_state(status="Succeeded")
+                    DataStore.change_simulation_state(self.simulation, status="Succeeded", pid=-1)
                 else:
-                    # Refresh the simulation
-                    self.simulation = DataStore.get_simulation(self.simulation.id)
                     # If we exited with a Canceled status, dont update to Failed
                     if not self.check_state() == 'Canceled':
-                        self.change_state(status="Failed")
+                        DataStore.change_simulation_state(self.simulation, status="Failed", pid=-1)
 
                 # Free up an item in the queue
                 self.queue.get()
-
-    def change_state(self, status=None, message=None, pid=None):
-        """
-        Change either status, message or both for the simulation currently handled by the thread.
-
-        Args:
-            message: Change the message of the simulation
-            status: Change the status
-            pid: Change the pid. if pid=-1 remove the pid
-        """
-        if status:
-            self.simulation.status = status
-
-        if message:
-            self.simulation.message = message
-
-        if pid:
-            self.simulation.pid = pid if pid != -1 else None
-
-        DataStore.save_simulation(self.simulation)
-
 
     def last_status_line(self):
         """

@@ -151,9 +151,16 @@ def resubmit(args, unknownArgs):
 
 
 def kill(args, unknownArgs):
-    sm = reload_experiment(args)
+    with utils.nostdout():
+        sm = reload_experiment(args)
+
+    logging.info("Killing Experiment %s" % sm.experiment.id)
     states, msgs = sm.get_simulation_status()
-    sm.print_status(states, msgs)
+    sm.print_status(states, msgs, verbose=False)
+
+    if sm.status_finished(states):
+        logging.warn("The Experiment %s is already finished and therefore cannot be killed. Exiting..." % sm.experiment.id)
+        return
 
     if args.simIds:
         logging.info('KIlling job(s) with ids: ' + str(args.simIds))

@@ -38,7 +38,7 @@ class LocalExperimentManager(BaseExperimentManager):
             states = self.get_simulation_status()[0]
 
         ids = states.keys()
-        logger.info('Killing all simulations in experiment: ' + str(ids))
+        logger.info('Killing all simulations in experiment: ')
         self.cancel_simulations(ids)
 
     def complete_sim_creation(self, commisioners=[]):
@@ -66,7 +66,7 @@ class LocalExperimentManager(BaseExperimentManager):
         self.experiment.exp_id = exp_id
 
         # Get the path and create it if needed
-        experiment_path = self.experiment.get_path
+        experiment_path = self.experiment.get_path()
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
 
@@ -76,7 +76,7 @@ class LocalExperimentManager(BaseExperimentManager):
         time.sleep(0.01)  # to avoid identical datetime
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.experiment.get_path, sim_id)
+        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
         self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
@@ -88,7 +88,7 @@ class LocalExperimentManager(BaseExperimentManager):
 
     def hard_delete(self):
         """
-        Delete local cache data for experiment and output data for experiment.
+        Delete experiment and output data.
         """
         # Perform soft delete cleanup.
         self.soft_delete()
@@ -99,22 +99,25 @@ class LocalExperimentManager(BaseExperimentManager):
         shutil.rmtree(local_data_path)
 
     def kill_job(self, simId):
-        # if the status has not been set -> set it to Canceled
-        if 'status' not in self.exp_data['sims'][simId]:
-            self.exp_data['sims'][simId]['status'] = 'Canceled'
-            self.cache_experiment_data(verbose=False)
-            return
+
+        simulation = DataStore.get_simulation(simId)
 
         # No need of trying to kill simulation already done
-        if self.exp_data['sims'][simId]['status'] in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
+        if simulation.status in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
             return
 
-        pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
-        if pid:
+        # if the status has not been set -> set it to Canceled
+        if not simulation.status:
+            simulation.status = 'Canceled'
+            DataStore.save_simulation(simulation)
+            return
+
+        # It was running -> Kill it if pid is there
+        if simulation.pid:
             try:
-                self.exp_data['sims'][simId]['status'] = 'Canceled'
-                self.cache_experiment_data(verbose=False)
-                os.kill(pid, signal.SIGTERM)
-            except:
-                pass
+                simulation.status = 'Canceled'
+                DataStore.save_simulation(simulation)
+                os.kill(int(simulation.pid), signal.SIGTERM)
+            except Exception as e:
+                print e
 

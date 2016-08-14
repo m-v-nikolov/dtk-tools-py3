@@ -212,19 +212,20 @@ class BaseExperimentManager:
 
     def soft_delete(self):
         """
-        Delete local cache data for experiment.
+        Delete experiment in the DB
         """
-        # First, ensure that all simulations are canceled.
+
         states, msgs = self.get_simulation_status()
-        self.cancel_all_simulations(states)
+        if not self.status_finished(states):
+            # If the experiment is not done -> cancel
+            self.cancel_all_simulations(states)
 
-        # Wait for successful cancellation.
-        self.wait_for_finished(verbose=True)
+            # Wait for successful cancellation.
+            self.wait_for_finished(verbose=True)
 
-        # Delete local cache file.
-        cache_file = os.path.join(os.getcwd(), 'simulations',
-                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
-        os.remove(cache_file)
+        # Delete experiment
+        DataStore.delete_experiment(self.experiment)
+
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
@@ -305,6 +306,7 @@ class BaseExperimentManager:
             return
 
         for id in ids:
+            logger.info("Killing Job %s" % id)
             if type(id) is str:
                 id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
 
