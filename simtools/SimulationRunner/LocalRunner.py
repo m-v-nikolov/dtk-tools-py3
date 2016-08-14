@@ -50,12 +50,13 @@ class SimulationCommissioner(threading.Thread):
                     time.sleep(3)
 
                 # When poll returns None, the process is done, test if succeeded or failed
+                last_message = self.last_status_line()
                 if "Done" in self.last_status_line():
-                    DataStore.change_simulation_state(self.simulation, status="Succeeded", pid=-1)
+                    DataStore.change_simulation_state(self.simulation, status="Succeeded",  pid=-1, message=last_message)
                 else:
                     # If we exited with a Canceled status, dont update to Failed
                     if not self.check_state() == 'Canceled':
-                        DataStore.change_simulation_state(self.simulation, status="Failed", pid=-1)
+                        DataStore.change_simulation_state(self.simulation, status="Failed", pid=-1, message=last_message)
 
                 # Free up an item in the queue
                 self.queue.get()
@@ -72,7 +73,7 @@ class SimulationCommissioner(threading.Thread):
             with open(status_path, 'r') as status_file:
                 msg = list(status_file)[-1]
 
-        return msg if msg else ""
+        return msg.strip('\n') if msg else ""
 
     def check_state(self):
         """
