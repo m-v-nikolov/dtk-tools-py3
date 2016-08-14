@@ -21,7 +21,7 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Cancelled'))
+    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled'))
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))

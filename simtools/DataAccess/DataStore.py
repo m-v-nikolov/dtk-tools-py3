@@ -85,10 +85,27 @@ class DataStore:
 
     @classmethod
     def get_experiments(cls, id_or_name):
-        print id_or_name
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name))
             session.expunge_all()
 
         return experiments
+
+    @classmethod
+    def delete_experiment(cls, experiment):
+        with session_scope() as session:
+            session.delete(experiment)
+
+    @classmethod
+    def change_simulation_state(cls, simulation, message=None, status=None, pid=None):
+        with session_scope() as session:
+            simulation = session.query(Simulation).filter(Simulation.id == simulation.id).one()
+            if message:
+                simulation.message = message
+
+            if status:
+                simulation.status = status
+
+            if pid:
+                simulation.pid = pid if pid > 0 else None
