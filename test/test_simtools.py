@@ -3,6 +3,7 @@ import stat
 import unittest
 
 from simtools import utils
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder
 from simtools.SetupParser import SetupParser
@@ -234,10 +235,10 @@ class TestLocalExperimentManager(unittest.TestCase):
         local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL')
         local_manager.run_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'),
                                       exp_builder=RunNumberSweepBuilder(self.nsims))
-        self.assertEqual(local_manager.exp_data['exp_name'], 'test')
+        self.assertEqual(local_manager.experiment.exp_name, 'test')
 
     def test_status(self):
-        local_manager = ExperimentManagerFactory.from_file(utils.exp_file())
+        local_manager = ExperimentManagerFactory.from_experiment(DataStore.get_most_recent_experiment(None))
         states, msgs = local_manager.get_simulation_status()
         self.assertListEqual(states.values(), ['Waiting'] * self.nsims)
 
