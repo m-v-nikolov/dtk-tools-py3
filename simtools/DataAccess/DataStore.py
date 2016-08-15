@@ -1,18 +1,28 @@
 import json
 import logging
-from operator import and_
 
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
-from simtools.DataAccess import engine, session_scope
-from simtools.DataAccess.Schema import Base, Experiment, Simulation
+from simtools.DataAccess import session_scope
+from simtools.DataAccess.Schema import Experiment, Simulation
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 def dumper(obj):
+    """
+    Function to pass to the json.dump function.
+    Allows to call the toJSON() function on the objects that needs to be serialized.
+    Revert to the __dict__ if failure to invoke the toJSON().
+
+    Args:
+        obj: the object to serialize
+
+    Returns:
+        Serializable format
+    """
     try:
         return obj.toJSON()
     except:
@@ -22,6 +32,9 @@ def dumper(obj):
 
 
 class DataStore:
+    """
+    Class to abstract access to the data.
+    """
 
     @classmethod
     def create_simulation(cls, **kwargs):
@@ -60,7 +73,7 @@ class DataStore:
     @classmethod
     def get_simulation(cls,sim_id):
         with session_scope() as session:
-            simulation = session.query(Simulation).filter(Simulation.id==sim_id).one()
+            simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
             session.expunge_all()
 
         return simulation
@@ -82,7 +95,7 @@ class DataStore:
         with session_scope() as session:
             experiments = session.query(Experiment).distinct(Experiment.exp_id)\
                 .join(Experiment.simulations)\
-                .filter(or_(Simulation.status.in_(("Running","Waiting",)), Simulation.status.is_(None)))
+                .filter(or_(Simulation.status.in_(("Running", "Waiting")), Simulation.status.is_(None)))
             session.expunge_all()
 
         return experiments

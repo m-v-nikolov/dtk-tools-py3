@@ -226,7 +226,7 @@ class TestIMIS(unittest.TestCase):
 
 class TestIterationState(unittest.TestCase):
     init_state = dict(parameters={}, next_point={}, simulations={},
-                      analyzers={}, results=[], iteration=0)
+                      analyzers={}, results=[], iteration=0, experiment_id=None)
 
     def setUp(self):
         self.state = IterationState()

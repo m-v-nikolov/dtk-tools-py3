@@ -292,7 +292,10 @@ class CalibManager(object):
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
             return self.iteration_state.results['total']
+        print self.iteration_state.experiment_id
         exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
+
+        print exp_manager.experiment.id
         for site in self.sites:
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
@@ -429,10 +432,8 @@ class CalibManager(object):
         else :
             sims_paths = dict()
 
-            base_path = os.path.join(self.exp_manager.experiment.sim_root, "%s_%s" % (experiment.exp_name, experiment.exp_id))
-
             for sim in experiment.simulations:
-                sims_paths[sim.id] = os.path.join(base_path, sim.id)
+                sims_paths[sim.id] = os.path.join(experiment.get_path(), sim.id)
 
         # Transform the ids in actual paths
         def find_path(el):
@@ -700,8 +701,11 @@ class CalibManager(object):
                 it = IterationState.from_file(iteration_cache)
 
                 # Create the associated experiment manager and ask for deletion
-                exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
-                exp_mgr.hard_delete()
+                try:
+                    exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
+                    exp_mgr.hard_delete()
+                except:
+                    continue
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -710,7 +714,6 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
-
 
     def reanalyze(self):
         """
