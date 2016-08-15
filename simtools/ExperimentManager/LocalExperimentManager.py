@@ -33,7 +33,6 @@ class LocalExperimentManager(BaseExperimentManager):
         return SimulationMonitor(self.experiment.exp_id)
 
     def cancel_all_simulations(self, states=None):
-
         if not states:
             states = self.get_simulation_status()[0]
 
@@ -105,7 +104,7 @@ class LocalExperimentManager(BaseExperimentManager):
             return
 
         # if the status has not been set -> set it to Canceled
-        if not simulation.status:
+        if not simulation.status or simulation.status == 'Waiting':
             simulation.status = 'Canceled'
             DataStore.save_simulation(simulation)
             return

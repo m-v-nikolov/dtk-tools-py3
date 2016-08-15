@@ -14,6 +14,8 @@ from scipy.stats import norm, uniform, multivariate_normal
 from calibtool.IterationState import IterationState
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
+from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
 
 class TestCommands(unittest.TestCase):
@@ -32,21 +34,15 @@ class TestCommands(unittest.TestCase):
         # Change the dir back to normal
         os.chdir(self.current_cwd)
 
-        # Get the JSONs to find the simulations
-        simulation_dir = os.path.join(self.calibration_dir, 'simulations')
-        simulation_files = glob.glob(simulation_dir+'/*.json')
-
-        # For each file, look for the experiment dir and erase
-        for simulation_file in simulation_files:
-            try:
-                siminfo = json.load(open(os.path.join(simulation_dir, simulation_file), 'rb'))
-                exp_dir = os.path.join(siminfo['sim_root'], "%s_%s" % (siminfo['exp_name'], siminfo['exp_id']))
-                shutil.rmtree(exp_dir)
-            except ValueError: # JSON cannot be decoded, just move on
-                continue
+        # get all iterations
+        for iteration_folder in glob.glob(os.path.join(self.calibration_dir,"test_dummy_calibration","iter*")):
+            it = IterationState.from_file(os.path.join(iteration_folder,'IterationState.json'))
+            exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
+            exp_mgr.hard_delete()
 
         # Clear the dir
         shutil.rmtree(self.calibration_dir)
+
 
     def test_run_calibration(self):
         os.chdir(self.calibration_dir)
@@ -55,7 +51,7 @@ class TestCommands(unittest.TestCase):
         ctool.communicate()
 
         # Test if files are present
-        calibpath = os.path.abspath('ExampleCalibration')
+        calibpath = os.path.abspath('test_dummy_calibration')
         self.assertTrue(os.path.exists(calibpath))
         self.assertTrue(os.path.exists(os.path.join(calibpath, '_plots')))
         self.assertNotEqual(len(os.listdir(os.path.join(calibpath, '_plots'))), 0)
@@ -72,7 +68,7 @@ class TestCommands(unittest.TestCase):
         ctool.communicate()
 
         # Open the CalibManager.json and save the values
-        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
             cm = json.load(fp)
             self.totals = cm['results']['total']
 
@@ -81,7 +77,7 @@ class TestCommands(unittest.TestCase):
         ctool.communicate()
 
         # After reanalyze compare the totals
-        with open('ExampleCalibration/CalibManager.json', 'r') as fp:
+        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
             cm = json.load(fp)
             for i in range(len(self.totals)):
                 self.assertAlmostEqual(cm['results']['total'][i], self.totals[i])
@@ -110,7 +106,7 @@ class TestCommands(unittest.TestCase):
         ctool.communicate()
 
         # Make sure everything disappeared
-        self.assertFalse(os.path.exists('ExampleCalibration'))
+        self.assertFalse(os.path.exists('test_dummy_calibration'))
         self.assertEqual(glob.glob('simulations/*.json'), [])
         for path in simulation_paths:
             self.assertFalse(os.path.exists(path))

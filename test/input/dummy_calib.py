@@ -42,7 +42,7 @@ next_point_kwargs = dict(initial_samples=3,
                          samples_per_iteration=3,
                          n_resamples=100)
 
-calib_manager = CalibManager(name='ExampleCalibration',
+calib_manager = CalibManager(name='test_dummy_calibration',
                              setup=SetupParser(),
                              config_builder=cb,
                              sample_point_fn=sample_point_fn,

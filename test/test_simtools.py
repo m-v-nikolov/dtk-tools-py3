@@ -218,14 +218,6 @@ class TestBuilders(unittest.TestCase):
         self.assertEqual(ModBuilder.metadata, {'foo.bar': v})
 
 
-class TestLocalExperimentManagerCreate(unittest.TestCase):
-
-    def test_create(self):
-        model_file = 'input/dummy_model.py'
-        local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL')
-        local_manager.create_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'))
-
-
 class TestLocalExperimentManager(unittest.TestCase):
 
     nsims = 3
@@ -236,11 +228,13 @@ class TestLocalExperimentManager(unittest.TestCase):
         local_manager.run_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'),
                                       exp_builder=RunNumberSweepBuilder(self.nsims))
         self.assertEqual(local_manager.experiment.exp_name, 'test')
+        experiment = local_manager.experiment
 
-    def test_status(self):
-        local_manager = ExperimentManagerFactory.from_experiment(DataStore.get_most_recent_experiment(None))
+        local_manager = ExperimentManagerFactory.from_experiment(experiment=DataStore.get_experiment(experiment.exp_id))
         states, msgs = local_manager.get_simulation_status()
         self.assertListEqual(states.values(), ['Waiting'] * self.nsims)
+
+        local_manager.hard_delete()
 
 
 if __name__ == '__main__':
