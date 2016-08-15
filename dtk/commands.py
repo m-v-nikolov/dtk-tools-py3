@@ -1,27 +1,23 @@
 import argparse
-import subprocess
-from importlib import import_module
 import json
 import logging
 import os
+import subprocess
 import sys
 import time
-
-import npyscreen
+from importlib import import_module
 
 import simtools.utils as utils
-
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
-from dtk.utils.setupui.SetupApplication import SetupApplication
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-
-from simtools.SetupParser import SetupParser
-
-from dtk.utils.analyzers.select import example_selection
+from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
-from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+from dtk.utils.analyzers.select import example_selection
+from dtk.utils.setupui.SetupApplication import SetupApplication
+from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.SetupParser import SetupParser
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
@@ -117,15 +113,17 @@ def run(args, unknownArgs):
 def status(args, unknownArgs):
     if args.active:
         logging.info('Getting status of all active experiments.')
-        sms = reload_active_experiments()
-        for sm in sms:
+        active_experiments = DataStore.get_active_experiments()
+
+        for exp in active_experiments:
+            sm = ExperimentManagerFactory.from_experiment(exp)
             states, msgs = sm.get_simulation_status()
             sm.print_status(states, msgs)
         return
 
     sm = reload_experiment(args)
     while True:
-        states, msgs = sm.get_simulation_status(args.repeat)
+        states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
         if not args.repeat or sm.finished():
             break
@@ -153,10 +151,16 @@ def resubmit(args, unknownArgs):
 
 
 def kill(args, unknownArgs):
+    with utils.nostdout():
+        sm = reload_experiment(args)
 
-    sm = reload_experiment(args)
+    logging.info("Killing Experiment %s" % sm.experiment.id)
     states, msgs = sm.get_simulation_status()
-    sm.print_status(states, msgs)
+    sm.print_status(states, msgs, verbose=False)
+
+    if sm.status_finished(states):
+        logging.warn("The Experiment %s is already finished and therefore cannot be killed. Exiting..." % sm.experiment.id)
+        return
 
     if args.simIds:
         logging.info('KIlling job(s) with ids: ' + str(args.simIds))
@@ -216,25 +220,33 @@ def delete(args, unknownArgs):
     else:
         sm.soft_delete()
 
+
 def clean(args, unknownArgs):
-    sms = reload_experiments(args)
+    with utils.nostdout():
+        sms = reload_experiments(args)
+
+    if len(sms) == 0:
+        logging.warn("No experiments matched by '%s'. Exiting..."% args.expId)
+        return
 
     if args.expId:
+        logging.info("Hard deleting ALL experiments matched by '%s' - %s experiments total." % (args.expId, len(sms)))
         for sm in sms:
+            logging.info(sm.experiment)
             states, msgs = sm.get_simulation_status()
-            sm.print_status(states, msgs)
-        logging.info('Hard deleting ALL experiments matched by ""' + args.expId + '".')
+            sm.print_status(states, msgs, verbose=False)
+            logging.info("")
     else:
-        logging.info('Hard deleting ALL experiments.')
+        logging.info("Hard deleting ALL experiments - %s experiments total." % len(sms))
     
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
 
-    if choice != 'Y':
-        logging.info('No action taken.')
+    if choice != "Y":
+        logging.info("No action taken.")
         return
 
     for sm in sms:
-        states, msgs = sm.get_simulation_status()
+        logging.info("Deleting %s" % sm.experiment)
         sm.hard_delete()
 
 
@@ -322,13 +334,7 @@ def reload_experiment(args=None):
     else:
         id = None
 
-    # Attempt to read file 3 times.
-    result = try_loop(lambda: ExperimentManagerFactory.from_file(utils.exp_file(id)))
-    if result:
-        return result
-            
-    logging.error('Could not successfully load any experiment files.')
-    sys.exit()
+    return ExperimentManagerFactory.from_experiment(DataStore.get_most_recent_experiment(id))
 
 
 def reload_experiments(args=None):
@@ -337,26 +343,8 @@ def reload_experiments(args=None):
     else:
         id = None
 
-    # Attempt to read files 3 times.
-    result = try_loop(lambda: [ExperimentManagerFactory.from_file(file, suppress_logging=True, force_block=True) for file in utils.exp_files(id)])
-    if result:
-        return result
-    
-    logging.error('Could not successfully load any experiment files.')
-    sys.exit()
+    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments(id))
 
-
-def reload_active_experiments(args = None):
-    return [sm for sm in reload_experiments(args) if not sm.finished()]
-
-def try_loop(func):
-    for i in range(0, 3):
-        try:
-            return func()
-        except:
-            time.sleep(.2)
-            continue
-    return None
 
 def main():
 

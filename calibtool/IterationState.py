@@ -27,6 +27,7 @@ class IterationState(object):
         self.parameters = {}
         self.next_point = {}
         self.simulations = {}
+        self.experiment_id = None
         self.analyzers = {}
         self.results = []
 
@@ -71,7 +72,7 @@ class IterationState(object):
 
         params_df = pd.DataFrame(self.parameters['values'], columns=self.parameters['names'])
 
-        sims_df = pd.DataFrame.from_dict(self.simulations['sims'], orient='index')
+        sims_df = pd.DataFrame.from_dict(self.simulations, orient='index')
         grouped = sims_df.groupby('__sample_index__', sort=True)
         simIds = tuple(group.index.values for sample, group in grouped)
 

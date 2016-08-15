@@ -3,15 +3,14 @@ import json
 import logging
 import os
 import threading
+import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
 
-import time
-
 from simtools import utils
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.SetupParser import SetupParser
-
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,17 +19,17 @@ logger = logging.getLogger(__name__)
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
 
-    def __init__(self, model_file, exp_data, setup=None):
+    def __init__(self, model_file, experiment, setup=None):
         # If no setup is passed -> create it
         if setup is None:
-            selected_block = exp_data['selected_block'] if 'selected_block' in exp_data else 'LOCAL'
-            setup_file = exp_data['setup_overlay_file'] if 'setup_overlay_file' in exp_data else None
-            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL')
+            selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
+            setup_file = experiment.setup_overlay_file
+            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True)
         else:
             self.setup = setup
 
         self.model_file = model_file
-        self.exp_data = exp_data
+        self.experiment = experiment if experiment else DataStore.create_experiment()
         max_threads = int(self.setup.get('max_threads'))
         self.maxThreadSemaphore = threading.Semaphore(max_threads)
         self.assets_service = False
@@ -43,7 +42,6 @@ class BaseExperimentManager:
         self.commandline = None
         self.location = self.setup.get('type')
         self.cache_path = os.path.join(os.getcwd(), 'simulations')
-
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -78,30 +76,29 @@ class BaseExperimentManager:
     def hard_delete(self):
         pass
 
+    @abstractmethod
+    def get_monitor(self):
+        pass
+
     def get_property(self, prop):
         return self.setup.get(prop)
 
     def get_setup(self):
         return dict(self.setup.items())
 
-    def get_simulation_status(self, reload=False):
+    def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
-        :param reload: Reload the exp_data (used in case of repeating poll with local simulations)
         """
-        if reload:
-            self.reload_exp_data()
-
         logger.debug("Status of simulations run on '%s':" % self.location)
-        states, msgs = self.monitorClass(self.exp_data, self.get_setup()).query()
+        states, msgs = self.get_monitor().query()
         return states, msgs
 
     def get_output_parser(self, sim_id, filtered_analyses):
-        return self.parserClass(os.path.join(self.exp_data.get('sim_root', ''),
-                                             self.exp_data.get('exp_name', '') + '_' + self.exp_data.get('exp_id', '')),
+        return self.parserClass(self.experiment.get_path(),
                                 sim_id,
-                                self.exp_data['sims'][sim_id],
+                                DataStore.get_simulation(sim_id).tags,
                                 filtered_analyses,
                                 self.maxThreadSemaphore)
 
@@ -112,7 +109,6 @@ class BaseExperimentManager:
         """
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
-        self.cache_experiment_data(verbose=False)  # now we have job IDs
 
     def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
         """
@@ -132,16 +128,18 @@ class BaseExperimentManager:
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
         # Set the meta data
-        self.exp_data.update({'sim_root': self.get_property('sim_root'),
-                              'exe_name': self.commandline.Executable,
-                              'exp_name': exp_name,
-                              'location': self.location,
-                              'sim_type': self.config_builder.get_param('Simulation_Type'),
-                              'dtk-tools_revision': utils.get_tools_revision(),
-                              'selected_block': self.setup.selected_block,
-                              'setup_overlay_file': self.setup.setup_file})
+        self.experiment = DataStore.create_experiment(sim_root=self.get_property('sim_root'),
+                                                      exe_name=self.commandline.Executable,
+                                                      exp_name=exp_name,
+                                                      location=self.location,
+                                                      sim_type=self.config_builder.get_param('Simulation_Type'),
+                                                      dtk_tools_revision=utils.get_tools_revision(),
+                                                      selected_block=self.setup.selected_block,
+                                                      setup_overlay_file=self.setup.setup_file,
+                                                      command_line=self.commandline.Commandline)
 
-        self.exp_data['exp_id'] = self.create_experiment(suite_id)
+        # Add the experiment id established during creation
+        self.experiment.exp_id = self.create_experiment(suite_id)
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
@@ -168,40 +166,7 @@ class BaseExperimentManager:
                 commissioners.append(commissioner)
 
         self.complete_sim_creation(commissioners)
-        experiment_cache_file = self.cache_experiment_data(verbose=verbose)
-
-        # Write the cache file to the most recent file
-        with (open(os.path.join(self.cache_path, 'most_recent.txt'), 'w')) as most_recent:
-            most_recent.writelines(experiment_cache_file)
-            most_recent.close()
-
-    def cache_experiment_data(self, verbose=True):
-
-        if not os.path.exists(self.cache_path):
-            os.mkdir(self.cache_path)
-
-        # Create the filename
-        cache_file = self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json'
-
-        with open(os.path.join(self.cache_path, cache_file), 'w') as exp_file:
-            if verbose:
-                logger.info('Saving meta-data for experiment:')
-                logger.info(json.dumps(self.exp_data, sort_keys=True, indent=4))
-            exp_file.write(json.dumps(self.exp_data, sort_keys=True, indent=4))
-
-        return cache_file
-
-    def reload_exp_data(self):
-        """
-        Refresh the exp_data with what is in the json metadata
-        :return:
-        """
-        cache_file_path = os.path.join(os.getcwd(), 'simulations', "%s_%s.json" % (self.exp_data['exp_name'], self.exp_data['exp_id']))
-
-        try:
-            self.exp_data = json.load(open(cache_file_path))
-        except:
-            logger.info('Experiment data file locked.')
+        DataStore.save_experiment(self.experiment, verbose=verbose)
 
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
@@ -229,7 +194,7 @@ class BaseExperimentManager:
             else:
                 logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
 
-    def print_status(self,states, msgs):
+    def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
             if 'Running' in state:
@@ -238,7 +203,7 @@ class BaseExperimentManager:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         logger.info('Job states:')
-        if len(long_states) < 20:
+        if len(long_states) < 20 and verbose:
             # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
         # Display the counter no matter the number of simulations
@@ -246,26 +211,25 @@ class BaseExperimentManager:
 
     def soft_delete(self):
         """
-        Delete local cache data for experiment.
+        Delete experiment in the DB
         """
-        # First, ensure that all simulations are canceled.
         states, msgs = self.get_simulation_status()
-        self.cancel_all_simulations(states)
+        if not self.status_finished(states):
+            # If the experiment is not done -> cancel
+            self.cancel_all_simulations(states)
 
-        # Wait for successful cancellation.
-        self.wait_for_finished(verbose=True)
+            # Wait for successful cancellation.
+            self.wait_for_finished(verbose=True)
 
-        # Delete local cache file.
-        cache_file = os.path.join(os.getcwd(), 'simulations',
-                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
-        os.remove(cache_file)
+        # Delete experiment
+        DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         while True:
             time.sleep(init_sleep)
 
-            # Reload the exp_data because job ids may have been added by the thread
-            states, msgs = self.get_simulation_status(reload=True)
+            # Get the new status
+            states, msgs = self.get_simulation_status()
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written
                 time.sleep(sleep_time)
@@ -291,21 +255,19 @@ class BaseExperimentManager:
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
         """
-
         parsers = {}
 
-        for i, (sim_id, sim) in enumerate(self.exp_data['sims'].items()):
-
-            filtered_analyses = [a for a in self.analyzers if a.filter(sim)]
+        for i, sim in enumerate(list(self.experiment.simulations)):
+            filtered_analyses = [a for a in self.analyzers if a.filter(sim.tags)]
             if not filtered_analyses:
                 logger.debug('Simulation did not pass filter on any analyzer.')
                 continue
 
             if self.maxThreadSemaphore:
                 self.maxThreadSemaphore.acquire()
-                logger.debug('Thread-%d: sim_id=%s', i, str(sim_id))
+                logger.debug('Thread-%d: sim_id=%s', i, str(sim.id))
 
-            parser = self.get_output_parser(sim_id, filtered_analyses)  # execute filtered analyzers on parser thread
+            parser = self.get_output_parser(sim.id, filtered_analyses)  # execute filtered analyzers on parser thread
             parser.start()
             parsers[parser.sim_id] = parser
 
@@ -339,6 +301,7 @@ class BaseExperimentManager:
             return
 
         for id in ids:
+            logger.info("Killing Job %s" % id)
             if type(id) is str:
                 id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
 

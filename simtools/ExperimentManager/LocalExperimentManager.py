@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -9,6 +8,7 @@ import sys
 import time
 from datetime import datetime
 
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
@@ -24,41 +24,34 @@ class LocalExperimentManager(BaseExperimentManager):
     """
 
     location = 'LOCAL'
-    monitorClass = SimulationMonitor
     parserClass = SimulationOutputParser
 
-    def __init__(self, model_file, exp_data, setup=None):
-        BaseExperimentManager.__init__(self, model_file, exp_data, setup)
+    def __init__(self, model_file, experiment, setup=None):
+        BaseExperimentManager.__init__(self, model_file, experiment, setup)
+
+    def get_monitor(self):
+        return SimulationMonitor(self.experiment.exp_id)
 
     def cancel_all_simulations(self, states=None):
-
         if not states:
             states = self.get_simulation_status()[0]
 
         ids = states.keys()
-        logger.info('Killing all simulations in experiment: ' + str(ids))
+        logger.info('Killing all simulations in experiment: ')
         self.cancel_simulations(ids)
 
     def complete_sim_creation(self, commisioners=[]):
         return  # no batching in LOCAL
 
     def commission_simulations(self):
-        # Retrieve the experiment dirs and the sim ids that we have to run
-        exp_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
-        sim_ids = self.exp_data['sims'].keys()
+        # Prepare the info to pass to the localrunner
         max_local_sims = int(self.get_property('max_local_sims'))
-
-        # Create the paths
-        paths = [os.path.join(exp_dir, sim_id) for sim_id in sim_ids]
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","SimulationRunner", "LocalRunner.py")
-        cache_path = os.path.join(os.getcwd(), 'simulations',
-                                  self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'] + '.json')
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        subprocess.Popen([sys.executable, local_runner_path, ",".join(paths),
-                          self.commandline.Commandline, str(max_local_sims), cache_path], shell=False, creationflags=512)
+        subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims),self.experiment.exp_id], shell=False, creationflags=512)
 
         super(LocalExperimentManager,self).commission_simulations()
 
@@ -67,21 +60,25 @@ class LocalExperimentManager(BaseExperimentManager):
     def create_experiment(self, suite_id=None):
         exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating exp_id = " + exp_id)
-        sim_path = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + exp_id)
-        if not os.path.exists(sim_path):
-            os.makedirs(sim_path)
-        self.exp_data['sims'] = {}
+
+        # Needed to get the path
+        self.experiment.exp_id = exp_id
+
+        # Get the path and create it if needed
+        experiment_path = self.experiment.get_path()
+        if not os.path.exists(experiment_path):
+            os.makedirs(experiment_path)
+
         return exp_id
 
     def create_simulation(self):
         time.sleep(0.01)  # to avoid identical datetime
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.exp_data['sim_root'], self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'],
-                               sim_id)
+        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
-        self.exp_data['sims'][sim_id] = self.exp_builder.metadata
+        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata, status='Waiting'))
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
@@ -90,33 +87,34 @@ class LocalExperimentManager(BaseExperimentManager):
 
     def hard_delete(self):
         """
-        Delete local cache data for experiment and output data for experiment.
+        Delete experiment and output data.
         """
         # Perform soft delete cleanup.
         self.soft_delete()
 
         # Delete local simulation data.
-        local_data_path = os.path.join(self.exp_data['sim_root'],
-                                       self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
-        shutil.rmtree(local_data_path)
+        shutil.rmtree(self.experiment.get_path())
 
     def kill_job(self, simId):
-        # if the status has not been set -> set it to Canceled
-        if 'status' not in self.exp_data['sims'][simId]:
-            self.exp_data['sims'][simId]['status'] = 'Canceled'
-            self.cache_experiment_data(verbose=False)
-            return
+
+        simulation = DataStore.get_simulation(simId)
 
         # No need of trying to kill simulation already done
-        if self.exp_data['sims'][simId]['status'] in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
+        if simulation.status in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
             return
 
-        pid = self.exp_data['sims'][simId]['pid'] if 'pid' in self.exp_data['sims'][simId] else None
-        if pid:
+        # if the status has not been set -> set it to Canceled
+        if not simulation.status or simulation.status == 'Waiting':
+            simulation.status = 'Canceled'
+            DataStore.save_simulation(simulation)
+            return
+
+        # It was running -> Kill it if pid is there
+        if simulation.pid:
             try:
-                self.exp_data['sims'][simId]['status'] = 'Canceled'
-                self.cache_experiment_data(verbose=False)
-                os.kill(pid, signal.SIGTERM)
-            except:
-                pass
+                simulation.status = 'Canceled'
+                DataStore.save_simulation(simulation)
+                os.kill(int(simulation.pid), signal.SIGTERM)
+            except Exception as e:
+                print e
 

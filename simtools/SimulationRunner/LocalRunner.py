@@ -1,4 +1,3 @@
-import json
 import os
 import shlex
 import subprocess
@@ -6,24 +5,25 @@ import threading
 import time
 from multiprocessing import Queue
 
+from simtools.DataAccess.DataStore import DataStore
+
 
 class SimulationCommissioner(threading.Thread):
     """
     Run one simulation.
     """
-    def __init__(self, sim_dir, eradication_command, thread_queue, cache_path, lock):
+    def __init__(self, simulation, experiment, thread_queue):
         threading.Thread.__init__(self)
-        self.sim_dir = sim_dir
-        self.sim_id = self.sim_dir.split(os.sep)[-1]
-        self.eradication_command = eradication_command
+        self.simulation = simulation
+        self.experiment = experiment
         self.queue = thread_queue
-        self.cache_path = cache_path
-        self.lock = lock
+
+        self.sim_dir = self.simulation.get_path(self.experiment)
 
     def run(self):
         # Make sure the status is not set.
         # If it is, dont touch this simulation
-        if self.check_state():
+        if self.check_state() != "Waiting":
             self.queue.get()
             return
 
@@ -33,32 +33,30 @@ class SimulationCommissioner(threading.Thread):
                 # On Unix, we want to pass it as a sequence
                 # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
                 if os.name == "nt":
-                    command = self.eradication_command
+                    command = self.experiment.command_line
                 else:
-                    command = shlex.split(self.eradication_command)
+                    command = shlex.split(self.experiment.command_line)
 
                 # Launch the command
                 p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                 # We are now running
-                self.change_state(status="Running", pid = p.pid)
+                DataStore.change_simulation_state(self.simulation, status="Running", pid=p.pid)
 
                 # Wait the end of the process
                 # We use poll to be able to update the status
                 while p.poll() is None:
-                    time.sleep(1)
-                    self.change_state(message=self.last_status_line())
-
-                # Remove "pid" from cached json file.
-                self.change_state(pid=-1)
+                    DataStore.change_simulation_state(self.simulation, message=self.last_status_line())
+                    time.sleep(3)
 
                 # When poll returns None, the process is done, test if succeeded or failed
+                last_message = self.last_status_line()
                 if "Done" in self.last_status_line():
-                    self.change_state(status="Finished")
+                    DataStore.change_simulation_state(self.simulation, status="Succeeded",  pid=-1, message=last_message)
                 else:
                     # If we exited with a Canceled status, dont update to Failed
                     if not self.check_state() == 'Canceled':
-                        self.change_state(status="Failed")
+                        DataStore.change_simulation_state(self.simulation, status="Failed", pid=-1, message=last_message)
 
                 # Free up an item in the queue
                 self.queue.get()
@@ -75,84 +73,33 @@ class SimulationCommissioner(threading.Thread):
             with open(status_path, 'r') as status_file:
                 msg = list(status_file)[-1]
 
-        return msg if msg else ""
+        return msg.strip('\n') if msg else ""
 
     def check_state(self):
         """
-        Returns the state of the simulation.
+        Update the simulation and check its state
         Returns: state of the simulation or None
         """
-        # Acquire the lock
-        self.lock.acquire()
+        self.simulation = DataStore.get_simulation(self.simulation.id)
+        return self.simulation.status
 
-        # Opeen the cache file
-        json_file = open(self.cache_path,'rb')
-        cache = json.load(json_file)
-
-        # Get the status
-        try:
-            status = cache['sims'][self.sim_id]['status']
-        except KeyError:
-            status = None
-
-        # Close the file and release the lock
-        json_file.close()
-        self.lock.release()
-
-        return status
-
-    def change_state(self, status=None, message=None, pid = None):
-        """
-        Change either status, message or both for the simulation currently handled by the thread.
-        Everything inside the lock is in a try, finally block to prevent infinite blocking even if something goes wrong.
-        :param status:
-        :param message:
-        :return:
-        """
-        # Acquire the lock on the file
-        self.lock.acquire()
-        try:
-            # Open the metadata file
-            json_file = open(self.cache_path, 'rb')
-            cache = json.load(json_file)
-
-            # If we have a status, set it (same for message)
-            if status:
-                cache['sims'][self.sim_id]["status"] = status
-            if message:
-                cache['sims'][self.sim_id]["message"] = message
-            if pid:
-                if pid == -1 and 'pid' in cache['sims'][self.sim_id]:
-                    del cache['sims'][self.sim_id]["pid"]
-                else:
-                    cache['sims'][self.sim_id]["pid"] = pid
-
-            # Write the file back
-            with open(self.cache_path, 'wb') as cache_file:
-                json.dump(cache, cache_file, indent=4)
-
-        finally:
-            # Close the file
-            json_file.close()
-
-            # To finish release the lock
-            self.lock.release()
 
 if __name__ == "__main__":
     import sys
 
     # Retrieve the info from the command line
-    paths = sys.argv[1].split(',')
-    command = sys.argv[2]
-    queue_size = int(sys.argv[3])
-    cache_path = sys.argv[4]
+    queue_size = int(sys.argv[1])
+    exp_id = sys.argv[2]
 
-    # Create the queue and the re-entrant lock
+    # Create the queue
     queue = Queue(maxsize=queue_size)
-    lock = threading.RLock()
+
+    # Retrieve the experiment
+    current_exp = DataStore.get_experiment(exp_id)
 
     # Go through the paths and commission
-    for path in paths:
+    for sim in current_exp.simulations:
         queue.put('run1')
-        t = SimulationCommissioner(path, command, queue, cache_path, lock)
+        t = SimulationCommissioner(sim, current_exp, queue)
         t.start()
+

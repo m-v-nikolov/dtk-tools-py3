@@ -11,6 +11,7 @@ from datetime import datetime
 from calibtool.plotters import SiteDataPlotter
 from IterationState import IterationState
 from simtools import utils
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
@@ -100,14 +101,14 @@ class CalibManager(object):
                 tstamp = re.sub('[ :.-]', '_', str(datetime.now()))
                 shutil.move(self.name, "%s_backup_%s" % (self.name, tstamp))
                 self.create_calibration(location)
-            elif var == 'C':
+            elif var == "C":
                 self.cleanup()
                 time.sleep(1)
                 self.create_calibration(location)
-            elif var == 'R':
+            elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
-            elif var == 'P':
+            elif var == "P":
                 self.replot_calibration(**kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
@@ -215,7 +216,8 @@ class CalibManager(object):
                 exp_builder=exp_builder,
                 suite_id=self.suite_id)
 
-            self.iteration_state.simulations = self.exp_manager.exp_data
+            self.iteration_state.simulations = self.exp_manager.experiment.toJSON()['simulations']
+            self.iteration_state.experiment_id = self.exp_manager.experiment.exp_id
             self.cache_iteration_state()
 
         self.wait_for_finished()
@@ -238,7 +240,7 @@ class CalibManager(object):
 
             # Retrieve simulation status and messages
             try:
-                states, msgs = self.exp_manager.get_simulation_status(reload=True)
+                states, msgs = self.exp_manager.get_simulation_status()
             except Exception as ex:
                 # logger.info(ex)
                 logger.info('[%s] cannot get simulation status. Calibration cannot continue. Exiting...' % self.location)
@@ -290,9 +292,10 @@ class CalibManager(object):
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
             return self.iteration_state.results['total']
+        print self.iteration_state.experiment_id
+        exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
 
-        exp_data = self.iteration_state.simulations
-        exp_manager = ExperimentManagerFactory.from_data(exp_data, self.location)
+        print exp_manager.experiment.id
         for site in self.sites:
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
@@ -322,7 +325,7 @@ class CalibManager(object):
         map(lambda plotter: plotter.visualize(self), self.plotters)
 
         # Write the CSV
-        self.write_LL_csv()
+        self.write_LL_csv(exp_manager.experiment)
 
         return results.total.tolist()
 
@@ -380,7 +383,7 @@ class CalibManager(object):
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
-    def write_LL_csv(self):
+    def write_LL_csv(self, experiment):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
@@ -399,7 +402,7 @@ class CalibManager(object):
 
         # Get the simIds
         sims = list()
-        for simid, values in self.iteration_state.simulations["sims"].iteritems():
+        for simid, values in self.iteration_state.simulations.iteritems():
             values['id'] = simid
             sims.append(values)
 
@@ -429,11 +432,8 @@ class CalibManager(object):
         else :
             sims_paths = dict()
 
-            sim_info = self.iteration_state.simulations
-            base_path = os.path.join(sim_info['sim_root'], "%s_%s" % (sim_info['exp_name'], sim_info['exp_id']))
-
-            for sim_id, sim in sim_info['sims'].iteritems():
-                sims_paths[sim_id] = os.path.join(base_path, sim_id)
+            for sim in experiment.simulations:
+                sims_paths[sim.id] = os.path.join(experiment.get_path(), sim.id)
 
         # Transform the ids in actual paths
         def find_path(el):
@@ -690,33 +690,22 @@ class CalibManager(object):
 
         if calib_data:
             # Delete the simulations too
-            logger.info('Deleting local simulations')
+            logger.info('Cleaning up calibration %s' % self.name)
             for i in range(0, iter_count + 1):
-                # Get the iteration state
-                it = IterationState.from_file(os.path.join(self.name, 'iter%d' % i, 'IterationState.json'))
-                # Check if simulations exit
-                if not self.simulation_exists(it):
+                # Get the iteration cache
+                iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState.json')
+                print iteration_cache
+                if not os.path.exists(iteration_cache):
+                    break
+                # Retrieve the iteration state
+                it = IterationState.from_file(iteration_cache)
+
+                # Create the associated experiment manager and ask for deletion
+                try:
+                    exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
+                    exp_mgr.hard_delete()
+                except:
                     continue
-
-                # Extract the path where the simulations are stored
-                sim_path = os.path.join(it.simulations['sim_root'],
-                                        "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
-
-                # If exist -> delete
-                if os.path.exists(sim_path):
-                    try:
-                        shutil.rmtree(sim_path)
-                    except OSError:
-                        logger.error("Failed to delete %s" % sim_path)
-
-                # If the json exist too -> delete
-                json_path = os.path.join('simulations',
-                                         '%s_%s.json' % (it.simulations['exp_name'], it.simulations['exp_id']))
-                if os.path.exists(json_path):
-                    try:
-                        os.remove(json_path)
-                    except OSError:
-                        logger.error("Failed to delete %s" % json_path)
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -725,18 +714,6 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
-
-    def simulation_exists(self, it_state):
-        """
-        Check if simulation exists
-        """
-        if (it_state is None) or (it_state.simulations is None):
-            return False
-
-        for att in ['sim_root', 'exp_name', 'exp_id']:
-            if it_state.simulations.get(att, None) is None:
-                return False
-        return True
 
     def reanalyze(self):
         """
