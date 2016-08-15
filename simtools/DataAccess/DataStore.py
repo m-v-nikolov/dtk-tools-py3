@@ -37,6 +37,12 @@ class DataStore:
     """
 
     @classmethod
+    def batch_simulations_update(cls, batch):
+        with session_scope() as session:
+            for simulation in batch:
+                session.merge(simulation)
+
+    @classmethod
     def create_simulation(cls, **kwargs):
         return Simulation(**kwargs)
 
