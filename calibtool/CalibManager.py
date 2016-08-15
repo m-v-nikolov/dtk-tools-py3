@@ -101,14 +101,14 @@ class CalibManager(object):
                 tstamp = re.sub('[ :.-]', '_', str(datetime.now()))
                 shutil.move(self.name, "%s_backup_%s" % (self.name, tstamp))
                 self.create_calibration(location)
-            elif var == 'C':
+            elif var == "C":
                 self.cleanup()
                 time.sleep(1)
                 self.create_calibration(location)
-            elif var == 'R':
+            elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
-            elif var == 'P':
+            elif var == "P":
                 self.replot_calibration(**kwargs)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
