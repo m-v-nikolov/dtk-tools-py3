@@ -51,6 +51,7 @@ class Experiment(Base):
     sim_type = Column(String)
     command_line = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
+    endpoint = Column(String)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan")
 

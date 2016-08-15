@@ -136,7 +136,8 @@ class BaseExperimentManager:
                                                       dtk_tools_revision=utils.get_tools_revision(),
                                                       selected_block=self.setup.selected_block,
                                                       setup_overlay_file=self.setup.setup_file,
-                                                      command_line=self.commandline.Commandline)
+                                                      command_line=self.commandline.Commandline,
+                                                      endpoint = self.setup.get('server_endpoint') if self.location == "HPC" else None)
 
         # Add the experiment id established during creation
         self.experiment.exp_id = self.create_experiment(suite_id)
