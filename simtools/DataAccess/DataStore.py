@@ -1,5 +1,6 @@
 import json
 import logging
+from operator import and_
 
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
@@ -79,7 +80,9 @@ class DataStore:
     @classmethod
     def get_active_experiments(cls):
         with session_scope() as session:
-            experiments = session.query(Experiment).join(Experiment.simulations, aliased=True).filter_by(status="Running")
+            experiments = session.query(Experiment).distinct(Experiment.exp_id)\
+                .join(Experiment.simulations)\
+                .filter(or_(Simulation.status.in_(("Running","Waiting",)), Simulation.status.is_(None)))
             session.expunge_all()
 
         return experiments

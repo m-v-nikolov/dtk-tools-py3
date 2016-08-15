@@ -23,7 +23,7 @@ class SimulationCommissioner(threading.Thread):
     def run(self):
         # Make sure the status is not set.
         # If it is, dont touch this simulation
-        if self.check_state():
+        if self.check_state() != "Waiting":
             self.queue.get()
             return
 
@@ -95,11 +95,11 @@ if __name__ == "__main__":
     queue = Queue(maxsize=queue_size)
 
     # Retrieve the experiment
-    experiment = DataStore.get_experiment(exp_id)
+    current_exp = DataStore.get_experiment(exp_id)
 
     # Go through the paths and commission
-    for sim in experiment.simulations:
+    for sim in current_exp.simulations:
         queue.put('run1')
-        t = SimulationCommissioner(sim, experiment, queue)
+        t = SimulationCommissioner(sim, current_exp, queue)
         t.start()
 

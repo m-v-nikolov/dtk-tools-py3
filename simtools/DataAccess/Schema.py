@@ -52,7 +52,7 @@ class Experiment(Base):
     command_line = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
-    simulations = relationship("Simulation", back_populates='experiment')
+    simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan")
 
     def __repr__(self):
         return "Experiment %s" % self.id

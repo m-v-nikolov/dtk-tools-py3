@@ -79,7 +79,7 @@ class LocalExperimentManager(BaseExperimentManager):
         sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         os.makedirs(sim_dir)
         self.config_builder.dump_files(sim_dir)
-        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata))
+        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata, status='Waiting'))
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
@@ -94,9 +94,7 @@ class LocalExperimentManager(BaseExperimentManager):
         self.soft_delete()
 
         # Delete local simulation data.
-        local_data_path = os.path.join(self.exp_data['sim_root'],
-                                       self.exp_data['exp_name'] + '_' + self.exp_data['exp_id'])
-        shutil.rmtree(local_data_path)
+        shutil.rmtree(self.experiment.get_path())
 
     def kill_job(self, simId):
 

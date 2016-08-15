@@ -24,7 +24,7 @@ class ExperimentManagerFactory(object):
     @classmethod
     def from_experiment(cls, experiment):
         logger.info("Reloading ExperimentManager from %s" % experiment)
-        return cls.factory(experiment.location)('', experiment)
+        return cls.factory(type=experiment.location)('', experiment)
 
     @classmethod
     def from_model(cls, model_file, location='LOCAL', setup=None, **kwargs):

@@ -42,7 +42,6 @@ class CompsExperimentManager(BaseExperimentManager):
                                                              self.experiment.exp_name, self.staged_bin_path,
                                                              self.commandline.Options, suite_id)
 
-
     def create_simulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
             self.maxThreadSemaphore.acquire()  # Is this okay outside the thread?  Stops the thread from being created

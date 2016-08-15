@@ -24,7 +24,7 @@ class BaseExperimentManager:
         if setup is None:
             selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
             setup_file = experiment.setup_overlay_file
-            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL')
+            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True)
         else:
             self.setup = setup
 
@@ -213,7 +213,6 @@ class BaseExperimentManager:
         """
         Delete experiment in the DB
         """
-
         states, msgs = self.get_simulation_status()
         if not self.status_finished(states):
             # If the experiment is not done -> cancel

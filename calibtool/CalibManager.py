@@ -240,7 +240,7 @@ class CalibManager(object):
 
             # Retrieve simulation status and messages
             try:
-                states, msgs = self.exp_manager.get_simulation_status(reload=True)
+                states, msgs = self.exp_manager.get_simulation_status()
             except Exception as ex:
                 # logger.info(ex)
                 logger.info('[%s] cannot get simulation status. Calibration cannot continue. Exiting...' % self.location)
@@ -689,38 +689,19 @@ class CalibManager(object):
 
         if calib_data:
             # Delete the simulations too
-            logger.info('Deleting local simulations')
+            logger.info('Cleaning up calibration %s' % self.name)
             for i in range(0, iter_count + 1):
-                # Get the iteration state
-                current_dir = os.path.dirname(os.path.realpath(__file__))
-                iteration_cache = os.path.join(current_dir,self.name, 'iter%d' % i, 'IterationState.json')
+                # Get the iteration cache
+                iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState.json')
+                print iteration_cache
                 if not os.path.exists(iteration_cache):
                     break
-
+                # Retrieve the iteration state
                 it = IterationState.from_file(iteration_cache)
-                # Check if simulations exit
-                if not self.simulation_exists(it):
-                    continue
 
-                # Extract the path where the simulations are stored
-                sim_path = os.path.join(it.simulations['sim_root'],
-                                        "%s_%s" % (it.simulations['exp_name'], it.simulations['exp_id']))
-
-                # If exist -> delete
-                if os.path.exists(sim_path):
-                    try:
-                        shutil.rmtree(sim_path)
-                    except OSError:
-                        logger.error("Failed to delete %s" % sim_path)
-
-                # If the json exist too -> delete
-                json_path = os.path.join('simulations',
-                                         '%s_%s.json' % (it.simulations['exp_name'], it.simulations['exp_id']))
-                if os.path.exists(json_path):
-                    try:
-                        os.remove(json_path)
-                    except OSError:
-                        logger.error("Failed to delete %s" % json_path)
+                # Create the associated experiment manager and ask for deletion
+                exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
+                exp_mgr.hard_delete()
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -730,17 +711,6 @@ class CalibManager(object):
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
 
-    def simulation_exists(self, it_state):
-        """
-        Check if simulation exists
-        """
-        if (it_state is None) or (it_state.simulations is None):
-            return False
-
-        for att in ['sim_root', 'exp_name', 'exp_id']:
-            if it_state.simulations.get(att, None) is None:
-                return False
-        return True
 
     def reanalyze(self):
         """
