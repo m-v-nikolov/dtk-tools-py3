@@ -55,7 +55,7 @@ class DataStore:
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
-            experiment = session.query(Experiment).options(joinedload('simulations'))\
+            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
                                                   .filter(Experiment.exp_id == exp_id).one()
             # Detach the object from the session
             session.expunge_all()
@@ -89,7 +89,7 @@ class DataStore:
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiment = session.query(Experiment)\
-                .filter(Experiment.exp_name.like('%%%s%%' % id_or_name)) \
+                .filter(Experiment.id.like('%%%s%%' % id_or_name)) \
                 .options(joinedload('simulations')) \
                 .order_by(Experiment.date_created.desc()).first()
 
