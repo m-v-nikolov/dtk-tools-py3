@@ -7,3 +7,4 @@ Cookbook
 
        cookbook/simulation
        cookbook/simplesweep
+       cookbook/caching

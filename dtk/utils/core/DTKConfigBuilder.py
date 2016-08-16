@@ -5,10 +5,28 @@ import re # find listed events by regex
 
 import dtk.generic.params as generic_params
 import dtk.generic.sir as sir_params
+import dtk.generic.sir_vaccinations_a as sir_vaccinations_a_params
+import dtk.generic.sir_vaccinations_b as sir_vaccinations_b_params
+import dtk.generic.sir_vaccinations_c as sir_vaccinations_c_params
+import dtk.generic.seir as seir_params
+import dtk.generic.seir_vitaldynamics as seir_vitaldynamics_params
+import dtk.generic.sirs as sirs_params
+import dtk.generic.seirs as seirs_params
+import dtk.generic.si as si_params
+import dtk.generic.sis as sis_params
 import dtk.malaria.params as malaria_params
 import dtk.vector.params as vector_params
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.interventions.sir_initial_seeding import sir_campaign
+from dtk.interventions.sir_vaccinations_a_initial_seeding import sir_vaccinations_a_campaign
+from dtk.interventions.sir_vaccinations_b_initial_seeding import sir_vaccinations_b_campaign
+from dtk.interventions.sir_vaccinations_c_initial_seeding import sir_vaccinations_c_campaign
+from dtk.interventions.seir_initial_seeding import seir_campaign
+from dtk.interventions.seir_vitaldynamics import seir_vitaldynamics_campaign
+from dtk.interventions.sirs_initial_seeding import sirs_campaign
+from dtk.interventions.seirs import seirs_campaign
+from dtk.interventions.si_initial_seeding import si_campaign
+from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools import utils
@@ -97,6 +115,17 @@ class DTKConfigBuilder(SimConfigBuilder):
                 * VECTOR_SIM
                 * VECTOR_SIM_VIVAX_SEMITROPICAL
                 * VECTOR_SIM_VIVAX_CHESSON
+                * GENERIC_SIM_SIR
+                * GENERIC_SIM_SIR_Vaccinations_A
+                * GENERIC_SIM_SIR_Vaccinations_B
+                * GENERIC_SIM_SIR_Vaccinations_C
+                * GENERIC_SIM_SEIR
+                * GENERIC_SIM_SEIR_VitalDynamics
+                * GENERIC_SIM_SIRS
+                * GENERIC_SIM_SEIRS
+                * GENERIC_SIM_SI
+                * GENERIC_SIM_SIS
+
 
             kwargs (dict): Additional overrides of config parameters
         """
@@ -128,6 +157,51 @@ class DTKConfigBuilder(SimConfigBuilder):
         elif sim_type == "GENERIC_SIM_SIR":
             config["parameters"].update(sir_params.params)
             campaign = sir_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIR_Vaccinations_A":
+            config["parameters"].update(sir_vaccinations_a_params.params)
+            campaign = sir_vaccinations_a_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIR_Vaccinations_B":
+            config["parameters"].update(sir_vaccinations_b_params.params)
+            campaign = sir_vaccinations_b_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIR_Vaccinations_C":
+            config["parameters"].update(sir_vaccinations_c_params.params)
+            campaign = sir_vaccinations_c_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SEIR":
+            config["parameters"].update(seir_params.params)
+            campaign = seir_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SEIR_VitalDynamics":
+            config["parameters"].update(seir_vitaldynamics_params.params)
+            campaign = seir_vitaldynamics_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIRS":
+            config["parameters"].update(sirs_params.params)
+            campaign = sirs_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SEIRS":
+            config["parameters"].update(seirs_params.params)
+            campaign = seirs_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SI":
+            config["parameters"].update(si_params.params)
+            campaign = si_campaign
+            sim_type = "GENERIC_SIM"
+
+        elif sim_type == "GENERIC_SIM_SIS":
+            config["parameters"].update(sis_params.params)
+            campaign = sis_campaign
             sim_type = "GENERIC_SIM"
 
         else:

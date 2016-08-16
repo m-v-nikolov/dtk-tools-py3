@@ -141,6 +141,8 @@ def status(args, unknownArgs):
                 if helpers.kbhit():
                     if getch() == '\r':
                         break
+                    else:
+                        return
                 else:
                     time.sleep(1)
 
