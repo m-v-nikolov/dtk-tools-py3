@@ -9,7 +9,6 @@ import os
 import sys
 import time
 from collections import OrderedDict
-
 import snappy
 
 # clorton cdo
