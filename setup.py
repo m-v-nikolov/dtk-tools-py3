@@ -124,7 +124,7 @@ else:
     # A simtools was already present, merge the best we can
     print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
     merge_cp = ConfigParser()
-    merge_cp.read([current_simtools, default_ini])
+    merge_cp.read([default_ini, current_simtools])
 
     # Backup copy the current
     print "Backup copy your current simtools.ini to simtools.ini.bak"
