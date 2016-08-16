@@ -11,6 +11,7 @@ from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.SetupParser import SetupParser
+from dtk import helpers
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -225,6 +226,7 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
+        getch = helpers.find_getch()
         while True:
             time.sleep(init_sleep)
 
@@ -232,12 +234,20 @@ class BaseExperimentManager:
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
                 # Wait when we are all done to make sure all the output files have time to get written
-                time.sleep(sleep_time)
+                time.sleep(1)
                 break
             else:
                 if verbose:
                     self.print_status(states, msgs)
-                time.sleep(sleep_time)
+
+                for i in range(sleep_time):
+                    if helpers.kbhit():
+                        if getch() == '\r':
+                            break
+                        else:
+                            return
+                    else:
+                        time.sleep(1)
 
         if verbose:
             self.print_status(states, msgs)
