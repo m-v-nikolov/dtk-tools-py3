@@ -57,19 +57,18 @@ class LocalExperimentManager(BaseExperimentManager):
 
         return True
 
-    def create_experiment(self, suite_id=None):
+    def create_experiment(self, experiment_name, suite_id=None):
+        # Create a unique id
         exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating exp_id = " + exp_id)
 
-        # Needed to get the path
-        self.experiment.exp_id = exp_id
+        # Create the experiment in the base class
+        super(LocalExperimentManager,self).create_experiment(experiment_name, exp_id, suite_id)
 
         # Get the path and create it if needed
         experiment_path = self.experiment.get_path()
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
-
-        return exp_id
 
     def create_simulation(self):
         time.sleep(0.01)  # to avoid identical datetime
