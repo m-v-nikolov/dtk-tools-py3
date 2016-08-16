@@ -83,7 +83,7 @@ class DataStore:
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiment = session.query(Experiment)\
-                .filter(Experiment.exp_name.like('%%%s%%' % id_or_name)) \
+                .filter(Experiment.id.like('%%%s%%' % id_or_name)) \
                 .options(joinedload('simulations')) \
                 .order_by(Experiment.date_created.desc()).first()
 
