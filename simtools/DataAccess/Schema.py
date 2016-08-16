@@ -24,6 +24,7 @@ class Simulation(Base):
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     tags = Column(PickleType(pickler=json))
+    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
 
     def __repr__(self):
@@ -32,8 +33,13 @@ class Simulation(Base):
     def toJSON(self):
         return {self.id: self.tags}
 
-    def get_path(self,experiment):
-        return os.path.join(experiment.sim_root, '%s_%s' % (experiment.exp_name, experiment.exp_id), self.id)
+    def get_path(self):
+        if self.experiment.location == "LOCAL":
+            return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
+        else:
+            from simtools.OutputParser import CompsDTKOutputParser
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, suite_id=self.experiment.suite_id, save=False)
+            return sims_paths[self.id]
 
 
 class Experiment(Base):
@@ -51,8 +57,9 @@ class Experiment(Base):
     sim_type = Column(String)
     command_line = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
+    endpoint = Column(String)
 
-    simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan")
+    simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
 
     def __repr__(self):
         return "Experiment %s" % self.id
@@ -63,6 +70,13 @@ class Experiment(Base):
 
     def get_path(self):
         return os.path.join(self.sim_root, self.id)
+
+    def contains_simulation(self, simid):
+        for sim in self.simulations:
+            if sim.id == simid:
+                return True
+        return False
+
 
     def toJSON(self):
         ret = {}

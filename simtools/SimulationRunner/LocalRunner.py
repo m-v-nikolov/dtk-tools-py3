@@ -18,7 +18,7 @@ class SimulationCommissioner(threading.Thread):
         self.experiment = experiment
         self.queue = thread_queue
 
-        self.sim_dir = self.simulation.get_path(self.experiment)
+        self.sim_dir = self.simulation.get_path()
 
     def run(self):
         # Make sure the status is not set.

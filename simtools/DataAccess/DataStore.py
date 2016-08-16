@@ -37,6 +37,12 @@ class DataStore:
     """
 
     @classmethod
+    def batch_simulations_update(cls, batch):
+        with session_scope() as session:
+            for simulation in batch:
+                session.merge(simulation)
+
+    @classmethod
     def create_simulation(cls, **kwargs):
         return Simulation(**kwargs)
 
@@ -49,7 +55,7 @@ class DataStore:
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
-            experiment = session.query(Experiment).options(joinedload('simulations'))\
+            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
                                                   .filter(Experiment.exp_id == exp_id).one()
             # Detach the object from the session
             session.expunge_all()
