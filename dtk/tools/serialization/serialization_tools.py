@@ -1,8 +1,8 @@
 from __future__ import print_function
-import dtk.tools.serialization.idtkFileTools as idtk
-import json
-import pandas as pd
+
 import os
+
+import dtk.tools.serialization.idtkFileTools as idtk
 
 STATE_ADULT = 1         # implies female, I believe
 STATE_INFECTED = 2
