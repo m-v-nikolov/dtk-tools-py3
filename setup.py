@@ -32,7 +32,8 @@ requirements = [
     'curses==2.2',
     'scipy==0.17.0',
     'validators',
-    'sqlalchemy==1.1.0b3'
+    'sqlalchemy==1.1.0b3',
+    'python-snappy==0.5'
 ]
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
