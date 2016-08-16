@@ -3,7 +3,7 @@ import json
 from dtk.utils.ioformat.OutputMessage import OutputMessage
 from simtools import utils
 import logging
-
+from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -47,7 +47,7 @@ class ExperimentManagerFactory(object):
     @classmethod
     def from_data(cls, exp_data, location='LOCAL'):
         logger.info('Reloading ExperimentManager from experiment data')
-        return cls.factory(location)('', exp_data)
+        return cls.factory(location)('', DataStore.create_experiment(exp_data))
 
     @classmethod
     def from_file(cls, exp_data_path, suppress_logging=False, force_block=False):
@@ -61,5 +61,4 @@ class ExperimentManagerFactory(object):
         if force_block:
             SetupParser.selected_block = SetupParser.setup_file = None
 
-        from simtools.DataAccess.DataStore import DataStore
         return cls.factory(exp_data['location'])('', DataStore.create_experiment(**exp_data))

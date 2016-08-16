@@ -36,11 +36,15 @@ class CompsExperimentManager(BaseExperimentManager):
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
 
-    def create_experiment(self, suite_id=None):
+    def create_experiment(self, experiment_name, suite_id=None):
+
         self.sims_created = 0
-        return CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
-                                                             self.experiment.exp_name, self.staged_bin_path,
-                                                             self.commandline.Options, suite_id)
+        # Also create the experiment in COMPS to get the ID
+        exp_id = CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
+                                                               experiment_name, self.staged_bin_path,
+                                                               self.commandline.Options, suite_id)
+        # Create experiment in the base class
+        super(CompsExperimentManager, self).create_experiment(experiment_name, exp_id, suite_id)
 
     def create_simulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
