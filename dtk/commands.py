@@ -8,11 +8,12 @@ import time
 from importlib import import_module
 
 import simtools.utils as utils
+import helpers
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
-from dtk.utils.analyzers.group  import group_by_name
-from dtk.utils.analyzers.plot   import plot_grouped_lines
+from dtk.utils.analyzers.group import group_by_name
+from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.analyzers.select import example_selection
 from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.DataAccess.DataStore import DataStore
@@ -20,20 +21,23 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 
 builtinAnalyzers = {
-    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'), plot_function=plot_grouped_lines),
+    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'),
+                                      plot_function=plot_grouped_lines),
     'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
 }
+
 
 class objectview(object):
     def __init__(self, d):
         self.__dict__ = d
 
+
 def load_config_module(config_name):
     # Support of relative paths
-    config_name = config_name.replace('\\','/')
+    config_name = config_name.replace('\\', '/')
     if '/' in config_name:
         splitted = config_name.split('/')[:-1]
-        sys.path.append(os.path.join(os.getcwd(),*splitted))
+        sys.path.append(os.path.join(os.getcwd(), *splitted))
     else:
         sys.path.append(os.getcwd())
 
@@ -44,7 +48,7 @@ def load_config_module(config_name):
 def test(args, unknownArgs):
     # Get to the test dir
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    test_dir = os.path.abspath(os.path.join(current_dir,'..','test' ))
+    test_dir = os.path.abspath(os.path.join(current_dir, '..', 'test'))
 
     # Create the test command
     command = ['nosetests']
@@ -52,6 +56,7 @@ def test(args, unknownArgs):
 
     # Run
     subprocess.Popen(command, cwd=test_dir).wait()
+
 
 def setup(args, unknownArgs):
     if os.name == "nt":
@@ -107,7 +112,7 @@ def run(args, unknownArgs):
 
     # Perform analyze, if requested.
     if args.analyzer:
-        analyze(objectview({ 'expId': None, 'config_name': args.analyzer, 'force': False, 'comps': True }), None);
+        analyze(objectview({'expId': None, 'config_name': args.analyzer, 'force': False, 'comps': True}), None);
 
 
 def status(args, unknownArgs):
@@ -122,13 +127,22 @@ def status(args, unknownArgs):
         return
 
     sm = reload_experiment(args)
+    getch = helpers.find_getch()
+
     while True:
         states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
+
         if not args.repeat or sm.finished():
             break
+
         else:
-            time.sleep(20)
+            for i in range(20):
+                if helpers.kbhit():
+                    if getch() == '\r':
+                        break
+                else:
+                    time.sleep(1)
 
 
 def resubmit(args, unknownArgs):
@@ -136,10 +150,10 @@ def resubmit(args, unknownArgs):
 
     if args.simIds:
         logging.info('Resubmitting job(s) with ids: ' + str(args.simIds))
-        params = { 'ids': args.simIds }
+        params = {'ids': args.simIds}
     else:
         logging.info('No job IDs were specified.  Resubmitting all failed and canceled jobs in experiment.')
-        params = { 'resubmit_all_failed': True }
+        params = {'resubmit_all_failed': True}
 
     if args.all:
         sms = reload_experiments(args)
@@ -159,15 +173,16 @@ def kill(args, unknownArgs):
     sm.print_status(states, msgs, verbose=False)
 
     if sm.status_finished(states):
-        logging.warn("The Experiment %s is already finished and therefore cannot be killed. Exiting..." % sm.experiment.id)
+        logging.warn(
+            "The Experiment %s is already finished and therefore cannot be killed. Exiting..." % sm.experiment.id)
         return
 
     if args.simIds:
         logging.info('KIlling job(s) with ids: ' + str(args.simIds))
-        params = { 'ids': args.simIds }
+        params = {'ids': args.simIds}
     else:
         logging.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
-        params = { 'killall': True }
+        params = {'killall': True}
 
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -176,6 +191,7 @@ def kill(args, unknownArgs):
         return
 
     sm.cancel_simulations(**params)
+
 
 def exterminate(args, unknownArgs):
     sms = reload_experiments(args)
@@ -196,19 +212,19 @@ def exterminate(args, unknownArgs):
 
     for sm in sms:
         states, msgs = sm.get_simulation_status()
-        sm.cancel_simulations(killall = True)
+        sm.cancel_simulations(killall=True)
+
 
 def delete(args, unknownArgs):
-
     sm = reload_experiment(args)
     states, msgs = sm.get_simulation_status()
     sm.print_status(states, msgs)
-    
+
     if args.hard:
         logging.info('Hard deleting selected experiment.')
     else:
         logging.info('Deleting selected experiment.')
-        
+
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
@@ -226,7 +242,7 @@ def clean(args, unknownArgs):
         sms = reload_experiments(args)
 
     if len(sms) == 0:
-        logging.warn("No experiments matched by '%s'. Exiting..."% args.expId)
+        logging.warn("No experiments matched by '%s'. Exiting..." % args.expId)
         return
 
     if args.expId:
@@ -238,7 +254,7 @@ def clean(args, unknownArgs):
             logging.info("")
     else:
         logging.info("Hard deleting ALL experiments - %s experiments total." % len(sms))
-    
+
     choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
 
     if choice != "Y":
@@ -287,7 +303,6 @@ def progress(args, unknownArgs):
 
 
 def analyze(args, unknownArgs):
-
     logging.info('Analyzing results...')
 
     sm = reload_experiment(args)
@@ -316,8 +331,10 @@ def analyze(args, unknownArgs):
     import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
     plt.show()
 
+
 def analyze_list(args, unknownArgs):
     logging.error('\n' + '\n'.join(builtinAnalyzers.keys()))
+
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -347,85 +364,107 @@ def reload_experiments(args=None):
 
 
 def main():
-
     parser = argparse.ArgumentParser(prog='dtk')
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = subparsers.add_parser('run', help = 'Run one or more simulations configured by run-options.')
-    parser_run.add_argument(dest = 'config_name', default = None, help = 'Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--ini', default = None, help = 'Specify an overlay configuration file (*.ini).')
-    parser_run.add_argument('--priority', default = None, help = 'Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default = None, help = 'Specify node group of COMPS simulation (only for HPC).')
-    parser_run.add_argument('-b', '--blocking', action = 'store_true', help = 'Block the thread until the simulations are done.')
-    parser_run.add_argument('-q', '--quiet', action = 'store_true', help = 'Runs quietly.')
-    parser_run.add_argument('-a', '--analyzer', default = None, help = 'Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
-    parser_run.set_defaults(func = run)
+    parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
+    parser_run.add_argument(dest='config_name', default=None,
+                            help='Name of configuration python script for custom running of simulation.')
+    parser_run.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
+    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
+    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
+    parser_run.add_argument('-b', '--blocking', action='store_true',
+                            help='Block the thread until the simulations are done.')
+    parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
+    parser_run.add_argument('-a', '--analyzer', default=None,
+                            help='Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
+    parser_run.set_defaults(func=run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status', help = 'Report status of simulations in experiment specified by ID or name.')
-    parser_status.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_status.add_argument('-r', '--repeat', action = 'store_true', help = 'Repeat status check until job is done processing.')
-    parser_status.add_argument('-a', '--active', action = 'store_true', help = 'Get the status of all active experiments (mutually exclusive to all other options).')
-    parser_status.set_defaults(func = status)
+    parser_status = subparsers.add_parser('status',
+                                          help='Report status of simulations in experiment specified by ID or name.')
+    parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
+    parser_status.add_argument('-r', '--repeat', action='store_true',
+                               help='Repeat status check until job is done processing.')
+    parser_status.add_argument('-a', '--active', action='store_true',
+                               help='Get the status of all active experiments (mutually exclusive to all other options).')
+    parser_status.set_defaults(func=status)
 
     # 'dtk resubmit' options
-    parser_resubmit = subparsers.add_parser('resubmit', help = 'Resubmit failed or canceled simulations specified by experiment ID or name.')
-    parser_resubmit.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_resubmit.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to resubmit.')
-    parser_resubmit.add_argument('-a', '--all', action = 'store_true', help = 'Resubmit all failed or canceled simulations in selected experiments.')
-    parser_resubmit.set_defaults(func = resubmit)
+    parser_resubmit = subparsers.add_parser('resubmit',
+                                            help='Resubmit failed or canceled simulations specified by experiment ID or name.')
+    parser_resubmit.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
+    parser_resubmit.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                                 help='Process or job IDs of simulations to resubmit.')
+    parser_resubmit.add_argument('-a', '--all', action='store_true',
+                                 help='Resubmit all failed or canceled simulations in selected experiments.')
+    parser_resubmit.set_defaults(func=resubmit)
 
     # 'dtk kill' options
-    parser_kill = subparsers.add_parser('kill', help = 'Kill most recent running experiment specified by ID or name.')
-    parser_kill.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_kill.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to kill.')
-    parser_kill.set_defaults(func = kill)
+    parser_kill = subparsers.add_parser('kill', help='Kill most recent running experiment specified by ID or name.')
+    parser_kill.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_kill.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                             help='Process or job IDs of simulations to kill.')
+    parser_kill.set_defaults(func=kill)
 
     # 'dtk exterminate' options
-    parser_exterminate = subparsers.add_parser('exterminate', help = 'Kill ALL experiments matched by ID or name.')
-    parser_exterminate.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_exterminate.set_defaults(func = exterminate)
+    parser_exterminate = subparsers.add_parser('exterminate', help='Kill ALL experiments matched by ID or name.')
+    parser_exterminate.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_exterminate.set_defaults(func=exterminate)
 
     # 'dtk delete' options
-    parser_delete = subparsers.add_parser('delete', help = 'Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
-    parser_delete.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_delete.add_argument('--hard', action = 'store_true', help = 'Additionally delete working directory or server entities for experiment.')
-    parser_delete.set_defaults(func = delete)
+    parser_delete = subparsers.add_parser('delete',
+                                          help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+    parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_delete.add_argument('--hard', action='store_true',
+                               help='Additionally delete working directory or server entities for experiment.')
+    parser_delete.set_defaults(func=delete)
 
     # 'dtk clean' options
-    parser_clean = subparsers.add_parser('clean', help = 'Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
-    parser_clean.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_clean.set_defaults(func = clean)
+    parser_clean = subparsers.add_parser('clean',
+                                         help='Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
+    parser_clean.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_clean.set_defaults(func=clean)
 
     # 'dtk stdout' options
-    parser_stdout = subparsers.add_parser('stdout', help = 'Print stdout from first simulation in selected experiment.')
-    parser_stdout.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_stdout.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
-    parser_stdout.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
-    parser_stdout.add_argument('-e', '--error', action = 'store_true', help = 'Print stderr instead of stdout.')
-    parser_stdout.add_argument('--failed', action = 'store_true', help = 'Get the stdout for the first failed simulation in the selected experiment.')
-    parser_stdout.add_argument('--succeeded', action = 'store_true', help = 'Get the stdout for the first succeeded simulation in the selected experiment.')
-    parser_stdout.set_defaults(func = stdout)
+    parser_stdout = subparsers.add_parser('stdout', help='Print stdout from first simulation in selected experiment.')
+    parser_stdout.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_stdout.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                               help='Process or job IDs of simulations to print.')
+    parser_stdout.add_argument('-c', '--comps', action='store_true',
+                               help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_stdout.add_argument('-e', '--error', action='store_true', help='Print stderr instead of stdout.')
+    parser_stdout.add_argument('--failed', action='store_true',
+                               help='Get the stdout for the first failed simulation in the selected experiment.')
+    parser_stdout.add_argument('--succeeded', action='store_true',
+                               help='Get the stdout for the first succeeded simulation in the selected experiment.')
+    parser_stdout.set_defaults(func=stdout)
 
     # 'dtk progress' options
-    parser_progress = subparsers.add_parser('progress', help = 'Print progress from simulation(s) in experiment.')
-    parser_progress.add_argument(dest = 'expId', default = None, nargs = '?', help =' Experiment ID or name.')
-    parser_progress.add_argument('-s', '--simIds', dest = 'simIds', default = None, nargs = '+', help = 'Process or job IDs of simulations to print.')
-    parser_progress.add_argument('-c', '--comps', action='store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
-    parser_progress.set_defaults(func = progress)
+    parser_progress = subparsers.add_parser('progress', help='Print progress from simulation(s) in experiment.')
+    parser_progress.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_progress.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                                 help='Process or job IDs of simulations to print.')
+    parser_progress.add_argument('-c', '--comps', action='store_true',
+                                 help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_progress.set_defaults(func=progress)
 
     # 'dtk analyze' options
-    parser_analyze = subparsers.add_parser('analyze', help = 'Analyze finished simulations in experiment according to analyzers.')
-    parser_analyze.add_argument(dest = 'expId', default = None, nargs = '?', help = 'Experiment ID or name.')
-    parser_analyze.add_argument(dest = 'config_name', default = None, help = 'Python script or builtin analyzer name for custom analysis of simulations.')
-    parser_analyze.add_argument('-c', '--comps', action = 'store_true', help = 'Use COMPS asset service to read output files (default is direct file access).')
-    parser_analyze.add_argument('-f', '--force', action = 'store_true', help = 'Force analyzer to run even if jobs are not all finished.')
-    parser_analyze.set_defaults(func = analyze)
+    parser_analyze = subparsers.add_parser('analyze',
+                                           help='Analyze finished simulations in experiment according to analyzers.')
+    parser_analyze.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
+    parser_analyze.add_argument(dest='config_name', default=None,
+                                help='Python script or builtin analyzer name for custom analysis of simulations.')
+    parser_analyze.add_argument('-c', '--comps', action='store_true',
+                                help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_analyze.add_argument('-f', '--force', action='store_true',
+                                help='Force analyzer to run even if jobs are not all finished.')
+    parser_analyze.set_defaults(func=analyze)
 
     # 'dtk analyze-list' options
-    parser_analyze_list = subparsers.add_parser('analyze-list', help = 'List the available builtin analyzers.')
-    parser_analyze_list.set_defaults(func = analyze_list)
+    parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
+    parser_analyze_list.set_defaults(func=analyze_list)
 
     # 'dtk setup' options
     parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
@@ -438,6 +477,7 @@ def main():
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
     args.func(args, unknownArgs)
+
 
 if __name__ == '__main__':
     main()
