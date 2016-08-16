@@ -86,10 +86,10 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def collect_sim_metadata(self):
         for simid, simdata in  CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
-            sim = DataStore.create_simulation(id=simid, tags=simdata)
-            self.experiment.simulations.append(sim)
-
-        DataStore.save_experiment(self.experiment)
+            # Only add simulation if not yet present in the experiment
+            if not self.experiment.contains_simulation(simid):
+                sim = DataStore.create_simulation(id=simid, tags=simdata)
+                self.experiment.simulations.append(sim)
 
     def cancel_all_simulations(self, states=None):
         utils.COMPS_login(self.get_property('server_endpoint'))
