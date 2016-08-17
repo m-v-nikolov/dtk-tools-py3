@@ -54,22 +54,19 @@ class BaseExperimentManager:
 
     @abstractmethod
     def create_experiment(self, experiment_name, experiment_id, suite_id=None):
-        if not self.experiment:
-            self.experiment = DataStore.create_experiment(
-                exp_id=experiment_id,
-                sim_root=self.get_property('sim_root'),
-                exe_name=self.commandline.Executable,
-                exp_name=experiment_name,
-                location=self.location,
-                sim_type=self.config_builder.get_param('Simulation_Type'),
-                dtk_tools_revision=utils.get_tools_revision(),
-                selected_block=self.setup.selected_block,
-                setup_overlay_file=self.setup.setup_file,
-                command_line=self.commandline.Commandline,
-                endpoint=self.setup.get('server_endpoint') if self.location == "HPC" else None)
-        else:
-            # Refresh the experiment
-            self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+        self.experiment = DataStore.create_experiment(
+            exp_id=experiment_id,
+            sim_root=self.get_property('sim_root'),
+            exe_name=self.commandline.Executable,
+            exp_name=experiment_name,
+            location=self.location,
+            sim_type=self.config_builder.get_param('Simulation_Type'),
+            dtk_tools_revision=utils.get_tools_revision(),
+            selected_block=self.setup.selected_block,
+            setup_overlay_file=self.setup.setup_file,
+            command_line=self.commandline.Commandline,
+            endpoint=self.setup.get('server_endpoint') if self.location == "HPC" else None)
+
 
     @abstractmethod
     def create_simulation(self, suite_id=None):
@@ -142,8 +139,13 @@ class BaseExperimentManager:
         # Create the command line
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
-        # Create the experiment
-        self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
+        # Create the experiment if not present already
+        if not self.experiment:
+            self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
+        else:
+            # Refresh the experiment
+            self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+            self.sims_created = 0
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
