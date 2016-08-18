@@ -6,6 +6,7 @@ from sqlalchemy.orm import joinedload
 
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
+from simtools.utils import remove_null_values
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -70,8 +71,9 @@ class DataStore:
     @classmethod
     def save_experiment(cls, experiment, verbose=True):
         if verbose:
+            # Dont display the null values
             logger.info('Saving meta-data for experiment:')
-            logger.info(json.dumps(experiment, indent=3, default=dumper, sort_keys=True))
+            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
 
         with session_scope() as session:
             session.merge(experiment)
@@ -107,10 +109,12 @@ class DataStore:
         return experiments
 
     @classmethod
-    def get_experiments(cls, id_or_name):
+    def get_experiments(cls, id_or_name, current_dir=None):
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name))
+            if current_dir:
+                experiments = experiments.filter(Experiment.working_directory == current_dir)
             session.expunge_all()
 
         return experiments
@@ -118,7 +122,7 @@ class DataStore:
     @classmethod
     def delete_experiment(cls, experiment):
         with session_scope() as session:
-            session.delete(experiment)
+            session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
 
     @classmethod
     def change_simulation_state(cls, simulation, message=None, status=None, pid=None):

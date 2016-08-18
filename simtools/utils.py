@@ -57,6 +57,13 @@ def COMPS_login(endpoint):
 
     return Client
 
+def remove_null_values(null_dict):
+    ret = {}
+    for key, value in null_dict.iteritems():
+        if value:
+            ret[key] = value
+    return ret
+
 
 def get_tools_revision():
     # Get the tools revision
