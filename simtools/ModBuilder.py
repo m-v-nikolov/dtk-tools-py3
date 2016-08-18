@@ -15,7 +15,6 @@ class ModBuilder(object):
     class ModList(list):
         def __init__(self, *args):
             ModBuilder.metadata = {}
-            self.tags = {}
             list.__init__(self, args)
 
     class ModFn(object):
@@ -32,6 +31,7 @@ class ModBuilder(object):
             ModBuilder.metadata.update(md)
 
     def __init__(self, mod_generator):
+        self.tags = {}
         self.mod_generator = mod_generator
 
     @classmethod
