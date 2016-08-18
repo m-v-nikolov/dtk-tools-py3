@@ -196,7 +196,8 @@ def kill(args, unknownArgs):
 
 
 def exterminate(args, unknownArgs):
-    sms = reload_experiments(args)
+    with utils.nostdout():
+        sms = reload_experiments(args)
 
     if args.expId:
         for sm in sms:
@@ -205,6 +206,8 @@ def exterminate(args, unknownArgs):
         logging.info('Killing ALL experiments matched by ""' + args.expId + '".')
     else:
         logging.info('Killing ALL experiments.')
+
+    logging.info('%s experiments found.' % len(sms))
 
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -241,6 +244,9 @@ def delete(args, unknownArgs):
 
 def clean(args, unknownArgs):
     with utils.nostdout():
+        # Store the current directory to let the reload knows that we want to
+        # only retrieve simulations in this directory
+        args.current_dir = os.getcwd()
         sms = reload_experiments(args)
 
     if len(sms) == 0:
@@ -248,14 +254,14 @@ def clean(args, unknownArgs):
         return
 
     if args.expId:
-        logging.info("Hard deleting ALL experiments matched by '%s' - %s experiments total." % (args.expId, len(sms)))
+        logging.info("Hard deleting ALL experiments matched by '%s' ran from the current directory.\n%s experiments total." % (args.expId, len(sms)))
         for sm in sms:
             logging.info(sm.experiment)
             states, msgs = sm.get_simulation_status()
             sm.print_status(states, msgs, verbose=False)
             logging.info("")
     else:
-        logging.info("Hard deleting ALL experiments - %s experiments total." % len(sms))
+        logging.info("Hard deleting ALL experiments ran from the current directory.\n%s experiments total." % len(sms))
 
     choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
 
@@ -362,7 +368,9 @@ def reload_experiments(args=None):
     else:
         id = None
 
-    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments(id))
+    current_dir = args.current_dir if 'current_dir' in args else None
+
+    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments(id, current_dir))
 
 
 def main():
@@ -424,8 +432,7 @@ def main():
     parser_delete.set_defaults(func=delete)
 
     # 'dtk clean' options
-    parser_clean = subparsers.add_parser('clean',
-                                         help='Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
+    parser_clean = subparsers.add_parser('clean', help='Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
     parser_clean.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     parser_clean.set_defaults(func=clean)
 
