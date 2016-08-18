@@ -240,6 +240,33 @@ drug_params = {
     "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 9, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 14, "Fraction_Of_Adult_Dose": 0.67}]
   },
 
+  "Chloroquine" : {
+     # Drug PkPd
+    "Drug_Cmax": 75,
+    "Drug_Decay_T1": 0.36,
+    "Drug_Decay_T2": 0.36,
+    "Drug_Vd": 1,
+    "Drug_PKPD_C50": 15,
+
+    # Treatment regimen
+    "Drug_Fulltreatment_Doses": 3,
+    "Drug_Dose_Interval": 1,
+
+    # These are daily parasite killing rates for:
+    "Drug_Gametocyte02_Killrate": 2.0,   # ... gametocyte - early stages
+    "Drug_Gametocyte34_Killrate": 0.0,   # ...            - late stages
+    "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
+    "Drug_Hepatocyte_Killrate":   0.1,   # ... hepatocytes
+    "Max_Drug_IRBC_Kill":         0.0,   # ... asexual parasites
+
+    # Adherence rate for subsequent doses
+    "Drug_Adherence_Rate" : 1.0,
+
+    # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+    "Bodyweight_Exponent": 1,
+    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 9, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 14, "Fraction_Of_Adult_Dose": 0.67}]
+  },
+
   "Abstract": { # abstracted drug
      # Drug PkPd
     "Drug_Cmax": 100, 

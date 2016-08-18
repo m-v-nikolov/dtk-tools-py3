@@ -48,12 +48,12 @@ def get_risk_by_distance(df, distances, ddf) :
         pos_w_pos = 0.
         tot_w_pos = 0.
         for hh_num in df.index :
-            if df.ix[hh_num, 'pos'] < 1 :
+            if df.loc[hh_num, 'pos'] < 1 :
                 continue
             
-            if n_dist == 0 and df.ix[hh_num, 'pop'] > 1 :
-                hh_pos = df.ix[hh_num, 'pos']
-                hh_tot = df.ix[hh_num, 'pop']
+            if n_dist == 0 and df.loc[hh_num, 'pop'] > 1 :
+                hh_pos = df.loc[hh_num, 'pos']
+                hh_tot = df.loc[hh_num, 'pop']
                 num_pos = (hh_pos - 1)*hh_pos
                 num_ppl = (hh_tot - 1)*hh_pos
 

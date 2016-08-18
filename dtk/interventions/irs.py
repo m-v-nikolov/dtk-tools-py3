@@ -15,8 +15,8 @@ import copy
 
 irs_housingmod = { "class": "IRSHousingModification",
                 "Killing_Config": {
-                    "Initial_Effect": 0.7,
-                    "Decay_Time_Constant": 1460,
+                    "Initial_Effect": 0.5,
+                    "Decay_Time_Constant": 90,
                     "class": "WaningEffectExponential"
                 },
                 "Blocking_Config": {
