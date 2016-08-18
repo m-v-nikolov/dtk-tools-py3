@@ -38,7 +38,7 @@ class Simulation(Base):
             return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
         else:
             from simtools.OutputParser import CompsDTKOutputParser
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, suite_id=self.experiment.suite_id, save=False)
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, save=False)
             return sims_paths[self.id]
 
 
@@ -56,6 +56,7 @@ class Experiment(Base):
     sim_root = Column(String)
     sim_type = Column(String)
     command_line = Column(String)
+    working_directory = Column(String, default=os.getcwd())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     endpoint = Column(String)
 
@@ -77,13 +78,12 @@ class Experiment(Base):
                 return True
         return False
 
-
     def toJSON(self):
         ret = {}
         for name in dir(self):
             value = getattr(self, name)
             # Weed out the internal parameters/methods
-            if name.startswith('_') or name in ('metadata','date_created') or inspect.ismethod(value):
+            if name.startswith('_') or name in ('metadata') or inspect.ismethod(value):
                 continue
 
             # Special case for the simulations

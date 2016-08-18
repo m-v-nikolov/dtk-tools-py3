@@ -15,6 +15,7 @@ class ModBuilder(object):
     class ModList(list):
         def __init__(self, *args):
             ModBuilder.metadata = {}
+            self.tags = {}
             list.__init__(self, args)
 
     class ModFn(object):
@@ -67,9 +68,11 @@ class ModBuilder(object):
 
 class SingleSimulationBuilder(ModBuilder):
     def __init__(self):
+        self.tags = {}
         self.mod_generator = (self.ModList() for _ in range(1))
 
 
 class RunNumberSweepBuilder(ModBuilder):
     def __init__(self, nsims):
+        self.tags = {}
         self.mod_generator = (self.ModList(self.ModFn(SimConfigBuilder.set_param, 'Run_Number', i)) for i in range(nsims))
