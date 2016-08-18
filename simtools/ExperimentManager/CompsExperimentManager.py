@@ -27,9 +27,9 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def analyze_simulations(self):
         if not self.assets_service:
-            CompsDTKOutputParser.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
+            self.parserClass.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
         if self.setup.getboolean('compress_assets'):
-            CompsDTKOutputParser.enableCompression()
+            self.parserClass.enableCompression()
 
         super(CompsExperimentManager, self).analyze_simulations()
 
@@ -60,6 +60,7 @@ class CompsExperimentManager(BaseExperimentManager):
         tags = self.exp_builder.metadata
         # Append the environment to the tag
         tags['environment'] = self.setup.get('environment')
+        tags.update(self.exp_builder.tags if self.exp_builder.tags else {})
         self.commissioner.create_simulation(self.config_builder.get_param('Config_Name'), files, tags)
 
         self.sims_created += 1

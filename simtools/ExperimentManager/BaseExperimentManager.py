@@ -128,7 +128,6 @@ class BaseExperimentManager:
         """
         self.config_builder = config_builder
         self.exp_builder = exp_builder
-
         # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
         # If not, use the normal staging process
         if self.assets_service:
@@ -149,7 +148,6 @@ class BaseExperimentManager:
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
-
         for mod_fn_list in self.exp_builder.mod_generator:
             # reset to base config/campaign
             self.config_builder = copy.deepcopy(cached_cb)

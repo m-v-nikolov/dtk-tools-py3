@@ -451,7 +451,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                         f.write(content)
         """
 
-        dump = lambda content: json.dumps(content, sort_keys=True, indent=4)
+        dump = lambda content: json.dumps(content, sort_keys=True, indent=4).strip('"')
 
         write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
 
