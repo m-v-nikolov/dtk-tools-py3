@@ -16,10 +16,8 @@ def dumper(obj):
     Function to pass to the json.dump function.
     Allows to call the toJSON() function on the objects that needs to be serialized.
     Revert to the __dict__ if failure to invoke the toJSON().
-
     Args:
         obj: the object to serialize
-
     Returns:
         Serializable format
     """
@@ -63,7 +61,7 @@ class DataStore:
         return experiment
 
     @classmethod
-    def save_simulation(cls,simulation):
+    def save_simulation(cls, simulation):
         with session_scope() as session:
             session.merge(simulation)
 
@@ -77,7 +75,7 @@ class DataStore:
             session.merge(experiment)
 
     @classmethod
-    def get_simulation(cls,sim_id):
+    def get_simulation(cls, sim_id):
         with session_scope() as session:
             simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
             session.expunge_all()
@@ -132,60 +130,3 @@ class DataStore:
 
             if pid:
                 simulation.pid = pid if pid > 0 else None
-
-
-    @classmethod
-    def delete_simulation(cls, simulation):
-        with session_scope() as session:
-            session.delete(simulation)
-
-
-    @classmethod
-    def delete_simulation_by_id(cls, sid):
-        simulation = DataStore.get_simulation(sid)
-        with session_scope() as session:
-            session.delete(simulation)
-
-
-    @classmethod
-    def delete_simulations_by_expid_bk(cls, expid):
-        simulations = DataStore.get_simulations_by_expid(expid)
-        print simulations
-        with session_scope() as session:
-            session.delete(simulations)   # throw error!
-
-            # for sim in simulations:
-            #     session.delete(sim)
-
-
-    @classmethod
-    def delete_simulations_by_expid(cls, expid):
-        with session_scope() as session:
-            simulations = session.query(Simulation).filter(Simulation.experiment_id == expid).all()
-            print simulations
-            # session.delete(simulations)   # throw error!
-
-            for sim in simulations:
-                session.delete(sim)
-
-
-    @classmethod
-    def get_simulations_by_expid(cls, exp_id):
-        with session_scope() as session:
-            simulations = session.query(Simulation).filter(Simulation.experiment_id == exp_id).all()
-            session.expunge_all()
-
-        return simulations
-
-
-    @classmethod
-    def get_experiments(cls):
-        with session_scope() as session:
-            experiments = session.query(Experiment)
-            session.expunge_all()
-
-        exp_ids = []
-        for exp in experiments:
-            exp_ids.append(exp.exp_id)
-
-        return exp_ids
