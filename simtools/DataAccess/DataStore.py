@@ -132,3 +132,60 @@ class DataStore:
 
             if pid:
                 simulation.pid = pid if pid > 0 else None
+
+
+    @classmethod
+    def delete_simulation(cls, simulation):
+        with session_scope() as session:
+            session.delete(simulation)
+
+
+    @classmethod
+    def delete_simulation_by_id(cls, sid):
+        simulation = DataStore.get_simulation(sid)
+        with session_scope() as session:
+            session.delete(simulation)
+
+
+    @classmethod
+    def delete_simulations_by_expid_bk(cls, expid):
+        simulations = DataStore.get_simulations_by_expid(expid)
+        print simulations
+        with session_scope() as session:
+            session.delete(simulations)   # throw error!
+
+            # for sim in simulations:
+            #     session.delete(sim)
+
+
+    @classmethod
+    def delete_simulations_by_expid(cls, expid):
+        with session_scope() as session:
+            simulations = session.query(Simulation).filter(Simulation.experiment_id == expid).all()
+            print simulations
+            # session.delete(simulations)   # throw error!
+
+            for sim in simulations:
+                session.delete(sim)
+
+
+    @classmethod
+    def get_simulations_by_expid(cls, exp_id):
+        with session_scope() as session:
+            simulations = session.query(Simulation).filter(Simulation.experiment_id == exp_id).all()
+            session.expunge_all()
+
+        return simulations
+
+
+    @classmethod
+    def get_experiments(cls):
+        with session_scope() as session:
+            experiments = session.query(Experiment)
+            session.expunge_all()
+
+        exp_ids = []
+        for exp in experiments:
+            exp_ids.append(exp.exp_id)
+
+        return exp_ids
