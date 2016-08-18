@@ -16,10 +16,8 @@ def dumper(obj):
     Function to pass to the json.dump function.
     Allows to call the toJSON() function on the objects that needs to be serialized.
     Revert to the __dict__ if failure to invoke the toJSON().
-
     Args:
         obj: the object to serialize
-
     Returns:
         Serializable format
     """
@@ -63,7 +61,7 @@ class DataStore:
         return experiment
 
     @classmethod
-    def save_simulation(cls,simulation):
+    def save_simulation(cls, simulation):
         with session_scope() as session:
             session.merge(simulation)
 
@@ -77,7 +75,7 @@ class DataStore:
             session.merge(experiment)
 
     @classmethod
-    def get_simulation(cls,sim_id):
+    def get_simulation(cls, sim_id):
         with session_scope() as session:
             simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
             session.expunge_all()

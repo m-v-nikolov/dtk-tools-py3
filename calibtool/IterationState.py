@@ -1,6 +1,6 @@
 import json
 import logging
-
+import os
 import pandas as pd
 
 from utils import NumpyEncoder, json_numpy_obj_hook
@@ -19,6 +19,7 @@ class IterationState(object):
 
     def __init__(self, **kwargs):
         self.iteration = 0
+        self.resume_point = 0
         self.reset_state()
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -82,3 +83,12 @@ class IterationState(object):
         #df['simIds'] = simIds
 
         return df
+
+    @classmethod
+    def restore_state(cls, exp_name, iteration):
+        """
+        Restore IterationState
+        """
+        iter_directory = os.path.join(exp_name, 'iter%d' % iteration)
+        iter_file = os.path.join(iter_directory, 'IterationState.json')
+        return cls.from_file(iter_file)

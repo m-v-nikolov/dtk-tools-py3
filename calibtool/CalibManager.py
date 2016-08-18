@@ -66,6 +66,7 @@ class CalibManager(object):
         self.plotters = plotters
         self.calibration_start = None
         self.iteration_start = None
+        self.iter_step = ''
 
     def run_calibration(self, **kwargs):
         """
@@ -127,6 +128,19 @@ class CalibManager(object):
         except IOError:
             raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
 
+    def get_resume_map(self):
+        ret = ''
+        if self.iteration_state.resume_point == 0:
+            ret = 'Normal'
+        elif self.iteration_state.resume_point == 1:
+            ret = 'Commission'
+        elif self.iteration_state.resume_point == 2:
+            ret = 'Analyze'
+        elif self.iteration_state.resume_point == 3:
+            ret = 'Next_Point'
+
+        return ret
+
     def run_iterations(self, **kwargs):
         """
         Run the iteration loop consisting of the following steps:
@@ -146,22 +160,34 @@ class CalibManager(object):
             # Restart the time for each iteration
             self.iteration_start = datetime.now().replace(microsecond=0)
 
-            logger.info('---- Iteration %d ----', self.iteration)
-            next_params = self.get_next_parameters()
+            logger.info('---- Starting Iteration %d ----', self.iteration)
 
-            self.commission_iteration(next_params, **kwargs)
+            # Output verbose resume point
+            if self.iteration_state.resume_point > 0:
+                logger.info('-- Resuming Point %d (%s) --', self.iteration_state.resume_point, self.get_resume_map())
 
-            results = self.analyze_iteration()
+            # Start from simulation
+            if self.iteration_state.resume_point <= 1:
+                next_params = self.get_next_parameters()
+                self.commission_iteration(next_params, **kwargs)
 
-            self.update_next_point(results)
+            # Start from analyze
+            if self.iteration_state.resume_point <= 2:
+                results = self.analyze_iteration()
+                self.update_next_point(results)
+
             if self.finished():
                 break
 
-            # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
-            if self.iteration + 1 < self.max_iterations:
-                self.increment_iteration()
-            else:
-                break
+            # Start from next iteration
+            if self.iteration_state.resume_point <= 3:
+                # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
+                if self.iteration + 1 < self.max_iterations:
+                    self.increment_iteration()
+                    # Make sure the following iteration always starts from very beginning as normal iteration!
+                    self.iteration_state.resume_point = 0
+                else:
+                    break
 
         # Print the calibration finish time
         current_time = datetime.now()
@@ -511,67 +537,230 @@ class CalibManager(object):
         self.all_results = pd.DataFrame.from_dict(results, orient='columns')
         self.all_results.set_index('sample', inplace=True)
 
-        last_iteration = iteration if self.iteration_state and self.iteration_state.results else iteration - 1
-
-        self.all_results = self.all_results[self.all_results.iteration <= last_iteration]
-        logger.info('Restored results from iteration %d', last_iteration)
+        self.all_results = self.all_results[self.all_results.iteration <= iteration]
+        logger.info('Restored results from iteration %d', iteration)
         logger.debug(self.all_results)
         self.cache_calibration()
 
-    def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
+    def check_leftover(self):
         """
-        Restart calibration from specified iteration (default=latest)
-        and from the specified iter_step in each iteration:
+        Handle the case: process got interrupted but it still runs on remote
+        """
+        try:
+            # Retrieve the experiment manager
+            self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
+        except Exception as ex:
+            logger.info(ex)
+            return
+
+        if not self.exp_manager:
+            return
+
+        # Make sure it is finished
+        self.exp_manager.wait_for_finished(verbose=True)
+
+        try:
+            # check the status
+            states = self.exp_manager.get_simulation_status()[0]
+        except Exception as ex:
+            logger.info(ex)
+            return
+
+        if not states:
+            return
+
+        if not self.exp_manager.status_succeeded(states):
+            # Force to set resuming point to 1 later
+            self.iteration_state.simulations = {}
+        else:
+            # Resuming point (2 or 3) will be determined from following logic
+            pass
+
+    def prepare_resume_point_for_iteration(self, iteration=None):
+        """
+        Setup resume point the point to resume the iteration:
            * commission -- commission a new iteration of simulations based on existing next_params
            * analyze -- calculate results for an existing iteration of simulations
            * next_point -- generate next sample points from an existing set of results
         """
 
+        # Cleanup iteration state
+        self.iteration_state.reset_state()
+
+        # Catch up the Next Point
+        if iteration > 0:
+            self.restore_next_point_for_iteration(self.iteration - 1)
+
+        # Restore IterationState
+        self.iteration_state = IterationState.restore_state(self.name, iteration)
+
+        # Store iteration #:
+        self.iteration_state.iteration = iteration
+
+        # Clear up next_point for iteration 0
+        if self.iteration == 0:
+            self.iteration_state.next_point = {}
+
+        # Check leftover (in case lost connection)
+        self.check_leftover()
+
+        # Adjust resuming point based on input options
+        if self.iter_step:
+            self.adjust_resume_point()
+
+        # Figure out the resuming point...
+        if not self.iteration_state.simulations:
+            # need to resume from commission
+            self.iteration_state.resume_point = 1
+            self.iteration_state.simulations = {}
+            self.iteration_state.results = {}
+            return
+
+        # # Retrieve the experiment manager
+        # self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
+        # states = self.exp_manager.get_simulation_status()[0]
+        # if self.exp_manager.any_failed(states) or self.exp_manager.any_canceled(states):
+        #     self.iteration_state.resume_point = 1
+        #     self.iteration_state.simulations = {}
+        #     self.iteration_state.results = {}
+        #     return
+        #
+        # if not self.exp_manager.succeeded():
+        #     # Still running but did not fail
+        #     self.iteration_state.results = {}
+        #     self.exp_manager.wait_for_finished(verbose=True)
+
+
+        # Assume simulations exits
+        if not self.iteration_state.results:
+            # need to resume from analyze
+            self.iteration_state.resume_point = 2
+            self.iteration_state.results = {}
+            return
+
+        # Assume both simulations and results exit
+        # Need to resume from next_point
+        self.iteration_state.resume_point = 3
+        self.update_next_point(self.iteration_state.results['total'])
+
+    def adjust_resume_point(self):
+        """
+        Consider user's input and determine the resuming point
+        """
+        if self.iter_step not in ['commission', 'analyze', 'next_point']:
+            pass
+        elif self.iter_step == 'commission':
+            self.iteration_state.simulations = {}
+        elif self.iter_step == 'analyze':
+            self.iteration_state.results = {}
+        elif self.iter_step == 'next_point':
+            pass
+
+    def restore_next_point_for_iteration(self, iteration):
+        """
+        Restore next_point up to this iteration
+        """
+        i = 0
+        while i <= iteration:
+            # Restore IterationState
+            self.iteration_state = IterationState.restore_state(self.name, i)
+            # Update next point
+            self.update_next_point(self.iteration_state.results['total'])
+            i += 1
+
+    def find_best_iteration_for_resume(self, iteration=None, calib_data=None):
+        """
+        Find the latest good iteration from where we can do resume
+        """
+        # If calib_data is None or Empty, throw exception
+        if calib_data is None or not calib_data:
+            raise Exception('Metadata is empty in %s/CalibManager.json' % self.name)
+
+        # If calib_data has no results, will resume from Iteration 0
+        if not calib_data.get('results', {}):
+            return 0
+
+        # Get latest iteration #
+        latest_iteration = calib_data.get('iteration', None)
+
+        # Handle special cases: resume from Iteration 0
+        if latest_iteration is None:
+            return 0
+
+        # If no iteration passed in, take latest_iteration for resume
+        if iteration is None:
+            iteration = latest_iteration
+
+        # Adjust input iteration
+        if latest_iteration < iteration:
+            iteration = latest_iteration
+
+        # [TODO]: maybe we can assume the current iteration is good and don't need to go through the while loop
+
+        # Find the latest good iteration from which resume can start
+        while iteration > 0:
+
+            # Bad case: iteration folder doesn't exist
+            iter_directory = os.path.join(self.name, 'iter%d' % iteration)
+            if not os.path.exists(iter_directory):
+                iteration -= 1
+                continue
+
+            # Bad case: file IterationState.json doesn't exist
+            iter_file = os.path.join(iter_directory, 'IterationState.json')
+            if not os.path.exists(iter_file):
+                iteration -= 1
+                continue
+
+            # Bad case: cannot restore the IterationState
+            try:
+                # print 'iter_file: %s' % iter_file
+                self.iteration_state = IterationState.from_file(iter_file)
+            except IOError:
+                logger.info('Unable to find metadata in %s/IterationState.json' % iter_directory)
+                iteration -= 1
+                continue
+
+            # Bad case: iteration_state is None or Empty
+            if self.iteration_state is None:
+                iteration -= 1
+                continue
+            else:
+                break   # found a good iteration candidate
+
+        return iteration
+
+    def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
+        """
+        It takes several steps:
+          * First we need to find the latest 'best' iteration
+          * Then restore IterationState for this iteration and check the resuming point
+          * Restore the proper results for resume
+          * Finally got through the iteration loop
+        """
+        self.iter_step = iter_step.lower() if iter_step is not None else ''
+
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
+        # Keep the simulation type: LOCAL, HPC, ...
         self.location = self.setup.get('type')
 
         calib_data = self.read_calib_data()
+        iteration = self.find_best_iteration_for_resume(iteration, calib_data)
+        self.prepare_resume_point_for_iteration(iteration)
+
+        # print 'iteration, resume_point: (%s, %s)' % (self.iteration, self.iteration_state.resume_point)
+        # exit()
+
         self.suite_id = calib_data.get('suite_id')
 
-        latest_iteration = calib_data.get('iteration')
-
-        if iteration is None:
-            iteration = latest_iteration
-            logger.info('Resuming calibration from last iteration: %d' % iteration)
+        if self.iteration_state.resume_point < 3:
+            # for resume_point < 3, it will combine current results with previous results
+            self.restore_results(calib_data.get('results'), iteration - 1)
         else:
-            if latest_iteration < iteration:
-                logger.warning(
-                    'Latest iteration (%d) is before resumption target (%d).' % (latest_iteration, iteration))
-                iteration = latest_iteration
-            logger.info('Resuming calibration from iteration %d' % iteration)
-
-        iter_directory = os.path.join(self.name, 'iter%d' % iteration)
-        self.iteration_state = self.retrieve_iteration_state(iter_directory)
-
-        # Empty the results and ...
-        self.iteration_state.results = {}
-        self.iteration_state.simulations = {}
-        if self.iteration == 0:
-            self.iteration_state.next_point["gaussian_covariances"] = []
-            self.iteration_state.next_point["gaussian_probs"] = []
-            self.iteration_state.next_point["gaussian_centers"] = []
-            self.iteration_state.next_point["priors"] = []
-            self.iteration_state.next_point["results"] = []
-
-        self.restore_results(calib_data.get('results'), iteration)
-        if iter_step:
-            self.iteration_state.reset_to_step(iter_step)
-            self.cache_iteration_state(backup_existing=True)
-
-        # TODO: If we attempt to resume, with re-commissioning,
-        #       we will have to roll back next_point to previous iteration?
-        #       Do we ever want to do this, or would we just re-select the
-        #       next parameters from the previous iteration state?
-        logger.info('Resuming NextPointAlgorithm from cached status.')
-        logger.debug(pprint.pformat(self.iteration_state.next_point))
-        self.next_point.set_current_state(self.iteration_state.next_point)
+            # for resume_point = 3, it will use the current results and resume from next iteration
+            self.restore_results(calib_data.get('results'), iteration)
 
         self.run_iterations(**kwargs)
 
