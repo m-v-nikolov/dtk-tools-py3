@@ -56,6 +56,7 @@ class BaseExperimentManager:
     def create_experiment(self, experiment_name, experiment_id, suite_id=None):
         self.experiment = DataStore.create_experiment(
             exp_id=experiment_id,
+            suite_id=suite_id,
             sim_root=self.get_property('sim_root'),
             exe_name=self.commandline.Executable,
             exp_name=experiment_name,
