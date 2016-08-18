@@ -93,7 +93,8 @@ def add_itn_fn(start=0, coverage=1, nodeIDs=[]) :
 # ITNs from nodeid-coverage specified in json
 def add_itn_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') :
     def fn(cb) :
-        itn_distr = zip(itn_dates, itn_fracs)
+        birth_durations = [itn_dates[x + 1] - itn_dates[x] for x in range(len(itn_dates)-1)]
+        itn_distr = zip(itn_dates[:-1], itn_fracs)
         with open(reffname) as fin :
             cov = json.loads(fin.read())
         for itncov in cov[channel] :
@@ -102,8 +103,13 @@ def add_itn_by_node_id_fn(reffname, itn_dates, itn_fracs, channel='itn2012cov') 
                     c = itncov['coverage']*itn_frac
                     if i < len(itn_fracs)-1 :
                         c /= np.prod([1 - x*itncov['coverage'] for x in itn_fracs[i+1:]])
-                    coverage = { 'min' : 0, 'max' : 200, 'coverage' : c}
-                    add_ITN(cb, itn_date, [coverage], nodeIDs=itncov['nodes'])
+                    # coverage = { 'min' : 0, 'max' : 200, 'coverage' : c}
+                    add_ITN(cb, itn_date,
+                            coverage_by_ages=[{'min': 0, 'max': 5, 'coverage': min([1,c*1.3])},
+                                              {'birth': 1, 'coverage': min([1,c*1.3]), 'duration': birth_durations[i]},
+                                              {'min': 5, 'max': 20, 'coverage': c / 2},
+                                              {'min': 20, 'max': 100, 'coverage': min([1,c*1.3])}],
+                            nodeIDs=itncov['nodes'])
     return fn
 
 # IRS from nodeid-coverage specified in json

@@ -1,9 +1,12 @@
 from dtk.interventions.malaria_drugs import drug_configs_from_code
 from dtk.interventions.malaria_diagnostic import add_diagnostic_survey, add_triggered_survey
+from dtk.interventions.intervention_states import *
 from copy import deepcopy
 
-def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, interval=60, diagnostic_threshold=40, node_selection_type='DISTANCE_ONLY',
-                      trigger_coverage=1.0, snowballs=0, delay=0, nodes={"class": "NodeSetAll"}, target_group='Everyone', dosing=''):
+def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, interval=60,
+                      diagnostic_threshold=40, node_selection_type='DISTANCE_ONLY',
+                      trigger_coverage=1.0, snowballs=0, delay=0, nodes={"class": "NodeSetAll"},
+                      target_group='Everyone', dosing=''):
     """
     Add a drug campaign defined by the parameters to the config builder.
 
@@ -13,19 +16,28 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
     :param coverage: Demographic coverage of the distribution
     :param trigger_coverage: for RCD, fraction of trigger events that will trigger an RCD. coverage param sets the fraction of individuals reached during RCD response.
     :param repetitions: Number repetitions
-    :param interval: Timesteps between the repetitions
-    :return: Nothing
+    :param interval: Timesteps between the repetitions. For RCD (rfMDA, rfMSAT), interval indicates the duration of RCD
 
     Accepted campaign codes:
     MDA
     MSAT
+    delayMSAT
+    SMC
     fMDA
     rfMSAT
     rfMDA
     """
+
+    intervention_state_setup = setup_recent_drug_states(cb, drug_events=['Received_Treatment',
+                                                                         'Received_Campaign_Drugs',
+                                                                         'Received_RCD_Drugs'])
+    if intervention_state_setup not in cb.campaign['Events'] :
+        cb.add_event(intervention_state_setup)
+
     campaign_type = drug_code.split('_')[0]
     drugs = drug_code.split('_')[-1]
     drug_configs = drug_configs_from_code(cb,'MDA_' + drugs)
+
     if dosing != '' :
         for i in range(len(drug_configs)) :
             drug_configs[i]['Dosing_Type'] = dosing
@@ -50,13 +62,17 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                 "class": "CampaignEvent",
                 "Start_Day": start_day,
                 "Event_Coordinator_Config": {
-                    "class": "MultiInterventionEventCoordinator",
+                    "class": "StandardInterventionDistributionEventCoordinator",
                     "Target_Demographic": "Everyone",
                     "Demographic_Coverage": coverage,
-                    "Intervention_Configs": drug_configs + [receiving_drugs_event],
+                    "Intervention_Config": {
+                        "Invalid_Intervention_States": ["Recent_Drug"],
+                        "class" : "MultiInterventionDistributor",
+                        "Intervention_List" :drug_configs + [receiving_drugs_event]
+                    },
                     "Number_Repetitions": repetitions,
                     "Timesteps_Between_Repetitions": interval
-                    }, 
+                    },
                 "Nodeset_Config": nodes
                 }
 
@@ -66,9 +82,24 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
 
         # MSAT controlled by MalariaDiagnostic campaign event rather than New_Diagnostic_Sensitivity
         for start_day in start_days:
-            add_diagnostic_survey(cb, coverage=coverage, repetitions=repetitions, tsteps_btwn=interval, target=target_group, start_day=start_day, 
-                                    diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
-                                    nodes=nodes, positive_diagnosis_configs= drug_configs + [receiving_drugs_event] )
+            add_diagnostic_survey(cb, coverage=coverage, repetitions=repetitions, tsteps_btwn=interval, target=target_group, start_day=start_day,
+                                  diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
+                                  nodes=nodes, positive_diagnosis_configs= drug_configs + [receiving_drugs_event],
+                                  ineligible_states=['Recent_Drug'])
+    elif campaign_type == 'delayMSAT':  # standard drug campaign: MSAT, no event triggering
+
+        delay_cfg = {  "class": "DelayedIntervention",
+                       "Delay_Distribution": "FIXED_DURATION",
+                       "Delay_Period": delay,
+                       "Actual_IndividualIntervention_Configs" : drug_configs + [receiving_drugs_event]
+                       }
+
+        for start_day in start_days:
+            add_diagnostic_survey(cb, coverage=coverage, repetitions=repetitions, tsteps_btwn=interval,
+                                  target=target_group, start_day=start_day,
+                                  diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
+                                  nodes=nodes, positive_diagnosis_configs=[delay_cfg],
+                                  ineligible_states=['Recent_Drug'])
 
     elif campaign_type == 'SMC' :
         for start_day in start_days:
@@ -76,12 +107,16 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                 "class": "CampaignEvent",
                 "Start_Day": start_day,
                 "Event_Coordinator_Config": {
-                    "class": "MultiInterventionEventCoordinator",
+                    "class": "StandardInterventionDistributionEventCoordinator",
                     "Target_Demographic": "ExplicitAgeRanges",  # Otherwise default is Everyone
-                    "Target_Age_Min": target['agemin'],
-                    "Target_Age_Max": target['agemax'],
+                    "Target_Age_Min": target_group['agemin'],
+                    "Target_Age_Max": target_group['agemax'],
                     "Demographic_Coverage": coverage,
-                    "Intervention_Configs": drug_configs + [receiving_drugs_event],
+                    "Intervention_Config": {
+                        "Invalid_Intervention_States": ["Recent_Drug"],
+                        "class" : "MultiInterventionDistributor",
+                        "Intervention_List" :drug_configs + [receiving_drugs_event]
+                    },
                     "Number_Repetitions": repetitions,
                     "Timesteps_Between_Repetitions": interval
                     }, 
@@ -114,19 +149,49 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                             }
                         },
                         "Nodeset_Config": nodes}
-        add_triggered_survey(cb, coverage=coverage, start_day=start_days[0], 
-                                diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes, 
-                                trigger_string=snowball_setup[0]['Event_Trigger'], event_name='Reactive MSAT level 0', 
-                                positive_diagnosis_configs=drug_configs + [receiving_drugs_event])
+        add_triggered_survey(cb, coverage=coverage, start_day=start_days[0],
+                             diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes,
+                             trigger_string=snowball_setup[0]['Event_Trigger'], event_name='Reactive MSAT level 0',
+                             positive_diagnosis_configs=drug_configs + [receiving_drugs_event],
+                             ineligible_states=['Recent_Drug'])
         cb.add_event(rcd_event)
         for snowball in range(snowballs) :
             curr_trigger = snowball_setup[snowball]['Event_Trigger']
-            add_triggered_survey(cb, coverage=coverage, start_day=start_days[0], 
-                                    diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes, 
-                                    trigger_string=curr_trigger, event_name='Snowball level ' + str(snowball), 
-                                    positive_diagnosis_configs=[snowball_setup[snowball+1], receiving_drugs_event]+drug_configs)
+            add_triggered_survey(cb, coverage=coverage, start_day=start_days[0],
+                                 diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes,
+                                 trigger_string=curr_trigger, event_name='Snowball level ' + str(snowball),
+                                 positive_diagnosis_configs=[snowball_setup[snowball+1], receiving_drugs_event]+drug_configs,
+                                 ineligible_states=['Recent_Drug'])
 
     elif campaign_type in ['fMDA', 'rfMDA'] :
+
+        # distributes drugs to individuals broadcasting "Give_Drugs"
+        # who is broadcasting is determined by other events
+        # if campaign drugs change (less effective, different cocktail), then this event should have an expiration date.
+        fmda_distribute_drugs = {   "Event_Name": "Distribute fMDA",
+                                    "class": "CampaignEvent",
+                                    "Start_Day": start_days[0],
+                                    "Event_Coordinator_Config":
+                                    {
+                                        "class": "StandardInterventionDistributionEventCoordinator",
+                                        "Intervention_Config" : {
+                                            "class": "NodeLevelHealthTriggeredIV",
+                                            "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
+                                            "Trigger_Condition": "TriggerString",
+                                            "Trigger_Condition_String": "Give_Drugs",
+                                            # with intervention states, don't need blackouts.
+                                            #"Blackout_Event_Trigger" : "Drug_Campaign_Blackout",
+                                            #"Blackout_Period" : 3.0,
+                                            #"Blackout_On_First_Occurrence" : 0,
+                                            "Actual_IndividualIntervention_Config" : {
+                                                "Invalid_Intervention_States": ["Recent_Drug"],
+                                                "Intervention_List" : drug_configs + [receiving_drugs_event],
+                                                "class" : "MultiInterventionDistributor"
+                                            }
+                                        }
+                                    },
+                                    "Nodeset_Config": nodes
+                                }
 
         if campaign_type == 'fMDA' :
             for start_day in start_days :
@@ -136,6 +201,7 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
 
         elif campaign_type == 'rfMDA' :
             receiving_drugs_event['Broadcast_Event'] = 'Received_RCD_Drugs'
+            fmda_distribute_drugs['Event_Coordinator_Config']['Intervention_Config']['Demographic_Coverage'] = coverage
             rcd_event = {   "Event_Name": "Trigger RCD MDA", 
                             "class": "CampaignEvent",
                             "Start_Day": start_days[0],
@@ -164,33 +230,8 @@ def add_drug_campaign(cb, drug_code, start_days, coverage=1.0, repetitions=3, in
                 add_triggered_survey(cb, coverage=coverage, start_day=start_days[0], 
                                      diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes, 
                                      trigger_string=curr_trigger, event_name='Snowball level ' + str(snowball), 
-                                     positive_diagnosis_configs=[snowball_setup[snowball+1], fmda_setup])
-
-        # distributes drugs to individuals broadcasting "Give_Drugs"
-        # who is broadcasting is determined by other events
-        # if campaign drugs change (less effective, different cocktail), then this event should have an expiration date.
-        fmda_distribute_drugs = {   "Event_Name": "Distribute fMDA", 
-                                    "class": "CampaignEvent",
-                                    "Start_Day": start_days[0],
-                                    "Event_Coordinator_Config": 
-                                    {
-                                        "class": "StandardInterventionDistributionEventCoordinator",
-                                        "Intervention_Config" : { 
-                                            "class": "NodeLevelHealthTriggeredIV",
-                                            "Demographic_Coverage": 1.0, # coverage is set in diagnostic_survey, rcd_event, and triggered_survey
-                                            "Trigger_Condition": "TriggerString",
-                                            "Trigger_Condition_String": "Give_Drugs",
-                                            "Blackout_Event_Trigger" : "Drug_Campaign_Blackout",
-                                            "Blackout_Period" : 3.0,
-                                            "Blackout_On_First_Occurrence" : 0,
-                                            "Actual_IndividualIntervention_Config" : {
-                                                "Intervention_List" : drug_configs + [receiving_drugs_event],
-                                                "class" : "MultiInterventionDistributor"
-                                            }                                            
-                                        }
-                                    },
-                                    "Nodeset_Config": {"class": "NodeSetAll"}
-                                }
+                                     positive_diagnosis_configs=[snowball_setup[snowball+1], fmda_setup],
+                                     ineligible_states=['Recent_Drug'])
 
         cb.add_event(fmda_distribute_drugs)
 
@@ -231,59 +272,3 @@ def fmda_cfg(fmda_type, node_selection_type='DISTANCE_ONLY', event_trigger='Give
     except ValueError :
         pass
     return fmda
-
-"""
-    treatment_ineligibility_event = {
-            "Description": "One week treatment ineligibility",
-            "class": "CampaignEvent",
-            "Start_Day": 0,
-            "Nodeset_Config": { "class": "NodeSetAll" },
-            "Event_Coordinator_Config": 
-            {
-            "class": "StandardInterventionDistributionEventCoordinator",
-            "Demographic_Coverage": 1,
-            "Intervention_Config": {
-                "class": "NodeLevelHealthTriggeredIV",
-	            "Trigger_Condition": "TriggerList",
-                "Trigger_Condition_List": [
-                    "Received_Treatment",
-                    "Received_Campaign_Drugs"
-                ],
-	            "Actual_IndividualIntervention_Config": 
-                    {
-                        "class": "HIVDelayedIntervention",
-	                    "Abort_States": [ "Abort_Ineligibility" ],
-	                    "Cascade_State": "Ineligible_For_Drugs",
-	                    "Delay_Distribution": "FIXED_DURATION",
-	                    "Delay_Period": 7,
-                        "Broadcast_Event": "Done_Waiting"
-                    }
-                }
-            }
-        }
-    end_ineligibility_event = {
-           "Description": "End treatment ineligibility",
-           "class": "CampaignEvent",
-           "Start_Day": 0,
-           "Nodeset_Config": { "class": "NodeSetAll" },
-           "Event_Coordinator_Config": 
-           {
-              "class": "StandardInterventionDistributionEventCoordinator",
-              "Demographic_Coverage": 1,
-              "Intervention_Config": 
-              {
-                 "class": "NodeLevelHealthTriggeredIV",
-                 "Trigger_Condition": "TriggerString",
-                 "Trigger_Condition_String": "Done_Waiting",
-                 "Actual_IndividualIntervention_Config": 
-                 {
-                    "class": "HIVSetCascadeState",
-                    "Abort_States": [ ],
-                    "Cascade_State": "Abort_Ineligibility"
-                 }
-              }
-           }
-        }
-    cb.add_event(treatment_ineligibility_event)
-    cb.add_event(end_ineligibility_event)
-"""

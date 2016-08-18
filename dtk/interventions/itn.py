@@ -1,3 +1,5 @@
+import copy
+
 # new campaign format : need to fix some add_itn() functionalities
 itn_bednet = { "class": "SimpleBednet",
                "Bednet_Type": "ITN", 
@@ -49,6 +51,67 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
         "Intervention_List" : [itn_bednet, receiving_itn_event] ,
         "class" : "MultiInterventionDistributor"
         }   
+
+    for coverage_by_age in coverage_by_ages:
+
+        ITN_event = { "class" : "CampaignEvent",
+                      "Start_Day": int(start),
+                      "Event_Coordinator_Config": {
+                          "class": "StandardInterventionDistributionEventCoordinator",
+                          "Target_Residents_Only" : 1,
+                          "Demographic_Coverage": coverage_by_age["coverage"],
+                          "Intervention_Config": itn_bednet_w_event #itn_bednet
+                      }
+                    }
+
+        if all([k in coverage_by_age.keys() for k in ['min','max']]):
+            ITN_event["Event_Coordinator_Config"].update({
+                   "Target_Demographic": "ExplicitAgeRanges",
+                   "Target_Age_Min": coverage_by_age["min"],
+                   "Target_Age_Max": coverage_by_age["max"]})
+
+        if not nodeIDs:
+            ITN_event["Nodeset_Config"] = { "class": "NodeSetAll" }
+        else:
+            ITN_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
+
+        if 'birth' in coverage_by_age.keys() and coverage_by_age['birth']:
+            birth_triggered_intervention = {
+                "class": "BirthTriggeredIV",
+                "Duration": coverage_by_age.get('duration', -1), # default to forever if  duration not specified
+                "Demographic_Coverage": coverage_by_age["coverage"],
+                "Actual_IndividualIntervention_Config": itn_bednet_w_event #itn_bednet
+            }
+
+            ITN_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention
+            ITN_event["Event_Coordinator_Config"].pop("Demographic_Coverage")
+            ITN_event["Event_Coordinator_Config"].pop("Target_Residents_Only")
+
+        config_builder.add_event(ITN_event)
+
+def add_box_ITN(config_builder, start, coverage_by_ages, ITN_duration=90, cost=None, nodeIDs=[]):
+    """
+    Add an ITN intervention to the config_builder passed.
+    """
+    receiving_itn_event = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": "Received_Box_ITN"
+    }
+
+    itn_bednet_box = copy.copy(itn_bednet)
+
+    itn_bednet_box['Killing_Config']['class'] = 'WaningEffectBox'
+    itn_bednet_box['Killing_Config']['Decay_Time_Constant'] = ITN_duration
+    itn_bednet_box['Blocking_Config']['class'] = 'WaningEffectBox'
+    itn_bednet_box['Blocking_Config']['Decay_Time_Constant'] = ITN_duration
+
+    if cost:
+        itn_bednet['Cost_To_Consumer'] = cost
+
+    itn_bednet_w_event = {
+        "Intervention_List" : [itn_bednet_box, receiving_itn_event] ,
+        "class" : "MultiInterventionDistributor"
+        }
 
     for coverage_by_age in coverage_by_ages:
 
