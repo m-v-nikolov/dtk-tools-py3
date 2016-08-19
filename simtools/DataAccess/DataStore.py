@@ -1,6 +1,7 @@
 import json
 import logging
 
+import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
@@ -27,6 +28,8 @@ def dumper(obj):
     except:
         if isinstance(obj, set):
             return list(obj)
+        if isinstance(obj,datetime.datetime):
+            return obj.isoformat()
         return obj.__dict__
 
 

@@ -213,9 +213,6 @@ class SetupParser:
         self.schema = json_schema
         return json_schema
 
-    def file_name(self):
-        return self.ini_file
-
     def validate(self, section_name, ini):
         validator = IniValidator(section_name)
         return validator.validate(self, ini)
