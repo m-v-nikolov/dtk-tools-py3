@@ -159,6 +159,35 @@ mod_albimanus_params = {
 }
 albimanus_param_block.update(mod_albimanus_params)
 
+# An. aegypti
+# Dengue
+aegypti_param_block = {
+    "Acquire_Modifier": 1,
+    "Adult_Life_Expectancy": 14,
+    "Anthropophily": 0.95,
+    "Aquatic_Arrhenius_1": 9752291.727,
+    "Aquatic_Arrhenius_2": 5525.492,
+    "Aquatic_Mortality_Rate": 0.12,
+    "Cycle_Arrhenius_1": 4.120591E10,
+    "Cycle_Arrhenius_2": 7.740230E3,
+    "Cycle_Arrhenius_Reduction_Factor": 0.58,
+    "Days_Between_Feeds": 3,
+    "Egg_Batch_Size": 70,
+    "Egg_Survival_Rate": 0.99,
+    "Larval_Habitat_Types": {
+        "TEMPORARY_RAINFALL": 1.125e10
+    },
+    "Immature_Duration": 2,
+    "Indoor_Feeding_Fraction": 1,
+    "Infected_Arrhenius_1": 4.784476E12,
+    "Infected_Arrhenius_2": 9550,
+    "Infected_Egg_Batch_Factor": 1,
+    "Infectious_Human_Feed_Mortality_Factor": 1,
+    "Nighttime_Feeding_Fraction": 0,
+    "Transmission_Rate": 0.5
+}
+
+
 # Dictionary of params by species name
 vector_params_by_species = {
     "arabiensis": arabiensis_param_block,
@@ -168,7 +197,8 @@ vector_params_by_species = {
     "maculatus": maculatus_param_block,
     "minimus": minimus_param_block,
     "dirus": dirus_param_block,
-    "albimanus": albimanus_param_block
+    "albimanus": albimanus_param_block,
+    "aegypti": aegypti_param_block
 }
 
 

@@ -107,6 +107,13 @@ geographies = {
                  "Enable_Demographics_Other": 0  # no 'AbovePoverty' etc. in these files
                  },
 
+    "Puerto_Rico": {"Geography": "Puerto_Rico",
+                    "Air_Temperature_Filename": "Namawala_single_node_air_temperature_daily.bin",
+                    "Demographics_Filenames": ["Dengue_single_node_demographics.json"],
+                    "Land_Temperature_Filename": "Namawala_single_node_land_temperature_daily.bin",
+                    "Rainfall_Filename": "Namawala_single_node_rainfall_daily.bin",
+                    "Relative_Humidity_Filename": "Namawala_single_node_relative_humidity_daily.bin",
+                    },
     "Sinamalima": {"Geography": "Zambia/Sinamalima_1_node",
                    "Demographics_Filenames": ["sinamalima_30arcsec_demographics_alt_600.json"],
                    "Air_Temperature_Filename": "Zambia_30arcsec_air_temperature_daily.bin",

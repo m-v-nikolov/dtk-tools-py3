@@ -29,7 +29,6 @@ from dtk.interventions.sirs_initial_seeding import sirs_campaign
 from dtk.interventions.seirs import seirs_campaign
 from dtk.interventions.si_initial_seeding import si_campaign
 from dtk.interventions.sis_initial_seeding import sis_campaign
-from dtk.interventions.dengue_bednets_irs_vaccines import dengue_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools import utils
@@ -209,8 +208,9 @@ class DTKConfigBuilder(SimConfigBuilder):
             sim_type = "GENERIC_SIM"
 
         elif sim_type == "DENGUE_SIM":
+            config["parameters"].update(vector_params.params)
             config["parameters"].update(dengue_params.params)
-            campaign = dengue_campaign
+            # campaign = dengue_campaign
 
         else:
             raise Exception("Don't recognize sim_type argument = %s" % sim_type)
