@@ -23,7 +23,11 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
     def get_monitor(self):
-        return CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id, self.setup.get('server_endpoint'))
+        if self.experiment.exp_id:
+            return CompsSimulationMonitor(self.experiment.exp_id, None, self.setup.get('server_endpoint'))
+        else:
+            return CompsSimulationMonitor(None, self.experiment.suite_id, self.setup.get('server_endpoint'))
+
 
     def analyze_simulations(self):
         if not self.assets_service:
