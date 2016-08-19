@@ -34,6 +34,11 @@ class SetupParser:
         :param force: Force the replacement of selected_block and setup_file in the class variable
         :param fallback: Fallback block if the selected_block cannot be found
         """
+        # Test if the default ini exist
+        if not os.path.exists(self.default_ini):
+            OutputMessage("The default simtools.ini file does not exist in %s. Please run 'python setup.py' again!" % self.default_ini,'warning')
+            exit()
+
         # Store the selected_block in the class only if passed
         if selected_block and (not SetupParser.selected_block or force):
             SetupParser.selected_block = selected_block
@@ -207,9 +212,6 @@ class SetupParser:
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         self.schema = json_schema
         return json_schema
-
-    def file_name(self):
-        return self.ini_file
 
     def validate(self, section_name, ini):
         validator = IniValidator(section_name)

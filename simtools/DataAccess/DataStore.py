@@ -71,7 +71,7 @@ class DataStore:
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
-            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
+            logger.info(json.dumps(experiment.toJSON(), indent=3, default=dumper, sort_keys=True))
 
         with session_scope() as session:
             session.merge(experiment)
