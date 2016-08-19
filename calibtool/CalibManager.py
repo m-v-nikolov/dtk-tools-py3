@@ -600,6 +600,7 @@ class CalibManager(object):
         # Clear up next_point for iteration 0
         if self.iteration == 0:
             self.iteration_state.next_point = {}
+            self.iteration_state.parameters = {}  # make sure we generate new parameters
 
         # Check leftover (in case lost connection)
         self.check_leftover()
@@ -615,21 +616,6 @@ class CalibManager(object):
             self.iteration_state.simulations = {}
             self.iteration_state.results = {}
             return
-
-        # # Retrieve the experiment manager
-        # self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
-        # states = self.exp_manager.get_simulation_status()[0]
-        # if self.exp_manager.any_failed(states) or self.exp_manager.any_canceled(states):
-        #     self.iteration_state.resume_point = 1
-        #     self.iteration_state.simulations = {}
-        #     self.iteration_state.results = {}
-        #     return
-        #
-        # if not self.exp_manager.succeeded():
-        #     # Still running but did not fail
-        #     self.iteration_state.results = {}
-        #     self.exp_manager.wait_for_finished(verbose=True)
-
 
         # Assume simulations exits
         if not self.iteration_state.results:
@@ -749,10 +735,6 @@ class CalibManager(object):
         calib_data = self.read_calib_data()
         iteration = self.find_best_iteration_for_resume(iteration, calib_data)
         self.prepare_resume_point_for_iteration(iteration)
-
-        # print 'iteration, resume_point: (%s, %s)' % (self.iteration, self.iteration_state.resume_point)
-        # exit()
-
         self.suite_id = calib_data.get('suite_id')
 
         if self.iteration_state.resume_point < 3:
