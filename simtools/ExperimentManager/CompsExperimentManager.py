@@ -27,7 +27,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def analyze_simulations(self):
         if not self.assets_service:
-            self.parserClass.createSimDirectoryMap(self.exp_data.get('exp_id'), self.exp_data.get('suite_id'))
+            self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
         if self.setup.getboolean('compress_assets'):
             self.parserClass.enableCompression()
 
