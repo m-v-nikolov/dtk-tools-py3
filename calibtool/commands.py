@@ -31,9 +31,9 @@ def get_calib_manager_args(args, unknownArgs):
 
 
 def update_calib_args(args, unknownArgs, calib_args):
-    if args.priority:
+    if hasattr(args,'priority') and args.priority:
         calib_args['priority'] = args.priority
-    if args.node_group:
+    if hasattr(args,'node_group') and args.node_group:
         calib_args['node_group'] = args.node_group
 
     # Get the proper configuration block.
@@ -45,7 +45,7 @@ def update_calib_args(args, unknownArgs, calib_args):
         raise Exception('Too many unknown arguments: please see help.')
 
     # Update the setupparser
-    SetupParser(selected_block=selected_block, setup_file=args.ini if args.ini else calib_args['ini'], force=True)
+    SetupParser(selected_block=selected_block, setup_file=args.ini if hasattr(args,'ini') and args.ini else calib_args['ini'], force=True)
 
 
 def run(args, unknownArgs):
@@ -61,8 +61,7 @@ def resume(args, unknownArgs):
 
 
 def reanalyze(args, unknownArgs):
-    mod = load_config_module(args.config_name)
-    manager = mod.calib_manager
+    manager, calib_args = get_calib_manager_args(args, unknownArgs)
     manager.reanalyze()
 
 
