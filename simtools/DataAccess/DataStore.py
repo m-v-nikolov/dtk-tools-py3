@@ -1,6 +1,7 @@
 import json
 import logging
 
+import datetime
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
@@ -27,6 +28,8 @@ def dumper(obj):
     except:
         if isinstance(obj, set):
             return list(obj)
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
         return obj.__dict__
 
 
@@ -71,7 +74,7 @@ class DataStore:
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
-            logger.info(json.dumps(experiment.toJSON(), indent=3, default=dumper, sort_keys=True))
+            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
 
         with session_scope() as session:
             session.merge(experiment)
