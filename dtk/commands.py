@@ -4,11 +4,9 @@ import logging
 import os
 import subprocess
 import sys
-import time
 from importlib import import_module
 
 import simtools.utils as utils
-import helpers
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
@@ -127,24 +125,11 @@ def status(args, unknownArgs):
         return
 
     sm = reload_experiment(args)
-    getch = helpers.find_getch()
-
-    while True:
+    if args.repeat:
+        sm.wait_for_finished(verbose=True, sleep_time=20)
+    else:
         states, msgs = sm.get_simulation_status()
         sm.print_status(states, msgs)
-
-        if not args.repeat or sm.finished():
-            break
-
-        else:
-            for i in range(20):
-                if helpers.kbhit():
-                    if getch() == '\r':
-                        break
-                    else:
-                        return
-                else:
-                    time.sleep(1)
 
 
 def resubmit(args, unknownArgs):

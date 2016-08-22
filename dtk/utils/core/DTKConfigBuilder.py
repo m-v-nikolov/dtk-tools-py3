@@ -16,6 +16,8 @@ import dtk.generic.si as si_params
 import dtk.generic.sis as sis_params
 import dtk.malaria.params as malaria_params
 import dtk.vector.params as vector_params
+import dtk.dengue.params as dengue_params
+
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.interventions.sir_initial_seeding import sir_campaign
 from dtk.interventions.sir_vaccinations_a_initial_seeding import sir_vaccinations_a_campaign
@@ -125,6 +127,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                 * GENERIC_SIM_SEIRS
                 * GENERIC_SIM_SI
                 * GENERIC_SIM_SIS
+                * DENGUE_SIM
 
 
             kwargs (dict): Additional overrides of config parameters
@@ -203,6 +206,11 @@ class DTKConfigBuilder(SimConfigBuilder):
             config["parameters"].update(sis_params.params)
             campaign = sis_campaign
             sim_type = "GENERIC_SIM"
+
+        elif sim_type == "DENGUE_SIM":
+            config["parameters"].update(vector_params.params)
+            config["parameters"].update(dengue_params.params)
+            # campaign = dengue_campaign
 
         else:
             raise Exception("Don't recognize sim_type argument = %s" % sim_type)

@@ -69,6 +69,11 @@ def configure_namawala(cb):
                             })
 
 
+# "Puerto_Rico": Tanzania: EIR = 400
+def configure_puerto_rico(cb):
+    set_larval_habitat(cb, {"aegypti": {'TEMPORARY_RAINFALL': 1.125e10}})
+
+
 # Sugungum, Garki, Jigawa, Nigeria: EIR = 132 (56 from funestus)
 def configure_sugungum(cb):
     set_larval_habitat(cb, {"arabiensis": {'TEMPORARY_RAINFALL': 2.3e9, 'CONSTANT': 1.25e7},

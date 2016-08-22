@@ -9,7 +9,7 @@ from dtk.interventions.mosquito_release import add_mosquito_release
 from dtk.interventions.itn import add_ITN
 from dtk.interventions.irs import add_node_IRS
 from dtk.interventions.malaria_challenge import add_challenge_trial
-from dtk.interventions.outbreak import recurring_outbreak
+from dtk.interventions.outbreakindividual import recurring_outbreak
 from dtk.interventions.migrate_to import add_migration_event
 from dtk.interventions.health_seeking import add_health_seeking
 from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
