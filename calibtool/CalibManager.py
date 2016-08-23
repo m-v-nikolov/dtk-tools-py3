@@ -60,7 +60,8 @@ class CalibManager(object):
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
         self.location = self.setup.get('type')
-        self.suite_id = None
+        self.local_suite_id = None
+        self.comps_suite_id = None
         self.all_results = None
         self.exp_manager = None
         self.plotters = plotters
@@ -225,7 +226,9 @@ class CalibManager(object):
                 kwargs.pop('location')
 
             self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
-            if not self.suite_id:
+
+            # Generate the suite ID if not present
+            if (self.location == "LOCAL" and not self.local_suite_id) or (self.location=="HPC" and not self.comps_suite_id):
                 self.generate_suite_id(self.exp_manager)
 
             exp_builder = ModBuilder.from_combos(
@@ -240,7 +243,7 @@ class CalibManager(object):
                 config_builder=self.config_builder,
                 exp_name='%s_iter%d' % (self.name, self.iteration),
                 exp_builder=exp_builder,
-                suite_id=self.suite_id)
+                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id)
 
             self.iteration_state.simulations = self.exp_manager.experiment.toJSON()['simulations']
             self.iteration_state.experiment_id = self.exp_manager.experiment.exp_id
@@ -384,7 +387,10 @@ class CalibManager(object):
         Get a new Suite ID from the LOCAL/HPC ExperimentManager
         and cache to calibration with this updated info.
         """
-        self.suite_id = exp_manager.create_suite(self.name)
+        if self.location == "LOCAL":
+            self.local_suite_id = exp_manager.create_suite(self.name)
+        elif self.location == "HPC":
+            self.comps_suite_id = exp_manager.create_suite(self.name)
         self.cache_calibration()
 
     def cache_calibration(self, **kwargs):
@@ -398,7 +404,8 @@ class CalibManager(object):
         #       and frozen scipy.stats functions in MultiVariatePrior.function for self.next_point
         state = {'name': self.name,
                  'location': self.location,
-                 'suite_id': self.suite_id,
+                 'local_suite_id': self.local_suite_id,
+                 'comps_suite_id': self.comps_suite_id,
                  'iteration': self.iteration,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
@@ -453,7 +460,7 @@ class CalibManager(object):
         # Retrieve the mapping between id - path
         if self.location == "HPC":
             from simtools.OutputParser import CompsDTKOutputParser
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id, save=False)
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.comps_suite_id, save=False)
         else :
             sims_paths = dict()
 
@@ -739,7 +746,8 @@ class CalibManager(object):
         calib_data = self.read_calib_data()
         iteration = self.find_best_iteration_for_resume(iteration, calib_data)
         self.prepare_resume_point_for_iteration(iteration)
-        self.suite_id = calib_data.get('suite_id')
+        self.local_suite_id = calib_data.get('local_suite_id')
+        self.comps_suite_id = calib_data.get('comps_suite_id')
 
         if self.iteration_state.resume_point < 3:
             # for resume_point < 3, it will combine current results with previous results
@@ -905,7 +913,6 @@ class CalibManager(object):
 
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
-        suite_id = calib_data.get('suite_id')
 
         # Go through each already ran iterations
         for i in range(0, iter_count+1):
@@ -928,7 +935,8 @@ class CalibManager(object):
 
         # Before leaving -> increase the iteration / set back the suite_id
         self.iteration_state.iteration += 1
-        self.suite_id = suite_id
+        self.local_suite_id = calib_data.get('local_suite_id')
+        self.comps_suite_id = calib_data.get('comps_suite_id')
         self.location = calib_data['location']
 
         # Also finalize
