@@ -552,11 +552,29 @@ class CalibManager(object):
         """
         Handle the case: process got interrupted but it still runs on remote
         """
+        # Step 1: Checking possible location changes
+        try:
+            exp_id = self.iteration_state.experiment_id
+            exp = DataStore.get_experiment(exp_id)
+        except Exception as ex:
+            logger.info("Cannot restore Experiment '%s'. Exiting...", exp_id)
+            exit()
+
+        # If location has been changed, will double check user for a special case before proceed...
+        if self.location != exp.location and self.iter_step in ['analyze', 'next_point']:
+            var = raw_input("Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (exp.location, self.location))
+            if var.upper() == 'Y':
+                self.iter_step = 'commission'
+            else:
+                logger.info("Answer is '%s'. Exiting...", var.upper())
+                exit()
+
+        # Step 2: Checking possible leftovers
         try:
             # Save the selected block the user wants
             user_selected_block = self.setup.selected_block
             # Retrieve the experiment manager. Note: it changed selected_block
-            self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
+            self.exp_manager = ExperimentManagerFactory.from_experiment(exp)
             # Restore the selected block
             self.setup.selected_block = user_selected_block
         except Exception as ex:
@@ -564,8 +582,8 @@ class CalibManager(object):
             logger.info('Proceed without checking the possible leftovers.')
             return
 
-        if not self.exp_manager:
-            logger.info('Proceed without checking the possible leftovers.')
+        # Don't do the leftover checking for a special case
+        if self.iteration == 0 and self.iter_step == 'commission':
             return
 
         # Make sure it is finished
@@ -611,9 +629,8 @@ class CalibManager(object):
         # Store iteration #:
         self.iteration_state.iteration = iteration
 
-        # Check leftover (in case lost connection)
-        if self.iteration > 0 or self.iter_step != 'commission':
-            self.check_leftover()
+        # Check leftover (in case lost connection) and also consider possible location change.
+        self.check_leftover()
 
         # Adjust resuming point based on input options
         if self.iter_step:
@@ -634,9 +651,10 @@ class CalibManager(object):
             self.iteration_state.results = {}
             return
 
-        # Assume both simulations and results exit
+        # Assume both simulations and results exist
         # Need to resume from next_point
         self.iteration_state.resume_point = 3
+        # To resume from resume_point, we need to update next_point
         self.update_next_point(self.iteration_state.results['total'])
 
     def adjust_resume_point(self):
@@ -744,10 +762,10 @@ class CalibManager(object):
         self.location = self.setup.get('type')
 
         calib_data = self.read_calib_data()
-        iteration = self.find_best_iteration_for_resume(iteration, calib_data)
-        self.prepare_resume_point_for_iteration(iteration)
         self.local_suite_id = calib_data.get('local_suite_id')
         self.comps_suite_id = calib_data.get('comps_suite_id')
+        iteration = self.find_best_iteration_for_resume(iteration, calib_data)
+        self.prepare_resume_point_for_iteration(iteration)
 
         if self.iteration_state.resume_point < 3:
             # for resume_point < 3, it will combine current results with previous results
