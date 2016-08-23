@@ -177,7 +177,6 @@ class BaseExperimentManager:
     def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
         """
         Resubmit some or all canceled or failed simulations.
-
         Keyword arguments:
         ids -- a list of job ids to resubmit
         resubmit_all_failed -- a Boolean flag to resubmit all canceled/failed simulations (default: False)
@@ -238,8 +237,6 @@ class BaseExperimentManager:
             # Get the new status
             states, msgs = self.get_simulation_status()
             if self.status_finished(states):
-                # Wait when we are all done to make sure all the output files have time to get written
-                time.sleep(1)
                 break
             else:
                 if verbose:
@@ -257,13 +254,14 @@ class BaseExperimentManager:
         if verbose:
             self.print_status(states, msgs)
 
+        # Wait when we are all done to make sure all the output files have time to get written
+        time.sleep(1.5)
+
     def analyze_simulations(self):
         """
         Apply one or more analyzers to the outputs of simulations.
-
         A parser thread will be spawned for each simulation with filtered analyzers to run,
         following which the combined outputs of all threads are reduced and displayed or saved.
-
         The analyzer interface provides the following methods:
            * filter -- based on the simulation meta-data return a Boolean to execute this analyzer
            * apply -- parse simulation output files and emit a subset of data
@@ -303,7 +301,6 @@ class BaseExperimentManager:
     def cancel_simulations(self, ids=[], killall=False):
         """
         Cancel currently some or all currently running simulations.
-
         Keyword arguments:
         ids -- a list of job ids to cancel
         killall -- a Boolean flag to kill all running simulations (default: False)

@@ -219,7 +219,7 @@ class CalibManager(object):
 
         if self.iteration_state.simulations:
             logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration_state.iteration)
-            self.exp_manager = ExperimentManagerFactory.from_data(self.iteration_state.simulations, self.location)
+            self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
         else:
             if 'location' in kwargs:
                 kwargs.pop('location')
@@ -295,8 +295,6 @@ class CalibManager(object):
 
             # Test if we are all done
             if self.exp_manager.status_finished(states):
-                # Wait when we are all done to make sure all the output files have time to get written
-                time.sleep(sleep_time)
                 break
             else:
                 if verbose:
@@ -308,6 +306,8 @@ class CalibManager(object):
         logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
         self.exp_manager.print_status(states, msgs)
 
+        # Wait when we are all done to make sure all the output files have time to get written
+        time.sleep(sleep_time)
 
     def analyze_iteration(self):
         """
@@ -318,10 +318,9 @@ class CalibManager(object):
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
             return self.iteration_state.results['total']
-        print self.iteration_state.experiment_id
+
         exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
 
-        print exp_manager.experiment.id
         for site in self.sites:
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
@@ -538,7 +537,7 @@ class CalibManager(object):
         self.all_results.set_index('sample', inplace=True)
 
         self.all_results = self.all_results[self.all_results.iteration <= iteration]
-        logger.info('Restored results from iteration %d', iteration)
+        # logger.info('Restored results from iteration %d', iteration)
         logger.debug(self.all_results)
         self.cache_calibration()
 
@@ -547,13 +546,19 @@ class CalibManager(object):
         Handle the case: process got interrupted but it still runs on remote
         """
         try:
-            # Retrieve the experiment manager
+            # Save the selected block the user wants
+            user_selected_block = self.setup.selected_block
+            # Retrieve the experiment manager. Note: it changed selected_block
             self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
+            # Restore the selected block
+            self.setup.selected_block = user_selected_block
         except Exception as ex:
-            logger.info(ex)
+            # logger.info(ex)
+            logger.info('Proceed without checking the possible leftovers.')
             return
 
         if not self.exp_manager:
+            logger.info('Proceed without checking the possible leftovers.')
             return
 
         # Make sure it is finished
@@ -563,10 +568,12 @@ class CalibManager(object):
             # check the status
             states = self.exp_manager.get_simulation_status()[0]
         except Exception as ex:
-            logger.info(ex)
+            # logger.info(ex)
+            logger.info('Proceed without checking the possible leftovers.')
             return
 
         if not states:
+            logger.info('Proceed without checking the possible leftovers.')
             return
 
         if not self.exp_manager.status_succeeded(states):
@@ -597,13 +604,9 @@ class CalibManager(object):
         # Store iteration #:
         self.iteration_state.iteration = iteration
 
-        # Clear up next_point for iteration 0
-        if self.iteration == 0:
-            self.iteration_state.next_point = {}
-            self.iteration_state.parameters = {}  # make sure we generate new parameters
-
         # Check leftover (in case lost connection)
-        self.check_leftover()
+        if self.iteration > 0 or self.iter_step != 'commission':
+            self.check_leftover()
 
         # Adjust resuming point based on input options
         if self.iter_step:
@@ -613,8 +616,8 @@ class CalibManager(object):
         if not self.iteration_state.simulations:
             # need to resume from commission
             self.iteration_state.resume_point = 1
-            self.iteration_state.simulations = {}
-            self.iteration_state.results = {}
+            # Cleanup iteration state
+            self.iteration_state.reset_state()
             return
 
         # Assume simulations exits
@@ -637,6 +640,7 @@ class CalibManager(object):
             pass
         elif self.iter_step == 'commission':
             self.iteration_state.simulations = {}
+            self.iteration_state.results = {}
         elif self.iter_step == 'analyze':
             self.iteration_state.results = {}
         elif self.iter_step == 'next_point':
