@@ -415,6 +415,15 @@ class CalibManager(object):
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
+    def backup_calibration(self):
+        """
+        Backup CalibManager.json for resume action
+        """
+        calibration_path = os.path.join(self.name, 'CalibManager.json')
+        if os.path.exists(calibration_path):
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
+            shutil.copy(calibration_path, os.path.join(self.name, 'CalibManager_%s.json' % backup_id))
+
     def write_LL_csv(self, experiment):
         """
         Write the LL_summary.csv with what is in the CalibManager
@@ -508,7 +517,7 @@ class CalibManager(object):
 
         iter_state_path = os.path.join(iter_directory, 'IterationState.json')
         if backup_existing and os.path.exists(iter_state_path):
-            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now()))
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
             os.rename(iter_state_path, os.path.join(iter_directory, 'IterationState_%s.json' % backup_id))
 
         self.iteration_state.to_file(iter_state_path)
@@ -550,7 +559,8 @@ class CalibManager(object):
 
     def check_leftover(self):
         """
-        Handle the case: process got interrupted but it still runs on remote
+            - Handle the case: process got interrupted but it still runs on remote
+            - Handle location change case: may resume from commission instead
         """
         # Step 1: Checking possible location changes
         try:
@@ -753,10 +763,14 @@ class CalibManager(object):
           * Restore the proper results for resume
           * Finally got through the iteration loop
         """
-        self.iter_step = iter_step.lower() if iter_step is not None else ''
-
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
+
+        # Make a backup of Calibration.json
+        self.backup_calibration()
+
+        # Keep iter_step which will be used later to determine the Resuming Point
+        self.iter_step = iter_step.lower() if iter_step is not None else ''
 
         # Keep the simulation type: LOCAL, HPC, ...
         self.location = self.setup.get('type')
@@ -774,6 +788,7 @@ class CalibManager(object):
             # for resume_point = 3, it will use the current results and resume from next iteration
             self.restore_results(calib_data.get('results'), iteration)
 
+        # Enter iteration loop
         self.run_iterations(**kwargs)
 
     def replot_calibration(self, **kwargs):
