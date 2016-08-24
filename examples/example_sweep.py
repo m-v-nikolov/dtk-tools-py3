@@ -8,7 +8,7 @@ from simtools.SetupParser import SetupParser
 # For example only -- Force the selected block to be EXAMPLE
 SetupParser("EXAMPLE")
 
-exp_name  = 'ExampleSweep'
+exp_name  = 'Puerto_Rico_First_Sweep'
 builder = GenericSweepBuilder.from_dict({'Run_Number': range(3),
                                          '_site_': ['Namawala', 'Matsari']})
 

@@ -2,7 +2,10 @@ import json
 import logging
 
 import datetime
+
+from sqlalchemy import bindparam
 from sqlalchemy import or_
+from sqlalchemy import update
 from sqlalchemy.orm import joinedload
 
 from simtools.DataAccess import session_scope
@@ -40,9 +43,10 @@ class DataStore:
 
     @classmethod
     def batch_simulations_update(cls, batch):
+        if len(batch) == 0: return
         with session_scope() as session:
-            for simulation in batch:
-                session.merge(simulation)
+            stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"))
+            session.execute(stmt, batch)
 
     @classmethod
     def create_simulation(cls, **kwargs):
@@ -124,6 +128,13 @@ class DataStore:
     def delete_experiment(cls, experiment):
         with session_scope() as session:
             session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
+
+    @classmethod
+    def change_experiment_state(cls, experiment, experiment_runner_id=None):
+        with session_scope() as session:
+            experiment = session.query(Experiment).fileter(Experiment.id == experiment.id).one
+            if experiment_runner_id:
+                experiment.experiment_runner_id = experiment_runner_id if experiment_runner_id > 0 else None
 
     @classmethod
     def change_simulation_state(cls, simulation, message=None, status=None, pid=None):
