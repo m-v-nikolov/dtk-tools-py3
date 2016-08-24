@@ -1,10 +1,8 @@
 import os
-
 import subprocess
-
 import sys
-
 import psutil
+
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
@@ -31,23 +29,22 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
     def get_monitor(self):
-        if self.experiment.exp_id:
-            # Runner finished and updated the experiment_runner_id to <null>
-            if self.experiment.experiment_runner_id is None:
-                return SimulationMonitor(self.experiment.exp_id)
 
-            # Runner still running
-            elif self.experiment.experiment_runner_id in psutil.pids() and psutil.Process(self.experiment.experiment_runner_id).name() == 'python.exe':
-                return SimulationMonitor(self.experiment.exp_id)
+        # Runner finished and updated the experiment_runner_id to <null>
+        if self.experiment.experiment_runner_id is None and self.finished():
+            return SimulationMonitor(self.experiment.exp_id)
 
-            # if COMPSRunner exit without finishing, start new COMPSRunner and save new pid to experiment table
-            else:
-                self.experiment.experiment_runner_id = self.start_comps_runner()
-                DataStore.save_experiment(self.experiment, verbose=False)
-                return CompsSimulationMonitor(self.experiment.exp_id, None, self.setup.get('server_endpoint'))
+        # Runner still running
+        elif self.experiment.experiment_runner_id in psutil.pids() and psutil.Process(
+                self.experiment.experiment_runner_id).name() == 'python.exe':
+            return SimulationMonitor(self.experiment.exp_id)
 
+        # If COMPSRunner exit without finishing, start new COMPSRunner and save new pid to experiment table
         else:
-            return CompsSimulationMonitor(None, self.experiment.suite_id, self.setup.get('server_endpoint'))
+            self.experiment.experiment_runner_id = self.start_comps_runner()
+            DataStore.save_experiment(self.experiment, verbose=False)
+            return CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id if not self.experiment.exp_id
+                                          else None, self.setup.get('server_endpoint'))
 
     def analyze_simulations(self):
         if not self.assets_service:
