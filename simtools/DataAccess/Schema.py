@@ -5,6 +5,7 @@ import os
 
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import Integer
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import PickleType
@@ -19,7 +20,8 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled'))
+    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
+                         "Retry", "CommissionRequested", "Provisioning", "Created"))
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -59,6 +61,7 @@ class Experiment(Base):
     working_directory = Column(String, default=os.getcwd())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     endpoint = Column(String)
+    experiment_runner_id = Column(Integer)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
 
