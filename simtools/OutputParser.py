@@ -123,7 +123,7 @@ class SimulationOutputParser(threading.Thread):
 
 
 class CompsDTKOutputParser(SimulationOutputParser):
-    sim_dir_map = None
+    sim_dir_map = {}
     use_compression = False
 
     @classmethod
