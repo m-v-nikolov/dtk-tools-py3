@@ -36,6 +36,7 @@ def nostdout(stdout = False, stderr=False):
 
     # Deactivate logging
     logger.propagate = False
+    previous_level = logging.root.manager.disable
     logging.disable(logging.CRITICAL)
 
     yield
@@ -46,7 +47,7 @@ def nostdout(stdout = False, stderr=False):
     if not stderr:
         sys.stderr = save_stderr
     logger.propagate = True
-    logging.disable(logging.NOTSET)
+    logging.disable(previous_level)
 
 
 def COMPS_login(endpoint):
