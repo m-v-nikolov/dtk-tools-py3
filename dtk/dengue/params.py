@@ -28,6 +28,7 @@ params = {
     "Enable_Demographics_Birth": 0,
     "Enable_Demographics_Other": 0,
     "Enable_Demographics_Reporting": 1,
+    "Enable_Drought_Egg_Hatch_Delay": 0,
     "Enable_Egg_Mortality": 1,
     "Enable_Rainfall_Stochasticity": 0,
     "Enable_Temperature_Dependent_Egg_Hatching": 1,
