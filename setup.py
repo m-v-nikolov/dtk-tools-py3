@@ -33,7 +33,7 @@ requirements = [
     'scipy==0.17.0',
     'validators',
     'sqlalchemy==1.1.0b3',
-    'python-snappy==0.5',
+    'python_snappy==0.5',
     'psutil==4.3.0'
 ]
 
