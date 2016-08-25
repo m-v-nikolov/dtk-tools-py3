@@ -130,13 +130,6 @@ class DataStore:
             session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
 
     @classmethod
-    def change_experiment_state(cls, experiment, experiment_runner_id=None):
-        with session_scope() as session:
-            experiment = session.query(Experiment).fileter(Experiment.id == experiment.id).one
-            if experiment_runner_id:
-                experiment.experiment_runner_id = experiment_runner_id if experiment_runner_id > 0 else None
-
-    @classmethod
     def change_simulation_state(cls, simulation, message=None, status=None, pid=None):
         with session_scope() as session:
             simulation = session.query(Simulation).filter(Simulation.id == simulation.id).one()

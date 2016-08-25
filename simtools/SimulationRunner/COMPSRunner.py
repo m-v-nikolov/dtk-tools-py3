@@ -46,4 +46,4 @@ if __name__ == "__main__":
             DataStore.save_experiment(current_exp, verbose=False)
             break
 
-        time.sleep(3)
+        time.sleep(5)
