@@ -1,8 +1,14 @@
+import os
+import subprocess
+import sys
+import psutil
+
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
+from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import CompsDTKOutputParser
 
 
@@ -23,11 +29,22 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
     def get_monitor(self):
-        if self.experiment.exp_id:
-            return CompsSimulationMonitor(self.experiment.exp_id, None, self.setup.get('server_endpoint'))
-        else:
-            return CompsSimulationMonitor(None, self.experiment.suite_id, self.setup.get('server_endpoint'))
 
+        # Runner finished and updated the experiment_runner_id to <null>
+        if self.experiment.experiment_runner_id is None and self.finished():
+            return SimulationMonitor(self.experiment.exp_id)
+
+        # Runner still running
+        elif self.experiment.experiment_runner_id in psutil.pids() and psutil.Process(
+                self.experiment.experiment_runner_id).name() == 'python.exe':
+            return SimulationMonitor(self.experiment.exp_id)
+
+        # If COMPSRunner exit without finishing, start new COMPSRunner and save new pid to experiment table
+        else:
+            self.experiment.experiment_runner_id = self.start_comps_runner()
+            DataStore.save_experiment(self.experiment, verbose=False)
+            return CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id if not self.experiment.exp_id
+                                          else None, self.setup.get('server_endpoint'))
 
     def analyze_simulations(self):
         if not self.assets_service:
@@ -84,8 +101,12 @@ class CompsExperimentManager(BaseExperimentManager):
         self.collect_sim_metadata()
 
     def commission_simulations(self):
+        self.experiment.experiment_runner_id = self.start_comps_runner()
+        DataStore.save_experiment(self.experiment, verbose=False)
+
         CompsSimulationCommissioner.commission_experiment(self.experiment.exp_id)
         super(CompsExperimentManager, self).commission_simulations()
+
         return True
 
     def collect_sim_metadata(self):
@@ -119,3 +140,12 @@ class CompsExperimentManager(BaseExperimentManager):
         from COMPS.Data import Experiment, QueryCriteria, Simulation
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
+
+    def start_comps_runner(self):
+        local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "SimulationRunner",
+                                         "COMPSRunner.py")
+        # Open the local runner as a subprocess and pass it all the required info to run the simulations
+        # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
+        # to the sub processes.
+        p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False, creationflags=512)
+        return p.pid
