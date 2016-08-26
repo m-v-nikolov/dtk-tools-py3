@@ -24,7 +24,7 @@ from simtools.utils import nostdout
 
 
 requirements = [
-    'numpy==1.11.1',
+    'numpy==1.11.1+mkl',
     'scipy==0.18.0',
     'matplotlib==1.5.1',
     'pandas==0.18.1',
