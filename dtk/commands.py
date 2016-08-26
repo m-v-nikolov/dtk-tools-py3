@@ -355,7 +355,7 @@ def sync(args, unknownArgs):
 
     # For each of them, check if they are in the db
     for exp in exps:
-        with utils.nostdout(True, True):
+        with utils.nostdout():
             experiment = DataStore.get_experiment(exp.getId().toString())
             if experiment and experiment.is_done(): continue # Do not bother with finished experiments
         if not experiment:
