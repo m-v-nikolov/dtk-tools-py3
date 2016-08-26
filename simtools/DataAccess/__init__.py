@@ -12,9 +12,9 @@ Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
 @contextmanager
-def session_scope():
+def session_scope(session=None):
     """Provide a transactional scope around a series of operations."""
-    session = Session()
+    session = Session() if not session else session
     try:
         yield session
         session.commit()

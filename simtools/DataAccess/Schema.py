@@ -82,6 +82,12 @@ class Experiment(Base):
                 return True
         return False
 
+    def is_done(self):
+        for sim in self.simulations:
+            if sim.status not in ('Succeeded', 'Failed','Canceled'):
+                return False
+        return True
+
     def toJSON(self):
         ret = {}
         for name in dir(self):
