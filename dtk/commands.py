@@ -394,6 +394,7 @@ def sync(args, unknownArgs):
     else:
         logging.info("The database was already up to date.")
 
+
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
     mod = load_config_module(args.config_name)

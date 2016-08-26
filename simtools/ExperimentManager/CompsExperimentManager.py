@@ -29,9 +29,8 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
 
     def get_monitor(self):
-
         # Runner finished and updated the experiment_runner_id to <null>
-        if self.experiment.experiment_runner_id is None and self.finished():
+        if not self.experiment.experiment_runner_id and self.experiment.is_done():
             return SimulationMonitor(self.experiment.exp_id)
 
         # Runner still running

@@ -74,7 +74,8 @@ class Experiment(Base):
         return self.exp_name + "_" + self.exp_id
 
     def get_path(self):
-        return os.path.join(self.sim_root, self.id)
+        if self.location == "LOCAL":
+            return os.path.join(self.sim_root, self.id)
 
     def contains_simulation(self, simid):
         for sim in self.simulations:
