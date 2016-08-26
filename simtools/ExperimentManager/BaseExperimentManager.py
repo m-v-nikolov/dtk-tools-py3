@@ -103,7 +103,7 @@ class BaseExperimentManager:
     def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
-        For example: 'Running', 'Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
+        For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
         logger.debug("Status of simulations run on '%s':" % self.location)
         states, msgs = self.get_monitor().query()
@@ -235,7 +235,12 @@ class BaseExperimentManager:
             time.sleep(init_sleep)
 
             # Get the new status
-            states, msgs = self.get_simulation_status()
+            try:
+                states, msgs = self.get_simulation_status()
+            except:
+                print "Exception occurred while retrieving status"
+                return
+
             if self.status_finished(states):
                 break
             else:
@@ -322,14 +327,14 @@ class BaseExperimentManager:
                 logger.warning('No job in experiment with ID = %s' % id)
                 continue
 
-            if state not in ['Finished', 'Succeeded', 'Failed', 'Canceled', 'Unknown']:
+            if state not in ['Succeeded', 'Failed', 'Canceled', 'Unknown']:
                 self.kill_job(id)
             else:
                 logger.warning("JobID %s is already in a '%s' state." % (str(id), state))
 
     @staticmethod
     def status_succeeded(states):
-        return all(v in ['Finished', 'Succeeded'] for v in states.itervalues())
+        return all(v in ['Succeeded'] for v in states.itervalues())
 
     def succeeded(self):
         return self.status_succeeded(self.get_simulation_status()[0])
@@ -351,7 +356,7 @@ class BaseExperimentManager:
 
     @staticmethod
     def status_finished(states):
-        return all(v in ['Finished', 'Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
+        return all(v in ['Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
 
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])

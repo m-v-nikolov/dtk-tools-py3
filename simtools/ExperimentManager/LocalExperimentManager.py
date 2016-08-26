@@ -100,7 +100,7 @@ class LocalExperimentManager(BaseExperimentManager):
         simulation = DataStore.get_simulation(simId)
 
         # No need of trying to kill simulation already done
-        if simulation.status in ('Finished', 'Succeeded', 'Failed', 'Canceled'):
+        if simulation.status in ('Succeeded', 'Failed', 'Canceled'):
             return
 
         # if the status has not been set -> set it to Canceled

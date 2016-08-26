@@ -41,8 +41,12 @@ def load_config_module(config_name):
         sys.path.append(os.getcwd())
 
     module_name = os.path.splitext(os.path.basename(config_name))[0]
-    return import_module(module_name)
 
+    try:
+        return import_module(module_name)
+    except ImportError:
+        logging.error("Unable to find %s in %s. Exiting..." % (module_name, os.getcwd()))
+        exit()
 
 def test(args, unknownArgs):
     # Get to the test dir
@@ -267,7 +271,7 @@ def stdout(args, unknownArgs):
     states, msgs = sm.get_simulation_status()
 
     if args.succeeded:
-        args.simIds = [k for k in states if states.get(k) in ['Finished', 'Succeeded']][:1]
+        args.simIds = [k for k in states if states.get(k) in ['Succeeded']][:1]
     elif args.failed:
         args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
 
@@ -355,7 +359,7 @@ def sync(args, unknownArgs):
 
     # For each of them, check if they are in the db
     for exp in exps:
-        with utils.nostdout(True, True):
+        with utils.nostdout():
             experiment = DataStore.get_experiment(exp.getId().toString())
             if experiment and experiment.is_done(): continue # Do not bother with finished experiments
         if not experiment:

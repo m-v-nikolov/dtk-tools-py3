@@ -82,7 +82,7 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     for requirement in requirements:
         # Split on == to get name and version (if any)
         package_name = requirement.split('==')[0]
-        package_name = package_name.replace('_','-')
+        package_name = package_name.replace('-','_')
 
         version = requirement.split('==')[1] if '==' in requirement else None
 
