@@ -77,7 +77,11 @@ class CalibManager(object):
         if 'location' in kwargs:
             kwargs.pop('location')
 
+        # Save the selected block the user wants
+        user_selected_block = self.setup.selected_block
         self.create_calibration(self.location, **kwargs)
+        # Restore the selected block
+        self.setup.selected_block = user_selected_block
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location, **kwargs):
