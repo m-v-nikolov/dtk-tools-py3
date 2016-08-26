@@ -676,7 +676,8 @@ class CalibManager(object):
         Consider user's input and determine the resuming point
         """
         if self.iter_step not in ['commission', 'analyze', 'next_point']:
-            pass
+            if self.iter_step:
+                logger.info("Invalid iter_step '%s', ignored.", self.iter_step)
         elif self.iter_step == 'commission':
             self.iteration_state.simulations = {}
             self.iteration_state.results = {}
@@ -927,6 +928,9 @@ class CalibManager(object):
                 except:
                     continue
 
+            # Delete all associated experiments in db
+            DataStore.delete_experiments_by_suite_ids([calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')])
+
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
         if os.path.exists(calib_dir):
@@ -988,15 +992,20 @@ class CalibManager(object):
             else:
                 return None
 
-    def get_experiment_from_iteration(self, iteration=None):
+    def get_experiment_from_iteration(self, iteration=None, force_metadata=False):
         """
         Retrieve experiment for a given iteration
         """
-        iteration = self.adjust_iteration(iteration)
-        iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
-        it = IterationState.from_file(iteration_cache)
+        exp = None
 
-        exp = DataStore.get_experiment(it.experiment_id)
+        # Only check iteration for resume cases
+        if force_metadata:
+            iteration = self.adjust_iteration(iteration)
+            iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
+            it = IterationState.from_file(iteration_cache)
+
+            exp = DataStore.get_experiment(it.experiment_id)
+
         return exp
 
     def adjust_iteration(self, iteration=None, calib_data=None):

@@ -226,9 +226,6 @@ class BaseExperimentManager:
             # Wait for successful cancellation.
             self.wait_for_finished(verbose=True)
 
-        # Delete experiment
-        DataStore.delete_experiment(self.experiment)
-
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         getch = helpers.find_getch()
         while True:
