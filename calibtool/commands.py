@@ -18,17 +18,25 @@ def load_config_module(config_name):
     return import_module(module_name)
 
 
-def get_calib_manager_args(args, unknownArgs):
+def get_calib_manager_args(args, unknownArgs, force_metadata=False):
     mod = load_config_module(args.config_name)
     manager = mod.calib_manager
     calib_args = mod.run_calib_args
 
+    # force_metadata == True for resume case
+    exp = manager.get_experiment_from_iteration(args.iteration if force_metadata else None)
+
+    # update selected_block
+    if ('selected_block' not in calib_args or not calib_args['selected_block']) or force_metadata:
+        if exp:
+            calib_args['selected_block'] = exp.selected_block
+
+    # update ini
     manager_data = manager.read_calib_data(True)
-    calib_args['block'] = manager_data['selected_block'] if manager_data else None
     calib_args['ini'] = manager_data['setup_overlay_file'] if manager_data else None
     update_calib_args(args, unknownArgs, calib_args)
-    return manager, calib_args
 
+    return manager, calib_args
 
 def update_calib_args(args, unknownArgs, calib_args):
     if hasattr(args,'priority') and args.priority:
@@ -38,7 +46,7 @@ def update_calib_args(args, unknownArgs, calib_args):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        selected_block = 'LOCAL' if 'override_block' not in calib_args else calib_args['override_block']
+        selected_block = calib_args['selected_block'] if calib_args['selected_block'] else "LOCAL"
     elif len(unknownArgs) == 1:
         selected_block = unknownArgs[0][2:].upper()
     else:
@@ -54,7 +62,7 @@ def run(args, unknownArgs):
 
 
 def resume(args, unknownArgs):
-    manager, calib_args = get_calib_manager_args(args,unknownArgs)
+    manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)
     manager.resume_from_iteration(args.iteration,
                                   iter_step=args.iter_step,
                                   **calib_args)
