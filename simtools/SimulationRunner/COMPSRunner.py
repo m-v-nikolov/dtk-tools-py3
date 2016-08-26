@@ -25,8 +25,12 @@ if __name__ == "__main__":
         last_states[simulation.id] = simulation.status
 
     sims_update = list()
+
     while True:
-        states, msgs = CompsSimulationMonitor(current_exp.exp_id, current_exp.suite_id, current_exp.endpoint).query()
+        try:
+            states, msgs = CompsSimulationMonitor(current_exp.exp_id, current_exp.suite_id, current_exp.endpoint).query()
+        except:
+            break
 
         last_states_set = last_states
         diff_list = [key for key in set(last_states_set).intersection(states) if last_states[key] != states[key]]
