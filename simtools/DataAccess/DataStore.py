@@ -59,15 +59,11 @@ class DataStore:
 
     @classmethod
     def get_experiment(cls, exp_id):
-        experiment = None
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
-            try:
-                experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
-                                                      .filter(Experiment.exp_id == exp_id).one()
-            except NoResultFound:
-                logging.error('No experiment found in the database with id:%s' % exp_id)
+            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
+                                                  .filter(Experiment.exp_id == exp_id).one_or_none()
 
             # Detach the object from the session
             session.expunge_all()
