@@ -147,3 +147,9 @@ class DataStore:
 
             if pid:
                 simulation.pid = pid if pid > 0 else None
+
+    @classmethod
+    def delete_experiments_by_suite_ids(cls, suite_ids):
+        with session_scope() as session:
+            num = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).delete(synchronize_session='fetch')
+            # print '%s experiment(s) deleted.' % num
