@@ -333,18 +333,27 @@ def sync(args, unknownArgs):
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
     utils.COMPS_login(sp.get('server_endpoint'))
+    from COMPS.Data import Experiment, Suite, QueryCriteria
+
+    exp_to_save = list()
+    exp_deleted = 0
+
+    # Test the experiments present in the local DB to make sure they still exist in COMPS
+    for exp in DataStore.get_experiments(None):
+        if exp.location == "HPC":
+            if len(Experiment.Get(QueryCriteria().Where("Id=%s" % exp.exp_id)).toArray()) == 0:
+                # The experiment doesnt exist on COMPS anymore -> delete from local
+                DataStore.delete_experiment(exp)
+                exp_deleted+=1
 
     # By default only get simulations created in the last month
     today = datetime.date.today()
     limit_date = today - datetime.timedelta(days=30)
     limit_date_str = limit_date.strftime("%Y-%m-%d")
 
-    # Get the experiments back
-    from COMPS.Data import Experiment, Suite, QueryCriteria
     exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
 
     # For each of them, check if they are in the db
-    exp_to_save = list()
     for exp in exps:
         with utils.nostdout(True, True):
             experiment = DataStore.get_experiment(exp.getId().toString())
@@ -388,9 +397,10 @@ def sync(args, unknownArgs):
         exp_to_save.append(experiment)
 
     # Save the experiments if any
-    if len(exp_to_save) > 0:
+    if len(exp_to_save) > 0 and exp_deleted == 0:
         DataStore.batch_save_experiments(exp_to_save)
         logging.info("%s experiments have been updated in the DB." % len(exp_to_save))
+        logging.info("%s experiments have been deleted from the DB." % exp_deleted)
     else:
         logging.info("The database was already up to date.")
 
