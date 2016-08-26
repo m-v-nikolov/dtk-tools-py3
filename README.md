@@ -44,6 +44,13 @@ pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
 
 If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
+#### Linux users
+Linux users, you need to install:
+- python-snappy
+- snappy-dev
+- LAPACK
+In order for the tools to work. 
+
 #### Setup
 
 To configure your user-specific paths and settings for local and HPC job submission, run the `dtk setup` command.
