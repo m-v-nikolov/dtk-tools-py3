@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.utils import remove_null_values
+from sqlalchemy.orm.exc import NoResultFound
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,11 +59,16 @@ class DataStore:
 
     @classmethod
     def get_experiment(cls, exp_id):
+        experiment = None
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
-            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
-                                                  .filter(Experiment.exp_id == exp_id).one()
+            try:
+                experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
+                                                      .filter(Experiment.exp_id == exp_id).one()
+            except NoResultFound:
+                logging.error('No experiment found in the database with id:%s' % exp_id)
+
             # Detach the object from the session
             session.expunge_all()
 
@@ -74,13 +80,20 @@ class DataStore:
             session.merge(simulation)
 
     @classmethod
-    def save_experiment(cls, experiment, verbose=True):
+    def batch_save_experiments(cls, batch):
+        with session_scope() as session:
+            for exp in batch:
+                DataStore.save_experiment(exp, False, session)
+
+
+    @classmethod
+    def save_experiment(cls, experiment, verbose=True, session=None):
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
             logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
 
-        with session_scope() as session:
+        with session_scope(session) as session:
             session.merge(experiment)
 
     @classmethod

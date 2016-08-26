@@ -109,6 +109,8 @@ class SetupParser:
             try:
                 os.environ['COMPS_REST_HOST'] = self.get('server_endpoint')
                 from pyCOMPS import pyCOMPS
+                from simtools import utils
+                utils.COMPS_login(self.get('server_endpoint'))
 
             except ImportError:
                 print('Failed loading pyCOMPS package; you will only be able to run local simulations.')

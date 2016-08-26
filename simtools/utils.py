@@ -254,3 +254,5 @@ class CommandlineGenerator(object):
     @property
     def Commandline(self):
         return ' '.join(filter(None, [self.Executable, self.Options, self.Params]))  # join ignores empty strings
+
+

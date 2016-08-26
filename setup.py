@@ -6,7 +6,7 @@ import re
 import shutil
 import sys
 from ConfigParser import ConfigParser
-
+from distutils.version import LooseVersion
 from setuptools import setup, find_packages
 
 if ctypes.sizeof(ctypes.c_voidp) != 8 :
@@ -22,17 +22,18 @@ if ctypes.sizeof(ctypes.c_voidp) != 8 :
 # For Windows, the wheel can be provided in either tar.gz or whl format
 from simtools.utils import nostdout
 
+
 requirements = [
-    'numpy==1.11.0',
+    'numpy==1.11.1',
+    'scipy==0.18.0',
     'matplotlib==1.5.1',
     'pandas==0.18.1',
     'seaborn==0.7.0',
     'statsmodels==0.6.1',
     'npyscreen==4.10.5',
     'curses==2.2',
-    'scipy==0.17.0',
     'validators',
-    'sqlalchemy==1.1.0b3',
+    'SQLAlchemy==1.1.0b3',
     'python-snappy==0.5',
     'psutil==4.3.0'
 ]
@@ -53,24 +54,19 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     def install_package(package):
         pip.main(['install', package])
 
-    def update_package(package):
-        pip.main(['install', package, '--upgrade'])
-
-    def mycmp(version1, version2):
-        def normalize(v):
-            return [int(x) for x in re.sub(r'(\.0+)*$', '', v).split(".")]
-
-        return cmp(normalize(version1), normalize(version2))
+    def update_package(package,version=None):
+        install = "%s==%s"%(package,version) if version else package
+        pip.main(['install', install, '--upgrade'])
 
     def test_package(name, version=None, package=None):
         if package is None:
             package = name
 
         if name in installed_packages:
-            if version and mycmp(version, installed_packages[name]) > 0:
+            if version and LooseVersion(version) > LooseVersion(installed_packages[name]):
                 print "Package: %s installed but with version %s. Upgrading to %s..." % (name, installed_packages[name], version)
                 # The version we want is ahead -> needs update
-                update_package(package)
+                update_package(package, version)
             else:
                 print "Package %s (%s) already installed and in correct version. Skipping..." % (name, installed_packages[name])
         else:
@@ -82,6 +78,8 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
     for requirement in requirements:
         # Split on == to get name and version (if any)
         package_name = requirement.split('==')[0]
+        package_name = package_name.replace('_','-')
+
         version = requirement.split('==')[1] if '==' in requirement else None
 
         # Find the associated wheel

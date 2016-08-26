@@ -6,6 +6,7 @@ import subprocess
 import sys
 from importlib import import_module
 
+import datetime
 import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer
 from dtk.utils.analyzers import StdoutAnalyzer
@@ -328,6 +329,81 @@ def analyze(args, unknownArgs):
 def analyze_list(args, unknownArgs):
     logging.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
+def sync(args, unknownArgs):
+    # Create a default HPC setup parser
+    sp = SetupParser('HPC')
+    utils.COMPS_login(sp.get('server_endpoint'))
+    from COMPS.Data import Experiment, Suite, QueryCriteria
+
+    exp_to_save = list()
+    exp_deleted = 0
+
+    # Test the experiments present in the local DB to make sure they still exist in COMPS
+    for exp in DataStore.get_experiments(None):
+        if exp.location == "HPC":
+            if len(Experiment.Get(QueryCriteria().Where("Id=%s" % exp.exp_id)).toArray()) == 0:
+                # The experiment doesnt exist on COMPS anymore -> delete from local
+                DataStore.delete_experiment(exp)
+                exp_deleted+=1
+
+    # By default only get simulations created in the last month
+    today = datetime.date.today()
+    limit_date = today - datetime.timedelta(days=30)
+    limit_date_str = limit_date.strftime("%Y-%m-%d")
+
+    exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
+
+    # For each of them, check if they are in the db
+    for exp in exps:
+        with utils.nostdout(True, True):
+            experiment = DataStore.get_experiment(exp.getId().toString())
+            if experiment and experiment.is_done(): continue # Do not bother with finished experiments
+        if not experiment:
+            # Cast the creation_date
+            creation_date = datetime.datetime.strptime(exp.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
+            experiment = DataStore.create_experiment(exp_id=exp.getId().toString(),
+                                                     suite_id=exp.getSuiteId().toString() if exp.getSuiteId() else None,
+                                                     exp_name=exp.getName(),
+                                                     date_created=creation_date,
+                                                     location='HPC',
+                                                     selected_block='HPC',
+                                                     endpoint=sp.get('server_endpoint'),
+                                                     working_directory=os.getcwd())
+
+        sims = exp.GetSimulations(QueryCriteria().Select('Id,SimulationState,DateCreated').SelectChildren('Tags')).toArray()
+
+        # Skip empty experiments or experiments that have the same number of sims
+        if len(sims) == 0 or len(sims) == len(experiment.simulations): continue
+
+        # Go through the sims and create them
+        for sim in sims:
+            # Create the tag dict
+            tags = dict()
+            for key in sim.getTags().keySet().toArray():
+                tags[key] = sim.getTags().get(key)
+
+            # Prepare the date
+            creation_date = datetime.datetime.strptime(sim.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
+
+            # Create the simulation
+            simulation = DataStore.create_simulation(id=sim.getId().toString(),
+                                                     status=sim.getState().toString(),
+                                                     tags=tags,
+                                                     date_created=creation_date)
+            # Add to the experiment
+            experiment.simulations.append(simulation)
+
+        # The experiment needs to be saved
+        exp_to_save.append(experiment)
+
+    # Save the experiments if any
+    if len(exp_to_save) > 0 and exp_deleted == 0:
+        DataStore.batch_save_experiments(exp_to_save)
+        logging.info("%s experiments have been updated in the DB." % len(exp_to_save))
+        logging.info("%s experiments have been deleted from the DB." % exp_deleted)
+    else:
+        logging.info("The database was already up to date.")
+
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -459,6 +535,9 @@ def main():
     # 'dtk analyze-list' options
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
     parser_analyze_list.set_defaults(func=analyze_list)
+
+    parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
+    parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options
     parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')

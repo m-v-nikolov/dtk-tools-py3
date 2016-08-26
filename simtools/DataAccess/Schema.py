@@ -74,13 +74,20 @@ class Experiment(Base):
         return self.exp_name + "_" + self.exp_id
 
     def get_path(self):
-        return os.path.join(self.sim_root, self.id)
+        if self.location == "LOCAL":
+            return os.path.join(self.sim_root, self.id)
 
     def contains_simulation(self, simid):
         for sim in self.simulations:
             if sim.id == simid:
                 return True
         return False
+
+    def is_done(self):
+        for sim in self.simulations:
+            if sim.status not in ('Succeeded', 'Failed','Canceled'):
+                return False
+        return True
 
     def toJSON(self):
         ret = {}
