@@ -55,7 +55,11 @@ if platform.architecture() == ('64bit', 'WindowsPE'):
         pip.main(['install', package])
 
     def update_package(package,version=None):
-        install = "%s==%s"%(package,version) if version else package
+        if '.whl' in package or '.tar.gz' in package:
+            install = package
+        else:
+            install = "%s==%s"%(package,version) if version else package
+
         pip.main(['install', install, '--upgrade'])
 
     def test_package(name, version=None, package=None):
