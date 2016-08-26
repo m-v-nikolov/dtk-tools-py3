@@ -54,7 +54,7 @@ calib_manager = CalibManager(name='ExampleCalibration',
                              num_to_plot=5,
                              plotters=plotters)
 
-run_calib_args = {'override_block':"EXAMPLE"}
+run_calib_args = {'selected_block': "EXAMPLE"}
 
 if __name__ == "__main__":
     run_calib_args.update(dict(location='LOCAL'))

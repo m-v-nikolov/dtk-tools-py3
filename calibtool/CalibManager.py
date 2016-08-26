@@ -77,7 +77,11 @@ class CalibManager(object):
         if 'location' in kwargs:
             kwargs.pop('location')
 
+        # Save the selected block the user wants
+        user_selected_block = self.setup.selected_block
         self.create_calibration(self.location, **kwargs)
+        # Restore the selected block
+        self.setup.selected_block = user_selected_block
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location, **kwargs):
@@ -766,7 +770,7 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        # Make a backup of Calibration.json
+        # Make a backup of CalibManager.json
         self.backup_calibration()
 
         # Keep iter_step which will be used later to determine the Resuming Point
@@ -984,6 +988,42 @@ class CalibManager(object):
             else:
                 return None
 
+    def get_experiment_from_iteration(self, iteration=None):
+        """
+        Retrieve experiment for a given iteration
+        """
+        iteration = self.adjust_iteration(iteration)
+        iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
+        it = IterationState.from_file(iteration_cache)
+
+        exp = DataStore.get_experiment(it.experiment_id)
+        return exp
+
+    def adjust_iteration(self, iteration=None, calib_data=None):
+        """
+        Validate iteration against latest_iteration
+        return adjusted iteration
+        """
+        # If calib_data is None or Empty, load data
+        if calib_data is None or not calib_data:
+            calib_data = self.read_calib_data()
+
+        # Get latest iteration #
+        latest_iteration = calib_data.get('iteration', None)
+
+        # Handle special case
+        if latest_iteration is None:
+            return 0
+
+        # If no iteration passed in, take latest_iteration as instead
+        if iteration is None:
+            iteration = latest_iteration
+
+        # Adjust input iteration
+        if latest_iteration < iteration:
+            iteration = latest_iteration
+
+        return iteration
 
     @property
     def iteration(self):
