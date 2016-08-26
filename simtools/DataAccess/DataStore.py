@@ -1,17 +1,14 @@
+import datetime
 import json
 import logging
-
-import datetime
-
-from sqlalchemy import bindparam
-from sqlalchemy import or_
-from sqlalchemy import update
-from sqlalchemy.orm import joinedload
 
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.utils import remove_null_values
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import bindparam
+from sqlalchemy import or_
+from sqlalchemy import update
+from sqlalchemy.orm import joinedload
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +30,7 @@ def dumper(obj):
         if isinstance(obj, set):
             return list(obj)
         if isinstance(obj, datetime.datetime):
-            return obj.isoformat()
+            return str(obj)
         return obj.__dict__
 
 
