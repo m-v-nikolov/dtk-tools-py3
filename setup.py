@@ -2,12 +2,11 @@ import ctypes
 import glob
 import os
 import platform
-import re
 import shutil
 import sys
 from ConfigParser import ConfigParser
 from distutils.version import LooseVersion
-from setuptools import setup, find_packages
+from simtools.utils import nostdout
 
 if ctypes.sizeof(ctypes.c_voidp) != 8 :
     print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
@@ -19,10 +18,7 @@ if ctypes.sizeof(ctypes.c_voidp) != 8 :
 
 # Set the list of requirements here
 # Can either take package==version or package
-# For Windows, the wheel can be provided in either tar.gz or whl format
-from simtools.utils import nostdout
-
-
+# For Windows, the wheel can be provided in either tar.gz or whl format\
 requirements = [
     'numpy==1.11.1+mkl',
     'scipy==0.18.0',
@@ -100,9 +96,38 @@ if platform.architecture() == ('64bit', ''):
     # Removes curses for MacOSx (built-in)
     requirements.remove('curses==2.2')
 
+if platform.architecture() == ('64bit', 'ELF'):
+    # Doing the apt-get install pre-requisites
+    from subprocess import check_call, STDOUT
+    pre_requisites = [
+        'python-setuptools',
+        'python-pip',
+        'psutils',
+        'build-essential',
+        'python-dev',
+        'libsnappy-dev',
+        'ncurses-dev',
+        'libfreetype6-dev',
+        'python-numpy',
+        'liblapack-dev',
+        'python-scipy'
+    ]
+    for req in pre_requisites:
+        print "Checking/Installing %s" % req
+        check_call(['apt-get', 'install', '-y', req],stdout=open(os.devnull, 'wb'), stderr=STDOUT)
+
+    # We are on linux, change some requirements
+    requirements.remove('curses==2.2')
+    requirements.remove('numpy==1.11.1+mkl')
+    requirements.remove('scipy==0.18.0')
+    requirements.append('numpy')
+    requirements.append('scipy')
+
 # Add the develop by default
 sys.argv.append('develop')
+sys.argv.append('--quiet')
 
+from setuptools import setup, find_packages
 # Suppress the outputs except the errors
 with nostdout(stderr=True):
     setup(name='dtk-tools',
