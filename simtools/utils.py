@@ -9,8 +9,6 @@ from hashlib import md5
 
 import cStringIO
 
-from simtools.SetupParser import SetupParser
-
 logger = logging.getLogger(__name__)
 
 
@@ -102,6 +100,7 @@ def translate_COMPS_path(path, setup=None):
 
     # Check if we have a setup
     if not setup:
+        from simtools.SetupParser import SetupParser
         setup = SetupParser()
 
     # Retrieve the variable to translate
