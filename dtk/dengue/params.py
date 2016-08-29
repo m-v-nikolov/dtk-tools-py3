@@ -31,6 +31,7 @@ params = {
     "Enable_Drought_Egg_Hatch_Delay": 0,
     "Enable_Egg_Mortality": 1,
     "Enable_Rainfall_Stochasticity": 0,
+    "Enable_Superinfection":0,
     "Enable_Temperature_Dependent_Egg_Hatching": 1,
     "Enable_Temperature_Dependent_Feeding_Cycle": "ARRHENIUS_DEPENDENCE",
     "Immunity_Acquisition_Factor": 0,
