@@ -109,7 +109,7 @@ geographies = {
 
     "Puerto_Rico": {"Geography": "Puerto_Rico",
                     "Air_Temperature_Filename": "PuertoRico_single_node_air_temperature_daily.bin",
-                    "Demographics_Filenames": ["Dengue_single_node_demographics.json"],
+                    "Demographics_Filenames": ["PuertoRico_single_node_demographics.json"],
                     "Land_Temperature_Filename": "PuertoRico_single_node_land_temperature_daily.bin",
                     "Rainfall_Filename": "PuertoRico_single_node_rainfall_daily.bin",
                     "Relative_Humidity_Filename": "PuertoRico_single_node_relative_humidity_daily.bin",
