@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='ClimateFileCreator_Log.log', level=logging.DEBUG)
 
 class ClimateFileCreator:
-    def __init__(self, nodes, prefix, suffix, original_data_years, is_slim=False):
+    def __init__(self, nodes, prefix, suffix, original_data_years, idref="Gridded world grump2.5arcmin", is_slim=False):
         """
         :param nodes: format -
             node1 = WeatherNode()
@@ -27,6 +27,7 @@ class ClimateFileCreator:
 
             nodes = [node1, node2]
         """
+        self.idReference = idref
         self.nodes = nodes
         self.prefix = prefix
         self.suffix = suffix
@@ -209,7 +210,7 @@ class ClimateFileCreator:
                 "DataProvenance": "",
                 "DatavalueCount": count,
                 "DateCreated": time.strftime("%m/%d/%Y"),
-                "IdReference": "Gridded world grump2.5arcmin",
+                "IdReference": self.idReference,
                 "NodeCount": len(self.nodes),
                 "OriginalDataYears": self.original_data_years,
                 "StartDayOfYear": "January 1",
@@ -221,7 +222,7 @@ class ClimateFileCreator:
 
         file_name = self.prefix + "_" + data_name + "_" + self.suffix
         bin_file_name = file_name + ".bin"
-        json_file_name = file_name + ".json"
+        json_file_name = file_name + ".bin.json"
         with open(os.path.join(output_path, '%s' % bin_file_name), 'wb') as handle:
             a = struct.pack('f' * len(data_to_save), *data_to_save)
             # Write it to the file
