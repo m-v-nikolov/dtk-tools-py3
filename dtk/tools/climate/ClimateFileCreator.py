@@ -190,16 +190,16 @@ class ClimateFileCreator:
 
         # Generate bin and json files
         if len(rainfall_data) > 0:
-            self.write_files(output_path, rainfall_count, offset_string, rainfall_data, "rainfall")
+            self.write_files(output_path, rainfall_count, offset_string if not self.is_slim else rainfall_offset_string, rainfall_data, "rainfall")
 
         if len(air_temperature_data) > 0:
-            self.write_files(output_path, air_temperature_count, offset_string, air_temperature_data, "air_temperature")
+            self.write_files(output_path, air_temperature_count, offset_string if not self.is_slim else air_temperature_offset_string, air_temperature_data, "air_temperature")
 
         if len(land_temperature_data) > 0:
-            self.write_files(output_path, land_temperature_count, offset_string, land_temperature_data, "land_temperature")
+            self.write_files(output_path, land_temperature_count, offset_string if not self.is_slim else land_temperature_offset_string, land_temperature_data, "land_temperature")
 
         if len(humidity_data) > 0:
-            self.write_files(output_path, humidity_count, offset_string, humidity_data, "humidity")
+            self.write_files(output_path, humidity_count, offset_string if not self.is_slim else humidity_offset_string, humidity_data, "humidity")
 
     def write_files(self, output_path, count, offset_string, data_to_save, data_name):
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4).strip('"')
@@ -223,7 +223,7 @@ class ClimateFileCreator:
         bin_file_name = file_name + ".bin"
         json_file_name = file_name + ".json"
         with open(os.path.join(output_path, '%s' % bin_file_name), 'wb') as handle:
-            a = struct.pack('f' * count, *data_to_save)
+            a = struct.pack('f' * len(data_to_save), *data_to_save)
             # Write it to the file
             handle.write(a)
 
