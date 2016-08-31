@@ -620,6 +620,7 @@ class CalibManager(object):
         if not self.exp_manager.status_succeeded(states):
             # Force to set resuming point to 1 later
             self.iteration_state.simulations = {}
+            self.iter_step == 'commission'
         else:
             # Resuming point (2 or 3) will be determined from following logic
             pass
