@@ -114,7 +114,7 @@ class DataStore:
         with session_scope() as session:
             experiments = session.query(Experiment).distinct(Experiment.exp_id)\
                 .join(Experiment.simulations)\
-                .filter(or_(Simulation.status.in_(("Running", "Waiting")), Simulation.status.is_(None)))
+                .filter(~Simulation.status.in_(('Succeeded', 'Failed', 'Canceled')))
             session.expunge_all()
 
         return experiments
