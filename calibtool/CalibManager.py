@@ -594,10 +594,12 @@ class CalibManager(object):
         except Exception as ex:
             # logger.info(ex)
             logger.info('Proceed without checking the possible leftovers.')
+            # Restore the selected block
+            self.setup.selected_block = user_selected_block
             return
 
         # Don't do the leftover checking for a special case
-        if self.iteration == 0 and self.iter_step == 'commission':
+        if self.iter_step == 'commission':
             return
 
         # Make sure it is finished
