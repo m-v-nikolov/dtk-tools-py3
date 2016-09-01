@@ -149,7 +149,55 @@ class DataStore:
                 simulation.pid = pid if pid > 0 else None
 
     @classmethod
-    def delete_experiments_by_suite_ids(cls, suite_ids):
+    def delete_experiments_by_suite(cls, suite_ids):
+        """
+        Delete those experiments which are associated with suite_ids
+        """
         with session_scope() as session:
             num = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).delete(synchronize_session='fetch')
             # print '%s experiment(s) deleted.' % num
+
+    @classmethod
+    def clear_leftover(cls, suite_ids, exp_ids):
+        """
+        Delete those experiments which are associated with suite_id and not in exp_ids
+        """
+        exp_orphan_list = cls.list_leftover(suite_ids, exp_ids)
+        cls.delete_experiments(exp_orphan_list)
+
+    @classmethod
+    def list_leftover(cls, suite_ids, exp_ids):
+        """
+        List those experiments which are associated with suite_id and not in exp_ids
+        """
+        exp_list = cls.get_experiments_by_suite(suite_ids)
+        exp_list_ids = [exp.exp_id for exp in exp_list]
+
+        # Calculate orphans
+        exp_orphan_ids = list(set(exp_list_ids) - set(exp_ids))
+        exp_orphan_list = [exp for exp in exp_list if exp.exp_id in exp_orphan_ids]
+
+        return exp_orphan_list
+
+    @classmethod
+    def get_experiments_by_suite(cls, suite_ids):
+        """
+        Get the experiments which are associated with suite_id
+        """
+        exp_list = []
+        with session_scope() as session:
+            exp_list = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).all()
+            session.expunge_all()
+
+        return exp_list
+
+    @classmethod
+    def delete_experiments(cls, exp_list, verbose=False):
+        """
+        Delete experiments given from input
+        """
+        exp_ids = [exp.exp_id for exp in exp_list]
+        with session_scope() as session:
+            num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
+            if verbose:
+                print '%s experiment(s) deleted.' % num

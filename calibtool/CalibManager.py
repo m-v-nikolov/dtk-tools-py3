@@ -571,8 +571,16 @@ class CalibManager(object):
             exp_id = self.iteration_state.experiment_id
             exp = DataStore.get_experiment(exp_id)
         except Exception as ex:
-            logger.info("Cannot restore Experiment '%s'. Exiting...", exp_id)
-            exit()
+            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
+            # force to resume from commission
+            self.iter_step = 'commission'
+            return
+
+        if exp is None:
+            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
+            # force to resume from commission
+            self.iter_step = 'commission'
+            return
 
         # If location has been changed, will double check user for a special case before proceed...
         if self.location != exp.location and self.iter_step in ['analyze', 'next_point']:
@@ -796,8 +804,11 @@ class CalibManager(object):
             # for resume_point = 3, it will use the current results and resume from next iteration
             self.restore_results(calib_data.get('results'), iteration)
 
-        # Enter iteration loop
+        # enter iteration loop
         self.run_iterations(**kwargs)
+
+        # check possible leftover experiments
+        self.check_orphan_experiments()
 
     def replot_calibration(self, **kwargs):
         """
@@ -932,7 +943,7 @@ class CalibManager(object):
                     continue
 
             # Delete all associated experiments in db
-            DataStore.delete_experiments_by_suite_ids([calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')])
+            DataStore.delete_experiments_by_suite([calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')])
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -1036,6 +1047,74 @@ class CalibManager(object):
             iteration = latest_iteration
 
         return iteration
+
+    def check_orphan_experiments(self, ask=True):
+        """
+            - Display all orphan experiments for this calibration
+            - Provide user option to clean up
+        """
+        if not ask:
+            self.clear_orphan_experiments()
+            return
+
+        # Continue if ask == True
+        exp_orphan_list = self.list_orphan_experiments()
+        if exp_orphan_list is None or len(exp_orphan_list) == 0:
+            return
+
+        orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
+        print '\nOrphan Experiment List:\n'
+        print '\n'.join(orphan_str_list)
+        print '\n'
+
+        DataStore.delete_experiments(exp_orphan_list)
+        if len(exp_orphan_list) > 1:
+            logger.info('Note: the detected orphan experiments have been deleted.')
+        else:
+            logger.info('Note: the detected orphan experiment has been deleted.')
+
+    def clear_orphan_experiments(self):
+        """
+        Cleanup the experiments in db, which are associated with THIS calibration's
+        suite_id and exp_ids
+        """
+        # make sure data exists
+        if not os.path.isdir(self.name):
+            logger.info('Unable to find existing calibration in directory (%s), no experiments cleanup is processed.', self.name)
+            return
+
+        suite_ids, exp_ids = self.get_experiments()
+        DataStore.clear_leftover(suite_ids, exp_ids)
+
+    def list_orphan_experiments(self):
+        """
+        Get orphan experiment list for this calibration
+        """
+        suite_ids, exp_ids = self.get_experiments()
+        exp_orphan_list = DataStore.list_leftover(suite_ids, exp_ids)
+        return exp_orphan_list
+
+    def get_experiments(self):
+        """
+        Retrieve suite_ids and their associated exp_ids
+        """
+        # restore the existing calibration data
+        calib_data = self.read_calib_data()
+        latest_iteration = calib_data.get('iteration')
+
+        exp_ids = []
+        for i in range(0, latest_iteration + 1):
+            iter_dir = os.path.join(self.name, 'iter%d' % i)
+            iter_path = os.path.join(iter_dir, 'IterationState.json')
+            if not os.path.exists(iter_path):
+                continue
+
+            iter_data = json.load(open(iter_path, 'rb'))
+            exp_id = iter_data.get('experiment_id', None)
+            if exp_id:
+                exp_ids.append(exp_id)
+
+        return [calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')], exp_ids
 
     @property
     def iteration(self):
