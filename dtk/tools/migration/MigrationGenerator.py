@@ -1,19 +1,12 @@
 import csv
 import json
-import subprocess
-import sys
 import re
-
 from struct import pack
-from sys import argv
 
 import dtk.tools.demographics.compiledemog as compiledemog
-import createmigrationheader
 import visualize_routes
-
-
+from GeoGraphGenerator import GeoGraphGenerator
 from GravityModelRatesGenerator import GravityModelRatesGenerator
-from GeoGraphGenerator import GeoGraphGenerator 
 
 
 class MigrationGenerator(object):
@@ -264,6 +257,7 @@ class MigrationGenerator(object):
         # compiledemog.py too could be refactored towards object-orientedness
         # the demographics_file_path supplied here may be different from self.demographics_file_path)
         compiledemog.main(demographics_file_path)
+        import createmigrationheader
         createmigrationheader.main('dtk-tools', re.sub('\.json$', '.compiled.json', demographics_file_path), 'local')
         
         

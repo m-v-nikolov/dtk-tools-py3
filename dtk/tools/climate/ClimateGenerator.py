@@ -2,26 +2,22 @@ import glob
 import os
 import time
 
-from COMPS import Client
-from COMPS.Data import QueryCriteria, AssetType
-from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
-from java.util import HashMap, ArrayList
-
 from WorkOrderGenerator import WorkOrderGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 
 
 class ClimateGenerator:
-    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path,
+    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path, setup,
                  climate_project="IDM-Zambia"):
 
+        self.setup = setup
         self.work_order_path = work_order_path
         self.demographics_file_path = demographics_file_path
         self.climate_files_output_path = climate_files_output_path
         self.climate_project = climate_project
 
         # see WorkOrderGenerator for other work options
-        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project)
+        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project, idRef='Gridded world grump30arcsec')
 
     def set_climate_project_info(self, climate_project):
         self.wo.set_project_info(climate_project)
@@ -33,12 +29,17 @@ class ClimateGenerator:
         om("Submitting request for climate files generation to COMPS.")
         om("This requires a login.")
 
+        from COMPS import Client
+        from COMPS.Data import QueryCriteria, AssetType
+        from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
+        from java.util import HashMap, ArrayList
+
         # can pass setup as param and extract HPC endserver; leave hard coded for now
         Client.Login('https://comps.idmod.org')
         om("Login success!")
 
         workerkey = WorkerKey('InputDataWorker', '1.0.0.0_RELEASE')
-        wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey)
+        wi = WorkItem('dtk-tools InputDataWorker WorkItem',self.setup.get('environment'), workerkey)
 
         tagmap = HashMap()
         tagmap.put('dtk-tools', None)

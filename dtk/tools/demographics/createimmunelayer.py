@@ -3,7 +3,7 @@ import os
 import scipy # for calculating means
 
 from simtools.SetupParser import SetupParser
-input_path = SetupParser().get('LOCAL','input_root')
+input_path = SetupParser().get('input_root')
 
 br_channel_titles = ["MSP", "Non-Specific", "PfEMP1"]
 output_channel_titles = ["MSP", "nonspec", "PfEMP1"]
