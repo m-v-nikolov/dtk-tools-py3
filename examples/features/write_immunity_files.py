@@ -11,7 +11,7 @@ from dtk.vector.study_sites import geography_from_site
 from dtk.generic.geography import get_geography_parameter
 
 from COMPS import Client
-Client.Login(SetupParser().get('HPC', 'server_endpoint'))
+Client.Login(SetupParser().get('server_endpoint'))
 
 with open("simulations/burnin_b63f325d-d9df-e511-93fb-f0921c16b9e3.json") as metadata_file:
     md = json.loads(metadata_file.read())

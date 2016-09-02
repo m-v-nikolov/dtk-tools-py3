@@ -8,6 +8,7 @@ from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+from simtools import utils
 
 
 class SpatialManager:
@@ -64,6 +65,7 @@ class SpatialManager:
         :param nodes_params_input_file: contains parameter value pairs for each node (e.g. from calibration); see ImmunityOverlaysGenerator for format
         :return:
         """
+        self.setup = setup
         self.name = name
         self.working_dir = working_dir
         self.log = log
@@ -85,9 +87,9 @@ class SpatialManager:
 
         # todo: need to modularize the local/remote test; used in other parts of the code
         if self.location == 'HPC':
-            self.sim_data_input = os.path.join(setup.get('HPC', 'input_root'))
+            self.sim_data_input = utils.translate_COMPS_path(setup.get('input_root'))
         elif self.location == 'LOCAL':
-            self.sim_data_input = os.path.join(setup.get('LOCAL', 'input_root'))
+            self.sim_data_input = os.path.join(setup.get('input_root'))
         else:
             raise ValueError(self.location + ' is not supported; select LOCAL or HPC.')
 
@@ -152,7 +154,7 @@ class SpatialManager:
         self.demographics_output_file_path = os.path.join(self.sim_data_input, self.demographics_output_file)
 
         # demographics generator instance
-        self.dg = DemographicsGenerator(
+        self.dg = DemographicsGenerator.from_file(
             self.cb,
             self.population_input_file_path,
             # demographics_type = 'static',
@@ -194,6 +196,7 @@ class SpatialManager:
                 self.demographics_output_file_path,
                 os.path.join(self.log_path, 'climate_wo.json'),
                 os.path.join(self.sim_data_input, self.geography),
+                self.setup
             )
 
     def set_demographics_type(self, demographics_type):

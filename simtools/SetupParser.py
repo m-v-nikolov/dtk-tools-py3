@@ -6,7 +6,6 @@ from simtools.IniValidator import IniValidator
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage
 
-
 class SetupParser:
     """
     Parse user settings and directory locations
@@ -34,6 +33,10 @@ class SetupParser:
         :param force: Force the replacement of selected_block and setup_file in the class variable
         :param fallback: Fallback block if the selected_block cannot be found
         """
+        # print selected_block
+        # from simtools import utils
+        # print utils.caller_name()
+
         # Test if the default ini exist
         if not os.path.exists(self.default_ini):
             OutputMessage("The default simtools.ini file does not exist in %s. Please run 'python setup.py' again!" % self.default_ini,'warning')

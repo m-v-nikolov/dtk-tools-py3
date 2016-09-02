@@ -2,7 +2,6 @@ import json
 import os
 
 from simtools.OutputParser import CompsDTKOutputParser as parser
-from dtk.tools.demographics.createimmunelayer import immune_init_from_custom_output_for_spatial as immune_init 
 from dtk.tools.demographics.compiledemog import CompileDemographics
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
@@ -155,14 +154,12 @@ class ImmunityOverlaysGenerator(object):
                     if exp_location_type == 'HPC':
 
                         from simtools.SetupParser import SetupParser
-                        from COMPS import Client
-
+                        from simtools import utils
+                        sp = SetupParser('HPC')
                         om("Pulling immunization data from COMPs.")
                         om("This requires a login.")
-                        
-                        setup = SetupParser()
-                        Client.Login(setup.get('HPC','server_endpoint'))
-                        
+
+                        utils.COMPS_login(sp.get('server_endpoint'))
                         om("Login success!")
 
                         sim_dir_map = parser.createSimDirectoryMap(exp_id)
@@ -204,7 +201,9 @@ class ImmunityOverlaysGenerator(object):
                             immunity_report_file_path = os.path.join(sim_output_path, 'MalariaImmunityReport_AnnualAverage.json')
                             
     
-                            # generate immune overlay 
+                            # generate immune overlay
+                            from dtk.tools.demographics.createimmunelayer import \
+                                immune_init_from_custom_output_for_spatial as immune_init
                             immune_overlay_json = immune_init(
                                                               { 
                                                                "Metadata": {  
