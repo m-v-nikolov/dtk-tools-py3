@@ -121,6 +121,10 @@ class BaseExperimentManager:
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
         """
+        # Check experiment name as early as possible
+        if not utils.validate_exp_name(exp_name):
+            exit()
+
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
 

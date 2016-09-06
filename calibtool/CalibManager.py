@@ -73,6 +73,10 @@ class CalibManager(object):
         """
         Create and run a complete multi-iteration calibration suite.
         """
+        # Check experiment name as early as possible
+        if not utils.validate_exp_name(self.name):
+            exit()
+
         self.location = self.setup.get('type')
         if 'location' in kwargs:
             kwargs.pop('location')
