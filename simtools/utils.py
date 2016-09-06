@@ -11,6 +11,8 @@ import cStringIO
 
 logger = logging.getLogger(__name__)
 
+max_exp_name_len = 100
+
 
 @contextlib.contextmanager
 def nostdout(stdout = False, stderr=False):
@@ -248,6 +250,15 @@ def override_HPC_settings(setup, **kwargs):
                 setup.set(variable, value)
             else:
                 logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
+
+def validate_exp_name(exp_name):
+    if len(exp_name) > max_exp_name_len:
+        logger.info(
+            "The experiment name '%s' exceeds the max length %s, please adjust your experiment name. Exiting...",
+            exp_name, max_exp_name_len)
+        return False
+    else:
+        return True
 
 class CommandlineGenerator(object):
     """
