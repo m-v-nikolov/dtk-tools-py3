@@ -812,7 +812,54 @@ class CalibManager(object):
         self.run_iterations(**kwargs)
 
         # check possible leftover experiments
-        self.check_orphan_experiments()
+        # self.check_orphan_experiments()
+        from multiprocessing import Process, Queue
+        import sys
+        def test():
+            pass
+
+        from calibtool.ask import Ask, Ask2
+
+        a = Ask()
+        q = Queue()
+        fn = sys.stdin.fileno()  # get original file descriptor
+        # job_for_another_core = Process(target=a.sub_proc, args=(q, fn))            # Working!
+        # job_for_another_core.start()
+        # print q.get()
+
+        # job_for_another_core = Process(target=self.sub_proc, args=(q, fn))      # Not working!
+        # job_for_another_core.start()
+
+        a2 = Ask2(self)
+        print a2.calib_manager.location        # Working!
+        # a2.calib_manager.mytest(q, fn)          # Working
+        # a2.calib_manager.sub_proc(q, fn)        # error but bad info
+        # job_for_another_core = Process(target=a2.hi, args=(q, fn))                  # Not working!
+
+        # job_for_another_core.start()
+        # print q.get()
+
+        # import threading
+        # t1 = threading.Thread(target=a.func)
+        # t1.start()
+        # t1.join()
+
+    def mytest(self, q, fileno):
+        print 'This is my test!'
+
+    def sub_proc(self, q, fileno):
+        import sys
+        sys.stdin = os.fdopen(fileno)  # open stdin in this process
+        var = raw_input('Check if we can ask user for input:  ')
+        print "User input is '%s'" % var.upper()
+        q.put(var.upper() == 'Y')
+
+    def hello(self):
+        var = raw_input('Check if we can ask user for input:  ')
+        print "User input is '%s'" % var.upper()
+        # exit()
+        pass
+
 
     def replot_calibration(self, **kwargs):
         """
@@ -1057,6 +1104,10 @@ class CalibManager(object):
             - Display all orphan experiments for this calibration
             - Provide user option to clean up
         """
+        # var = raw_input('Check if we can ask user for input:  ')
+        # print "User input is '%s'" % var.upper()
+        exit()
+
         if not ask:
             self.clear_orphan_experiments()
             return

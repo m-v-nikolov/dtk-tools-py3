@@ -94,6 +94,10 @@ class BaseExperimentManager:
     def get_monitor(self):
         pass
 
+    @abstractmethod
+    def check_input_files(self, input_files):
+        pass
+
     def get_property(self, prop):
         return self.setup.get(prop)
 
@@ -125,8 +129,41 @@ class BaseExperimentManager:
         if not utils.validate_exp_name(exp_name):
             exit()
 
+        # Check input files existence
+        if not self.validate_input_files(config_builder):
+            exit()
+
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
+
+        self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
+        self.commission_simulations()
+
+    def validate_input_files(self, config_builder):
+        """
+        Check input files and make sure there exist
+        Note: we by pass the 'Campaign_Filename'
+        """
+        input_files = config_builder.get_input_file_paths()
+        missing_files = self.check_input_files(input_files)
+
+        # Py-passing 'Campaign_Filename' for now.
+        if 'Campaign_Filename' in missing_files:
+            logger.info("By-passing file '%s'...", missing_files['Campaign_Filename'])
+            missing_files.pop('Campaign_Filename')
+
+        if len(missing_files) > 0:
+            print 'Missing files list:'
+            print json.dumps(missing_files, indent=2)
+            var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
+            if var.upper() == 'Y':
+                logger.info("Answer is '%s'. Continue...", var.upper())
+                return True
+            else:
+                logger.info("Answer is '%s'. Exiting...", var.upper())
+                return False
+
+        return True
 
     def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
         """

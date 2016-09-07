@@ -29,6 +29,25 @@ class LocalExperimentManager(BaseExperimentManager):
     def __init__(self, model_file, experiment, setup=None):
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
+    def check_input_files(self, input_files):
+        """
+        Check file exist and return the missing files as dict
+        """
+        input_root = self.setup.get('input_root')
+
+        missing_files = {}
+        for (filename, filepath) in input_files.iteritems():
+            if isinstance(filepath, basestring):
+                if not os.path.exists(os.path.join(input_root, filepath)):
+                    missing_files[filename] = filepath
+            elif isinstance(filepath, list):
+                missing_files[filename] = [f for f in filepath if not os.path.exists(os.path.join(input_root, f))]
+                # Remove empty list
+                if len(missing_files[filename]) == 0:
+                    missing_files.pop(filename)
+
+        return missing_files
+
     def get_monitor(self):
         return SimulationMonitor(self.experiment.exp_id)
 
