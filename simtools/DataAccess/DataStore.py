@@ -9,6 +9,7 @@ from sqlalchemy import bindparam
 from sqlalchemy import or_
 from sqlalchemy import update
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -201,3 +202,26 @@ class DataStore:
             num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
             if verbose:
                 print '%s experiment(s) deleted.' % num
+
+
+    @classmethod
+    def get_recent_experiment_by_filter(cls, num=20, is_all=False, name=None, location=None):
+        with session_scope() as session:
+            experiment = session.query(Experiment) \
+                .options(joinedload('simulations')) \
+                .order_by(Experiment.date_created.desc())
+
+            if name:
+                experiment = experiment.filter(Experiment.exp_name.like('%%%s%%' % name))
+
+            if location:
+                experiment = experiment.filter(Experiment.location == location)
+
+            if is_all:
+                experiment = experiment.all()
+            else:
+                experiment = experiment.limit(num).all()
+
+            session.expunge_all()
+        return experiment
+

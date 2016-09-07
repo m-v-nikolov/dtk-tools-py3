@@ -21,7 +21,7 @@ from simtools.SetupParser import SetupParser
 
 logger = logging.getLogger(__name__)
 # Do we have to specify the log path?
-fh = logging.FileHandler('server.log')
+fh = logging.FileHandler('DtkTools_log.log')
 fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 
@@ -413,6 +413,51 @@ def sync(args, unknownArgs):
         logger.info("The database was already up to date.")
 
 
+# List experiments from local database
+def list(args, unknownArgs):
+    format_string = "%s - %s (%s) - %d simulations - %s"
+    experiments = []
+
+    # Filter by location
+    if args.HPC:
+        experiments = DataStore.get_recent_experiment_by_filter(location="HPC")
+
+    elif args.LOCAL:
+        experiments = DataStore.get_recent_experiment_by_filter(location="LOCAL")
+
+    # Limit number of experiments to display
+    elif args.number:
+        print args.number
+        print unknownArgs
+        if len(unknownArgs) == 1:
+            num = unknownArgs[0][2:]
+            if num.isdigit():
+                experiments = DataStore.get_recent_experiment_by_filter(num=num)
+
+            elif num == '*':
+                experiments = DataStore.get_recent_experiment_by_filter(is_all=True)
+
+            else:
+                raise Exception('Invalid unknown arguments: please see help.')
+        else:
+            raise Exception('Invalid unknown arguments: please see help.')
+
+    # Filter by experiment name like
+    elif args.exp_name:
+        experiments = DataStore.get_recent_experiment_by_filter(name=args.exp_name)
+
+    # No args given
+    else:
+        experiments = DataStore.get_recent_experiment_by_filter()
+
+    if len(experiments) > 0:
+        for exp in experiments:
+            print format_string % (exp.date_created.strftime('%m/%d/%Y %H:%M:%S'), exp.exp_id, exp.location,
+                                   len(exp.simulations), "Completed" if exp.is_done() else "Not Completed")
+    else:
+        print "No experiments to display."
+
+
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
     mod = load_config_module(args.config_name)
@@ -469,6 +514,15 @@ def main():
     parser_status.add_argument('-a', '--active', action='store_true',
                                help='Get the status of all active experiments (mutually exclusive to all other options).')
     parser_status.set_defaults(func=status)
+
+    # 'dtk list' options
+    parser_list = subparsers.add_parser('list',
+                                        help='Report recent 20 list of simulations in experiment.')
+    parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
+    parser_list.add_argument('--HPC', action='store_true', help='Get HPC recent experiment list.')
+    parser_list.add_argument('--LOCAL', action='store_true', help='Get Local recent experiment list.')
+    parser_list.add_argument('-n', '--number', action='store_true', help='Get given number recent experiment list')
+    parser_list.set_defaults(func=list)
 
     # 'dtk resubmit' options
     parser_resubmit = subparsers.add_parser('resubmit',
