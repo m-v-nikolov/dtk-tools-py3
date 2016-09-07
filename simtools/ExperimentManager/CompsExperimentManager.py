@@ -80,7 +80,7 @@ class CompsExperimentManager(BaseExperimentManager):
         tags = self.exp_builder.metadata
         # Append the environment to the tag
         tags['environment'] = self.setup.get('environment')
-        tags.update(self.exp_builder.tags if self.exp_builder.tags else {})
+        tags.update(self.exp_builder.tags if hasattr(self.exp_builder, 'tags') else {})
         self.commissioner.create_simulation(self.config_builder.get_param('Config_Name'), files, tags)
 
         self.sims_created += 1
