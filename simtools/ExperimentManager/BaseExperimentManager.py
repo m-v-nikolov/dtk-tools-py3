@@ -144,6 +144,10 @@ class BaseExperimentManager:
         Check input files and make sure there exist
         Note: we by pass the 'Campaign_Filename'
         """
+        # By-pass input file checking if using assets_service
+        if self.assets_service:
+            return True
+
         input_files = config_builder.get_input_file_paths()
         missing_files = self.check_input_files(input_files)
 
