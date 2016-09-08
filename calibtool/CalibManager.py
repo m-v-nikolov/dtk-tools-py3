@@ -814,6 +814,9 @@ class CalibManager(object):
         # check possible leftover experiments
         self.check_orphan_experiments()
 
+        # delete all backup file for CalibManger and each of iterations
+        self.cleanup_backup_files()
+
     def replot_calibration(self, **kwargs):
         """
         Cleanup the existing plots, then re-do the plottering
@@ -1089,6 +1092,47 @@ class CalibManager(object):
 
         suite_ids, exp_ids = self.get_experiments()
         DataStore.clear_leftover(suite_ids, exp_ids)
+
+    def cleanup_backup_files(self):
+        """
+        Cleanup the backup files for current calibration
+        """
+        def delete_files(file_list):
+            # print '\n'.join(file_list)
+            for f in file_list:
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except OSError:
+                        logger.error("Failed to delete %s" % f)
+
+        iter_count = self.iteration
+        if iter_count is None:
+            try:
+                calib_data = self.read_calib_data()
+                iter_count = calib_data.get('iteration', 0)
+            except Exception:
+                logger.info('Calib data cannot be read, no backup files are deleted.')
+                return
+
+        # Step 1: delete backup files for each of the iterations
+        for i in range(0, iter_count + 1):
+            # Get the iteration backup files
+            iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState_backup_*.json')
+            backup_files = glob.glob(iteration_cache)
+            if backup_files is None or len(backup_files) == 0:
+                continue
+
+            delete_files(backup_files)
+
+        # Step 2: delete backup files for CalibManger.json
+        # Get the CalibManager backup files
+        calib_manager_cache = os.path.join(self.name, 'CalibManager_backup_*.json')
+        backup_files = glob.glob(calib_manager_cache)
+        if backup_files is None or len(backup_files) == 0:
+            return
+
+        delete_files(backup_files)
 
     def list_orphan_experiments(self):
         """
