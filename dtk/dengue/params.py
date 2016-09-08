@@ -64,6 +64,8 @@ params = {
     "RBC_Destruction_Multiplier": 1,
     "Reporting_Onset_Delay_Mean": 2,
     "Reporting_Period_Distribution":"LOG_NORMAL_DURATION",
+    "Reporting_Period_Log_Mean": 2,
+    "Reporting_Period_Log_Width": 0.27,
     "Run_Number": 26,
     "Simulation_Duration": 500,
     "Simulation_Type": "DENGUE_SIM",
