@@ -44,4 +44,5 @@ test/tmp/
 *.ignore.*
 
 # User configuration
-simtools/simtools.ini
+simtools.ini
+db.sqlite
