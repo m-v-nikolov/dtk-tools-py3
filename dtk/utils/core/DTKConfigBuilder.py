@@ -243,6 +243,14 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
+    def get_input_file_paths(self):
+        params_dict = self.config['parameters']
+        file_dict = {filename: filepath for (filename, filepath) in params_dict.iteritems()
+                      if filename.endswith('_Filename') or filename.startswith('Filename_') or '_Filename_' in filename
+                      or filename.endswith('_Filenames') or filename.startswith('Filenames_') or '_Filenames_' in filename}
+
+        return file_dict
+
     def enable(self, param):
         """
         Enable a parameter.
