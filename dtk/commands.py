@@ -419,28 +419,22 @@ def list(args, unknownArgs):
     experiments = []
 
     # Filter by location
-    if args.HPC:
-        experiments = DataStore.get_recent_experiment_by_filter(location="HPC")
-
-    elif args.LOCAL:
-        experiments = DataStore.get_recent_experiment_by_filter(location="LOCAL")
+    if len(unknownArgs) > 0:
+        if len(unknownArgs) == 1:
+            experiments = DataStore.get_recent_experiment_by_filter(location=unknownArgs[0][2:].upper())
+        else:
+            raise Exception('Too many unknown arguments: please see help.')
 
     # Limit number of experiments to display
-    elif args.number:
-        print args.number
-        print unknownArgs
-        if len(unknownArgs) == 1:
-            num = unknownArgs[0][2:]
-            if num.isdigit():
-                experiments = DataStore.get_recent_experiment_by_filter(num=num)
+    elif args.limit:
+        if args.limit.isdigit():
+            experiments = DataStore.get_recent_experiment_by_filter(num=args.limit)
 
-            elif num == '*':
-                experiments = DataStore.get_recent_experiment_by_filter(is_all=True)
+        elif args.limit == '*':
+            experiments = DataStore.get_recent_experiment_by_filter(is_all=True)
 
-            else:
-                raise Exception('Invalid unknown arguments: please see help.')
         else:
-            raise Exception('Invalid unknown arguments: please see help.')
+            raise Exception('Invalid limit: please see help.')
 
     # Filter by experiment name like
     elif args.exp_name:
@@ -519,9 +513,7 @@ def main():
     parser_list = subparsers.add_parser('list',
                                         help='Report recent 20 list of simulations in experiment.')
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
-    parser_list.add_argument('--HPC', action='store_true', help='Get HPC recent experiment list.')
-    parser_list.add_argument('--LOCAL', action='store_true', help='Get Local recent experiment list.')
-    parser_list.add_argument('-n', '--number', action='store_true', help='Get given number recent experiment list')
+    parser_list.add_argument('-n', '--number',  help='Get given number recent experiment list', dest='limit')
     parser_list.set_defaults(func=list)
 
     # 'dtk resubmit' options
