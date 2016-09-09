@@ -136,9 +136,6 @@ class BaseExperimentManager:
         self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
 
-        self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
-        self.commission_simulations()
-
     def validate_input_files(self, config_builder):
         """
         Check input files and make sure there exist
