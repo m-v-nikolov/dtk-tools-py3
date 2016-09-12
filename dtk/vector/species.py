@@ -225,11 +225,6 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
 
 
 def set_species_param(cb, species, parameter, value):
-    cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
-    return {'.'.join([species, parameter]): value}
-
-
-def set_single_species_param(cb, species, parameter, value):
     """ Update a 'Vector_Species_Param' variable in a config file; return a length-one dict with a numeric value.
 
     :param cb: DTKConfigBuilder object with a 'config' attribute.
