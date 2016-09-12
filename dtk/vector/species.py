@@ -231,10 +231,8 @@ def set_species_param(cb, species, parameter, value):
     :param species: (string) vector species whose parameter will be updated.
     :param parameter: (string) 'Vector_Species_Param' variable to be updated.
     :param value: (float, dict)New value for 'parameter'. If 'value' is a dict, the corresponding 'parameter'
-     will be updated without changing other key-value pairs of 'parameter'. Note that the function only returns the
-     first key-value pair in 'value'.
-    :return: a dict whose key traces the config parameters from 'species' onward (including the key of 'value' if 'value'
-    is a dict) and whose value is equal to the updated config value.
+     will be updated without changing other key-value pairs of 'parameter'. Note that the function only returns the first key-value pair in 'value'.
+    :return: a dict whose key traces the config parameters from 'species' onward (including the key of 'value' if 'value' is a dict) and whose value is equal to the updated config value.
     """
 
     if isinstance(value, dict):
