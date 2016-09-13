@@ -256,7 +256,7 @@ def update_species_param(cb, species, parameter, value, overwrite):
         if len(value) > 1:
             warnings.warn("value is a dict of length>1, returning only the first value.")
 
-        return {'.'.join([species, parameter, value.keys()[0]]): value.values()[0]}
+        return {'.'.join([species, value.keys()[0]]): value.values()[0]}
     else:
         cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
         return {'.'.join([species, parameter]): value}
