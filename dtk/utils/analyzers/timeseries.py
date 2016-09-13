@@ -76,3 +76,5 @@ class TimeseriesAnalyzer(BaseAnalyzer):
         plot_by_channel(self.plot_name, self.channels, plot_channel_on_axes)
         if self.saveOutput:
             self.data.to_csv(self.output_file)
+        import matplotlib.pyplot as plt
+        plt.show()
