@@ -37,6 +37,11 @@ class BaseExperimentManager:
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
         self.analyzers = []
+        if self.experiment and self.experiment.analyzers:
+            import dill
+            import pickle
+            self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
+
         self.exp_builder = None
         self.staged_bin_path = None
         self.config_builder = None
@@ -62,12 +67,19 @@ class BaseExperimentManager:
             exe_name=self.commandline.Executable,
             exp_name=experiment_name,
             location=self.location,
+            analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=utils.get_tools_revision(),
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
             command_line=self.commandline.Commandline,
             endpoint=self.setup.get('server_endpoint') if self.location == "HPC" else None)
+
+        for analyzer in self.analyzers:
+            import dill
+            import pickle
+            self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
+                                                                       analyzer=pickle.dumps(analyzer)))
 
 
     @abstractmethod
@@ -120,7 +132,7 @@ class BaseExperimentManager:
                                 filtered_analyses,
                                 self.maxThreadSemaphore)
 
-    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None):
+    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, analyzers=[]):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
@@ -133,7 +145,8 @@ class BaseExperimentManager:
         if not self.validate_input_files(config_builder):
             exit()
 
-        self.create_simulations(config_builder, exp_name, exp_builder, suite_id=suite_id, verbose=not self.quiet)
+        self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
+                                analyzers=analyzers, suite_id=suite_id, verbose=not self.quiet)
         self.commission_simulations()
 
     def validate_input_files(self, config_builder):
@@ -166,10 +179,13 @@ class BaseExperimentManager:
 
         return True
 
-    def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
+    def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), analyzers=[], suite_id=None, verbose=True):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         """
+        for analyzer in analyzers:
+            self.add_analyzer(analyzer)
+
         self.config_builder = config_builder
         self.exp_builder = exp_builder
         # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path

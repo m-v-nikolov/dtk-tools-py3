@@ -36,7 +36,6 @@ class SimulationOutputParser(threading.Thread):
             for analyzer in self.analyzers:
                 self.selected_data[id(analyzer)] = analyzer.apply(self)
 
-            del self.raw_data  # ?
         finally:
             if self.semaphore:
                 self.semaphore.release()

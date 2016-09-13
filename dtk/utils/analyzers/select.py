@@ -35,11 +35,3 @@ def summary_interval_selection(start_date='1/1/2000', freq='M'):
         return pd.Series(ts, index=dates)
 
     return f
-
-
-def example_selection(*args, **kwargs):
-    """
-    For backwards compatibility
-    """
-    warnings.warn('Use the sample_selection() function instead.', DeprecationWarning, stacklevel=2)
-    return sample_selection(*args, **kwargs)

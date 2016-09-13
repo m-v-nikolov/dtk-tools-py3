@@ -3,7 +3,7 @@ import json
 import logging
 
 from simtools.DataAccess import session_scope
-from simtools.DataAccess.Schema import Experiment, Simulation
+from simtools.DataAccess.Schema import Experiment, Simulation, Analyzer
 from simtools.utils import remove_null_values
 from sqlalchemy import bindparam
 from sqlalchemy import or_
@@ -43,8 +43,9 @@ class DataStore:
     @classmethod
     def batch_simulations_update(cls, batch):
         if len(batch) == 0: return
+
         with session_scope() as session:
-            stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"))
+            stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, batch)
 
     @classmethod
@@ -56,11 +57,15 @@ class DataStore:
         return Experiment(**kwargs)
 
     @classmethod
+    def create_analyzer(cls, **kwargs):
+        return Analyzer(**kwargs)
+
+    @classmethod
     def get_experiment(cls, exp_id):
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
-            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment'))\
+            experiment = session.query(Experiment).options(joinedload('simulations').joinedload('experiment').joinedload('analyzers'))\
                                                   .filter(Experiment.exp_id == exp_id).one_or_none()
 
             # Detach the object from the session
@@ -104,7 +109,7 @@ class DataStore:
         with session_scope() as session:
             experiment = session.query(Experiment)\
                 .filter(Experiment.id.like('%%%s%%' % id_or_name)) \
-                .options(joinedload('simulations')) \
+                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
                 .order_by(Experiment.date_created.desc()).first()
 
             session.expunge_all()
@@ -137,8 +142,8 @@ class DataStore:
             session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
 
     @classmethod
-    def change_simulation_state(cls, simulation, message=None, status=None, pid=None):
-        with session_scope() as session:
+    def change_simulation_state(cls, simulation, message=None, status=None, pid=None, session=None):
+        with session_scope(session) as session:
             simulation = session.query(Simulation).filter(Simulation.id == simulation.id).one()
             if message:
                 simulation.message = message

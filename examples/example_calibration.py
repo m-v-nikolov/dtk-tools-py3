@@ -21,7 +21,10 @@ analyzer = DTKCalibFactory.get_analyzer(
 sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer]),
          DTKCalibFactory.get_site('Ndiop', analyzers=[analyzer])]
 
+cb.add_input_file('test.q',"test")
+
 prior = MultiVariatePrior.by_param(
+    Transmission_Rate=uniform(loc=0, scale=1),  # from 0 to 1
     MSP1_Merozoite_Kill_Fraction=uniform(loc=0.4, scale=0.3),  # from 0.4 to 0.7
     Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
 
@@ -34,13 +37,19 @@ def sample_point_fn(cb, param_values):
     Note that more complicated logic, e.g. setting campaign event coverage or habitat abundance by species,
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
     """
+    cb.input_files['test.q'] +=  str(param_values[0])
+
     params_dict = dict(zip(prior.params, param_values))
-    params_dict['Simulation_Duration'] = 365  # shorter for quick test
-    return cb.update_params(params_dict)
+    for param, value in params_dict.iteritems():
+        if param == "Transmission_Rate":
+            continue
+        cb.set_param(param,value)
+    cb.set_param('Simulation_Duration',365)
+    return params_dict
 
 
 next_point_kwargs = dict(initial_samples=4,
-                         samples_per_iteration=3,
+                         samples_per_iteration=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='ExampleCalibration',
