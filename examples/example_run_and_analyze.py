@@ -17,16 +17,16 @@ configure_site(cb, 'Namawala')
 cb.set_param('Simulation_Duration',365)
 
 
-analyzers = [ TimeseriesAnalyzer(
-                select_function=sample_selection(),
-                group_function=group_by_name('_site_'),
-                plot_function=plot_grouped_lines
-                ),            VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_')),
-DownloadAnalyzer()
-            ]
+analyzers = (TimeseriesAnalyzer(select_function=sample_selection(),
+                                group_function=group_by_name('_site_'),
+                                plot_function=plot_grouped_lines),
+
+             VectorSpeciesAnalyzer(select_function=sample_selection(),
+                                   group_function=group_by_name('_site_')),
+             )
 
 
-builder = GenericSweepBuilder.from_dict({'Run_Number': range(16)})
+builder = GenericSweepBuilder.from_dict({'Run_Number': range(10)})
 
 run_sim_args =  {'config_builder': cb,
                  'exp_name': 'testrunandanalyze',
