@@ -225,28 +225,38 @@ def set_params_by_species(params, ss, sim_type="VECTOR_SIM"):
 
 
 def set_species_param(cb, species, parameter, value):
+    cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
+    return {'.'.join([species, parameter]): value}
+
+
+def update_species_param(cb, species, parameter, value, overwrite):
     """ Update a 'Vector_Species_Param' variable in a config file; return a length-one dict with a numeric value.
 
     :param cb: DTKConfigBuilder object with a 'config' attribute.
     :param species: (string) vector species whose parameter will be updated.
     :param parameter: (string) 'Vector_Species_Param' variable to be updated.
-    :param value: (float, dict)New value for 'parameter'. If 'value' is a dict, the corresponding 'parameter'
-     will be updated without changing other key-value pairs of 'parameter'. Note that the function only returns the first key-value pair in 'value'.
+    :param value: (float, dict) New value for 'parameter'.
+    Note that the function only returns the first key-value pair in 'value'.
+    :param overwrite: (logical) Relevant only if 'value' is a dict.
+    If True, will replace the entire original parameter with whatever is passed in 'value'. If False, will change only the elements specified in 'value'.
     :return: a dict whose key traces the config parameters from 'species' onward (including the key of 'value' if 'value' is a dict) and whose value is equal to the updated config value.
     """
 
     if isinstance(value, dict):
 
-        # update values in 'parameter' without deleting what's already there.
-        # i.e: update the "TEMPORARY RAINFALL" value in a "Larval_Habitat_Types" object
-        # without eliminating the "CONSTANT" value
-        for k, v in value.iteritems():
-            cb.config['parameters']['Vector_Species_Params'][species][parameter][k] = v
+        if overwrite:
+            # update values in 'parameter' without deleting what's already there.
+            # i.e: update the "TEMPORARY RAINFALL" value in a "Larval_Habitat_Types" object
+            # without eliminating the "CONSTANT" value
+            for k, v in value.iteritems():
+                cb.config['parameters']['Vector_Species_Params'][species][parameter][k] = v
+        else:
+            cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
 
         if len(value) > 1:
             warnings.warn("value is a dict of length>1, returning only the first value.")
 
-        return {'.'.join([species, parameter, value.keys()[0]]): value.values()[0]}
+        return {'.'.join([species, value.keys()[0]]): value.values()[0]}
     else:
         cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
         return {'.'.join([species, parameter]): value}
