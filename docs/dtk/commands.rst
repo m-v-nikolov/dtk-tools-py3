@@ -15,6 +15,8 @@ Available commands
 +------------------------+------------------------+
 | :dtk-cmd:`status`      |  :dtk-cmd:`stdout`     |
 +------------------------+------------------------+
+| :dtk-cmd:`list`        |                        |
++------------------------+------------------------+
 
 ``analyze``
 -------------
@@ -252,3 +254,28 @@ Prints ``StdOut.txt`` for the *first* failed or succeeded (depending on flag) si
 .. dtk-cmd-option:: --force, -f
 
 ``dtk stdout`` by default will only display simulations of a finished experiment. If you wish to display the outputs while the experiment is running, use this flag.
+
+
+``list``
+-------------
+.. dtk-cmd:: list {none|name}
+
+list 20 *most recent* experiment containing specified **name** in the experiment name (or just the 20 most recent). For example::
+
+    dtk list TestExperiment
+
+.. dtk-cmd-option:: --<location>
+list 20 *most recent* experiment by matched specified **location** in the experiment location. For example, to list experiments with HPC as a location::
+
+    dtk list --HPC
+
+.. dtk-cmd-option:: --number, -n
+Use any number following by the command option to **limit** the number of *most recent* experiments to display. For example::
+
+    dtk list -n 100
+
+Use * to retrieve all experiments from local database. For example::
+
+    dtk list -n *
+
+``dtk list`` will only list experiments based on local database data that may not reflect the current status of the running experiments.
