@@ -97,7 +97,7 @@ if platform.architecture() == ('64bit', ''):
     # Removes curses for MacOSx (built-in)
     requirements.remove('curses==2.2')
 
-if platform.architecture() == ('64bit', 'ELF'):
+if platform.system() == 'Linux':
     # Doing the apt-get install pre-requisites
     from subprocess import check_call, STDOUT
     pre_requisites = [
@@ -113,12 +113,26 @@ if platform.architecture() == ('64bit', 'ELF'):
         'liblapack-dev',
         'python-scipy'
     ]
-    for req in pre_requisites:
-        print "Checking/Installing %s" % req
-        check_call(['apt-get', 'install', '-y', req],stdout=open(os.devnull, 'wb'), stderr=STDOUT)
+
+    supports_apt_get = False
+    try:
+        check_call('apt-get -h',stdout=open(os.devnull, 'wb'), stderr=STDOUT)
+        supports_apt_get = True
+    except OSError:
+        print "Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:"
+        print pre_requisites
+    except:
+        print "Unexpected error checking for apt-get:", sys.exc_info()[0]
+        raise
+
+    if supports_apt_get:
+        for req in pre_requisites:
+            print "Checking/Installing %s" % req
+            check_call(['apt-get', 'install', '-y', req],stdout=open(os.devnull, 'wb'), stderr=STDOUT)
 
     # We are on linux, change some requirements
-    requirements.remove('curses==2.2')
+    if 'curses==2.2' in requirements: # Could have been removed by 64bit architecture above
+        requirements.remove('curses==2.2')
     requirements.remove('numpy==1.11.1+mkl')
     requirements.remove('scipy==0.18.0')
     requirements.append('numpy')
