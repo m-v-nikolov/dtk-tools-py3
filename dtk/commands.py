@@ -414,7 +414,7 @@ def sync(args, unknownArgs):
 
 
 # List experiments from local database
-def list(args, unknownArgs):
+def db_list(args, unknownArgs):
     format_string = "%s - %s (%s) - %d simulations - %s"
     experiments = []
 
@@ -514,7 +514,7 @@ def main():
                                         help='Report recent 20 list of simulations in experiment.')
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
     parser_list.add_argument('-n', '--number',  help='Get given number recent experiment list', dest='limit')
-    parser_list.set_defaults(func=list)
+    parser_list.set_defaults(func=db_list)
 
     # 'dtk resubmit' options
     parser_resubmit = subparsers.add_parser('resubmit',
