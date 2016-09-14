@@ -203,16 +203,17 @@ def save_all_figs():
         plt.savefig(os.path.join('figs','%s.png' % L))
 
 if __name__ == '__main__':
-    bin_name='D:/Worldpop/Haiti/HTI_pph_v2b_2009.tif'
-    title='Haiti'
-    mask=3
+    bin_name='Q:/Malaria/Myanmar/Karen/village_pop/MMR_ppp_v2c_2015_UNadj.tif'
+    title='Myanmar'
+    mask=100
 
     crop=(None,None)
     #crop=(range(2000),range(1000))
     validation=True
 
     A, transform_fn = read(bin_name, *crop)
-    #plot(A, title)
+    plot(A, title)
+    plt.show()
     patches,N=detect_watershed_patches(A, mask, validation=validation)
     #patches,N=detect_contiguous_blocks(A, mask, validation=validation)
     sums,centroids=centroids(A,patches,N,validation=validation)
