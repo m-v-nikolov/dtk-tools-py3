@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import psutil
+import platform
 
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
@@ -166,5 +167,8 @@ class CompsExperimentManager(BaseExperimentManager):
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False, creationflags=512)
+        if platform.system() == 'Windows':
+            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False, creationflags=512)
+        else:
+            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False)
         return p.pid

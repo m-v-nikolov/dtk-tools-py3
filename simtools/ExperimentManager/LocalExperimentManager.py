@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+import platform
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
@@ -70,8 +71,11 @@ class LocalExperimentManager(BaseExperimentManager):
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
-        subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.experiment.exp_id],
+        if platform.system() == 'Windows':
+            subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.experiment.exp_id],
                          shell=False, creationflags=512)
+        else:
+            subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.experiment.exp_id], shell=False)
 
         super(LocalExperimentManager,self).commission_simulations()
 
