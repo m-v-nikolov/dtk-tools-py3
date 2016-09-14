@@ -127,8 +127,6 @@ class SimulationCommissioner(threading.Thread):
         parsers[parser.sim_id] = parser
 
 
-
-
 def SimulationStateUpdater(loop=True):
     while True:
         DataStore.batch_simulations_update(states)
@@ -142,8 +140,8 @@ if __name__ == "__main__":
 
     # Retrieve the info from the command line
     queue_size = int(sys.argv[1])
-    exp_id = sys.argv[2]
-    max_analysis_threads = int(sys.argv[3])
+    exp_id = sys.argv[3]
+    max_analysis_threads = int(sys.argv[2])
 
     # Create the queue
     queue = Queue(maxsize=queue_size)

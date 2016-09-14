@@ -65,20 +65,17 @@ class LocalExperimentManager(BaseExperimentManager):
 
     def commission_simulations(self):
         # Prepare the info to pass to the localrunner
-        max_local_sims = self.get_property('max_local_sims')
-        max_analysis_threads = self.get_property('max_threads')
         local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","SimulationRunner", "LocalRunner.py")
+        args = [sys.executable, local_runner_path, self.get_property('max_local_sims'),
+                self.get_property('max_threads'), self.experiment.exp_id]
 
         # Open the local runner as a subprocess and pass it all the required info to run the simulations
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
         if platform.system() == 'Windows':
-            subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.experiment.exp_id],
-        subprocess.Popen([sys.executable, local_runner_path,
-                          max_local_sims, self.experiment.exp_id, max_analysis_threads ],
-                         shell=False, creationflags=512)
+            subprocess.Popen(args,shell=False, creationflags=512)
         else:
-            subprocess.Popen([sys.executable, local_runner_path, str(max_local_sims), self.experiment.exp_id], shell=False)
+            subprocess.Popen(args, shell=False)
 
         super(LocalExperimentManager,self).commission_simulations()
 
