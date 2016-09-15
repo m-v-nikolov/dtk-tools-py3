@@ -46,7 +46,7 @@ def update_calib_args(args, unknownArgs, calib_args):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        selected_block = calib_args['selected_block'] if calib_args['selected_block'] else "LOCAL"
+        selected_block = calib_args['selected_block'] if ('selected_block' in calib_args and calib_args['selected_block']) else "LOCAL"
     elif len(unknownArgs) == 1:
         selected_block = unknownArgs[0][2:].upper()
     else:

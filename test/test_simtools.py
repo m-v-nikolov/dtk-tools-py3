@@ -235,6 +235,8 @@ class TestLocalExperimentManager(unittest.TestCase):
         self.assertListEqual(states.values(), ['Waiting'] * self.nsims)
 
         local_manager.hard_delete()
+        import time
+        time.sleep(3)
 
 
 if __name__ == '__main__':

@@ -157,6 +157,9 @@ class BaseExperimentManager:
         # By-pass input file checking if using assets_service
         if self.assets_service:
             return True
+        # If the config builder has no file paths -> bypass
+        if not hasattr(config_builder, 'get_input_file_paths'):
+            return True
 
         input_files = config_builder.get_input_file_paths()
         missing_files = self.check_input_files(input_files)

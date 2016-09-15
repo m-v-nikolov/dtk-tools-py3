@@ -222,7 +222,7 @@ class TestIMIS(unittest.TestCase):
 
 class TestIterationState(unittest.TestCase):
     init_state = dict(parameters={}, next_point={}, simulations={},
-                      analyzers={}, results=[], iteration=0, experiment_id=None)
+                      analyzers={}, results=[], iteration=0, experiment_id=None, resume_point=0)
 
     def setUp(self):
         self.state = IterationState()
@@ -243,14 +243,6 @@ class TestIterationState(unittest.TestCase):
         self.assertDictEqual(self.state.__dict__,
                              self.init_state)
 
-    def test_increment_iteration(self):
-        self.example_settings()
-        self.state.increment_iteration()
-        self.assertEqual(self.state.iteration, 1)
-        iter1_init_state = copy.deepcopy(self.init_state)
-        iter1_init_state.update(dict(iteration=1))
-        self.assertDictEqual(self.state.__dict__,
-                             iter1_init_state)
 
     def test_serialization(self):
         self.example_settings()
