@@ -307,6 +307,7 @@ def analyze(args, unknownArgs):
     logger.info('Analyzing results...')
 
     sm = reload_experiment(args)
+    sm.analyzers = []
     states, msgs = sm.get_simulation_status()
 
     if not args.force:

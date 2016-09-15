@@ -73,7 +73,7 @@ class SimulationCommissioner(threading.Thread):
     def update_status(self, simulation, status=None, message=None, pid=None):
         pid = pid if pid > 0 else None
         for state in states:
-            if state['sid'] == simulation.id:
+            if state['sid'] == simulation.id and state['status'] != "Succeeded":
                 state['status'] = status
                 state['message'] = message
                 state['pid'] = pid
