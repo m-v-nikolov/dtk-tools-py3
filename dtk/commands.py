@@ -354,8 +354,9 @@ def sync(args, unknownArgs):
                 exp_deleted+=1
 
     # By default only get simulations created in the last month
+    day_limit = args.days if args.days else 30
     today = datetime.date.today()
-    limit_date = today - datetime.timedelta(days=30)
+    limit_date = today - datetime.timedelta(days=day_limit)
     limit_date_str = limit_date.strftime("%Y-%m-%d")
 
     exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
@@ -590,6 +591,7 @@ def main():
     parser_analyze_list.set_defaults(func=analyze_list)
 
     parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
+    parser_analyze_list.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
     parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options
