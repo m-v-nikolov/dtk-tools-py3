@@ -138,7 +138,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
             return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims}
 
         def sims_from_experiment(e):
-            print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
+            #print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
             return e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
 
         def workdirs_from_experiment_id(exp_id):
@@ -147,7 +147,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
             return workdirs_from_simulations(sims)
 
         def workdirs_from_suite_id(suite_id):
-            print('Simulation working directories for SuiteId = %s' % suite_id)
+            #print('Simulation working directories for SuiteId = %s' % suite_id)
             s = Suite.GetById(suite_id)
             exps = s.GetExperiments(QueryCriteria().Select('Id')).toArray()
             sims = []
