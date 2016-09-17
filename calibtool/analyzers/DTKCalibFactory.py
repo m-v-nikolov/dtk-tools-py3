@@ -18,7 +18,13 @@ class DTKCalibFactory(object):
         elif name == 'PositiveFractionByDistanceAnalyzer':
             return PositiveFractionByDistanceAnalyzer(name, weight)
         else:
-            raise NotImplementedError("Don't recognize CalibAnalyzer: %s" % name)
+            # Last chance: Try to import the analyzer in the working directory
+            try:
+                module = __import__(name, fromlist=[name])
+                mod= getattr(module, name)
+                return mod(name, weight)
+            except:
+                raise NotImplemented("Cannot import analyzer %s" % name)
 
     @staticmethod
     def get_site(name, analyzers):
@@ -31,5 +37,15 @@ class DTKCalibFactory(object):
                        analyzers=analyzers,
                        analyzer_setups=mod.analyzers)
         except ImportError:
-            raise NotImplementedError("Don't recognize CalibSite: %s" % name)
+            try:
+                # Try to import the site in the working directory
+                mod = importlib.import_module("site_%s" % name)
+                return CalibSite.from_setup_functions(
+                    name=name,
+                    setup_functions=mod.setup_functions,
+                    reference_data=mod.reference_data,
+                    analyzers=analyzers,
+                    analyzer_setups=mod.analyzers)
+            except:
+                raise NotImplementedError("Don't recognize CalibSite: %s" % name)
 
