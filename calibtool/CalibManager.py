@@ -906,7 +906,7 @@ class CalibManager(object):
         it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
 
         # Retrieve the experiment manager and cancel all
-        exp_manager = ExperimentManagerFactory.from_data(it.simulations, self.location)
+        exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
 
         if self.location == "LOCAL":
             # LOCAL calibration
