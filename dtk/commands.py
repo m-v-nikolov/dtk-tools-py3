@@ -357,7 +357,7 @@ def sync(args, unknownArgs):
     # By default only get simulations created in the last month
     day_limit = args.days if args.days else 30
     today = datetime.date.today()
-    limit_date = today - datetime.timedelta(days=day_limit)
+    limit_date = today - datetime.timedelta(days=int(day_limit))
     limit_date_str = limit_date.strftime("%Y-%m-%d")
 
     exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
