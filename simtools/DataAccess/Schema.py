@@ -15,6 +15,7 @@ from sqlalchemy.orm import relationship
 
 from simtools.DataAccess import Base, engine
 
+
 class Analyzer(Base):
     __tablename__ = "analyzers"
 
@@ -23,6 +24,12 @@ class Analyzer(Base):
     analyzer = Column(String)
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     experiment = relationship("Experiment", back_populates="analyzers")
+
+
+class Settings(Base):
+    __tablename__ = "settings"
+    key = Column(String, primary_key=True)
+    value = Column(String)
 
 
 class Simulation(Base):
