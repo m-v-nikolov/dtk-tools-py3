@@ -3,13 +3,11 @@ import json
 import logging
 
 from simtools.DataAccess import session_scope
-from simtools.DataAccess.Schema import Experiment, Simulation, Analyzer
+from simtools.DataAccess.Schema import Experiment, Simulation, Analyzer, Settings
 from simtools.utils import remove_null_values
 from sqlalchemy import bindparam
-from sqlalchemy import or_
 from sqlalchemy import update
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -84,7 +82,6 @@ class DataStore:
             for exp in batch:
                 DataStore.save_experiment(exp, False, session)
 
-
     @classmethod
     def save_experiment(cls, experiment, verbose=True, session=None):
         if verbose:
@@ -94,6 +91,23 @@ class DataStore:
 
         with session_scope(session) as session:
             session.merge(experiment)
+
+    @classmethod
+    def get_setting(cls,setting):
+        with session_scope() as session:
+            setting = session.query(Settings).filter(Settings.key == setting).one()
+            session.expunge_all()
+
+        return setting
+
+    @classmethod
+    def save_setting(cls, setting):
+        with session_scope() as session:
+            session.merge(setting)
+
+    @classmethod
+    def create_setting(cls, **kwargs):
+        return Settings(**kwargs)
 
     @classmethod
     def get_simulation(cls, sim_id):
@@ -207,7 +221,6 @@ class DataStore:
             num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
             if verbose:
                 print '%s experiment(s) deleted.' % num
-
 
     @classmethod
     def get_recent_experiment_by_filter(cls, num=20, is_all=False, name=None, location=None):
