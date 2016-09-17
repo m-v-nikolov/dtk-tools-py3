@@ -49,7 +49,7 @@ class CompsSimulationMonitor(SimulationMonitor):
             return sims_from_experiment(e)
 
         def sims_from_suite_id(suite_id):
-            logger.info('Monitoring simulations for SuiteId = %s', suite_id)
+            #logger.info('Monitoring simulations for SuiteId = %s', suite_id)
             s = Suite.GetById(suite_id)
             exps = s.GetExperiments(QueryCriteria().Select('Id')).toArray()
             sims = []

@@ -32,7 +32,8 @@ requirements = [
     'SQLAlchemy==1.1.0b3',
     'python-snappy==0.5',
     'psutil==4.3.0',
-    'networkx'
+    'networkx',
+    'dill'
 ]
 
 current_directory = os.path.dirname(os.path.abspath(__file__))

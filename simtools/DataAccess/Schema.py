@@ -15,6 +15,15 @@ from sqlalchemy.orm import relationship
 
 from simtools.DataAccess import Base, engine
 
+class Analyzer(Base):
+    __tablename__ = "analyzers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)
+    analyzer = Column(String)
+    experiment_id = Column(String, ForeignKey('experiments.exp_id'))
+    experiment = relationship("Experiment", back_populates="analyzers")
+
 
 class Simulation(Base):
     __tablename__ = "simulations"
@@ -65,6 +74,7 @@ class Experiment(Base):
     experiment_runner_id = Column(Integer)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
+    analyzers = relationship("Analyzer", back_populates='experiment', cascade="all, delete-orphan")
 
     def __repr__(self):
         return "Experiment %s" % self.id
@@ -102,6 +112,12 @@ class Experiment(Base):
                 ret['simulations'] = {}
                 for sim in value:
                     ret['simulations'][sim.id] = sim.tags
+                continue
+
+            if name == 'analyzers':
+                ret['analyzers'] = []
+                for a in value:
+                    ret['analyzers'].append(a.name)
                 continue
 
             # By default just add to the dict

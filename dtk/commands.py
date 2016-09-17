@@ -8,12 +8,11 @@ from importlib import import_module
 
 import datetime
 import simtools.utils as utils
-from dtk.utils.analyzers import ProgressAnalyzer
+from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
-from dtk.utils.analyzers.select import example_selection
 from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -26,9 +25,9 @@ fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 
 builtinAnalyzers = {
-    'time_series': TimeseriesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'),
+    'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
                                       plot_function=plot_grouped_lines),
-    'vector_species': VectorSpeciesAnalyzer(select_function=example_selection(), group_function=group_by_name('_site_'))
+    'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'))
 }
 
 
@@ -308,6 +307,7 @@ def analyze(args, unknownArgs):
     logger.info('Analyzing results...')
 
     sm = reload_experiment(args)
+    sm.analyzers = []
     states, msgs = sm.get_simulation_status()
 
     if not args.force:
@@ -355,8 +355,9 @@ def sync(args, unknownArgs):
                 exp_deleted+=1
 
     # By default only get simulations created in the last month
+    day_limit = args.days if args.days else 30
     today = datetime.date.today()
-    limit_date = today - datetime.timedelta(days=30)
+    limit_date = today - datetime.timedelta(days=int(day_limit))
     limit_date_str = limit_date.strftime("%Y-%m-%d")
 
     exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
@@ -591,6 +592,7 @@ def main():
     parser_analyze_list.set_defaults(func=analyze_list)
 
     parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
+    parser_analyze_list.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
     parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options

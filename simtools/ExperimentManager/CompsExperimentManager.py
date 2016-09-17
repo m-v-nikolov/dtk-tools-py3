@@ -168,7 +168,7 @@ class CompsExperimentManager(BaseExperimentManager):
         # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
         # to the sub processes.
         if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False, creationflags=512)
+            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id, self.setup.get('max_threads')], shell=False, creationflags=512)
         else:
-            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id], shell=False)
+            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id, self.setup.get('max_threads')], shell=False)
         return p.pid
