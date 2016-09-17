@@ -147,7 +147,7 @@ from setuptools import setup, find_packages
 # Suppress the outputs except the errors
 with nostdout(stderr=True):
     setup(name='dtk-tools',
-          version='0.3.5',
+          version='0.4',
           description='Facilitating submission and analysis of simulations',
           url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
           author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
