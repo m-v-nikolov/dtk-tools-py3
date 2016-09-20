@@ -37,7 +37,7 @@ class Simulation(Base):
 
     id = Column(String, primary_key=True)
     status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
-                         "Retry", "CommissionRequested", "Provisioning", "Created"))
+                         "Retry", "CommissionRequested", "Provisioning", "Created"), default='Waiting')
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))

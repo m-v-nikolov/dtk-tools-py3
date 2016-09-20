@@ -11,56 +11,44 @@ class LocalSimulationCommissioner:
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, analyzers, thread_queue, max_threads, states, parsers):
-        self.simulation = simulation
+    def __init__(self, simulation, experiment, thread_queue, states,  success):
         self.experiment = experiment
-        self.analyzers = analyzers
         self.queue = thread_queue
-        self.max_threads = max_threads
+        self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
         self.states = states
-        self.parsers = parsers
+        self.success = success
 
-        self.run()
+        if self.simulation.status == "Waiting":
+            self.run()
+        else:
+            self.queue.get()
+            if self.simulation.status in ('Failed', 'Succeeded', 'Cancelled'):
+                return
+
+            self.monitor()
 
     def run(self):
         try:
-            # If we are just waiting -> run
-            if self.check_state() == "Waiting":
-                with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
-                    with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
-                        # On windows we want to pass the command to popen as a string
-                        # On Unix, we want to pass it as a sequence
-                        # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
-                        if os.name == "nt":
-                            command = self.experiment.command_line
-                        else:
-                            command = shlex.split(self.experiment.command_line)
+            with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
+                with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
+                    # On windows we want to pass the command to popen as a string
+                    # On Unix, we want to pass it as a sequence
+                    # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
+                    if os.name == "nt":
+                        command = self.experiment.command_line
+                    else:
+                        command = shlex.split(self.experiment.command_line)
 
-                        # Launch the command
-                        p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
+                    # Launch the command
+                    p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
-                        # We are now running
-                        DataStore.change_simulation_state(self.simulation, status="Running", pid=p.pid)
+                    # We are now running
+                    self.simulation.pid = p.pid
+                    self.simulation.status = "Running"
+                    self.update_status()
 
-            if self.check_state() == "Running":
-                # Wait the end of the process
-                # We use poll to be able to update the status
-                pid = int(self.simulation.pid)
-                while self.simulation.pid and psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
-                    self.update_status(self.simulation, message=self.last_status_line(), pid=pid, status="Running")
-                    time.sleep(3)
-
-                # When poll returns None, the process is done, test if succeeded or failed
-                last_message = self.last_status_line()
-                if "Done" in self.last_status_line():
-                    self.update_status(self.simulation, status="Succeeded",  pid=-1, message=last_message)
-                    # Wise to wait a little bit to make sure files are written
-                    self.analyze_simulation()
-                else:
-                    # If we exited with a Canceled status, dont update to Failed
-                    if not self.check_state() == 'Canceled':
-                        self.update_status(self.simulation, status="Failed", pid=-1, message=last_message)
+            self.monitor()
         except Exception as e:
             print "Error encountered while running the simulation."
             print e
@@ -68,21 +56,36 @@ class LocalSimulationCommissioner:
             # Free up an item in the queue
             self.queue.get()
 
-    def update_status(self, simulation, status=None, message=None, pid=None):
-        pid = pid if pid > 0 else None
-        for state in self.states:
-            if state['sid'] == simulation.id and state['status'] != "Succeeded":
-                state['status'] = status
-                state['message'] = message
-                state['pid'] = pid
-                return
+    def monitor(self):
+        # Wait the end of the process
+        # We use poll to be able to update the status
+        if self.simulation.pid:
+            pid = int(self.simulation.pid)
+            while psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
+                self.simulation.message = self.last_status_line()
+                self.update_status()
 
-        self.states.append({
-            'sid':simulation.id,
-            'status':status,
-            'message':message,
-            'pid': pid
-        })
+                time.sleep(4)
+
+        # When poll returns None, the process is done, test if succeeded or failed
+        last_message = self.last_status_line()
+        if "Done" in last_message:
+            self.simulation.status = "Succeeded"
+            # Wise to wait a little bit to make sure files are written
+            self.success(self.simulation)
+        else:
+            last_state = self.check_state()
+            # If we exited with a Canceled status, dont update to Failed
+            if not last_state == 'Canceled':
+                self.simulation.status = "Failed"
+
+        # Set the final simulation state
+        self.simulation.message = last_message
+        self.simulation.pid = None
+        self.update_status()
+
+    def update_status(self):
+        self.states[self.simulation.id] = self.simulation
 
     def last_status_line(self):
         """
@@ -105,20 +108,4 @@ class LocalSimulationCommissioner:
         """
         self.simulation = DataStore.get_simulation(self.simulation.id)
         return self.simulation.status
-
-    def analyze_simulation(self):
-        # Called when a simulation finishes
-        filtered_analyses = [a for a in self.analyzers if a.filter(self.simulation.tags)]
-        if not filtered_analyses:
-            # logger.debug('Simulation did not pass filter on any analyzer.')
-            return
-        self.max_threads.acquire()
-        from simtools.OutputParser import SimulationOutputParser
-        parser = SimulationOutputParser(self.experiment.get_path(),
-                                self.simulation.id,
-                                self.simulation.tags,
-                                filtered_analyses,
-                                self.max_threads)
-        parser.start()
-        self.parsers[parser.sim_id] = parser
 

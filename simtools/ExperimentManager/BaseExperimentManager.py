@@ -7,9 +7,15 @@ import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
 
+import subprocess
+
+import sys
+
+import psutil
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
+from simtools.Monitor import SimulationMonitor
 from simtools.SetupParser import SetupParser
 from dtk import helpers
 
@@ -25,22 +31,24 @@ class BaseExperimentManager:
         if setup is None:
             selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
             setup_file = experiment.setup_overlay_file
-            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True)
+            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True, working_directory = experiment.working_directory)
         else:
             self.setup = setup
-
         self.model_file = model_file
         self.experiment = experiment
-        max_threads = int(self.setup.get('max_threads'))
-        self.maxThreadSemaphore = threading.Semaphore(max_threads)
+        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('max_threads')))
         self.assets_service = False
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
         self.analyzers = []
-        if self.experiment and self.experiment.analyzers:
-            import dill
-            import pickle
-            self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
+        self.parsers = {}
+        try:
+            if self.experiment and self.experiment.analyzers:
+                import dill
+                import pickle
+                self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
+        except:
+            pass
 
         self.exp_builder = None
         self.staged_bin_path = None
@@ -48,6 +56,7 @@ class BaseExperimentManager:
         self.commandline = None
         self.location = self.setup.get('type')
         self.cache_path = os.path.join(os.getcwd(), 'simulations')
+        self.runner_created = False
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -55,8 +64,7 @@ class BaseExperimentManager:
 
     @abstractmethod
     def commission_simulations(self):
-        if self.blocking:
-            self.wait_for_finished(verbose=not self.quiet)
+        pass
 
     @abstractmethod
     def create_experiment(self, experiment_name, experiment_id, suite_id=None):
@@ -81,6 +89,49 @@ class BaseExperimentManager:
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
                                                                        analyzer=pickle.dumps(analyzer)))
 
+    def done_commissioning(self):
+        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+        for sim in self.experiment.simulations:
+            if sim.status=='Waiting' or not sim.status:
+                return False
+
+        return True
+
+    @abstractmethod
+    def get_parser(self, experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore):
+        pass
+
+    def success_callback(self, simulation):
+        """
+        Called when the given simulation is done successfully
+        """
+        self.analyze_simulation(simulation)
+
+    def analyze_simulation(self, simulation):
+        # Called when a simulation finishes
+        filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
+        if not filtered_analyses:
+            # logger.debug('Simulation did not pass filter on any analyzer.')
+            return
+        self.maxThreadSemaphore.acquire()
+        from simtools.OutputParser import SimulationOutputParser
+        parser = self.get_parser(self.experiment.get_path(),
+                                        simulation.id,
+                                        simulation.tags,
+                                        filtered_analyses,
+                                        self.maxThreadSemaphore)
+        parser.start()
+        self.parsers[parser.sim_id] = parser
+
+    def analyze(self):
+        if len(self.analyzers) != 0:
+            # We are all done, finish analyzing
+            for p in self.parsers.values():
+                p.join()
+
+            for a in self.analyzers:
+                a.combine(self.parsers)
+                a.finalize()
 
     @abstractmethod
     def create_simulation(self, suite_id=None):
@@ -102,9 +153,8 @@ class BaseExperimentManager:
     def hard_delete(self):
         pass
 
-    @abstractmethod
     def get_monitor(self):
-        pass
+        return SimulationMonitor(self.experiment.exp_id)
 
     @abstractmethod
     def check_input_files(self, input_files):
@@ -147,7 +197,11 @@ class BaseExperimentManager:
 
         self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not self.quiet)
-        self.commission_simulations()
+
+        self.check_overseer()
+
+        if self.blocking:
+            self.wait_for_finished(verbose=not self.quiet)
 
     def validate_input_files(self, config_builder):
         """
@@ -418,3 +472,14 @@ class BaseExperimentManager:
 
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
+
+    def check_overseer(self):
+        runner_pid = int(DataStore.get_setting('runner_pid').value)
+        if runner_pid and psutil.pid_exists(runner_pid) and psutil.Process(runner_pid).name() == 'python.exe':
+            return
+
+        # Run the runner
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        runner_path = os.path.join(current_dir, '..', 'Monitors','MonitorThread.py')
+        p = subprocess.Popen([sys.executable, runner_path], shell=False)
+        DataStore.save_setting(DataStore.create_setting(key='runner_pid', value=str(p.pid)))
