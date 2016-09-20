@@ -122,7 +122,8 @@ class CompsExperimentManager(BaseExperimentManager):
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
-        e.Cancel()
+        if e:
+            e.Cancel()
 
     def hard_delete(self):
         """

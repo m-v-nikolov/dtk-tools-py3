@@ -68,9 +68,9 @@ class LocalExperimentManager(BaseExperimentManager):
         if not states:
             states = self.get_simulation_status()[0]
 
-        ids = states.keys()
-        logger.info('Killing all simulations in experiment: ')
-        self.cancel_simulations(ids)
+        logger.info('Killing all simulations in experiment: %s' % self.experiment.id)
+        if len(states.keys()) == 0 : return
+        self.cancel_simulations(states.keys())
 
     def create_experiment(self, experiment_name, suite_id=None):
         # Create a unique id

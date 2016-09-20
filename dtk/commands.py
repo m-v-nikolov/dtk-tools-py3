@@ -209,7 +209,6 @@ def exterminate(args, unknownArgs):
         return
 
     for sm in sms:
-        states, msgs = sm.get_simulation_status()
         sm.cancel_simulations(killall=True)
 
 
