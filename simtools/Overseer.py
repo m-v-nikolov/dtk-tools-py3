@@ -6,6 +6,7 @@ from collections import OrderedDict
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.utils import nostdout
 
 
 def SimulationStateUpdater(states, loop=True):
@@ -41,7 +42,8 @@ if __name__ == "__main__":
         # Create all the managers
         for experiment in active_experiments:
             if not managers.has_key(experiment.id):
-                manager = ExperimentManagerFactory.from_experiment(experiment)
+                with nostdout():
+                    manager = ExperimentManagerFactory.from_experiment(experiment)
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore
                 if manager.location == "LOCAL": manager.local_queue = local_queue
@@ -55,7 +57,7 @@ if __name__ == "__main__":
 
             elif manager.finished():
                 # Analyze
-                manager.analyze()
+                manager.analyze_experiment()
                 # Remove it from the list
                 del managers[manager.experiment.id]
 

@@ -73,4 +73,4 @@ def monitor_status(sm, verbose=True):
 
 def draw_plots(sm, analyzers):
     sm.analyzers = analyzers
-    sm.analyze_simulations()
+    sm.analyze_experiment()
