@@ -15,7 +15,7 @@ class SetupParser:
     setup_file = None
     default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=False):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=False, working_directory=None):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -84,8 +84,10 @@ class SetupParser:
         overlay_path = None
         if self.setup_file and os.path.exists(self.setup_file):
             overlay_path = self.setup_file
-        elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
+        elif not working_directory and os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
             overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
+        elif working_directory and os.path.exists(os.path.join(working_directory, 'simtools.ini')):
+            overlay_path = os.path.join(working_directory, 'simtools.ini')
 
         # If we found an overlay applies it
         if overlay_path:

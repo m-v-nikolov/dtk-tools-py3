@@ -1,15 +1,12 @@
 import os
+import platform
 import subprocess
 import sys
-import psutil
-import platform
 
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
-from simtools.Monitor import CompsSimulationMonitor
-from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import CompsDTKOutputParser
 
 
@@ -49,23 +46,6 @@ class CompsExperimentManager(BaseExperimentManager):
 
         return missing_files
 
-    def get_monitor(self):
-        # Runner finished and updated the experiment_runner_id to <null>
-        if not self.experiment.experiment_runner_id and self.experiment.is_done():
-            return SimulationMonitor(self.experiment.exp_id)
-
-        # Runner still running
-        elif self.experiment.experiment_runner_id in psutil.pids() and psutil.Process(
-                self.experiment.experiment_runner_id).name() == 'python.exe':
-            return SimulationMonitor(self.experiment.exp_id)
-
-        # If COMPSRunner exit without finishing, start new COMPSRunner and save new pid to experiment table
-        else:
-            self.experiment.experiment_runner_id = self.start_comps_runner()
-            DataStore.save_experiment(self.experiment, verbose=False)
-            return CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id if not self.experiment.exp_id
-                                          else None, self.setup.get('server_endpoint'))
-
     def analyze_simulations(self):
         if not self.assets_service:
             self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
@@ -76,6 +56,9 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
+
+    def get_parser(self, experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore):
+        return CompsDTKOutputParser(experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore)
 
     def create_experiment(self, experiment_name, suite_id=None):
         self.sims_created = 0
@@ -120,14 +103,16 @@ class CompsExperimentManager(BaseExperimentManager):
             c.join()
         self.collect_sim_metadata()
 
-    def commission_simulations(self):
-        self.experiment.experiment_runner_id = self.start_comps_runner()
-        DataStore.save_experiment(self.experiment, verbose=False)
+    def commission_simulations(self, states):
+        import threading
+        from simtools.SimulationRunner.COMPSRunner import HPCSimulationCommissioner
 
-        CompsSimulationCommissioner.commission_experiment(self.experiment.exp_id)
-        super(CompsExperimentManager, self).commission_simulations()
-
-        return True
+        t1 = threading.Thread(target=HPCSimulationCommissioner, args=(self.experiment, states,
+                                                                      self.success_callback,
+                                                                      not self.done_commissioning()))
+        t1.daemon = True
+        t1.start()
+        self.runner_created = True
 
     def collect_sim_metadata(self):
         for simid, simdata in  CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
@@ -138,7 +123,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def cancel_all_simulations(self, states=None):
         utils.COMPS_login(self.get_property('server_endpoint'))
-        from COMPS.Data import Experiment, QueryCriteria, Simulation
+        from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Cancel()
 
@@ -151,13 +136,13 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Mark experiment for deletion in COMPS.
         utils.COMPS_login(self.get_property('server_endpoint'))
-        from COMPS.Data import Experiment, QueryCriteria, Simulation
+        from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
         utils.COMPS_login(self.get_property('server_endpoint'))
-        from COMPS.Data import Experiment, QueryCriteria, Simulation
+        from COMPS.Data import QueryCriteria, Simulation
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
 

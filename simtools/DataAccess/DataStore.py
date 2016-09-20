@@ -37,7 +37,6 @@ class DataStore:
     """
     Class to abstract access to the data.
     """
-
     @classmethod
     def batch_simulations_update(cls, batch):
         if len(batch) == 0: return
@@ -95,7 +94,7 @@ class DataStore:
     @classmethod
     def get_setting(cls,setting):
         with session_scope() as session:
-            setting = session.query(Settings).filter(Settings.key == setting).one()
+            setting = session.query(Settings).filter(Settings.key == setting).one_or_none()
             session.expunge_all()
 
         return setting
@@ -130,11 +129,16 @@ class DataStore:
         return experiment
 
     @classmethod
-    def get_active_experiments(cls):
+    def get_active_experiments(cls, location=None):
         with session_scope() as session:
-            experiments = session.query(Experiment).distinct(Experiment.exp_id)\
-                .join(Experiment.simulations)\
+            experiments = session.query(Experiment).distinct(Experiment.exp_id) \
+                .join(Experiment.simulations) \
+                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
                 .filter(~Simulation.status.in_(('Succeeded', 'Failed', 'Canceled')))
+            if location:
+                experiments = experiments.filter(Experiment.location == location)
+
+            experiments = experiments.all()
             session.expunge_all()
 
         return experiments
@@ -156,9 +160,9 @@ class DataStore:
             session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
 
     @classmethod
-    def change_simulation_state(cls, simulation, message=None, status=None, pid=None, session=None):
+    def change_simulation_state(cls, sim, message=None, status=None, pid=None, session=None):
         with session_scope(session) as session:
-            simulation = session.query(Simulation).filter(Simulation.id == simulation.id).one()
+            simulation = session.query(Simulation).filter(Simulation.id == sim.id).one()
             if message:
                 simulation.message = message
 
