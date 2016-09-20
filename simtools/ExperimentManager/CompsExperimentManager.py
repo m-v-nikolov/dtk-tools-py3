@@ -1,7 +1,4 @@
 import os
-import platform
-import subprocess
-import sys
 
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
@@ -15,7 +12,6 @@ class CompsExperimentManager(BaseExperimentManager):
     Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
     e.g. creation of Simulation, Experiment, Suite objects
     """
-
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
@@ -25,6 +21,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.commissioner = None
         self.sims_created = 0
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
+        self.endpoint = self.setup.get('server_endpoint')
 
     def check_input_files(self, input_files):
         """
@@ -46,19 +43,16 @@ class CompsExperimentManager(BaseExperimentManager):
 
         return missing_files
 
-    def analyze_simulations(self):
+    def analyze_experiment(self):
         if not self.assets_service:
             self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
         if self.setup.getboolean('compress_assets'):
             self.parserClass.enableCompression()
 
-        super(CompsExperimentManager, self).analyze_simulations()
+        super(CompsExperimentManager, self).analyze_experiment()
 
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
-
-    def get_parser(self, experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore):
-        return CompsDTKOutputParser(experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore)
 
     def create_experiment(self, experiment_name, suite_id=None):
         self.sims_created = 0
@@ -68,6 +62,9 @@ class CompsExperimentManager(BaseExperimentManager):
                                                                self.commandline.Options, suite_id)
         # Create experiment in the base class
         super(CompsExperimentManager, self).create_experiment(experiment_name, exp_id, suite_id)
+
+        # Set some extra stuff
+        self.experiment.endpoint = self.endpoint
 
     def create_simulation(self):
         if self.sims_created % self.comps_sims_to_batch == 0:
@@ -115,14 +112,14 @@ class CompsExperimentManager(BaseExperimentManager):
         self.runner_created = True
 
     def collect_sim_metadata(self):
-        for simid, simdata in  CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
+        for simid, simdata in CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
             # Only add simulation if not yet present in the experiment
             if not self.experiment.contains_simulation(simid):
                 sim = DataStore.create_simulation(id=simid, tags=simdata)
                 self.experiment.simulations.append(sim)
 
     def cancel_all_simulations(self, states=None):
-        utils.COMPS_login(self.get_property('server_endpoint'))
+        utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Cancel()
@@ -135,25 +132,13 @@ class CompsExperimentManager(BaseExperimentManager):
         self.soft_delete()
 
         # Mark experiment for deletion in COMPS.
-        utils.COMPS_login(self.get_property('server_endpoint'))
+        utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Delete()
 
     def kill_job(self, simId):
-        utils.COMPS_login(self.get_property('server_endpoint'))
+        utils.COMPS_login(self.endpoint)
         from COMPS.Data import QueryCriteria, Simulation
         s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
         s.Cancel()
-
-    def start_comps_runner(self):
-        local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "SimulationRunner",
-                                         "COMPSRunner.py")
-        # Open the local runner as a subprocess and pass it all the required info to run the simulations
-        # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
-        # to the sub processes.
-        if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id, self.setup.get('max_threads')], shell=False, creationflags=512)
-        else:
-            p = subprocess.Popen([sys.executable, local_runner_path, self.experiment.exp_id, self.setup.get('max_threads')], shell=False)
-        return p.pid

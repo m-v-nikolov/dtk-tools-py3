@@ -1,13 +1,11 @@
+import cStringIO
 import contextlib
-import glob
 import logging
 import os
 import re
 import shutil
 import sys
 from hashlib import md5
-
-import cStringIO
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +78,7 @@ def caller_name(skip=2):
     del parentframe
     return ".".join(name)
 
+
 def COMPS_login(endpoint):
     from COMPS import Client
     with nostdout():
@@ -87,6 +86,7 @@ def COMPS_login(endpoint):
             Client.Login(endpoint)
 
     return Client
+
 
 def remove_null_values(null_dict):
     ret = {}
@@ -106,6 +106,7 @@ def get_tools_revision():
         revision = "Unknown"
 
     return revision
+
 
 path_translations = {}
 def translate_COMPS_path(path, setup=None):
@@ -171,37 +172,6 @@ def get_md5(filename):
     return md5_value
 
 
-def exp_files(idOrName=None):
-    files = None
-
-    if idOrName:
-        files = glob.glob('simulations/*' + idOrName + '*.json')
-    else:
-        files = glob.glob('simulations/*.json')
-
-    if not files or len(files) < 1:
-        logger.error('Unable to find experiment meta-data file in local directory (' + os.path.join(os.getcwd(), 'simulations') + ').')
-        sys.exit()
-
-    return files
-
-
-def exp_file(idOrName=None):
-    if not idOrName:
-        # If the most_recent doesnt exist -> use fallback method
-        most_recent = 'simulations/most_recent.txt'
-        if os.path.exists(most_recent):
-            # Look into the most recent
-            with open(os.path.join(most_recent), 'r') as most_recent:
-                exp_path = 'simulations/%s' % most_recent.readline()
-                # Make sure the path exists.
-                if os.path.exists(exp_path):
-                    return exp_path
-
-    # Fallback method
-    return max(exp_files(idOrName), key=os.path.getctime)
-
-
 def is_remote_path(path):
     return path.startswith('\\\\')
 
@@ -251,6 +221,7 @@ def override_HPC_settings(setup, **kwargs):
             else:
                 logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
 
+
 def validate_exp_name(exp_name):
     if len(exp_name) > max_exp_name_len:
         logger.info(
@@ -259,6 +230,7 @@ def validate_exp_name(exp_name):
         return False
     else:
         return True
+
 
 class CommandlineGenerator(object):
     """

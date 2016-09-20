@@ -25,7 +25,6 @@ class LocalExperimentManager(BaseExperimentManager):
     Manages the creation, submission, status, parsing, and analysis
     of local experiments, i.e. collections of related simulations
     """
-
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
@@ -33,9 +32,6 @@ class LocalExperimentManager(BaseExperimentManager):
         self.local_queue = None
         self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
-
-    def get_parser(self, experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore):
-        return SimulationOutputParser(experiment_path, simulation_id, simulation_tags, filtered_analysis, semaphore)
 
     def commission_simulations(self, states):
         while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
@@ -75,9 +71,6 @@ class LocalExperimentManager(BaseExperimentManager):
         ids = states.keys()
         logger.info('Killing all simulations in experiment: ')
         self.cancel_simulations(ids)
-
-    def complete_sim_creation(self, commisioners=[]):
-        return  # no batching in LOCAL
 
     def create_experiment(self, experiment_name, suite_id=None):
         # Create a unique id
@@ -139,3 +132,5 @@ class LocalExperimentManager(BaseExperimentManager):
             except Exception as e:
                 print e
 
+    def complete_sim_creation(self,commissioners):
+        pass

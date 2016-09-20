@@ -14,7 +14,6 @@ class HPCSimulationCommissioner:
         self.commission = commission
         self.run()
 
-
     def commission_experiment(self):
         from COMPS.Data import Experiment
         e = Experiment.GetById(self.experiment.exp_id)

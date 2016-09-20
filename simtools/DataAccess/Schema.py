@@ -78,7 +78,6 @@ class Experiment(Base):
     working_directory = Column(String, default=os.getcwd())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     endpoint = Column(String)
-    experiment_runner_id = Column(Integer)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
     analyzers = relationship("Analyzer", back_populates='experiment', cascade="all, delete-orphan")
