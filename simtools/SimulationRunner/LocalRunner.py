@@ -5,19 +5,18 @@ import time
 
 import psutil
 from simtools.DataAccess.DataStore import DataStore
+from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 
 
-class LocalSimulationCommissioner:
+class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, thread_queue, states,  success):
-        self.experiment = experiment
+    def __init__(self, simulation, experiment, thread_queue, states, success):
+        super(LocalSimulationRunner, self).__init__(experiment, states, success)
         self.queue = thread_queue
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
-        self.states = states
-        self.success = success
 
         if self.simulation.status == "Waiting":
             self.run()

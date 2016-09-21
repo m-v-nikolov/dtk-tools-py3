@@ -14,7 +14,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
-from simtools.SimulationRunner.LocalRunner import LocalSimulationCommissioner
+from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class LocalExperimentManager(BaseExperimentManager):
         while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
             self.local_queue.put('run 1')
             simulation = self.experiment.simulations[self.simulations_commissioned]
-            t1 = threading.Thread(target=LocalSimulationCommissioner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
             t1.daemon = True
             t1.start()
             self.simulations_commissioned += 1
