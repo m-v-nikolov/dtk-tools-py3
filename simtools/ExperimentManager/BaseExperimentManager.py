@@ -242,9 +242,6 @@ class BaseExperimentManager:
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         """
-        for analyzer in analyzers:
-            self.add_analyzer(analyzer)
-
         self.config_builder = config_builder
         self.exp_builder = exp_builder
 
@@ -265,6 +262,10 @@ class BaseExperimentManager:
             # Refresh the experiment
             self.experiment = DataStore.get_experiment(self.experiment.exp_id)
             self.sims_created = 0
+
+        # Add the analyzers
+        for analyzer in analyzers:
+            self.add_analyzer(analyzer)
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
