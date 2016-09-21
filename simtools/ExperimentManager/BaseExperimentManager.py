@@ -405,7 +405,10 @@ class BaseExperimentManager:
             a.combine(self.parsers)
             a.finalize()
 
-    def add_analyzer(self, analyzer):
+    def add_analyzer(self, analyzer, working_dir=None):
+        analyzer.exp_id = self.experiment.exp_id
+        analyzer.exp_name = self.experiment.exe_name
+        analyzer.working_dir = working_dir
         self.analyzers.append(analyzer)
 
     def cancel_simulations(self, ids=[], killall=False):
