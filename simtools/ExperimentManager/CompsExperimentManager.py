@@ -22,6 +22,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.sims_created = 0
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
         self.endpoint = self.setup.get('server_endpoint')
+        self.compress_assets = self.setup.getboolean('compress_assets')
 
     def check_input_files(self, input_files):
         """
@@ -46,7 +47,7 @@ class CompsExperimentManager(BaseExperimentManager):
     def analyze_experiment(self):
         if not self.assets_service:
             self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
-        if self.setup.getboolean('compress_assets'):
+        if self.compress_assets:
             self.parserClass.enableCompression()
 
         super(CompsExperimentManager, self).analyze_experiment()
