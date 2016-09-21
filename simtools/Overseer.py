@@ -11,10 +11,20 @@ from simtools.utils import nostdout
 
 def SimulationStateUpdater(states, loop=True):
     while True:
-        batch = [{'sid':id, "status": s.status, "message":s.message, "pid":s.pid} for id,s in states.iteritems()]
-        DataStore.batch_simulations_update(batch)
-        states.clear()
-        if not loop: return
+        if states:
+            batch = []
+            # First retrieve our simulation state
+            for db_state in DataStore.get_simulation_states(states.keys()):
+                if db_state[1] in ('Succeeded','Failed','Canceled'):
+                    continue
+                else:
+                    new_state = states[db_state[0]]
+                    batch.append({'sid':db_state[0], "status": new_state.status, "message":new_state.message, "pid":new_state.pid})
+
+            DataStore.batch_simulations_update(batch)
+            states.clear()
+            if not loop: return
+
         time.sleep(4)
 
 

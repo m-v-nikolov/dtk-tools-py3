@@ -18,7 +18,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
-        if self.simulation.status == "Waiting":
+        if self.check_state() == "Waiting":
             self.run()
         else:
             self.queue.get()
@@ -68,12 +68,12 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
+        last_state = self.check_state()
         if "Done" in last_message:
             self.simulation.status = "Succeeded"
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
-            last_state = self.check_state()
             # If we exited with a Canceled status, dont update to Failed
             if not last_state == 'Canceled':
                 self.simulation.status = "Failed"
