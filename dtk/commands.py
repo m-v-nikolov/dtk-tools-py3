@@ -338,10 +338,15 @@ def analyze_list(args, unknownArgs):
     logger.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
 def sync(args, unknownArgs):
+    """
+    Sync COMPS db with local db
+    """
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
     utils.COMPS_login(sp.get('server_endpoint'))
     from COMPS.Data import Experiment, Suite, QueryCriteria
+
+    day_limit_default = 30
 
     exp_to_save = list()
     exp_deleted = 0
@@ -349,61 +354,38 @@ def sync(args, unknownArgs):
     # Test the experiments present in the local DB to make sure they still exist in COMPS
     for exp in DataStore.get_experiments(None):
         if exp.location == "HPC":
-            if len(Experiment.Get(QueryCriteria().Where("Id=%s" % exp.exp_id)).toArray()) == 0:
+            exps_comps = Experiment.Get(QueryCriteria().Where("Id=%s" % exp.exp_id))
+            if not exps_comps or len(exps_comps.toArray()) == 0:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
-                exp_deleted+=1
+                exp_deleted += 1
 
-    # By default only get simulations created in the last month
-    day_limit = args.days if args.days else 30
-    today = datetime.date.today()
-    limit_date = today - datetime.timedelta(days=int(day_limit))
-    limit_date_str = limit_date.strftime("%Y-%m-%d")
+    # Consider experiment id option
+    exp_id = args.exp_id if args.exp_id else None
 
-    exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
-
-    # For each of them, check if they are in the db
-    for exp in exps:
-        with utils.nostdout():
-            experiment = DataStore.get_experiment(exp.getId().toString())
-            if experiment and experiment.is_done(): continue # Do not bother with finished experiments
-        if not experiment:
-            # Cast the creation_date
-            creation_date = datetime.datetime.strptime(exp.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
-            experiment = DataStore.create_experiment(exp_id=exp.getId().toString(),
-                                                     suite_id=exp.getSuiteId().toString() if exp.getSuiteId() else None,
-                                                     exp_name=exp.getName(),
-                                                     date_created=creation_date,
-                                                     location='HPC',
-                                                     selected_block='HPC',
-                                                     endpoint=sp.get('server_endpoint'),
-                                                     working_directory=os.getcwd())
-
-        sims = exp.GetSimulations(QueryCriteria().Select('Id,SimulationState,DateCreated').SelectChildren('Tags')).toArray()
-
-        # Skip empty experiments or experiments that have the same number of sims
-        if len(sims) == 0 or len(sims) == len(experiment.simulations): continue
-
-        # Go through the sims and create them
-        for sim in sims:
-            # Create the tag dict
-            tags = dict()
-            for key in sim.getTags().keySet().toArray():
-                tags[key] = sim.getTags().get(key)
-
-            # Prepare the date
-            creation_date = datetime.datetime.strptime(sim.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
-
-            # Create the simulation
-            simulation = DataStore.create_simulation(id=sim.getId().toString(),
-                                                     status=sim.getState().toString(),
-                                                     tags=tags,
-                                                     date_created=creation_date)
-            # Add to the experiment
-            experiment.simulations.append(simulation)
-
+    if exp_id:
+        # Create a new experiment
+        experiment = create_experiment(exp_id, sp, True)
         # The experiment needs to be saved
-        exp_to_save.append(experiment)
+        if experiment:
+            exp_to_save.append(experiment)
+    else:
+        # By default only get simulations created in the last month
+        day_limit = args.days if args.days else day_limit_default
+        today = datetime.date.today()
+        limit_date = today - datetime.timedelta(days=int(day_limit))
+        limit_date_str = limit_date.strftime("%Y-%m-%d")
+
+        exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
+
+        # For each of them, check if they are in the db
+        for exp in exps:
+            # Create a new experiment
+            experiment = create_experiment(exp.getId().toString(), sp)
+
+            # The experiment needs to be saved
+            if experiment:
+                exp_to_save.append(experiment)
 
     # Save the experiments if any
     if len(exp_to_save) > 0 and exp_deleted == 0:
@@ -412,6 +394,77 @@ def sync(args, unknownArgs):
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
     else:
         logger.info("The database was already up to date.")
+
+
+def create_experiment(exp_id, sp, verbose=False):
+    """
+    Create a new experiment in local db given COMPS experiment id
+    If experiment exists in local db, just update it
+    """
+    from COMPS.Data import Experiment, Suite, QueryCriteria
+
+    with utils.nostdout():
+        experiment = DataStore.get_experiment(exp_id)
+        if experiment and experiment.is_done():
+            if verbose:
+                print "Experiment ('%s') already exists in local db." % exp_id
+            # Do not bother with finished experiments
+            return None
+
+    exp_comps = Experiment.Get(QueryCriteria().Where("Id=%s" % exp_id))
+    if not exp_comps or len(exp_comps.toArray()) == 0:
+        if verbose:
+            print "The experiment ('%s') doesn't exist in COMPS." % exp_id
+        return None
+
+    # Get experiment from COMPS
+    exp = exp_comps.toArray()[0]
+
+    # Case: experiment doesn't exist in local db
+    if not experiment:
+        # Cast the creation_date
+        creation_date = datetime.datetime.strptime(exp.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
+        experiment = DataStore.create_experiment(exp_id=exp.getId().toString(),
+                                                 suite_id=exp.getSuiteId().toString() if exp.getSuiteId() else None,
+                                                 exp_name=exp.getName(),
+                                                 date_created=creation_date,
+                                                 location='HPC',
+                                                 selected_block='HPC',
+                                                 endpoint=sp.get('server_endpoint'),
+                                                 working_directory=os.getcwd())
+
+    # Note: experiment may be new or comes from local db
+    # Get associated simulations of the experiment
+    sims = exp.GetSimulations(QueryCriteria().Select('Id,SimulationState,DateCreated').SelectChildren('Tags')).toArray()
+
+    # Skip empty experiments or experiments that have the same number of sims
+    if len(sims) == 0 or len(sims) == len(experiment.simulations):
+        if verbose:
+            if len(sims) == 0:
+                print "Skip empty experiment ('%s')." % exp_id
+            elif len(sims) == len(experiment.simulations):
+                print "Skip experiment ('%s') since local one has the same number of simulations." % exp_id
+        return None
+
+    # Go through the sims and create them
+    for sim in sims:
+        # Create the tag dict
+        tags = dict()
+        for key in sim.getTags().keySet().toArray():
+            tags[key] = sim.getTags().get(key)
+
+        # Prepare the date
+        creation_date = datetime.datetime.strptime(sim.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
+
+        # Create the simulation
+        simulation = DataStore.create_simulation(id=sim.getId().toString(),
+                                                 status=sim.getState().toString(),
+                                                 tags=tags,
+                                                 date_created=creation_date)
+        # Add to the experiment
+        experiment.simulations.append(simulation)
+
+    return experiment
 
 
 # List experiments from local database
@@ -593,6 +646,7 @@ def main():
 
     parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
     parser_analyze_list.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
+    parser_analyze_list.add_argument('-id', '--exp_id', help='Sync a specific experiment from COMPS.', dest='exp_id')
     parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options
