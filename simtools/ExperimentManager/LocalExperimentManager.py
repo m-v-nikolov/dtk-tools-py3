@@ -31,6 +31,7 @@ class LocalExperimentManager(BaseExperimentManager):
     def __init__(self, model_file, experiment, setup=None):
         self.local_queue = None
         self.simulations_commissioned = 0
+        print experiment
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def commission_simulations(self, states):

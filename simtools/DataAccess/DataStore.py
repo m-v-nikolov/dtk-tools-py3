@@ -44,6 +44,12 @@ class DataStore:
         with session_scope() as session:
             stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, batch)
+    @classmethod
+    def get_simulation_states(cls,simids):
+        with session_scope() as session:
+            states = session.query(Simulation.id, Simulation.status).filter(Simulation.id.in_(simids)).all()
+            session.expunge_all()
+        return states
 
     @classmethod
     def create_simulation(cls, **kwargs):

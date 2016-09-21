@@ -26,7 +26,7 @@ analyzers = (TimeseriesAnalyzer(select_function=sample_selection(),
              )
 
 
-builder = GenericSweepBuilder.from_dict({'Run_Number': range(10)})
+builder = GenericSweepBuilder.from_dict({'Run_Number': range(4)})
 
 run_sim_args =  {'config_builder': cb,
                  'exp_name': 'testrunandanalyze',

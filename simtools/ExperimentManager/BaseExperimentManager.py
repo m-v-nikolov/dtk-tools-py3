@@ -10,6 +10,7 @@ from collections import Counter
 import subprocess
 
 import sys
+import dill
 import pickle
 import psutil
 from simtools import utils
@@ -44,12 +45,9 @@ class BaseExperimentManager:
 
         self.analyzers = []
         self.parsers = {}
-        try:
-            if self.experiment and self.experiment.analyzers:
-                import dill
-                self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
-        except:
-            pass
+        if self.experiment and self.experiment.analyzers:
+            for analyzer in experiment.analyzers:
+                self.add_analyzer(pickle.loads(analyzer.analyzer))
 
         self.assets_service = None
         self.exp_builder = None
@@ -105,11 +103,6 @@ class BaseExperimentManager:
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
             command_line=self.commandline.Commandline)
-
-        for analyzer in self.analyzers:
-            import dill
-            self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
-                                                                       analyzer=pickle.dumps(analyzer)))
 
     def done_commissioning(self):
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
@@ -271,6 +264,9 @@ class BaseExperimentManager:
         # Add the analyzers
         for analyzer in analyzers:
             self.add_analyzer(analyzer)
+            # Also add to the experiment
+            self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
+                                                                       analyzer=pickle.dumps(analyzer)))
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
@@ -417,6 +413,7 @@ class BaseExperimentManager:
         analyzer.exp_id = self.experiment.exp_id
         analyzer.exp_name = self.experiment.exe_name
         analyzer.working_dir = working_dir
+        # Add to the list
         self.analyzers.append(analyzer)
 
     def cancel_simulations(self, ids=[], killall=False):

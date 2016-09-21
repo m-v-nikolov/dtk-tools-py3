@@ -98,8 +98,6 @@ def run(args, unknownArgs):
     setup = SetupParser(selected_block=selected_block, setup_file=args.ini, force=True)
 
     # Assess arguments.
-    if args.analyzer:
-        args.blocking = True
     if args.blocking:
         setup.set('blocking', '1')
     if args.quiet:
@@ -115,10 +113,6 @@ def run(args, unknownArgs):
     # Create the experiment manager based on the setup and run simulation.
     sm = ExperimentManagerFactory.from_setup(setup, location=setup.get('type'), **additional_args)
     sm.run_simulations(**mod.run_sim_args)
-
-    # Perform analyze, if requested.
-    if args.analyzer:
-        analyze(objectview({'expId': None, 'config_name': args.analyzer, 'force': False, 'comps': True}), None);
 
 
 def status(args, unknownArgs):
