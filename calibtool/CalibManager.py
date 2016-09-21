@@ -335,8 +335,8 @@ class CalibManager(object):
         for site in self.sites:
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
-                exp_manager.add_analyzer(analyzer)
-        exp_manager.analyze_simulations()
+                exp_manager.add_analyzer(analyzer, self.iteration_directory())
+        exp_manager.analyze_experiment()
 
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
@@ -906,7 +906,7 @@ class CalibManager(object):
         it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
 
         # Retrieve the experiment manager and cancel all
-        exp_manager = ExperimentManagerFactory.from_data(it.simulations, self.location)
+        exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
 
         if self.location == "LOCAL":
             # LOCAL calibration

@@ -37,7 +37,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         self.server_endpoint = endpoint
 
     def query(self):
-        from COMPS.Data import Experiment, Suite, QueryCriteria
+        from COMPS.Data import Experiment, Suite, QueryCriteria, Simulation
         utils.COMPS_login(self.server_endpoint)
 
         def sims_from_experiment(e):
@@ -45,8 +45,9 @@ class CompsSimulationMonitor(SimulationMonitor):
             return e.GetSimulations(QueryCriteria().Select('Id,SimulationState')).toArray()
 
         def sims_from_experiment_id(exp_id):
-            e = Experiment.GetById(exp_id)
-            return sims_from_experiment(e)
+            return Simulation.Get(QueryCriteria().Where('ExperimentId=%s'%exp_id)).toArray()
+            # e = Experiment.GetById(exp_id)
+            # return sims_from_experiment(e)
 
         def sims_from_suite_id(suite_id):
             #logger.info('Monitoring simulations for SuiteId = %s', suite_id)

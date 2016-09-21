@@ -1,36 +1,34 @@
 import os
-import pickle
 import shlex
 import subprocess
-import threading
 import time
-from multiprocessing import Queue
 
+import psutil
 from simtools.DataAccess.DataStore import DataStore
+from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 
 
-class SimulationCommissioner(threading.Thread):
+class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment,analyzers, thread_queue, max_threads):
-        threading.Thread.__init__(self)
-        self.simulation = simulation
-        self.experiment = experiment
-        self.analyzers = analyzers
-        self.data = {}
+    def __init__(self, simulation, experiment, thread_queue, states, success):
+        super(LocalSimulationRunner, self).__init__(experiment, states, success)
         self.queue = thread_queue
-        self.max_threads = max_threads
+        self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
+
+        if self.simulation.status == "Waiting":
+            self.run()
+        else:
+            self.queue.get()
+            if self.simulation.status in ('Failed', 'Succeeded', 'Cancelled'):
+                return
+
+            self.monitor()
 
     def run(self):
         try:
-            # Make sure the status is not set.
-            # If it is, dont touch this simulation
-            if self.check_state() != "Waiting":
-                self.queue.get()
-                return
-
             with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
                 with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
                     # On windows we want to pass the command to popen as a string
@@ -45,24 +43,11 @@ class SimulationCommissioner(threading.Thread):
                     p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
                     # We are now running
-                    DataStore.change_simulation_state(self.simulation, status="Running", pid=p.pid)
+                    self.simulation.pid = p.pid
+                    self.simulation.status = "Running"
+                    self.update_status()
 
-                    # Wait the end of the process
-                    # We use poll to be able to update the status
-                    while p.poll() is None:
-                        self.update_status(self.simulation, message=self.last_status_line(), pid=p.pid, status="Running")
-                        time.sleep(1)
-
-                    # When poll returns None, the process is done, test if succeeded or failed
-                    last_message = self.last_status_line()
-                    if "Done" in self.last_status_line():
-                        self.update_status(self.simulation, status="Succeeded",  pid=-1, message=last_message)
-                        # Wise to wait a little bit to make sure files are written
-                        self.analyze_simulation()
-                    else:
-                        # If we exited with a Canceled status, dont update to Failed
-                        if not self.check_state() == 'Canceled':
-                            self.update_status(self.simulation, status="Failed", pid=-1, message=last_message)
+            self.monitor()
         except Exception as e:
             print "Error encountered while running the simulation."
             print e
@@ -70,21 +55,36 @@ class SimulationCommissioner(threading.Thread):
             # Free up an item in the queue
             self.queue.get()
 
-    def update_status(self, simulation, status=None, message=None, pid=None):
-        pid = pid if pid > 0 else None
-        for state in states:
-            if state['sid'] == simulation.id and state['status'] != "Succeeded":
-                state['status'] = status
-                state['message'] = message
-                state['pid'] = pid
-                return
+    def monitor(self):
+        # Wait the end of the process
+        # We use poll to be able to update the status
+        if self.simulation.pid:
+            pid = int(self.simulation.pid)
+            while psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
+                self.simulation.message = self.last_status_line()
+                self.update_status()
 
-        states.append({
-            'sid':simulation.id,
-            'status':status,
-            'message':message,
-            'pid': pid
-        })
+                time.sleep(4)
+
+        # When poll returns None, the process is done, test if succeeded or failed
+        last_message = self.last_status_line()
+        if "Done" in last_message:
+            self.simulation.status = "Succeeded"
+            # Wise to wait a little bit to make sure files are written
+            self.success(self.simulation)
+        else:
+            last_state = self.check_state()
+            # If we exited with a Canceled status, dont update to Failed
+            if not last_state == 'Canceled':
+                self.simulation.status = "Failed"
+
+        # Set the final simulation state
+        self.simulation.message = last_message
+        self.simulation.pid = None
+        self.update_status()
+
+    def update_status(self):
+        self.states[self.simulation.id] = self.simulation
 
     def last_status_line(self):
         """
@@ -108,79 +108,3 @@ class SimulationCommissioner(threading.Thread):
         self.simulation = DataStore.get_simulation(self.simulation.id)
         return self.simulation.status
 
-    def analyze_simulation(self):
-        # Called when a simulation finishes
-        filtered_analyses = [a for a in self.analyzers if a.filter(self.simulation.tags)]
-        if not filtered_analyses:
-            # logger.debug('Simulation did not pass filter on any analyzer.')
-            return
-
-        self.max_threads.acquire()
-
-        from simtools.OutputParser import SimulationOutputParser
-        parser = SimulationOutputParser(self.experiment.get_path(),
-                                self.simulation.id,
-                                self.simulation.tags,
-                                filtered_analyses,
-                                self.max_threads)
-        parser.start()
-        parsers[parser.sim_id] = parser
-
-
-def SimulationStateUpdater(loop=True):
-    while True:
-        DataStore.batch_simulations_update(states)
-        states[:] = []
-        if not loop: return
-        time.sleep(3)
-
-
-if __name__ == "__main__":
-    import sys
-
-    # Retrieve the info from the command line
-    queue_size = int(sys.argv[1])
-    exp_id = sys.argv[3]
-    max_analysis_threads = int(sys.argv[2])
-
-    # Create the queue
-    queue = Queue(maxsize=queue_size)
-
-    # Store the parsers and the states globally
-    parsers = {}
-    states = []
-
-    # Start our SimulationStateUpdate thread (in charge of batch updating the simulations in the DB)
-    t1 = threading.Thread(target=SimulationStateUpdater, args=(True,))
-    t1.daemon = True
-    t1.start()
-
-    # max thread semaphone
-    max_threads = threading.Semaphore(max_analysis_threads)
-
-    # Retrieve the experiment
-    current_exp = DataStore.get_experiment(exp_id)
-    analyzers = [pickle.loads(analyzer.analyzer) for analyzer in current_exp.analyzers]
-
-    # Go through the paths and commission
-    threads = []
-    for sim in current_exp.simulations:
-        queue.put('run1')
-        t = SimulationCommissioner(sim, current_exp, analyzers, queue, max_threads)
-        threads.append(t)
-        t.start()
-
-    # Make sure we are all done
-    map(lambda t: t.join(), threads)
-
-    # Write the status a last time
-    SimulationStateUpdater(False)
-
-    if len(analyzers) != 0:
-        # We are all done, finish analyzing
-        for p in parsers.values():
-            p.join()
-
-        for a in analyzers:
-            a.combine(parsers)
-            a.finalize()

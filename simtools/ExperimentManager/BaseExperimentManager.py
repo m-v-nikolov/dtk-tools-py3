@@ -7,9 +7,15 @@ import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
 
+import subprocess
+
+import sys
+import pickle
+import psutil
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
+from simtools.Monitor import SimulationMonitor
 from simtools.SetupParser import SetupParser
 from dtk import helpers
 
@@ -21,33 +27,36 @@ class BaseExperimentManager:
     __metaclass__ = ABCMeta
 
     def __init__(self, model_file, experiment, setup=None):
+        self.model_file = model_file
+        self.experiment = experiment
+
         # If no setup is passed -> create it
         if setup is None:
             selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
             setup_file = experiment.setup_overlay_file
-            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True)
+            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True, working_directory = experiment.working_directory)
         else:
             self.setup = setup
 
-        self.model_file = model_file
-        self.experiment = experiment
-        max_threads = int(self.setup.get('max_threads'))
-        self.maxThreadSemaphore = threading.Semaphore(max_threads)
-        self.assets_service = False
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
-        self.analyzers = []
-        if self.experiment and self.experiment.analyzers:
-            import dill
-            import pickle
-            self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
+        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('max_threads')))
 
+        self.analyzers = []
+        self.parsers = {}
+        try:
+            if self.experiment and self.experiment.analyzers:
+                import dill
+                self.analyzers = [pickle.loads(analyzer.analyzer) for analyzer in experiment.analyzers]
+        except:
+            pass
+
+        self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
-        self.location = self.setup.get('type')
-        self.cache_path = os.path.join(os.getcwd(), 'simulations')
+        self.runner_created = False
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -55,32 +64,7 @@ class BaseExperimentManager:
 
     @abstractmethod
     def commission_simulations(self):
-        if self.blocking:
-            self.wait_for_finished(verbose=not self.quiet)
-
-    @abstractmethod
-    def create_experiment(self, experiment_name, experiment_id, suite_id=None):
-        self.experiment = DataStore.create_experiment(
-            exp_id=experiment_id,
-            suite_id=suite_id,
-            sim_root=self.get_property('sim_root'),
-            exe_name=self.commandline.Executable,
-            exp_name=experiment_name,
-            location=self.location,
-            analyzers=[],
-            sim_type=self.config_builder.get_param('Simulation_Type'),
-            dtk_tools_revision=utils.get_tools_revision(),
-            selected_block=self.setup.selected_block,
-            setup_overlay_file=self.setup.setup_file,
-            command_line=self.commandline.Commandline,
-            endpoint=self.setup.get('server_endpoint') if self.location == "HPC" else None)
-
-        for analyzer in self.analyzers:
-            import dill
-            import pickle
-            self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
-                                                                       analyzer=pickle.dumps(analyzer)))
-
+        pass
 
     @abstractmethod
     def create_simulation(self, suite_id=None):
@@ -91,7 +75,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def complete_sim_creation(self,commissioners):
+    def complete_sim_creation(self, commissioners):
         pass
 
     @abstractmethod
@@ -103,12 +87,80 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def get_monitor(self):
+    def check_input_files(self, input_files):
         pass
 
     @abstractmethod
-    def check_input_files(self, input_files):
-        pass
+    def create_experiment(self, experiment_name, experiment_id, suite_id=None):
+        self.experiment = DataStore.create_experiment(
+            exp_id=experiment_id,
+            suite_id=suite_id,
+            sim_root=self.setup.get('sim_root'),
+            exe_name=self.commandline.Executable,
+            exp_name=experiment_name,
+            location=self.location,
+            analyzers=[],
+            sim_type=self.config_builder.get_param('Simulation_Type'),
+            dtk_tools_revision=utils.get_tools_revision(),
+            selected_block=self.setup.selected_block,
+            setup_overlay_file=self.setup.setup_file,
+            command_line=self.commandline.Commandline)
+
+        for analyzer in self.analyzers:
+            import dill
+            self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
+                                                                       analyzer=pickle.dumps(analyzer)))
+
+    def done_commissioning(self):
+        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+        for sim in self.experiment.simulations:
+            if sim.status == 'Waiting' or not sim.status:
+                return False
+
+        return True
+
+    @staticmethod
+    def check_overseer():
+        """
+        Ensure that the overseer thread is running.
+        The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
+        If not, just start it.
+        """
+        runner_pid = int(DataStore.get_setting('runner_pid').value)
+        if runner_pid and psutil.pid_exists(runner_pid) and psutil.Process(runner_pid).name() == 'python.exe':
+            return
+
+        # Run the runner
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        runner_path = os.path.join(current_dir, '..', 'Overseer.py')
+        import platform
+        if platform.system() == 'Windows':
+            p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
+        else:
+            p = subprocess.Popen([sys.executable, runner_path], shell=False)
+
+        # Save the pid in the settings
+        DataStore.save_setting(DataStore.create_setting(key='runner_pid', value=str(p.pid)))
+
+    def success_callback(self, simulation):
+        """
+        Called when the given simulation is done successfully
+        """
+        self.analyze_simulation(simulation)
+
+    def analyze_simulation(self, simulation):
+        # Add the simulation_id to the tags
+        simulation.tags['sim_id'] = simulation.id
+        # Called when a simulation finishes
+        filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
+        if not filtered_analyses:
+            # logger.debug('Simulation did not pass filter on any analyzer.')
+            return
+        self.maxThreadSemaphore.acquire()
+
+        parser = self.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
+        parser.start()
+        self.parsers[parser.sim_id] = parser
 
     def get_property(self, prop):
         return self.setup.get(prop)
@@ -122,13 +174,13 @@ class BaseExperimentManager:
         For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
         logger.debug("Status of simulations run on '%s':" % self.location)
-        states, msgs = self.get_monitor().query()
+        states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
-    def get_output_parser(self, sim_id, filtered_analyses):
+    def get_output_parser(self, sim_id, sim_tags, filtered_analyses):
         return self.parserClass(self.experiment.get_path(),
                                 sim_id,
-                                DataStore.get_simulation(sim_id).tags,
+                                sim_tags,
                                 filtered_analyses,
                                 self.maxThreadSemaphore)
 
@@ -147,7 +199,11 @@ class BaseExperimentManager:
 
         self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not self.quiet)
-        self.commission_simulations()
+
+        self.check_overseer()
+
+        if self.blocking:
+            self.wait_for_finished(verbose=not self.quiet)
 
     def validate_input_files(self, config_builder):
         """
@@ -191,6 +247,7 @@ class BaseExperimentManager:
 
         self.config_builder = config_builder
         self.exp_builder = exp_builder
+
         # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
         # If not, use the normal staging process
         if self.assets_service:
@@ -320,7 +377,7 @@ class BaseExperimentManager:
         # Wait when we are all done to make sure all the output files have time to get written
         time.sleep(1.5)
 
-    def analyze_simulations(self):
+    def analyze_experiment(self):
         """
         Apply one or more analyzers to the outputs of simulations.
         A parser thread will be spawned for each simulation with filtered analyzers to run,
@@ -331,34 +388,29 @@ class BaseExperimentManager:
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
         """
-        parsers = {}
-
-        for i, sim in enumerate(list(self.experiment.simulations)):
-            filtered_analyses = [a for a in self.analyzers if a.filter(sim.tags)]
-            if not filtered_analyses:
-                logger.debug('Simulation did not pass filter on any analyzer.')
-                continue
-
-            if self.maxThreadSemaphore:
-                self.maxThreadSemaphore.acquire()
-                logger.debug('Thread-%d: sim_id=%s', i, str(sim.id))
-
-            parser = self.get_output_parser(sim.id, filtered_analyses)  # execute filtered analyzers on parser thread
-            parser.start()
-            parsers[parser.sim_id] = parser
-
-        for p in parsers.values():
-            p.join()
-
-        if not parsers:
-            logger.warn('No simulations passed analysis filters.')
+        # If no analyzers -> quit
+        if len(self.analyzers) == 0:
             return
 
+        for simulation in self.experiment.simulations:
+            # We already processed this simulation
+            if self.parsers.has_key(simulation.id):
+                continue
+
+            self.analyze_simulation(simulation)
+
+        # We are all done, finish analyzing
+        for p in self.parsers.values():
+            p.join()
+
         for a in self.analyzers:
-            a.combine(parsers)
+            a.combine(self.parsers)
             a.finalize()
 
-    def add_analyzer(self, analyzer):
+    def add_analyzer(self, analyzer, working_dir=None):
+        analyzer.exp_id = self.experiment.exp_id
+        analyzer.exp_name = self.experiment.exe_name
+        analyzer.working_dir = working_dir
         self.analyzers.append(analyzer)
 
     def cancel_simulations(self, ids=[], killall=False):
@@ -418,3 +470,4 @@ class BaseExperimentManager:
 
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
+

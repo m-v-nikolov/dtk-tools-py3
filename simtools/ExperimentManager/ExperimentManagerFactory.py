@@ -43,22 +43,3 @@ class ExperimentManagerFactory(object):
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)
         return cls.factory(location)(setup.get('exe_path'), None, setup)
-
-    @classmethod
-    def from_data(cls, exp_data, location='LOCAL'):
-        logger.info('Reloading ExperimentManager from experiment data')
-        return cls.factory(location)('', DataStore.create_experiment(exp_data))
-
-    @classmethod
-    def from_file(cls, exp_data_path, suppress_logging=False, force_block=False):
-        OutputMessage.deprecate("ExperimentManagerFactory.from_file is deprecated and may not be supported in future versions."
-                                "Please use ExperimentManagerFactory.from_experiment instead.")
-        if not suppress_logging:
-            logger.info('Reloading ExperimentManager from: %s', exp_data_path)
-        with open(exp_data_path) as exp_data_file:
-            exp_data = json.loads(exp_data_file.read())
-
-        if force_block:
-            SetupParser.selected_block = SetupParser.setup_file = None
-
-        return cls.factory(exp_data['location'])('', DataStore.create_experiment(**exp_data))

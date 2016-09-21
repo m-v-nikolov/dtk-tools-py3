@@ -15,6 +15,9 @@ class BaseAnalyzer(object):
         self.weight = weight
         self.site = None
         self.setup = {}
+        self.exp_id = None
+        self.exp_name = None
+        self.working_dir = None
 
     def set_setup(self, setup):
         self.setup = setup

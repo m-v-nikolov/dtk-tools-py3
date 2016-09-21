@@ -209,7 +209,6 @@ def exterminate(args, unknownArgs):
         return
 
     for sm in sms:
-        states, msgs = sm.get_simulation_status()
         sm.cancel_simulations(killall=True)
 
 
@@ -286,7 +285,7 @@ def stdout(args, unknownArgs):
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
-    sm.analyze_simulations()
+    sm.analyze_experiment()
 
 
 def progress(args, unknownArgs):
@@ -300,7 +299,7 @@ def progress(args, unknownArgs):
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
-    sm.analyze_simulations()
+    sm.analyze_experiment()
 
 
 def analyze(args, unknownArgs):
@@ -328,7 +327,7 @@ def analyze(args, unknownArgs):
     if args.comps:
         utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
 
-    sm.analyze_simulations()
+    sm.analyze_experiment()
 
     import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
     plt.show()

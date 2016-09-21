@@ -5,6 +5,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 import platform
@@ -13,6 +14,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
+from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,12 +25,25 @@ class LocalExperimentManager(BaseExperimentManager):
     Manages the creation, submission, status, parsing, and analysis
     of local experiments, i.e. collections of related simulations
     """
-
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
     def __init__(self, model_file, experiment, setup=None):
+        self.local_queue = None
+        self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
+
+    def commission_simulations(self, states):
+        while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
+            self.local_queue.put('run 1')
+            simulation = self.experiment.simulations[self.simulations_commissioned]
+            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+            t1.daemon = True
+            t1.start()
+            self.simulations_commissioned += 1
+
+        if self.simulations_commissioned == len(self.experiment.simulations):
+            self.runner_created = True
 
     def check_input_files(self, input_files):
         """
@@ -49,37 +64,13 @@ class LocalExperimentManager(BaseExperimentManager):
 
         return missing_files
 
-    def get_monitor(self):
-        return SimulationMonitor(self.experiment.exp_id)
-
     def cancel_all_simulations(self, states=None):
         if not states:
             states = self.get_simulation_status()[0]
 
-        ids = states.keys()
-        logger.info('Killing all simulations in experiment: ')
-        self.cancel_simulations(ids)
-
-    def complete_sim_creation(self, commisioners=[]):
-        return  # no batching in LOCAL
-
-    def commission_simulations(self):
-        # Prepare the info to pass to the localrunner
-        local_runner_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","SimulationRunner", "LocalRunner.py")
-        args = [sys.executable, local_runner_path, self.get_property('max_local_sims'),
-                self.get_property('max_threads'), self.experiment.exp_id]
-
-        # Open the local runner as a subprocess and pass it all the required info to run the simulations
-        # The creationflags=512 asks Popen to create a new process group therefore not propagating the signals down
-        # to the sub processes.
-        if platform.system() == 'Windows':
-            subprocess.Popen(args,shell=False, creationflags=512)
-        else:
-            subprocess.Popen(args, shell=False)
-
-        super(LocalExperimentManager,self).commission_simulations()
-
-        return True
+        logger.info('Killing all simulations in experiment: %s' % self.experiment.id)
+        if len(states.keys()) == 0 : return
+        self.cancel_simulations(states.keys())
 
     def create_experiment(self, experiment_name, suite_id=None):
         # Create a unique id
@@ -141,3 +132,5 @@ class LocalExperimentManager(BaseExperimentManager):
             except Exception as e:
                 print e
 
+    def complete_sim_creation(self,commissioners):
+        pass
