@@ -4,29 +4,30 @@ import time
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
+from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 
 
-class HPCSimulationCommissioner:
+class COMPSSimulationRunner(BaseSimulationRunner):
     def __init__(self, experiment, states, success, commission=True):
-        self.experiment = experiment
-        self.success = success
-        self.states = states
-        self.commission = commission
-        self.run()
+        super(COMPSSimulationRunner, self).__init__(experiment, states, success)
 
-    def commission_experiment(self):
-        from COMPS.Data import Experiment
-        e = Experiment.GetById(self.experiment.exp_id)
-        e.Commission()
+        if commission:
+            self.run()
+        else:
+            self.monitor()
 
     def run(self):
         # Imports for COMPS
         os.environ['COMPS_REST_HOST'] = self.experiment.endpoint
 
-        # Commission the experiment if needed
-        if self.commission:
-            self.commission_experiment()
+        # Commission the experiment
+        from COMPS.Data import Experiment
+        e = Experiment.GetById(self.experiment.exp_id)
+        e.Commission()
 
+        self.monitor()
+
+    def monitor(self):
         # Until done, update the status
         last_states = dict()
         for simulation in self.experiment.simulations:
@@ -36,7 +37,7 @@ class HPCSimulationCommissioner:
         while True:
             try:
                 states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
-                                                      self.experiment.endpoint).query()
+                                                   self.experiment.endpoint).query()
             except Exception as e:
                 print e
                 break
