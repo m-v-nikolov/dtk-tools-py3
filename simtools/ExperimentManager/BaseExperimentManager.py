@@ -149,6 +149,8 @@ class BaseExperimentManager:
         self.analyze_simulation(simulation)
 
     def analyze_simulation(self, simulation):
+        # Add the simulation_id to the tags
+        simulation.tags['sim_id'] = simulation.id
         # Called when a simulation finishes
         filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
         if not filtered_analyses:
