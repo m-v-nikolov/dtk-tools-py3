@@ -126,7 +126,12 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        runner_pid = int(DataStore.get_setting('runner_pid').value)
+        setting = DataStore.get_setting('runner_pid')
+        if setting:
+            runner_pid = int(setting.value)
+        else:
+            runner_pid = None
+
         if runner_pid and psutil.pid_exists(runner_pid) and psutil.Process(runner_pid).name() == 'python.exe':
             return
 
