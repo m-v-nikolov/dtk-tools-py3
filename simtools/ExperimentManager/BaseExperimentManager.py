@@ -6,13 +6,12 @@ import threading
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-
 import subprocess
-
 import sys
-import dill
 import pickle
+import dill
 import psutil
+from multiprocessing import Process
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
@@ -49,13 +48,13 @@ class BaseExperimentManager:
             for analyzer in experiment.analyzers:
                 self.add_analyzer(pickle.loads(analyzer.analyzer))
 
+        self.sims_created = 0
         self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
-        self.plotting_thread = None
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -134,7 +133,7 @@ class BaseExperimentManager:
         runner_path = os.path.join(current_dir, '..', 'Overseer.py')
         import platform
         if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
+            p = subprocess.Popen([sys.executable, runner_path], shell=False) #, creationflags=512)
         else:
             p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
@@ -150,13 +149,14 @@ class BaseExperimentManager:
     def analyze_simulation(self, simulation):
         # Add the simulation_id to the tags
         simulation.tags['sim_id'] = simulation.id
+
         # Called when a simulation finishes
         filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
         if not filtered_analyses:
             # logger.debug('Simulation did not pass filter on any analyzer.')
             return
-        self.maxThreadSemaphore.acquire()
 
+        self.maxThreadSemaphore.acquire()
         parser = self.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
         parser.start()
         self.parsers[parser.sim_id] = parser
@@ -377,9 +377,6 @@ class BaseExperimentManager:
         if verbose:
             self.print_status(states, msgs)
 
-        # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(1.5)
-
     def analyze_experiment(self):
         """
         Apply one or more analyzers to the outputs of simulations.
@@ -411,9 +408,7 @@ class BaseExperimentManager:
 
             a.finalize()
 
-            from multiprocessing import Process
-            self.plotting_thread = Process(target=a.plot)
-            self.plotting_thread.start()
+            a.plot()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

@@ -2,7 +2,8 @@ import threading
 import time
 from Queue import Queue
 from collections import OrderedDict
-
+import dill
+from multiprocessing import Process, Semaphore
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
@@ -36,7 +37,7 @@ if __name__ == "__main__":
 
     # Create the queues and semaphore
     local_queue = Queue(max_local_sims)
-    analysis_semaphore = threading.Semaphore(max_analysis_threads)
+    analysis_semaphore = Semaphore(max_analysis_threads)
 
     update_states = {}
     managers = OrderedDict()
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     t1.start()
 
     # will hold the analyze threads
-    plotting_threads = []
+    analyze_processes = []
 
     while True:
         # Retrieve the active LOCAL experiments
@@ -71,19 +72,19 @@ if __name__ == "__main__":
             # If the manager is done -> analyze
             if manager.finished():
                 # Analyze
-                manager.analyze_experiment()
-
-                if manager.plotting_thread:
-                    plotting_threads.append(manager.plotting_thread)
+                analyze_thread = Process(target=manager.analyze_experiment)
+                analyze_thread.daemon = False
+                analyze_thread.start()
+                analyze_processes.append(analyze_thread)
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
 
         # Cleanup the analyze thread list
-        for pthread in plotting_threads:
-            if not pthread.is_alive(): plotting_threads.remove(pthread)
+        for ap in analyze_processes:
+            if not ap.is_alive(): analyze_processes.remove(ap)
 
         # No more active managers  -> Exit if our analyzers threads are done
-        if len(managers) == 0 and len(plotting_threads) == 0: break
+        if len(managers) == 0 and len(analyze_processes) == 0: break
 
         time.sleep(5)
