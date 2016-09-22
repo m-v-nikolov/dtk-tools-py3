@@ -39,15 +39,20 @@ if __name__ == "__main__":
     analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
     update_states = {}
+    managers = OrderedDict()
+
+    # Start the simulation updater
     t1 = threading.Thread(target=SimulationStateUpdater, args=(update_states, True))
     t1.daemon = True
     t1.start()
 
-    managers = OrderedDict()
+    # will hold the analyze theads
+    analyze_threads = []
 
     while True:
         # Retrieve the active LOCAL experiments
         active_experiments = DataStore.get_active_experiments()
+        # active_experiments = [DataStore.get_experiment('2016_09_21_18_43_16_019000')]
 
         # Create all the managers
         for experiment in active_experiments:
@@ -58,17 +63,26 @@ if __name__ == "__main__":
                 manager.maxThreadSemaphore = analysis_semaphore
                 if manager.location == "LOCAL": manager.local_queue = local_queue
 
-        # No more active managers  -> Exit
-        if len(managers) == 0: exit()
-
+        # Check every one of them
         for manager in managers.values():
+            # If the runners have not been created -> create them
             if not manager.runner_created:
                 manager.commission_simulations(update_states)
 
-            elif manager.finished():
+            # If the manager is done -> analyze
+            if manager.finished():
                 # Analyze
                 manager.analyze_experiment()
-                # Remove it from the list
+                analyze_threads.append(manager.analyze_thread)
+
+                # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
+
+        # Cleanup the analyze thread list
+        for athread in analyze_threads:
+            if not athread.is_alive(): analyze_threads.remove(athread)
+
+        # No more active managers  -> Exit if our analyzers threads are done
+        if len(managers) == 0 and len(analyze_threads) == 0: break
 
         time.sleep(5)

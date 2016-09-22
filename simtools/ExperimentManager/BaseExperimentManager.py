@@ -55,6 +55,7 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
+        self.analyze_thread = None
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -407,7 +408,10 @@ class BaseExperimentManager:
 
         for a in self.analyzers:
             a.combine(self.parsers)
-            a.finalize()
+            # Finalize
+            from multiprocessing import Process
+            self.analyze_thread = Process(target=a.finalize)
+            self.analyze_thread.start()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

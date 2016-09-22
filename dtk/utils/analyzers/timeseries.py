@@ -8,7 +8,6 @@ from plot import plot_by_channel
 
 logger = logging.getLogger(__name__)
 
-
 def default_plot_fn(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
     m = grouped.mean()
@@ -22,18 +21,13 @@ class TimeseriesAnalyzer(BaseAnalyzer):
     ordered_levels = ['channel', 'group', 'sim_id']
     output_file = 'timeseries.csv'
 
-    def __init__(self,
-                 filename = os.path.join('output', 'InsetChart.json'),
-                 filter_function = lambda md: True, # no filtering based on metadata
-                 select_function = lambda ts: pd.Series(ts), # return complete-&-unaltered timeseries
-                 group_function  = lambda k,v: k, # group by unique simid-key from parser
-                 plot_function   = default_plot_fn,
-                 channels = [ 'Statistical Population', 
-                              'Rainfall', 'Adult Vectors', 
-                              'Daily EIR', 'Infected', 
-                              'Parasite Prevalence' ],
-                 saveOutput = False):
-
+    def __init__(self, filename=os.path.join('output', 'InsetChart.json'), filter_function=lambda md: True,
+                 select_function=lambda ts: pd.Series(ts), group_function=lambda k, v: k, plot_function=default_plot_fn,
+                 channels=['Statistical Population',
+                           'Rainfall', 'Adult Vectors',
+                           'Daily EIR', 'Infected',
+                           'Parasite Prevalence'], saveOutput=False):
+        super(TimeseriesAnalyzer, self).__init__()
         self.filenames = [filename]
         self.channels = channels
         self.group_function = group_function
@@ -78,3 +72,4 @@ class TimeseriesAnalyzer(BaseAnalyzer):
             self.data.to_csv(self.output_file)
         import matplotlib.pyplot as plt
         plt.show()
+
