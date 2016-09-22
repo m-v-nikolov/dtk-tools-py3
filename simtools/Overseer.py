@@ -47,7 +47,7 @@ if __name__ == "__main__":
     t1.start()
 
     # will hold the analyze threads
-    analyze_threads = []
+    plotting_threads = []
 
     while True:
         # Retrieve the active LOCAL experiments
@@ -72,17 +72,18 @@ if __name__ == "__main__":
             if manager.finished():
                 # Analyze
                 manager.analyze_experiment()
-                if manager.analyze_thread:
-                    analyze_threads.append(manager.analyze_thread)
+
+                if manager.plotting_thread:
+                    plotting_threads.append(manager.plotting_thread)
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
 
         # Cleanup the analyze thread list
-        for athread in analyze_threads:
-            if not athread.is_alive(): analyze_threads.remove(athread)
+        for pthread in plotting_threads:
+            if not pthread.is_alive(): plotting_threads.remove(pthread)
 
         # No more active managers  -> Exit if our analyzers threads are done
-        if len(managers) == 0 and len(analyze_threads) == 0: break
+        if len(managers) == 0 and len(plotting_threads) == 0: break
 
         time.sleep(5)

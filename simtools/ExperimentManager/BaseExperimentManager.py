@@ -55,7 +55,7 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
-        self.analyze_thread = None
+        self.plotting_thread = None
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -380,7 +380,7 @@ class BaseExperimentManager:
         # Wait when we are all done to make sure all the output files have time to get written
         time.sleep(1.5)
 
-    def analyze_experiment(self, blocking=False):
+    def analyze_experiment(self):
         """
         Apply one or more analyzers to the outputs of simulations.
         A parser thread will be spawned for each simulation with filtered analyzers to run,
@@ -390,7 +390,6 @@ class BaseExperimentManager:
            * apply -- parse simulation output files and emit a subset of data
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
-           * blocking -- Workaround for calibtool to wait on the finalize
         """
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
@@ -409,15 +408,12 @@ class BaseExperimentManager:
 
         for a in self.analyzers:
             a.combine(self.parsers)
-            # Finalize
-            # t1 = threading.Thread(target=a.finalize)
-            # t1.daemon = True
-            # t1.start()
+
+            a.finalize()
+
             from multiprocessing import Process
-            self.analyze_thread = Process(target=a.finalize)
-            self.analyze_thread.start()
-            if blocking:
-                a.finalize()
+            self.plotting_thread = Process(target=a.plot)
+            self.plotting_thread.start()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

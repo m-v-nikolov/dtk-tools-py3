@@ -336,7 +336,7 @@ class CalibManager(object):
             for analyzer in site.analyzers:
                 logger.debug(site, analyzer)
                 exp_manager.add_analyzer(analyzer, self.iteration_directory())
-        exp_manager.analyze_experiment(blocking=True)
+        exp_manager.analyze_experiment()
 
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
