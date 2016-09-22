@@ -1,6 +1,5 @@
 from dtk.utils.analyzers import TimeseriesAnalyzer, sample_selection
 from dtk.utils.analyzers import VectorSpeciesAnalyzer
-from dtk.utils.analyzers.download import DownloadAnalyzer
 from dtk.utils.analyzers.group  import group_by_name
 from dtk.utils.analyzers.plot   import plot_grouped_lines
 from dtk.utils.builders.sweep import GenericSweepBuilder
@@ -26,7 +25,7 @@ analyzers = (TimeseriesAnalyzer(select_function=sample_selection(),
              )
 
 
-builder = GenericSweepBuilder.from_dict({'Run_Number': range(4)})
+builder = GenericSweepBuilder.from_dict({'Run_Number': range(5)})
 
 run_sim_args =  {'config_builder': cb,
                  'exp_name': 'testrunandanalyze',
