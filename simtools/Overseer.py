@@ -46,13 +46,12 @@ if __name__ == "__main__":
     t1.daemon = True
     t1.start()
 
-    # will hold the analyze theads
+    # will hold the analyze threads
     analyze_threads = []
 
     while True:
         # Retrieve the active LOCAL experiments
         active_experiments = DataStore.get_active_experiments()
-        # active_experiments = [DataStore.get_experiment('2016_09_21_18_43_16_019000')]
 
         # Create all the managers
         for experiment in active_experiments:
@@ -73,7 +72,8 @@ if __name__ == "__main__":
             if manager.finished():
                 # Analyze
                 manager.analyze_experiment()
-                analyze_threads.append(manager.analyze_thread)
+                if manager.analyze_thread:
+                    analyze_threads.append(manager.analyze_thread)
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
