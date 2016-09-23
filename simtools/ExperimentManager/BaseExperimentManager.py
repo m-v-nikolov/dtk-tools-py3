@@ -8,7 +8,6 @@ from abc import ABCMeta, abstractmethod
 from collections import Counter
 import subprocess
 import sys
-import pickle
 import dill
 import psutil
 from multiprocessing import Process
@@ -46,7 +45,7 @@ class BaseExperimentManager:
         self.parsers = {}
         if self.experiment and self.experiment.analyzers:
             for analyzer in experiment.analyzers:
-                self.add_analyzer(pickle.loads(analyzer.analyzer))
+                self.add_analyzer(dill.loads(analyzer.analyzer))
 
         self.sims_created = 0
         self.assets_service = None
@@ -267,7 +266,7 @@ class BaseExperimentManager:
             self.add_analyzer(analyzer)
             # Also add to the experiment
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
-                                                                       analyzer=pickle.dumps(analyzer)))
+                                                                       analyzer=dill.dumps(analyzer)))
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
