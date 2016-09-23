@@ -427,8 +427,7 @@ def create_experiment(exp_id, sp, verbose=False):
                                                  date_created=creation_date,
                                                  location='HPC',
                                                  selected_block='HPC',
-                                                 endpoint=sp.get('server_endpoint'),
-                                                 working_directory=os.getcwd())
+                                                 endpoint=sp.get('server_endpoint'))
 
     # Note: experiment may be new or comes from local db
     # Get associated simulations of the experiment
