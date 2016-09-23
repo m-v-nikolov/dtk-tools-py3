@@ -23,7 +23,6 @@ class SimulationOutputParser(threading.Thread):
 
     def run(self):
         try:
-            print "OP"
             # list of output files needed by any analysis
             filenames = set()
             for a in self.analyzers:
