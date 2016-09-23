@@ -179,18 +179,30 @@ class DataStore:
                 simulation.pid = pid if pid > 0 else None
 
     @classmethod
-    def delete_experiments_by_suite(cls, suite_ids):
+    def delete_experiments_by_suite(cls, suite_ids, verbose=False):
         """
         Delete those experiments which are associated with suite_ids
+        suite_ids: list of suite ids
         """
         with session_scope() as session:
-            num = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).delete(synchronize_session='fetch')
-            # print '%s experiment(s) deleted.' % num
+            # Issue: related tables are not deleted
+            # num = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).delete(synchronize_session='fetch')
+
+            # New approach: it will delete related simulations
+            exps = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids))
+            num = 0
+            for exp in exps:
+                session.delete(exp)
+                num += 1
+            if verbose:
+                print '%s experiment(s) deleted.' % num
 
     @classmethod
     def clear_leftover(cls, suite_ids, exp_ids):
         """
         Delete those experiments which are associated with suite_id and not in exp_ids
+        suite_ids: list of suite ids
+        exp_ids: list of experiment ids
         """
         exp_orphan_list = cls.list_leftover(suite_ids, exp_ids)
         cls.delete_experiments(exp_orphan_list)
@@ -199,6 +211,8 @@ class DataStore:
     def list_leftover(cls, suite_ids, exp_ids):
         """
         List those experiments which are associated with suite_id and not in exp_ids
+        suite_ids: list of suite ids
+        exp_ids: list of experiment ids
         """
         exp_list = cls.get_experiments_by_suite(suite_ids)
         exp_list_ids = [exp.exp_id for exp in exp_list]
@@ -213,6 +227,7 @@ class DataStore:
     def get_experiments_by_suite(cls, suite_ids):
         """
         Get the experiments which are associated with suite_id
+        suite_ids: list of suite ids
         """
         exp_list = []
         with session_scope() as session:
@@ -225,10 +240,19 @@ class DataStore:
     def delete_experiments(cls, exp_list, verbose=False):
         """
         Delete experiments given from input
+        exp_list: list of experiments
         """
         exp_ids = [exp.exp_id for exp in exp_list]
         with session_scope() as session:
-            num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
+            # Issue: related tables are not deleted
+            # num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
+
+            # New approach: it will delete related simulations
+            exps = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids))
+            num = 0
+            for exp in exps:
+                session.delete(exp)
+                num += 1
             if verbose:
                 print '%s experiment(s) deleted.' % num
 
