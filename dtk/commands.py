@@ -116,6 +116,10 @@ def run(args, unknownArgs):
 
 
 def status(args, unknownArgs):
+    # No matter what check the overseer
+    from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
+    BaseExperimentManager.check_overseer()
+    
     if args.active:
         logger.info('Getting status of all active experiments.')
         active_experiments = DataStore.get_active_experiments()

@@ -10,7 +10,6 @@ import subprocess
 import sys
 import dill
 import psutil
-from multiprocessing import Process
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
@@ -390,14 +389,12 @@ class BaseExperimentManager:
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
-
         for simulation in self.experiment.simulations:
             # We already processed this simulation
             if self.parsers.has_key(simulation.id):
                 continue
 
             self.analyze_simulation(simulation)
-
         # We are all done, finish analyzing
         for p in self.parsers.values():
             p.join()
@@ -407,7 +404,10 @@ class BaseExperimentManager:
 
             a.finalize()
 
-            a.plot()
+            # Plot in a separate process
+            from multiprocessing import Process
+            plotting_process = Process(target=a.plot)
+            plotting_process.start()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

@@ -66,11 +66,11 @@ class TimeseriesAnalyzer(BaseAnalyzer):
         self.data = combined.reorder_levels(self.ordered_levels, axis=1).sortlevel(axis=1)
 
     def finalize(self):
-        self.plot_channel_on_axes = lambda channel, ax: self.plot_function(self.data[channel].dropna(), ax)
         if self.saveOutput:
             self.data.to_csv(self.output_file)
 
     def plot(self):
+        self.plot_channel_on_axes = lambda channel, ax: self.plot_function(self.data[channel].dropna(), ax)
         plot_by_channel(self.plot_name, self.channels, self.plot_channel_on_axes)
         import matplotlib.pyplot as plt
         plt.show()

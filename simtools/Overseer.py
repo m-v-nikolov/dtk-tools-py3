@@ -2,8 +2,6 @@ import threading
 import time
 from Queue import Queue
 from collections import OrderedDict
-import dill
-from multiprocessing import Process, Semaphore
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
@@ -26,7 +24,7 @@ def SimulationStateUpdater(states, loop=True):
             states.clear()
             if not loop: return
 
-        time.sleep(4)
+        time.sleep(5)
 
 
 if __name__ == "__main__":
@@ -37,7 +35,7 @@ if __name__ == "__main__":
 
     # Create the queues and semaphore
     local_queue = Queue(max_local_sims)
-    analysis_semaphore = Semaphore(max_analysis_threads)
+    analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
     update_states = {}
     managers = OrderedDict()
@@ -48,7 +46,7 @@ if __name__ == "__main__":
     t1.start()
 
     # will hold the analyze threads
-    analyze_processes = []
+    analysis_threads = []
 
     while True:
         # Retrieve the active LOCAL experiments
@@ -72,19 +70,18 @@ if __name__ == "__main__":
             # If the manager is done -> analyze
             if manager.finished():
                 # Analyze
-                analyze_thread = Process(target=manager.analyze_experiment)
-                analyze_thread.daemon = False
-                analyze_thread.start()
-                analyze_processes.append(analyze_thread)
+                athread = threading.Thread(target=manager.analyze_experiment)
+                athread.start()
+                analysis_threads.append(athread)
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
 
         # Cleanup the analyze thread list
-        for ap in analyze_processes:
-            if not ap.is_alive(): analyze_processes.remove(ap)
+        for ap in analysis_threads:
+            if not ap.is_alive(): analysis_threads.remove(ap)
 
         # No more active managers  -> Exit if our analyzers threads are done
-        if len(managers) == 0 and len(analyze_processes) == 0: break
+        if len(managers) == 0 and len(analysis_threads) == 0: break
 
         time.sleep(5)
