@@ -10,6 +10,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import PickleType
 from sqlalchemy import String
+from sqlalchemy import Binary
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
@@ -21,7 +22,7 @@ class Analyzer(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String)
-    analyzer = Column(String)
+    analyzer = Column(Binary)
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     experiment = relationship("Experiment", back_populates="analyzers")
 

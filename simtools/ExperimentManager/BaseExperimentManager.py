@@ -6,12 +6,9 @@ import threading
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-
 import subprocess
-
 import sys
 import dill
-import pickle
 import psutil
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
@@ -47,15 +44,15 @@ class BaseExperimentManager:
         self.parsers = {}
         if self.experiment and self.experiment.analyzers:
             for analyzer in experiment.analyzers:
-                self.add_analyzer(pickle.loads(analyzer.analyzer))
+                self.add_analyzer(dill.loads(analyzer.analyzer))
 
+        self.sims_created = 0
         self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
-        self.analyze_thread = None
 
     @abstractmethod
     def cancel_all_simulations(self, states=None):
@@ -134,7 +131,7 @@ class BaseExperimentManager:
         runner_path = os.path.join(current_dir, '..', 'Overseer.py')
         import platform
         if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
+            p = subprocess.Popen([sys.executable, runner_path], shell=False) #, creationflags=512)
         else:
             p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
@@ -150,13 +147,14 @@ class BaseExperimentManager:
     def analyze_simulation(self, simulation):
         # Add the simulation_id to the tags
         simulation.tags['sim_id'] = simulation.id
+
         # Called when a simulation finishes
         filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
         if not filtered_analyses:
             # logger.debug('Simulation did not pass filter on any analyzer.')
             return
-        self.maxThreadSemaphore.acquire()
 
+        self.maxThreadSemaphore.acquire()
         parser = self.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
         parser.start()
         self.parsers[parser.sim_id] = parser
@@ -267,7 +265,7 @@ class BaseExperimentManager:
             self.add_analyzer(analyzer)
             # Also add to the experiment
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
-                                                                       analyzer=pickle.dumps(analyzer)))
+                                                                       analyzer=dill.dumps(analyzer)))
 
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
@@ -377,10 +375,7 @@ class BaseExperimentManager:
         if verbose:
             self.print_status(states, msgs)
 
-        # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(1.5)
-
-    def analyze_experiment(self, blocking=False):
+    def analyze_experiment(self):
         """
         Apply one or more analyzers to the outputs of simulations.
         A parser thread will be spawned for each simulation with filtered analyzers to run,
@@ -390,34 +385,29 @@ class BaseExperimentManager:
            * apply -- parse simulation output files and emit a subset of data
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
-           * blocking -- Workaround for calibtool to wait on the finalize
         """
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
-
         for simulation in self.experiment.simulations:
             # We already processed this simulation
             if self.parsers.has_key(simulation.id):
                 continue
 
             self.analyze_simulation(simulation)
-
         # We are all done, finish analyzing
         for p in self.parsers.values():
             p.join()
 
         for a in self.analyzers:
             a.combine(self.parsers)
-            # Finalize
-            # t1 = threading.Thread(target=a.finalize)
-            # t1.daemon = True
-            # t1.start()
+
+            a.finalize()
+
+            # Plot in a separate process
             from multiprocessing import Process
-            self.analyze_thread = Process(target=a.finalize)
-            self.analyze_thread.start()
-            if blocking:
-                a.finalize()
+            plotting_process = Process(target=a.plot)
+            plotting_process.start()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

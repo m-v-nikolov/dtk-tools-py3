@@ -23,19 +23,18 @@ class BaseAnalyzer:
     def set_setup(self, setup):
         self.setup = setup
 
-    @abstractmethod
     def filter(self, sim_metadata):
         #return sim_metadata.get('__site__', False) == self.site.name
         return lambda x : True
 
-    @abstractmethod
     def apply(self, parser):
         return {}  # emit sim/reference comparison
 
-    @abstractmethod
     def combine(self, parsers):
         self.data = {}  # combine comparisons by sample-index groups
 
-    @abstractmethod
     def finalize(self):
         pass  # make plots and return summary info
+
+    def plot(self):
+        pass
