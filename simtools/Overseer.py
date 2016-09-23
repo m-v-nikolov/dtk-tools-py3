@@ -82,6 +82,7 @@ if __name__ == "__main__":
             if not ap.is_alive(): analysis_threads.remove(ap)
 
         # No more active managers  -> Exit if our analyzers threads are done
-        if len(managers) == 0 and len(analysis_threads) == 0: break
+        # Do not use len() to not block anything
+        if managers == OrderedDict() and analysis_threads == []: break
 
         time.sleep(5)

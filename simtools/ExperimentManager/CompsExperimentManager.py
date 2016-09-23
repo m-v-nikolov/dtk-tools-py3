@@ -48,7 +48,9 @@ class CompsExperimentManager(BaseExperimentManager):
         if not self.assets_service:
             self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
         if self.compress_assets:
-            self.parserClass.enableCompression()
+            from simtools.utils import nostdout
+            with nostdout():
+                self.parserClass.enableCompression()
 
         super(CompsExperimentManager, self).analyze_experiment()
 
