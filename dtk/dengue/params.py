@@ -12,7 +12,7 @@ params = {
     "Burnin_Cache_Mode": "none",
     "Burnin_Cache_Period": 0,
     "Burnin_Name": "",
-    "Config_Name": "98_Dengue_Sandbox",
+    "Config_Name": "",
     "Death_Rate_Dependence": "NONDISEASE_MORTALITY_OFF",
     "Default_Geography_Initial_Node_Population": 1000,
     "Default_Geography_Torus_Size": 5,

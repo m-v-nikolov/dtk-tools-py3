@@ -131,7 +131,7 @@ class BaseExperimentManager:
         runner_path = os.path.join(current_dir, '..', 'Overseer.py')
         import platform
         if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, runner_path], shell=False) #, creationflags=512)
+            p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
         else:
             p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
@@ -398,7 +398,7 @@ class BaseExperimentManager:
         # We are all done, finish analyzing
         for p in self.parsers.values():
             p.join()
-
+        plotting_processes = []
         for a in self.analyzers:
             a.combine(self.parsers)
 
@@ -408,6 +408,11 @@ class BaseExperimentManager:
             from multiprocessing import Process
             plotting_process = Process(target=a.plot)
             plotting_process.start()
+            plotting_processes.append(plotting_process)
+
+        for p in plotting_processes:
+            p.join()
+
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id
