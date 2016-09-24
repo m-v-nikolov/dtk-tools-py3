@@ -5,6 +5,7 @@ import os
 import json
 import sys
 import random
+import pandas as pd
 
 try:
     import osr
@@ -39,6 +40,7 @@ except:
 from node import Node
 from visualize_nodes import get_country_shape,plot_geojson_shape
 
+
 def read(bingrid_name, cropX=None, cropY=None):
     '''
     Read the data and meta-data from GeoTIFF
@@ -51,6 +53,7 @@ def read(bingrid_name, cropX=None, cropY=None):
     srs=osr.SpatialReference(wkt=ds.GetProjection())
     srsLatLong = srs.CloneGeogCS()
     coordtransform = osr.CoordinateTransformation(srs,srsLatLong)
+
 
     def transform_fn(x,y):
         ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY = geotransform
@@ -77,17 +80,20 @@ def read(bingrid_name, cropX=None, cropY=None):
 
     return A, transform_fn
 
-def plot(A, title='Raster_Plot',cmap='YlGnBu'):
-    fig=plt.figure(title + '_WorldPop',figsize=(12,8))
+
+def plot(A, title='Raster_Plot',cmap='YlGnBu', norm=LogNorm(vmin=1, vmax=1e3)):
+    fig=plt.figure(title + '_WorldPop',figsize=(8,8))
     ax=plt.subplot(111)
-    plt.imshow(A, interpolation='nearest', cmap=cmap, norm=LogNorm(vmin=1, vmax=1e3))
+    plt.imshow(A, interpolation='nearest', cmap=cmap, norm=norm)
     ax.set(aspect=1)
+    ax.set_axis_bgcolor('LightGray')
     cb=plt.colorbar()
     plt.title(title + ' (WorldPop)')
     cb.ax.set_ylabel(r'population ($\mathrm{km}^{-2}$)', rotation=270, labelpad=15)
     plt.tight_layout()
 
     return ax
+
 
 def detect_watershed_patches(A,mask=0,validation=False):
     A_copy=np.copy(A)
@@ -117,7 +123,9 @@ def detect_watershed_patches(A,mask=0,validation=False):
         watershed_patches[watershed_patches<1]=np.nan
         plt.imshow(watershed_patches,cmap='Paired')
         plt.tight_layout()
+        plt.title('Watershed')
     return watershed_patches, len(blobs)
+
 
 def detect_contiguous_blocks(A, mask=0, validation=False):
     binary_img = A > mask
@@ -143,6 +151,7 @@ def detect_contiguous_blocks(A, mask=0, validation=False):
 
     return label_img, n_labels
 
+
 def centroids(A,label_img,n_labels,validation=False):
     A[A<0]=0 # correct no data (?) value of -3.4e38 to zero, so sums don't get messed up for cities by the ocean (e.g. Dakar)
     sums = ndimage.sum(A, label_img, range(1, n_labels + 1))
@@ -156,6 +165,7 @@ def centroids(A,label_img,n_labels,validation=False):
 
     return sums,centroids
 
+
 def compare(A,sums,centroids,title='Raster_Plot',cmap='YlGnBu'):
     yy,xx = zip(*centroids)
     plt.figure('Nodes')
@@ -165,6 +175,7 @@ def compare(A,sums,centroids,title='Raster_Plot',cmap='YlGnBu'):
     plt.imshow(A, interpolation='nearest', cmap=cmap, norm=LogNorm(vmin=1, vmax=1e3), alpha=0.8)
     plt.scatter(xx,yy,s=sizes, c='gray', vmin=1, vmax=7, alpha=0.5)
     plt.tight_layout()
+
 
 def make_nodes(sums,centroids,transform_fn,min_pop=100):
     yy,xx = zip(*centroids)
@@ -178,6 +189,7 @@ def make_nodes(sums,centroids,transform_fn,min_pop=100):
         nodes.append(n)
     return nodes
 
+
 def plot_nodes(nodes,countries):
     plt.figure('LatLonNodes')
     lats,lons,pp=zip(*[x.toTuple() for x in nodes])
@@ -189,32 +201,78 @@ def plot_nodes(nodes,countries):
             plot_geojson_shape(country_shape)
     plt.tight_layout()
 
+
 def write_nodes(nodes,title):
     if not os.path.exists('cache'):
         os.mkdir('cache')
     with open('cache/raster_nodes_%s.json' % title,'w') as fjson:
         json.dump([n.toDict() for n in nodes], fjson)
 
-def save_all_figs():
-    if not os.path.exists('figs'):
-        os.mkdir('figs')
+
+def save_all_figs(dirname='figs'):
+    if not os.path.exists(dirname):
+        os.mkdir(dirname)
     for L in plt.get_figlabels():
         plt.figure(L)
-        plt.savefig(os.path.join('figs','%s.png' % L))
+        plt.savefig(os.path.join(dirname,'%s.png' % L))
+
+
+def coord_pixel_transform(point_lat, point_long):
+    # find the lat-long coordinates of the raster image origin, and an arbitrary other point.
+    origin_long, origin_lat, origin_alt = transform_fn(0, 0)
+    raster_pt_long, raster_pt_lat, raster_pt_origin = transform_fn(0, 100)
+
+    # find the pixel:decimal degree conversion factor
+    conversion_factor = 100 / (origin_lat - raster_pt_lat)  # this is the number of pixels per decimal degree
+
+    # find the pixel location of the passed argument
+    point_x = (point_long - origin_long) * conversion_factor
+    point_y = (origin_lat - point_lat) * conversion_factor
+
+    return point_x, point_y
 
 if __name__ == '__main__':
-    bin_name='Q:/Malaria/Myanmar/Karen/village_pop/MMR_ppp_v2c_2015_UNadj.tif'
-    title='Myanmar'
-    mask=100
+    main_dir = 'Q:/Malaria/Myanmar/Karen/village_pop/'
+    bin_name = 'Q:/Malaria/Myanmar/Karen/village_pop/MMR_ppp_karen_compressed.tif'
 
-    crop=(None,None)
-    #crop=(range(2000),range(1000))
-    validation=True
+    title = 'Karen, Myanmar'
+    mask = 0.001
 
+    # crop = (None,None)
+    crop = (range(4900, 8500), range(10500, 16100))
+    validation = True
+
+    print "reading raster population file"
     A, transform_fn = read(bin_name, *crop)
-    plot(A, title)
+
+    print "reading village location file"
+
+    for village_type in ["manual", "auto"]:
+
+        villages = pd.read_csv("{main_dir}/metf_villages/{village_type}_villages_coords.csv".format(main_dir=main_dir,
+                                                                                                    village_type=village_type))
+
+        # convert village locations into pixel coordinates
+        coords = villages.apply(lambda row: coord_pixel_transform(row['latitude'], row['longitude']), axis=1)
+        villages["pixel_x"] = coords.apply(lambda row: row[0])
+        villages["pixel_y"] = coords.apply(lambda row: row[1])
+
+        print "plotting"
+        plot(A, title="{village_type} Villages".format(village_type=village_type).capitalize(),
+             norm=LogNorm(vmin=1, vmax=10))
+        plt.scatter(villages.pixel_x, villages.pixel_y, c="ForestGreen", alpha=0.5)
+
+    save_all_figs(dirname='{main_dir}/plots'.format(main_dir=main_dir))
     plt.show()
+
+    HALT
+
     patches,N=detect_watershed_patches(A, mask, validation=validation)
+
+
+
+
+
     #patches,N=detect_contiguous_blocks(A, mask, validation=validation)
     sums,centroids=centroids(A,patches,N,validation=validation)
     compare(A,sums,centroids,title)
