@@ -6,6 +6,7 @@ import json
 import sys
 import random
 import pandas as pd
+from math import sqrt
 
 try:
     import osr
@@ -95,19 +96,25 @@ def plot(A, title='Raster_Plot',cmap='YlGnBu', norm=LogNorm(vmin=1, vmax=1e3)):
     return ax
 
 
-def detect_watershed_patches(A,mask=0,validation=False):
+def detect_watershed_patches(A,mask=0,validation=False, blobs=None, label=''):
     A_copy=np.copy(A)
     A_copy[A_copy<mask]=0
     A_log=adjust_log(A_copy)
     A_norm=rescale_intensity(A_log)
     print('Raster shape (%d,%d)' % A_norm.shape)
-    blobs = blob_dog(A_norm, max_sigma=30, threshold=.1)
-    print('Detected %d blobs to seed watershed'%len(blobs))
+    if blobs is None:
+        blobs = blob_dog(A_norm, max_sigma=30, threshold=.1)
+        print('Detected %d blobs to seed watershed'%len(blobs))
+    else:
+        print 'Seeding watershed with {len} predefined blobs'.format(len=len(blobs))
     if validation:
-        ax=plot(A_copy,'DetectBlobs')
+        title='DetectBlobs' if label == '' else '{label} Blobs'.format(label=label)
+        ax=plot(A_copy, title)
         for blob in blobs:
-            y, x, r = blob
-            c = plt.Circle((x, y), r, color='k', linewidth=1, fill=False)
+            y, x, sigma = blob
+            # plot blobs as circles. NOTE: multiply 'r' by sqrt(2) because the blob_dog docs say that the
+            # radius of each blob is approximately sqrt(2)*(std. deviation of that blob's Gaussian kernel)
+            c = plt.Circle((x, y), sqrt(2)*sigma, color='k', linewidth=1, fill=False)
             ax.add_patch(c)
     x, y = np.indices(A_norm.shape)
     markers=np.zeros(A_norm.shape)
@@ -119,11 +126,12 @@ def detect_watershed_patches(A,mask=0,validation=False):
         markers[mask_circle]=i+1
     watershed_patches = watershed(1-A_norm, markers, mask=A_copy)
     if validation:
-        plt.figure('Watershed')
+        title = 'Watershed' if label == '' else 'Watershed {label}'.format(label=label)
+        plt.figure(title, figsize=(8,8))
         watershed_patches[watershed_patches<1]=np.nan
-        plt.imshow(watershed_patches,cmap='Paired')
+        plt.imshow(watershed_patches, cmap='Paired')
         plt.tight_layout()
-        plt.title('Watershed')
+        plt.title(title)
     return watershed_patches, len(blobs)
 
 
@@ -217,7 +225,7 @@ def save_all_figs(dirname='figs'):
         plt.savefig(os.path.join(dirname,'%s.png' % L))
 
 
-def coord_pixel_transform(point_lat, point_long):
+def coord_pixel_transform(point_lat, point_long, transform_fn):
     # find the lat-long coordinates of the raster image origin, and an arbitrary other point.
     origin_long, origin_lat, origin_alt = transform_fn(0, 0)
     raster_pt_long, raster_pt_lat, raster_pt_origin = transform_fn(0, 100)
@@ -242,43 +250,35 @@ if __name__ == '__main__':
     crop = (range(4900, 8500), range(10500, 16100))
     validation = True
 
-    print "reading raster population file"
+    print 'reading raster population file'
     A, transform_fn = read(bin_name, *crop)
 
-    print "reading village location file"
+    print 'plotting raster'
+    plot(A, title=title, norm=LogNorm(vmin=1, vmax=10))
 
-    for village_type in ["manual", "auto"]:
+    print 'reading village location file'
 
-        villages = pd.read_csv("{main_dir}/metf_villages/{village_type}_villages_coords.csv".format(main_dir=main_dir,
+    for village_type in ['manual', 'auto']:
+
+        villages = pd.read_csv('{main_dir}/metf_villages/{village_type}_villages_coords.csv'.format(main_dir=main_dir,
                                                                                                     village_type=village_type))
 
         # convert village locations into pixel coordinates
-        coords = villages.apply(lambda row: coord_pixel_transform(row['latitude'], row['longitude']), axis=1)
-        villages["pixel_x"] = coords.apply(lambda row: row[0])
-        villages["pixel_y"] = coords.apply(lambda row: row[1])
+        coords = villages.apply(lambda row: coord_pixel_transform(row['latitude'], row['longitude'], transform_fn), axis=1)
+        villages['pixel_x'] = coords.apply(lambda row: row[0])
+        villages['pixel_y'] = coords.apply(lambda row: row[1])
 
-        print "plotting"
-        plot(A, title="{village_type} Villages".format(village_type=village_type).capitalize(),
-             norm=LogNorm(vmin=1, vmax=10))
-        plt.scatter(villages.pixel_x, villages.pixel_y, c="ForestGreen", alpha=0.5)
+        # the blob_dog method returns a lat, long, and sigma for each blob it finds. We pick a 'sigma' for each
+        # village equal to the mean sigma value in the blob_dog method.
+        villages['sigma'] = 16.6
 
-    save_all_figs(dirname='{main_dir}/plots'.format(main_dir=main_dir))
-    plt.show()
+        patches, N = detect_watershed_patches(A, mask, validation=validation,
+                                              blobs=villages[["pixel_y", "pixel_x", "sigma"]].as_matrix(),
+                                              label='{type} Village'.format(type=village_type.capitalize()))
 
-    HALT
-
+    # run without village seeding
     patches,N=detect_watershed_patches(A, mask, validation=validation)
 
-
-
-
-
-    #patches,N=detect_contiguous_blocks(A, mask, validation=validation)
-    sums,centroids=centroids(A,patches,N,validation=validation)
-    compare(A,sums,centroids,title)
-    nodes=make_nodes(sums,centroids,transform_fn,min_pop=100)
-    plot_nodes(nodes,countries=[title])
-    write_nodes(nodes,title)
-    save_all_figs()
+    save_all_figs(dirname='{main_dir}/plots'.format(main_dir=main_dir))
 
     plt.show()
