@@ -5,7 +5,7 @@ import os
 import json
 import sys
 import random
-import pandas as pd
+
 from math import sqrt
 
 try:
@@ -240,45 +240,23 @@ def coord_pixel_transform(point_lat, point_long, transform_fn):
     return point_x, point_y
 
 if __name__ == '__main__':
-    main_dir = 'Q:/Malaria/Myanmar/Karen/village_pop/'
-    bin_name = 'Q:/Malaria/Myanmar/Karen/village_pop/MMR_ppp_karen_compressed.tif'
+    bin_name = 'Q:/Worldpop/Haiti/HTI_pph_v2b_2009.tif'
+    title = 'Haiti'
+    mask = 3
 
-    title = 'Karen, Myanmar'
-    mask = 0.001
-
-    # crop = (None,None)
-    crop = (range(4900, 8500), range(10500, 16100))
+    crop = (None, None)
+    # crop=(range(2000),range(1000))
     validation = True
 
-    print 'reading raster population file'
     A, transform_fn = read(bin_name, *crop)
-
-    print 'plotting raster'
-    plot(A, title=title, norm=LogNorm(vmin=1, vmax=10))
-
-    print 'reading village location file'
-
-    for village_type in ['manual', 'auto']:
-
-        villages = pd.read_csv('{main_dir}/metf_villages/{village_type}_villages_coords.csv'.format(main_dir=main_dir,
-                                                                                                    village_type=village_type))
-
-        # convert village locations into pixel coordinates
-        coords = villages.apply(lambda row: coord_pixel_transform(row['latitude'], row['longitude'], transform_fn), axis=1)
-        villages['pixel_x'] = coords.apply(lambda row: row[0])
-        villages['pixel_y'] = coords.apply(lambda row: row[1])
-
-        # the blob_dog method returns a lat, long, and sigma for each blob it finds. We pick a 'sigma' for each
-        # village equal to the mean sigma value in the blob_dog method.
-        villages['sigma'] = 16.6
-
-        patches, N = detect_watershed_patches(A, mask, validation=validation,
-                                              blobs=villages[["pixel_y", "pixel_x", "sigma"]].as_matrix(),
-                                              label='{type} Village'.format(type=village_type.capitalize()))
-
-    # run without village seeding
-    patches,N=detect_watershed_patches(A, mask, validation=validation)
-
-    save_all_figs(dirname='{main_dir}/plots'.format(main_dir=main_dir))
+    # plot(A, title)
+    patches, N = detect_watershed_patches(A, mask, validation=validation)
+    # patches,N=detect_contiguous_blocks(A, mask, validation=validation)
+    sums, centroids = centroids(A, patches, N, validation=validation)
+    compare(A, sums, centroids, title)
+    nodes = make_nodes(sums, centroids, transform_fn, min_pop=100)
+    plot_nodes(nodes, countries=[title])
+    write_nodes(nodes, title)
+    save_all_figs()
 
     plt.show()
