@@ -139,9 +139,9 @@ def get_local_file_path(url):
     return local_file
 
 
-def install_package(my_os, name, val):
+def install_package(my_os, name, val, upgrade=False):
     """
-    Install package
+    Install or upgrade package
     """
     import pip
     package_str = build_package_str(my_os, name, val)
@@ -154,43 +154,79 @@ def install_package(my_os, name, val):
         else:
             # Download file first
             local_file = download_file(package_str)
+
         # Install package from local file (just downloaded or existing one)
-        pip.main(['install', local_file])
+        if upgrade:
+            pip.main(['install', local_file, '--upgrade'])
+        else:
+            pip.main(['install', local_file])
     # check if it is local wheel file or tar.gz file
     elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
             and os.path.exists(get_local_file_path(package_str)):
         # Use local file if it exists
-        pip.main(['install', get_local_file_path(package_str)])
-    # Just package name w/o version
-    else:
-        pip.main(['install', package_str])
-
-
-def update_package(my_os, name, val):
-    """
-    Upgrade package
-    """
-    import pip
-    package_str = build_package_str(my_os, name, val)
-
-    # it is an internet file
-    if validators.url(package_str):
-        if os.path.exists(get_local_file_path(package_str)):
-            # use local file if it exists
-            local_file = get_local_file_path(package_str)
+        if upgrade:
+            pip.main(['install', get_local_file_path(package_str), '--upgrade'])
         else:
-            # Download file first
-            local_file = download_file(package_str)
-        # Install package from local file (just downloaded or existing one)
-        pip.main(['install', local_file, '--upgrade'])
-    # check if it is local wheel file or tar.gz file
-    elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
-            and os.path.exists(os.path.join(install_directory, package_str)):
-        # Use local file if it exists
-        pip.main(['install', os.path.join(install_directory, package_str), '--upgrade'])
+            pip.main(['install', get_local_file_path(package_str)])
     # Just package name w/o version
     else:
-        pip.main(['install', package_str, '--upgrade'])
+        if upgrade:
+            pip.main(['install', package_str, '--upgrade'])
+        else:
+            pip.main(['install', package_str])
+
+
+def test_package_g(my_os, name, val):
+    """
+    Case: required version > installed version
+    """
+    version = val.get('version', None)
+    test = val.get('test', None)
+
+    if test:
+        if test in ['==', '>=']:
+            print "Package %s (%s) already installed with lower version. Upgrading to %s..." % \
+                  (name, installed_packages[name], version)
+            install_package(my_os, name, val, True)
+        else:
+            # Usually we don't have this case.
+            print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+    else:
+        print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+
+
+def test_package_e(my_os, name, val):
+    """
+    Case: required version == installed version
+    """
+    version = val.get('version', None)
+    test = val.get('test', None)
+
+    if test:
+        if test == '>=':
+            print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+        elif test == '==':
+            print "Package %s (%s) with exact version already installed. Skipping..." % \
+                  (name, installed_packages[name])
+        else:
+            # Usually we don't have this case.
+            print "Package %s (%s) with higher version already installed but require lower version (%s). " \
+                  "Installing..." % (name, installed_packages[name], version)
+            install_package(my_os, name, val)
+    else:
+        print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+
+
+def test_package_l(my_os, name, val):
+    """
+    Case: required version < installed version
+    """
+    version = val.get('version', None)
+
+    # Usually we don't have this case.
+    print "Package %s (%s) with higher version installed but require lower version (%s). Installing..." % \
+          (name, installed_packages[name], version)
+    install_package(my_os, name, val)
 
 
 def test_package(my_os, name, val):
@@ -198,42 +234,18 @@ def test_package(my_os, name, val):
     Check installation
     """
     version = val.get('version', None)
-    test = val.get('test', None)
 
     if name in installed_packages:
-        if version:
-            if LooseVersion(version) > LooseVersion(installed_packages[name]):
-                if test:
-                    if test in ['==', '>=']:
-                        print "Package %s (%s) already installed with lower version. Upgrading to %s..." % \
-                              (name, installed_packages[name], version)
-                        update_package(my_os, name, val)
-                    else:
-                        # Usually we don't have this case.
-                        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
-                else:
-                    print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
-            elif LooseVersion(version) == LooseVersion(installed_packages[name]):
-                if test:
-                    if test == '>=':
-                        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
-                    elif test == '==':
-                        print "Package %s (%s) with exact version already installed. Skipping..." % \
-                              (name, installed_packages[name])
-                    else:
-                        # Usually we don't have this case.
-                        print "Package %s (%s) with higher version already installed but require lower version. " \
-                              "Installing..." % (name, installed_packages[name])
-                        install_package(my_os, name, val)
-                else:
-                    print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
-            else:
-                # Usually we don't have this case.
-                print "Package %s (%s) with higher version installed but require lower version. Installing..." % \
-                      (name, installed_packages[name])
-                install_package(my_os, name, val)
-        else:
+        if not version:
             print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+            return
+
+        if LooseVersion(version) > LooseVersion(installed_packages[name]):
+            test_package_g(my_os, name, val)
+        elif LooseVersion(version) == LooseVersion(installed_packages[name]):
+            test_package_e(my_os, name, val)
+        else:
+            test_package_l(my_os, name, val)
     else:
         print "Package %s not installed. Installing..." % name
         install_package(my_os, name, val)
