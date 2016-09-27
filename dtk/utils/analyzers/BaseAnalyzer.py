@@ -4,6 +4,20 @@ from abc import ABCMeta, abstractmethod
 logger = logging.getLogger(__name__)
 
 class BaseAnalyzer:
+    """
+    A class to represent a BaseAnalyzer
+
+    Plotting using the interactive Matplotlib outside of the plot() functions HAVE TO use the following form:
+        def plot():
+            import matplotlib.pyplot as plt
+            plt.plot(channel_data)
+            plt.show()
+        from multiprocessing import Process
+        plotting_process = Process(target=plot)
+        plotting_process.start()
+
+        If a Process is not spawned, it may end up in an infinite loop breaking the tools.
+    """
     __metaclass__ = ABCMeta
 
     required_reference_types = []
