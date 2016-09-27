@@ -1,5 +1,6 @@
 import ctypes
-import glob
+import validators
+import re
 import os
 import platform
 import shutil
@@ -8,97 +9,309 @@ from ConfigParser import ConfigParser
 from distutils.version import LooseVersion
 from simtools.utils import nostdout
 
-if ctypes.sizeof(ctypes.c_voidp) != 8 :
-    print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
-    - Windows: https://www.python.org/downloads/windows/
-    - Mac OSX: https://www.python.org/downloads/mac-osx/
-    - Linux: https://www.python.org/downloads/source/\n
-    Installation is now exiting..."""
-    exit()
-
-# Set the list of requirements here
-# Can either take package==version or package
-# For Windows, the wheel can be provided in either tar.gz or whl format\
-requirements = [
-    'numpy==1.11.1+mkl',
-    'scipy==0.18.0',
-    'matplotlib==1.5.1',
-    'pandas==0.18.1',
-    'seaborn==0.7.0',
-    'statsmodels==0.6.1',
-    'npyscreen==4.10.5',
-    'curses==2.2',
-    'validators',
-    'SQLAlchemy==1.1.0b3',
-    'python-snappy==0.5',
-    'psutil==4.3.0',
-    'networkx',
-    'dill'
-]
-
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
 
-if platform.architecture() == ('64bit', 'WindowsPE'):
-    # For windows + python x64 -> use the wheel
+installed_packages = dict()
+
+# Set the list of requirements here
+# For Windows, the wheel can be provided in either tar.gz or whl format
+requirements = {
+    'curses': {
+        'platform': ['win'],
+        'version': '2.2',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/curses-2.2-cp27-none-win_amd64.whl'
+    },
+    'matplotlib': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.5.3',
+        'test': '>=',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
+    },
+    'numpy': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.11.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/numpy-1.11.1+mkl-cp27-cp27m-win_amd64.whl'
+    },
+    'pandas': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.18.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
+    },
+    'psutil': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '4.3.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
+    },
+    'python-snappy': {
+        'platform': ['win', 'lin'],
+        'version': '0.5',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/python_snappy-0.5-cp27-none-win_amd64.whl'
+    },
+    'scipy': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.18.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+    },
+    'seaborn': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.7.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/seaborn-0.7.1-py2.py3-none-any.whl'
+    },
+    'statsmodels': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.6.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/statsmodels-0.6.1-cp27-none-win_amd64.whl'
+    },
+    'SQLAlchemy': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.1.0b3',
+        'test': '=='
+    },
+    'npyscreen': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '4.10.5',
+        'test': '=='
+    },
+    'decorator': {
+        'platform': ['mac'],
+        'version': '4.0.10',
+        'test': '=='
+    },
+    'validators': {
+        'platform': ['win', 'lin', 'mac'],
+    },
+    'networkx': {
+        'platform': ['win', 'lin', 'mac'],
+    },
+    'dill': {
+        'platform': ['win', 'lin', 'mac'],
+    }
+}
+
+
+def get_installed_packages():
+    """
+    Check packages in system
+    """
     import pip
 
-    # Get the installed package to not reinstall everything
-    installed_packages = dict()
     # Flatten the list
     for package in pip.get_installed_distributions():
         installed_packages[package.project_name] = package.version
 
-    def install_package(package):
-        pip.main(['install', package])
 
-    def update_package(package,version=None):
-        if '.whl' in package or '.tar.gz' in package:
-            install = package
+def download_file(url):
+    """
+    Download package
+    """
+    import requests
+
+    local_file = get_local_file_path(url)
+
+    with requests.Session() as s:
+        headers = {'host': 'www.lfd.uci.edu', 'Connection': 'keep-alive',
+                   'Upgrade-Insecure-Requests': '1',
+                   'Accept-Language': 'en-US,en;q=0.8',
+                   'Accept-Encoding': 'gzip, deflate, sdch',
+                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36',
+                   'Referer': 'http://www.lfd.uci.edu/~gohlke/pythonlibs/'}
+
+        r = s.get(url, headers=headers)
+        with open(local_file, "wb") as code:
+            code.write(r.content)
+
+    return local_file
+
+
+def get_local_file_path(url):
+    file_name = os.path.basename(url)
+    local_file = os.path.join(install_directory, file_name)
+    return local_file
+
+
+def install_package(my_os, name, val):
+    """
+    Install package
+    """
+    import pip
+    package_str = build_package_str(my_os, name, val)
+
+    # it is an internet file
+    if validators.url(package_str):
+        if os.path.exists(get_local_file_path(package_str)):
+            # use local file if it exists
+            local_file = get_local_file_path(package_str)
         else:
-            install = "%s==%s"%(package,version) if version else package
+            # Download file first
+            local_file = download_file(package_str)
+        # Install package from local file (just downloaded or existing one)
+        pip.main(['install', local_file])
+    # check if it is local wheel file or tar.gz file
+    elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
+            and os.path.exists(get_local_file_path(package_str)):
+        # Use local file if it exists
+        pip.main(['install', get_local_file_path(package_str)])
+    # Just package name w/o version
+    else:
+        pip.main(['install', package_str])
 
-        pip.main(['install', install, '--upgrade'])
 
-    def test_package(name, version=None, package=None):
-        if package is None:
-            package = name
+def update_package(my_os, name, val):
+    """
+    Upgrade package
+    """
+    import pip
+    package_str = build_package_str(my_os, name, val)
 
-        if name in installed_packages:
-            if version and LooseVersion(version) > LooseVersion(installed_packages[name]):
-                print "Package: %s installed but with version %s. Upgrading to %s..." % (name, installed_packages[name], version)
-                # The version we want is ahead -> needs update
-                update_package(package, version)
+    # it is an internet file
+    if validators.url(package_str):
+        if os.path.exists(get_local_file_path(package_str)):
+            # use local file if it exists
+            local_file = get_local_file_path(package_str)
+        else:
+            # Download file first
+            local_file = download_file(package_str)
+        # Install package from local file (just downloaded or existing one)
+        pip.main(['install', local_file, '--upgrade'])
+    # check if it is local wheel file or tar.gz file
+    elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
+            and os.path.exists(os.path.join(install_directory, package_str)):
+        # Use local file if it exists
+        pip.main(['install', os.path.join(install_directory, package_str), '--upgrade'])
+    # Just package name w/o version
+    else:
+        pip.main(['install', package_str, '--upgrade'])
+
+
+def test_package(my_os, name, val):
+    """
+    Check installation
+    """
+    version = val.get('version', None)
+    test = val.get('test', None)
+
+    if name in installed_packages:
+        if version:
+            if LooseVersion(version) > LooseVersion(installed_packages[name]):
+                if test:
+                    if test in ['==', '>=']:
+                        print "Package %s (%s) already installed with lower version. Upgrading to %s..." % \
+                              (name, installed_packages[name], version)
+                        update_package(my_os, name, val)
+                    else:
+                        # Usually we don't have this case.
+                        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+                else:
+                    print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+            elif LooseVersion(version) == LooseVersion(installed_packages[name]):
+                if test:
+                    if test == '>=':
+                        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+                    elif test == '==':
+                        print "Package %s (%s) with exact version already installed. Skipping..." % \
+                              (name, installed_packages[name])
+                    else:
+                        # Usually we don't have this case.
+                        print "Package %s (%s) with higher version already installed but require lower version. " \
+                              "Installing..." % (name, installed_packages[name])
+                        install_package(my_os, name, val)
+                else:
+                    print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
             else:
-                print "Package %s (%s) already installed and in correct version. Skipping..." % (name, installed_packages[name])
+                # Usually we don't have this case.
+                print "Package %s (%s) with higher version installed but require lower version. Installing..." % \
+                      (name, installed_packages[name])
+                install_package(my_os, name, val)
         else:
-            print "Package: %s (%s) not installed. Installing..." % (name,version)
-            # No version found -> install
-            install_package(package)
+            print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+    else:
+        print "Package %s not installed. Installing..." % name
+        install_package(my_os, name, val)
 
-    # Go through the requirements
-    for requirement in requirements:
-        # Split on == to get name and version (if any)
-        package_name = requirement.split('==')[0]
-        package_name = package_name.replace('-','_')
 
-        version = requirement.split('==')[1] if '==' in requirement else None
+def build_package_str(my_os, name, val):
+    """
+    Build package installation string
+    """
+    package_str = None
 
-        # Find the associated wheel
-        glob_search = glob.glob(os.path.join(install_directory,'%s*' % package_name))
-        wheel = glob_search[0] if len(glob_search) > 0 else None
+    if my_os in ['win']:
+        if val.get('wheel', None):
+            package_str = val['wheel']
+        elif val.get('version', None):
+            # Win doesn't support >= or <=. Replace with ==
+            op = val['test']
+            op = re.sub('[><]', '=', op) if not op else op
+            package_str = "%s%s%s" % (name, op, val['version'])
+        else:
+            package_str = name
+    elif my_os in ['mac', 'lin']:
+        package_str = "%s%s%s" % (name, val['test'], val['version'])
 
-        # Test the presence of the package
-        test_package(package_name, version, wheel)
+    return package_str
 
-    # Remove the requirements for windows (because we handled them manually)
-    requirements = []
 
-if platform.architecture() == ('64bit', ''):
-    # Removes curses for MacOSx (built-in)
-    requirements.remove('curses==2.2')
+def get_os():
+    """
+    Retrieve OS
+    """
+    my_os = None
+    # OS: windows
+    if platform.architecture() == ('64bit', 'WindowsPE') or platform.system() == 'Windows':
+        my_os = 'win'
 
-if platform.system() == 'Linux':
+    # OS: Mac
+    if platform.architecture() == ('64bit', '') or platform.system() == 'Darwin':
+        my_os = 'mac'
+
+    # OS: Linux
+    if platform.architecture() == ('64bit', 'ELF') or platform.system() == 'Linux':
+        my_os = 'lin'
+
+    return my_os
+
+
+def get_requirements_by_os(my_os):
+    """
+    Update requirements based on OS
+    """
+    reqs = {name: val for (name, val) in requirements.iteritems() if my_os in val['platform']}
+
+    # OS: Mac or Linux. No wheel needed
+    if my_os in ['mac', 'lin']:
+        for (name, val) in reqs.iteritems():
+            if 'wheel' in val:
+                val.pop('wheel')
+
+    # OS: Linux. No version for some packages
+    if my_os == 'lin':
+        if 'version' in reqs['numpy']:
+            reqs['numpy'].pop('version')
+        if 'test' in reqs['numpy']:
+            reqs['numpy'].pop('test')
+
+        if 'version' in reqs['scipy']:
+            reqs['scipy'].pop('version')
+        if 'test' in reqs['scipy']:
+            reqs['scipy'].pop('test')
+
+    return reqs
+
+
+def install_linux_pre_requisites():
+    """
+    Install pre-requisites for Linux
+    """
     # Doing the apt-get install pre-requisites
     from subprocess import check_call, STDOUT
     pre_requisites = [
@@ -117,7 +330,7 @@ if platform.system() == 'Linux':
 
     supports_apt_get = False
     try:
-        check_call('apt-get -h',stdout=open(os.devnull, 'wb'), stderr=STDOUT)
+        check_call('apt-get -h', stdout=open(os.devnull, 'wb'), stderr=STDOUT)
         supports_apt_get = True
     except OSError:
         print "Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:"
@@ -129,76 +342,116 @@ if platform.system() == 'Linux':
     if supports_apt_get:
         for req in pre_requisites:
             print "Checking/Installing %s" % req
-            check_call(['apt-get', 'install', '-y', req],stdout=open(os.devnull, 'wb'), stderr=STDOUT)
-
-    # We are on linux, change some requirements
-    if 'curses==2.2' in requirements: # Could have been removed by 64bit architecture above
-        requirements.remove('curses==2.2')
-    requirements.remove('numpy==1.11.1+mkl')
-    requirements.remove('scipy==0.18.0')
-    requirements.append('numpy')
-    requirements.append('scipy')
-
-# Add the develop by default
-sys.argv.append('develop')
-sys.argv.append('--quiet')
-
-from setuptools import setup, find_packages
-# Suppress the outputs except the errors
-with nostdout(stderr=True):
-    setup(name='dtk-tools',
-          version='0.4',
-          description='Facilitating submission and analysis of simulations',
-          url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
-          author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
-          author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
-          packages=find_packages(),
-          install_requires=requirements,
-          entry_points={
-              'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
-          },
-          package_data={'': ['simtools/simtools.ini']},
-          zip_safe=False)
-
-# Copy the default.ini into the right directory if not already present
-current_simtools = os.path.join(current_directory,'simtools','simtools.ini')
-default_ini = os.path.join(install_directory,'default.ini')
-if not os.path.exists(current_simtools):
-    shutil.copyfile(default_ini, current_simtools)
-else:
-    # A simtools was already present, merge the best we can
-    print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
-    merge_cp = ConfigParser()
-    merge_cp.read([default_ini, current_simtools])
-
-    # Backup copy the current
-    print "Backup copy your current simtools.ini to simtools.ini.bak"
-    shutil.copy(current_simtools, current_simtools+".bak")
-
-    # Write the merged one
-    merge_cp.write(open(current_simtools,'w'))
-    print "Merged simtools.ini written!\n"
+            check_call(['apt-get', 'install', '-y', req], stdout=open(os.devnull, 'wb'), stderr=STDOUT)
 
 
-# Create the EXAMPLE block for the examples
-example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+def install_packages(my_os, reqs):
+    """
+    Install required packages
+    """
+    if my_os in ['lin']:
+        # Doing the apt-get install pre-requisites
+        install_linux_pre_requisites()
 
-# Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
-open(example_simtools, 'a').close()
+    # Get the installed package to not reinstall everything
+    get_installed_packages()
 
-# Check if we have the EXAMPLE block
-cp = ConfigParser()
-cp.read(example_simtools)
+    # Go through the requirements
+    for (name, val) in reqs.iteritems():
+        test_package(my_os, name, val)
 
-if not cp.has_section('EXAMPLE'):
-    # EXAMPLE section is not here -> create it
-    cp.add_section('EXAMPLE')
-    cp.set('EXAMPLE','type','LOCAL')
-    cp.set('EXAMPLE','input_root', os.path.join(current_directory,'examples','inputs'))
+    # Add the develop by default
+    sys.argv.append('develop')
+    sys.argv.append('--quiet')
 
-cp.write(open(example_simtools,'w'))
+    from setuptools import setup, find_packages
+    # Suppress the outputs except the errors
+    with nostdout(stderr=True):
+        setup(name='dtk-tools',
+              version='0.4',
+              description='Facilitating submission and analysis of simulations',
+              url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
+              author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
+              author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
+              packages=find_packages(),
+              install_requires=[],
+              entry_points={
+                  'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
+              },
+              package_data={'': ['simtools/simtools.ini']},
+              zip_safe=False)
 
-# Success !
-print "\n======================================================="
-print "| Dtk-Tools and dependencies installed successfully.  |"
-print "======================================================="
+
+def handle_init():
+    """
+    Consider user's configuration file
+    """
+    # Copy the default.ini into the right directory if not already present
+    current_simtools = os.path.join(current_directory, 'simtools', 'simtools.ini')
+    default_ini = os.path.join(install_directory, 'default.ini')
+    if not os.path.exists(current_simtools):
+        shutil.copyfile(default_ini, current_simtools)
+    else:
+        # A simtools was already present, merge the best we can
+        print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
+        merge_cp = ConfigParser()
+        merge_cp.read([default_ini, current_simtools])
+
+        # Backup copy the current
+        print "Backup copy your current simtools.ini to simtools.ini.bak"
+        shutil.copy(current_simtools, current_simtools + ".bak")
+
+        # Write the merged one
+        merge_cp.write(open(current_simtools, 'w'))
+        print "Merged simtools.ini written!\n"
+
+    # Create the EXAMPLE block for the examples
+    example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+
+    # Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
+    open(example_simtools, 'a').close()
+
+    # Check if we have the EXAMPLE block
+    cp = ConfigParser()
+    cp.read(example_simtools)
+
+    if not cp.has_section('EXAMPLE'):
+        # EXAMPLE section is not here -> create it
+        cp.add_section('EXAMPLE')
+        cp.set('EXAMPLE', 'type', 'LOCAL')
+        cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+
+    cp.write(open(example_simtools, 'w'))
+
+
+def main():
+    # Check OS
+    my_os = get_os()
+    print 'os: %s' % my_os
+
+    # Get OS-specific requirements
+    reqs = get_requirements_by_os(my_os)
+
+    # Install required packages
+    install_packages(my_os, reqs)
+
+    # Consider config file
+    handle_init()
+
+    # Success !
+    print "\n======================================================="
+    print "| Dtk-Tools and dependencies installed successfully.  |"
+    print "======================================================="
+
+
+if __name__ == "__main__":
+    # check os first
+    if ctypes.sizeof(ctypes.c_voidp) != 8:
+        print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+        - Windows: https://www.python.org/downloads/windows/
+        - Mac OSX: https://www.python.org/downloads/mac-osx/
+        - Linux: https://www.python.org/downloads/source/\n
+        Installation is now exiting..."""
+        exit()
+
+    main()
