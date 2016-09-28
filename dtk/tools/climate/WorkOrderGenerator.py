@@ -40,7 +40,8 @@ class WorkOrderGenerator:
               'NaNCheck': self.nan_check,
               'Migration': self.migration,
               'IdReference': self.id_reference,
-              'ProjectRoot':'v2014'
+              'ProjectRoot':'v2014',
+              'Mode':'discrete'
         }
 
         # add the work order items
