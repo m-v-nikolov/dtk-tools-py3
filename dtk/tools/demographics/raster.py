@@ -6,6 +6,8 @@ import json
 import sys
 import random
 
+from math import sqrt
+
 try:
     import osr
     import gdal
@@ -39,6 +41,7 @@ except:
 from node import Node
 from visualize_nodes import get_country_shape,plot_geojson_shape
 
+
 def read(bingrid_name, cropX=None, cropY=None):
     '''
     Read the data and meta-data from GeoTIFF
@@ -51,6 +54,7 @@ def read(bingrid_name, cropX=None, cropY=None):
     srs=osr.SpatialReference(wkt=ds.GetProjection())
     srsLatLong = srs.CloneGeogCS()
     coordtransform = osr.CoordinateTransformation(srs,srsLatLong)
+
 
     def transform_fn(x,y):
         ulX,cellsizeX,rotateX,ulY,rotateY,cellsizeY = geotransform
@@ -77,11 +81,13 @@ def read(bingrid_name, cropX=None, cropY=None):
 
     return A, transform_fn
 
-def plot(A, title='Raster_Plot',cmap='YlGnBu'):
-    fig=plt.figure(title + '_WorldPop',figsize=(12,8))
+
+def plot(A, title='Raster_Plot',cmap='YlGnBu', norm=LogNorm(vmin=1, vmax=1e3)):
+    fig=plt.figure(title + '_WorldPop',figsize=(8,8))
     ax=plt.subplot(111)
-    plt.imshow(A, interpolation='nearest', cmap=cmap, norm=LogNorm(vmin=1, vmax=1e3))
+    plt.imshow(A, interpolation='nearest', cmap=cmap, norm=norm)
     ax.set(aspect=1)
+    ax.set_axis_bgcolor('LightGray')
     cb=plt.colorbar()
     plt.title(title + ' (WorldPop)')
     cb.ax.set_ylabel(r'population ($\mathrm{km}^{-2}$)', rotation=270, labelpad=15)
@@ -89,19 +95,26 @@ def plot(A, title='Raster_Plot',cmap='YlGnBu'):
 
     return ax
 
-def detect_watershed_patches(A,mask=0,validation=False):
+
+def detect_watershed_patches(A,mask=0,validation=False, blobs=None, label=''):
     A_copy=np.copy(A)
     A_copy[A_copy<mask]=0
     A_log=adjust_log(A_copy)
     A_norm=rescale_intensity(A_log)
     print('Raster shape (%d,%d)' % A_norm.shape)
-    blobs = blob_dog(A_norm, max_sigma=30, threshold=.1)
-    print('Detected %d blobs to seed watershed'%len(blobs))
+    if blobs is None:
+        blobs = blob_dog(A_norm, max_sigma=30, threshold=.1)
+        print('Detected %d blobs to seed watershed'%len(blobs))
+    else:
+        print 'Seeding watershed with {len} predefined blobs'.format(len=len(blobs))
     if validation:
-        ax=plot(A_copy,'DetectBlobs')
+        title='DetectBlobs' if label == '' else '{label} Blobs'.format(label=label)
+        ax=plot(A_copy, title)
         for blob in blobs:
-            y, x, r = blob
-            c = plt.Circle((x, y), r, color='k', linewidth=1, fill=False)
+            y, x, sigma = blob
+            # plot blobs as circles. NOTE: multiply 'r' by sqrt(2) because the blob_dog docs say that the
+            # radius of each blob is approximately sqrt(2)*(std. deviation of that blob's Gaussian kernel)
+            c = plt.Circle((x, y), sqrt(2)*sigma, color='k', linewidth=1, fill=False)
             ax.add_patch(c)
     x, y = np.indices(A_norm.shape)
     markers=np.zeros(A_norm.shape)
@@ -113,11 +126,14 @@ def detect_watershed_patches(A,mask=0,validation=False):
         markers[mask_circle]=i+1
     watershed_patches = watershed(1-A_norm, markers, mask=A_copy)
     if validation:
-        plt.figure('Watershed')
+        title = 'Watershed' if label == '' else 'Watershed {label}'.format(label=label)
+        plt.figure(title, figsize=(8,8))
         watershed_patches[watershed_patches<1]=np.nan
-        plt.imshow(watershed_patches,cmap='Paired')
+        plt.imshow(watershed_patches, cmap='Paired')
         plt.tight_layout()
+        plt.title(title)
     return watershed_patches, len(blobs)
+
 
 def detect_contiguous_blocks(A, mask=0, validation=False):
     binary_img = A > mask
@@ -143,6 +159,7 @@ def detect_contiguous_blocks(A, mask=0, validation=False):
 
     return label_img, n_labels
 
+
 def centroids(A,label_img,n_labels,validation=False):
     A[A<0]=0 # correct no data (?) value of -3.4e38 to zero, so sums don't get messed up for cities by the ocean (e.g. Dakar)
     sums = ndimage.sum(A, label_img, range(1, n_labels + 1))
@@ -156,6 +173,7 @@ def centroids(A,label_img,n_labels,validation=False):
 
     return sums,centroids
 
+
 def compare(A,sums,centroids,title='Raster_Plot',cmap='YlGnBu'):
     yy,xx = zip(*centroids)
     plt.figure('Nodes')
@@ -165,6 +183,7 @@ def compare(A,sums,centroids,title='Raster_Plot',cmap='YlGnBu'):
     plt.imshow(A, interpolation='nearest', cmap=cmap, norm=LogNorm(vmin=1, vmax=1e3), alpha=0.8)
     plt.scatter(xx,yy,s=sizes, c='gray', vmin=1, vmax=7, alpha=0.5)
     plt.tight_layout()
+
 
 def make_nodes(sums,centroids,transform_fn,min_pop=100):
     yy,xx = zip(*centroids)
@@ -178,6 +197,7 @@ def make_nodes(sums,centroids,transform_fn,min_pop=100):
         nodes.append(n)
     return nodes
 
+
 def plot_nodes(nodes,countries):
     plt.figure('LatLonNodes')
     lats,lons,pp=zip(*[x.toTuple() for x in nodes])
@@ -189,37 +209,54 @@ def plot_nodes(nodes,countries):
             plot_geojson_shape(country_shape)
     plt.tight_layout()
 
+
 def write_nodes(nodes,title):
     if not os.path.exists('cache'):
         os.mkdir('cache')
     with open('cache/raster_nodes_%s.json' % title,'w') as fjson:
         json.dump([n.toDict() for n in nodes], fjson)
 
-def save_all_figs():
-    if not os.path.exists('figs'):
-        os.mkdir('figs')
+
+def save_all_figs(dirname='figs'):
+    if not os.path.exists(dirname):
+        os.mkdir(dirname)
     for L in plt.get_figlabels():
         plt.figure(L)
-        plt.savefig(os.path.join('figs','%s.png' % L))
+        plt.savefig(os.path.join(dirname,'%s.png' % L))
+
+
+def coord_pixel_transform(point_lat, point_long, transform_fn):
+    # find the lat-long coordinates of the raster image origin, and an arbitrary other point.
+    origin_long, origin_lat, origin_alt = transform_fn(0, 0)
+    raster_pt_long, raster_pt_lat, raster_pt_origin = transform_fn(0, 100)
+
+    # find the pixel:decimal degree conversion factor
+    conversion_factor = 100 / (origin_lat - raster_pt_lat)  # this is the number of pixels per decimal degree
+
+    # find the pixel location of the passed argument
+    point_x = (point_long - origin_long) * conversion_factor
+    point_y = (origin_lat - point_lat) * conversion_factor
+
+    return point_x, point_y
 
 if __name__ == '__main__':
-    bin_name='D:/Worldpop/Haiti/HTI_pph_v2b_2009.tif'
-    title='Haiti'
-    mask=3
+    bin_name = 'Q:/Worldpop/Haiti/HTI_pph_v2b_2009.tif'
+    title = 'Haiti'
+    mask = 3
 
-    crop=(None,None)
-    #crop=(range(2000),range(1000))
-    validation=True
+    crop = (None, None)
+    # crop=(range(2000),range(1000))
+    validation = True
 
     A, transform_fn = read(bin_name, *crop)
-    #plot(A, title)
-    patches,N=detect_watershed_patches(A, mask, validation=validation)
-    #patches,N=detect_contiguous_blocks(A, mask, validation=validation)
-    sums,centroids=centroids(A,patches,N,validation=validation)
-    compare(A,sums,centroids,title)
-    nodes=make_nodes(sums,centroids,transform_fn,min_pop=100)
-    plot_nodes(nodes,countries=[title])
-    write_nodes(nodes,title)
+    # plot(A, title)
+    patches, N = detect_watershed_patches(A, mask, validation=validation)
+    # patches,N=detect_contiguous_blocks(A, mask, validation=validation)
+    sums, centroids = centroids(A, patches, N, validation=validation)
+    compare(A, sums, centroids, title)
+    nodes = make_nodes(sums, centroids, transform_fn, min_pop=100)
+    plot_nodes(nodes, countries=[title])
+    write_nodes(nodes, title)
     save_all_figs()
 
     plt.show()
