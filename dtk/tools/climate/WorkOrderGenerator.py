@@ -6,10 +6,8 @@ class WorkOrderGenerator:
                  start_year='2009', num_years="4", nan_check=True, idRef = 'Gridded world grump2.5arcmin'):
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
-        self.request_type = "FromDemographics"
         self.work_item_type = "InputDataWorker"
         self.node_list = []
-        self.plugin_info = []
         self.project_info = project_info
         self.region = ""
         self.include_non_pop = include_non_pop
@@ -25,14 +23,10 @@ class WorkOrderGenerator:
         self.path = ''
 
     def wo_2_dict(self):
-        wo = {'RequestType': self.request_type,
-              'DemographicsPath': self.demographics_file_path,
-              'WorkItem_Type': self.work_item_type,
-              'PluginInfo': self.plugin_info,
+        wo = {'WorkItem_Type': self.work_item_type,
               'Project': self.project_info,
               'Region': self.region,
               'IncludeNonPop': self.include_non_pop,
-              'ShapeId': '',
               'Resolution': self.resolution,
               'Parameters': self.parameters,
               'StartYear': self.start_year,
@@ -41,7 +35,7 @@ class WorkOrderGenerator:
               'Migration': self.migration,
               'IdReference': self.id_reference,
               'ProjectRoot':'v2014',
-              'Mode':'discrete'
+              'Mode':'upload'
         }
 
         # add the work order items
