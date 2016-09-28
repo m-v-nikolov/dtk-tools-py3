@@ -4,6 +4,7 @@ import time
 
 from WorkOrderGenerator import WorkOrderGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+from simtools import utils
 
 
 class ClimateGenerator:
@@ -34,8 +35,7 @@ class ClimateGenerator:
         from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
         from java.util import HashMap, ArrayList
 
-        # can pass setup as param and extract HPC endserver; leave hard coded for now
-        Client.Login('https://comps.idmod.org')
+        utils.COMPS_login(self.setup.get('server_endpoint'))
         om("Login success!")
 
         workerkey = WorkerKey('InputDataWorker', '1.0.0.0_RELEASE')
