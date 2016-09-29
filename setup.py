@@ -1,10 +1,10 @@
 import ctypes
-import validators
 import re
 import os
 import platform
 import shutil
 import sys
+from urlparse import urlparse
 from ConfigParser import ConfigParser
 from distutils.version import LooseVersion
 from simtools.utils import nostdout
@@ -118,13 +118,16 @@ def download_file(url):
     local_file = get_local_file_path(url)
 
     with requests.Session() as s:
-        headers = {'host': 'www.lfd.uci.edu', 'Connection': 'keep-alive',
+        headers = {
+                   'host': 'www.lfd.uci.edu',
+                   'Connection': 'keep-alive',
                    'Upgrade-Insecure-Requests': '1',
                    'Accept-Language': 'en-US,en;q=0.8',
                    'Accept-Encoding': 'gzip, deflate, sdch',
                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36',
-                   'Referer': 'http://www.lfd.uci.edu/~gohlke/pythonlibs/'}
+                   'Referer': 'http://www.lfd.uci.edu/~gohlke/pythonlibs/',
+                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
+                   }
 
         r = s.get(url, headers=headers)
         with open(local_file, "wb") as code:
@@ -134,6 +137,11 @@ def download_file(url):
 
 
 def get_local_file_path(url):
+    # If it is local file, use it
+    if os.path.exists(url):
+        return url
+
+    # Compose local file
     file_name = os.path.basename(url)
     local_file = os.path.join(install_directory, file_name)
     return local_file
@@ -146,10 +154,12 @@ def install_package(my_os, name, val, upgrade=False):
     import pip
     package_str = build_package_str(my_os, name, val)
 
-    # it is an internet file
-    if validators.url(package_str):
+    host, path = urlparse(package_str)
+
+    # It is an internet file
+    if len(host) > 0 and len(path) > 0:
         if os.path.exists(get_local_file_path(package_str)):
-            # use local file if it exists
+            # Use local file if it exists
             local_file = get_local_file_path(package_str)
         else:
             # Download file first
@@ -160,7 +170,7 @@ def install_package(my_os, name, val, upgrade=False):
             pip.main(['install', local_file, '--upgrade'])
         else:
             pip.main(['install', local_file])
-    # check if it is local wheel file or tar.gz file
+    # Check if it is local wheel file or tar.gz file
     elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
             and os.path.exists(get_local_file_path(package_str)):
         # Use local file if it exists
@@ -183,36 +193,26 @@ def test_package_g(my_os, name, val):
     version = val.get('version', None)
     test = val.get('test', None)
 
-    if test:
-        if test in ['==', '>=']:
-            print "Package %s (%s) already installed with lower version. Upgrading to %s..." % \
-                  (name, installed_packages[name], version)
-            install_package(my_os, name, val, True)
-        else:
-            # Usually we don't have this case.
-            print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+    if test in ['==', '>=']:
+        print "Package %s (%s) already installed with lower version. Upgrading to (%s)..." % \
+              (name, installed_packages[name], version)
+        install_package(my_os, name, val, True)
     else:
-        print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+        # Usually we don't have this case.
+        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
 
 
 def test_package_e(my_os, name, val):
     """
     Case: required version == installed version
     """
-    version = val.get('version', None)
     test = val.get('test', None)
 
-    if test:
-        if test == '>=':
-            print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
-        elif test == '==':
-            print "Package %s (%s) with exact version already installed. Skipping..." % \
-                  (name, installed_packages[name])
-        else:
-            # Usually we don't have this case.
-            print "Package %s (%s) with higher version already installed but require lower version (%s). " \
-                  "Installing..." % (name, installed_packages[name], version)
-            install_package(my_os, name, val)
+    if test in ['>=', '<=']:
+        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+    elif test in ['==']:
+        print "Package %s (%s) with exact version already installed. Skipping..." % \
+              (name, installed_packages[name])
     else:
         print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
 
@@ -306,7 +306,7 @@ def get_requirements_by_os(my_os):
                 val.pop('wheel')
 
     # OS: Linux. No version for some packages
-    if my_os == 'lin':
+    if my_os in ['lin']:
         if 'version' in reqs['numpy']:
             reqs['numpy'].pop('version')
         if 'test' in reqs['numpy']:
