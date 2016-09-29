@@ -154,7 +154,7 @@ def install_package(my_os, name, val, upgrade=False):
     import pip
     package_str = build_package_str(my_os, name, val)
 
-    host, path = urlparse(package_str)
+    host, path = urlparse(package_str)[1:3]
 
     # It is an internet file
     if len(host) > 0 and len(path) > 0:
