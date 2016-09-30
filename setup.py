@@ -26,7 +26,7 @@ requirements = {
     },
     'numpy': {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.1',
+        'version': '1.11.1+mkl',
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/numpy-1.11.1+mkl-cp27-cp27m-win_amd64.whl'
     },
