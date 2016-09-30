@@ -99,6 +99,9 @@ requirements = {
 }
 
 
+order_requirements = ['curses', 'numpy',  'scipy', 'matplotlib']
+
+
 def get_installed_packages():
     """
     Check packages in system
@@ -316,7 +319,18 @@ def get_requirements_by_os(my_os):
         if 'test' in reqs['scipy']:
             reqs['scipy'].pop('test')
 
-    return reqs
+    # Keep packages in order
+    reqs_OrderedDict = OrderedDict()
+
+    for i in range(len(order_requirements)):
+        name = order_requirements[i]
+        reqs_OrderedDict[name] = reqs[name]
+        reqs.pop(name)
+
+    for (name, val) in reqs.iteritems():
+        reqs_OrderedDict[name] = val
+
+    return reqs_OrderedDict
 
 
 def install_linux_pre_requisites():
@@ -435,10 +449,25 @@ def handle_init():
     cp.write(open(example_simtools, 'w'))
 
 
+def upgrade_pip(my_os):
+    """
+    Upgrade pip before install other packages
+    """
+    import subprocess
+
+    if my_os in ['mac', 'lin']:
+        subprocess.call("pip install -U pip", shell=True)
+    elif my_os in ['win']:
+        subprocess.call("python -m pip install --upgrade pip", shell=True)
+
+
 def main():
     # Check OS
     my_os = get_os()
     print 'os: %s' % my_os
+
+    # Upgrade pip before install other packages
+    upgrade_pip(my_os)
 
     # Get OS-specific requirements
     reqs = get_requirements_by_os(my_os)
