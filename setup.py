@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import sys
+from collections import OrderedDict
 from urlparse import urlparse
 from ConfigParser import ConfigParser
 from distutils.version import LooseVersion
@@ -23,17 +24,23 @@ requirements = {
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/curses-2.2-cp27-none-win_amd64.whl'
     },
-    'matplotlib': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.5.3',
-        'test': '>=',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
-    },
     'numpy': {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.11.1',
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/numpy-1.11.1+mkl-cp27-cp27m-win_amd64.whl'
+    },
+    'scipy': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.18.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+    },
+    'matplotlib': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.5.3',
+        'test': '>=',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
     },
     'pandas': {
         'platform': ['win', 'lin', 'mac'],
@@ -52,12 +59,6 @@ requirements = {
         'version': '0.5',
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/python_snappy-0.5-cp27-none-win_amd64.whl'
-    },
-    'scipy': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
-        'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
     },
     'seaborn': {
         'platform': ['win', 'lin', 'mac'],
