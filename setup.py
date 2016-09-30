@@ -114,25 +114,23 @@ def download_file(url):
     """
     Download package
     """
-    import requests
+    import urllib2
 
     local_file = get_local_file_path(url)
 
-    with requests.Session() as s:
-        headers = {
-                   'host': 'www.lfd.uci.edu',
-                   'Connection': 'keep-alive',
-                   'Upgrade-Insecure-Requests': '1',
-                   'Accept-Language': 'en-US,en;q=0.8',
-                   'Accept-Encoding': 'gzip, deflate, sdch',
-                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                   'Referer': 'http://www.lfd.uci.edu/~gohlke/pythonlibs/',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
-                   }
-
-        r = s.get(url, headers=headers)
-        with open(local_file, "wb") as code:
-            code.write(r.content)
+    req = urllib2.Request(url)
+    req.add_header('host', 'www.lfd.uci.edu')
+    req.add_header('Connection', 'keep-alive')
+    req.add_header('Upgrade-Insecure-Requests', '1')
+    req.add_header('Accept-Language', 'en-US,en;q=0.8',)
+    req.add_header('Accept-Encoding', 'gzip, deflate, sdch')
+    req.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
+    req.add_header('Referer', 'http://www.lfd.uci.edu/~gohlke/pythonlibs/')
+    req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36')
+    resp = urllib2.urlopen(req)
+    data = resp.read()
+    with open(local_file, "wb") as code:
+        code.write(data)
 
     return local_file
 
