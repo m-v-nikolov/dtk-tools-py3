@@ -23,17 +23,23 @@ requirements = {
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/curses-2.2-cp27-none-win_amd64.whl'
     },
-    'matplotlib': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.5.3',
-        'test': '>=',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
-    },
     'numpy': {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.11.1',
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/numpy-1.11.1+mkl-cp27-cp27m-win_amd64.whl'
+    },
+    'scipy': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.18.1',
+        'test': '==',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+    },
+    'matplotlib': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.5.3',
+        'test': '>=',
+        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
     },
     'pandas': {
         'platform': ['win', 'lin', 'mac'],
@@ -52,12 +58,6 @@ requirements = {
         'version': '0.5',
         'test': '==',
         'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/python_snappy-0.5-cp27-none-win_amd64.whl'
-    },
-    'scipy': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
-        'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
     },
     'seaborn': {
         'platform': ['win', 'lin', 'mac'],
@@ -113,25 +113,23 @@ def download_file(url):
     """
     Download package
     """
-    import requests
+    import urllib2
 
     local_file = get_local_file_path(url)
 
-    with requests.Session() as s:
-        headers = {
-                   'host': 'www.lfd.uci.edu',
-                   'Connection': 'keep-alive',
-                   'Upgrade-Insecure-Requests': '1',
-                   'Accept-Language': 'en-US,en;q=0.8',
-                   'Accept-Encoding': 'gzip, deflate, sdch',
-                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                   'Referer': 'http://www.lfd.uci.edu/~gohlke/pythonlibs/',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36'
-                   }
-
-        r = s.get(url, headers=headers)
-        with open(local_file, "wb") as code:
-            code.write(r.content)
+    req = urllib2.Request(url)
+    req.add_header('host', 'www.lfd.uci.edu')
+    req.add_header('Connection', 'keep-alive')
+    req.add_header('Upgrade-Insecure-Requests', '1')
+    req.add_header('Accept-Language', 'en-US,en;q=0.8',)
+    req.add_header('Accept-Encoding', 'gzip, deflate, sdch')
+    req.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
+    req.add_header('Referer', 'http://www.lfd.uci.edu/~gohlke/pythonlibs/')
+    req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36')
+    resp = urllib2.urlopen(req)
+    data = resp.read()
+    with open(local_file, "wb") as code:
+        code.write(data)
 
     return local_file
 
