@@ -22,55 +22,55 @@ requirements = {
         'platform': ['win'],
         'version': '2.2',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/curses-2.2-cp27-none-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
     },
     'numpy': {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.1+mkl',
-        'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/numpy-1.11.1+mkl-cp27-cp27m-win_amd64.whl'
+        'version': '1.11.2rc1+mkl',
+        'test': '>=',
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2rc1%2Bmkl-cp27-cp27m-win_amd64.whl'
     },
     'scipy': {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
     },
     'matplotlib': {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
     },
     'pandas': {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
     },
     'psutil': {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
     },
     'python-snappy': {
         'platform': ['win', 'lin'],
         'version': '0.5',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/python_snappy-0.5-cp27-none-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/python_snappy-0.5-cp27-none-win_amd64.whl'
     },
     'seaborn': {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.7.1',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/seaborn-0.7.1-py2.py3-none-any.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/seaborn-0.7.1-py2.py3-none-any.whl'
     },
     'statsmodels': {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.6.1',
         'test': '==',
-        'wheel': 'http://www.lfd.uci.edu/%7Egohlke/pythonlibs/dp2ng7en/statsmodels-0.6.1-cp27-none-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/statsmodels-0.6.1-cp27-none-win_amd64.whl'
     },
     'SQLAlchemy': {
         'platform': ['win', 'lin', 'mac'],
@@ -122,14 +122,6 @@ def download_file(url):
     local_file = get_local_file_path(url)
 
     req = urllib2.Request(url)
-    req.add_header('host', 'www.lfd.uci.edu')
-    req.add_header('Connection', 'keep-alive')
-    req.add_header('Upgrade-Insecure-Requests', '1')
-    req.add_header('Accept-Language', 'en-US,en;q=0.8',)
-    req.add_header('Accept-Encoding', 'gzip, deflate, sdch')
-    req.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
-    req.add_header('Referer', 'http://www.lfd.uci.edu/~gohlke/pythonlibs/')
-    req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.116 Safari/537.36')
     resp = urllib2.urlopen(req)
     data = resp.read()
     with open(local_file, "wb") as code:
