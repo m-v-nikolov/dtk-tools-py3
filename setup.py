@@ -316,8 +316,9 @@ def get_requirements_by_os(my_os):
 
     for i in range(len(order_requirements)):
         name = order_requirements[i]
-        reqs_OrderedDict[name] = reqs[name]
-        reqs.pop(name)
+        if name in reqs:
+            reqs_OrderedDict[name] = reqs[name]
+            reqs.pop(name)
 
     for (name, val) in reqs.iteritems():
         reqs_OrderedDict[name] = val
