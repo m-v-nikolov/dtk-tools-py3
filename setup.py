@@ -262,10 +262,10 @@ def build_package_str(my_os, name, val):
         else:
             package_str = name
     elif my_os in ['mac', 'lin']:
-        if ('test' in val and val['test']) and ('version' in val and val['version']):
+        if val.get('test', None) and val.get('version', None):
             package_str = "%s%s%s" % (name, val['test'], val['version'])
         else:
-            package_str = "%s" % (name)
+            package_str = "%s" % name
 
     return package_str
 
@@ -274,17 +274,18 @@ def get_os():
     """
     Retrieve OS
     """
+    ar = platform.architecture()
+    sy = platform.system()
+
     my_os = None
     # OS: windows
-    if platform.architecture() == ('64bit', 'WindowsPE') or platform.system() == 'Windows':
+    if ar == ('64bit', 'WindowsPE') or sy == 'Windows':
         my_os = 'win'
-
     # OS: Mac
-    if platform.architecture() == ('64bit', '') or platform.system() == 'Darwin':
+    elif ar == ('64bit', '') or sy == 'Darwin':
         my_os = 'mac'
-
     # OS: Linux
-    if platform.architecture() == ('64bit', 'ELF') or platform.system() == 'Linux':
+    elif ar == ('64bit', 'ELF') or sy == 'Linux':
         my_os = 'lin'
 
     return my_os
@@ -320,8 +321,7 @@ def get_requirements_by_os(my_os):
     for i in range(len(order_requirements)):
         name = order_requirements[i]
         if name in reqs:
-            reqs_OrderedDict[name] = reqs[name]
-            reqs.pop(name)
+            reqs_OrderedDict[name] = reqs.pop(name)
 
     for (name, val) in reqs.iteritems():
         reqs_OrderedDict[name] = val
