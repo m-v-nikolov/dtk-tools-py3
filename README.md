@@ -19,13 +19,13 @@ Make sure you have Python 2.7 installed (available [here](https://www.python.org
 
 From a command-prompt (as admin), run the following from the **dtk-tools** directory:
 ```
-python -m pip install --upgrade pip
+pip install --upgrade setuptools
 python setup.py 
 ```
 
 Add the path to `dtk_tools` to your `PYTHONPATH` environment variable.
 
-**Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default: `C:\Python27\Scripts`) 
+**Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default in Windows: `C:\Python27\Scripts`)
 to your `PATH` environment variable.
 
 To test if dtk-tools is correctly installed on your machine issue a:
@@ -34,11 +34,17 @@ dtk -h
 ```
 If the command succeed and present you with the details of the dtk command you are all set!
 
-**Note:** If you run into issues updating numpy on Windows, under the dtk-tools\install folder try:
+**Note:** if you setup dtk-tools on MacBook with virtualenv, you may encounter an error below:
 
-```
-pip install numpy-1.11.0+mkl-cp27-cp27m-win_amd64.whl
-```
+RuntimeError: Python is not installed as a framework. The Mac OS X backend will not be able to function correctly if Python is not installed as a framework. See the Python documentation for more information on installing Python as a framework on Mac OS X. Please either reinstall Python as a framework, or try one of the other backends. If you are Working with Matplotlib in a virtual enviroment see 'Working with Matplotlib in Virtual environments' in the Matplotlib FAQ
+
+Fix: You can fix this issue by using the backend Agg:
+
+Go to /Users/yourname/.matplotlib and open/create matplotlibrc and add the following line
+
+backend : Agg
+
+it should work for you.
 
 **Note:** EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
 
@@ -49,7 +55,9 @@ Linux users, you need to install:
 - python-snappy
 - snappy-dev
 - LAPACK
-In order for the tools to work. 
+In order for the tools to work.
+
+Remark: the command ```python setup.py``` from previous step will do these installation for you!
 
 #### Setup
 
