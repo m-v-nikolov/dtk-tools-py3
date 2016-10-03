@@ -262,7 +262,10 @@ def build_package_str(my_os, name, val):
         else:
             package_str = name
     elif my_os in ['mac', 'lin']:
-        package_str = "%s%s%s" % (name, val['test'], val['version'])
+        if ('test' in val and val['test']) and ('version' in val and val['version']):
+            package_str = "%s%s%s" % (name, val['test'], val['version'])
+        else:
+            package_str = "%s" % (name)
 
     return package_str
 
@@ -316,8 +319,9 @@ def get_requirements_by_os(my_os):
 
     for i in range(len(order_requirements)):
         name = order_requirements[i]
-        reqs_OrderedDict[name] = reqs[name]
-        reqs.pop(name)
+        if name in reqs:
+            reqs_OrderedDict[name] = reqs[name]
+            reqs.pop(name)
 
     for (name, val) in reqs.iteritems():
         reqs_OrderedDict[name] = val
