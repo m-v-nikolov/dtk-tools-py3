@@ -19,6 +19,7 @@ from dtk.utils.builders.ConfigTemplate import ConfigTemplate
 from dtk.utils.builders.TaggedTemplate import CampaignTemplate, DemographicsTemplate
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.ModBuilder import ModBuilder
+from simtools.SetupParser import SetupParser
 
 # For example only -- Force the selected block to be EXAMPLE
 SetupParser("EXAMPLE")
@@ -40,7 +41,7 @@ cpn = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign.json'
 cpn_outbreak = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign_outbreak_only.json') ) # These get the default tag, which is also "__KP"
 demog_pfa = DemographicsTemplate.from_file( os.path.join(plugin_files_dir, 'pfa_overlay.json') )
 
-# You can query and obtain values from templates.  Because some parameters can exist in multiple locates, i.e. tagged parameters, get_param return a tuple of (paths, values).\
+# You can query and obtain values from templates.  Because some parameters can exist in multiple locations, i.e. tagged parameters, get_param return a tuple of (paths, values).\
 demo_key = 'Start_Year__KP_Seeding_Year'
 if cpn.has_param(demo_key):
     print "Demo getting values of %s:" % demo_key
@@ -60,14 +61,14 @@ static_demog_params = {
     'Relationship_Parameters__KP_TRANSITORY_and_INFORMAL.Coital_Act_Rate': 0.5
 }
 
-cfg.set_params( static_config_params )              # <-- Set the parameter values
-cpn.set_params( static_campaign_params )            # <-- Set the parameter values
-cpn_outbreak.set_params( static_campaign_params )   # <-- Set the parameter values
+cfg.set_params( static_config_params )              # <-- Set static config parameters
+cpn.set_params( static_campaign_params )            # <-- Set static campaign parameters for campaign.json
+cpn_outbreak.set_params( static_campaign_params )   # <-- Set static campaign parameters for campaign_outbreak_only.json
 
 demo_key = static_demog_params.keys()[0]
 demo_value = static_demog_params.values()[0]
 (paths,before) = demog_pfa.get_param( demo_key )
-demog_pfa.set_params( static_demog_params )         # <-- Set the parameter values
+demog_pfa.set_params( static_demog_params )         # <-- Demo setting tagged parameter(s) in demographics file
 (_,after) = demog_pfa.get_param( demo_key )
 print 'Demo setting of %s to %f:' % (demo_key, demo_value)
 for (p,b,a) in zip(paths, before, after):
@@ -112,9 +113,8 @@ run_sim_args =  {'config_builder': config_builder,
                  'exp_name': 'TemplateDemo'}
 
 if __name__ == "__main__":
-    from simtools.SetupParser import SetupParser
     from simtools.ExperimentManager import ExperimentManagerFactory
 
-    sm = ExperimentManagerFactory.from_model(SetupParser().get('exe_path'), 'LOCAL')
+    sm = ExperimentManagerFactory.from_setup(SetupParser())
     sm.run_simulations(**run_sim_args)
 
