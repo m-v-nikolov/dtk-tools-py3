@@ -262,7 +262,10 @@ def build_package_str(my_os, name, val):
         else:
             package_str = name
     elif my_os in ['mac', 'lin']:
-        package_str = "%s%s%s" % (name, val['test'], val['version'])
+        if val.get('test', None) and val.get('version', None):
+            package_str = "%s%s%s" % (name, val['test'], val['version'])
+        else:
+            package_str = "%s" % name
 
     return package_str
 
@@ -271,17 +274,18 @@ def get_os():
     """
     Retrieve OS
     """
+    ar = platform.architecture()
+    sy = platform.system()
+
     my_os = None
     # OS: windows
-    if platform.architecture() == ('64bit', 'WindowsPE') or platform.system() == 'Windows':
+    if ar == ('64bit', 'WindowsPE') or sy == 'Windows':
         my_os = 'win'
-
     # OS: Mac
-    if platform.architecture() == ('64bit', '') or platform.system() == 'Darwin':
+    elif ar == ('64bit', '') or sy == 'Darwin':
         my_os = 'mac'
-
     # OS: Linux
-    if platform.architecture() == ('64bit', 'ELF') or platform.system() == 'Linux':
+    elif ar == ('64bit', 'ELF') or sy == 'Linux':
         my_os = 'lin'
 
     return my_os
@@ -301,23 +305,19 @@ def get_requirements_by_os(my_os):
 
     # OS: Linux. No version for some packages
     if my_os in ['lin']:
-        if 'version' in reqs['numpy']:
-            reqs['numpy'].pop('version')
-        if 'test' in reqs['numpy']:
-            reqs['numpy'].pop('test')
-
-        if 'version' in reqs['scipy']:
-            reqs['scipy'].pop('version')
-        if 'test' in reqs['scipy']:
-            reqs['scipy'].pop('test')
+        for name in ['numpy', 'scipy']:
+            if 'version' in reqs[name]:
+                reqs[name].pop('version')
+            if 'test' in reqs[name]:
+                reqs[name].pop('test')
 
     # Keep packages in order
     reqs_OrderedDict = OrderedDict()
 
     for i in range(len(order_requirements)):
         name = order_requirements[i]
-        reqs_OrderedDict[name] = reqs[name]
-        reqs.pop(name)
+        if name in reqs:
+            reqs_OrderedDict[name] = reqs.pop(name)
 
     for (name, val) in reqs.iteritems():
         reqs_OrderedDict[name] = val
