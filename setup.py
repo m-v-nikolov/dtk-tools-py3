@@ -305,15 +305,11 @@ def get_requirements_by_os(my_os):
 
     # OS: Linux. No version for some packages
     if my_os in ['lin']:
-        if 'version' in reqs['numpy']:
-            reqs['numpy'].pop('version')
-        if 'test' in reqs['numpy']:
-            reqs['numpy'].pop('test')
-
-        if 'version' in reqs['scipy']:
-            reqs['scipy'].pop('version')
-        if 'test' in reqs['scipy']:
-            reqs['scipy'].pop('test')
+        for name in ['numpy', 'scipy']:
+            if 'version' in reqs[name]:
+                reqs[name].pop('version')
+            if 'test' in reqs[name]:
+                reqs[name].pop('test')
 
     # Keep packages in order
     reqs_OrderedDict = OrderedDict()
