@@ -49,9 +49,14 @@ def load_config_module(config_name):
 
     try:
         return import_module(module_name)
-    except ImportError:
-        logger.error("Unable to find %s in %s. Exiting..." % (module_name, os.getcwd()))
+    except ImportError as e:
+        logger.error("ImportError: '%s' during loading module '%s' in %s. Exiting...",
+                     e.message, module_name, os.getcwd())
         exit()
+    else:
+        logger.error("Unexpected error: %s", sys.exc_info()[0])
+        raise
+
 
 def test(args, unknownArgs):
     # Get to the test dir
