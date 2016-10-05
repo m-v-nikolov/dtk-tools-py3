@@ -117,8 +117,8 @@ class SetupParser:
                 from simtools import utils
                 utils.COMPS_login(self.get('server_endpoint'))
 
-            except ImportError:
-                print('Failed loading pyCOMPS package; you will only be able to run local simulations.')
+            except ImportError as e:
+                print 'Failed loading pyCOMPS package; you will only be able to run local simulations.\n%s' % e
 
             except KeyError:
                 print('Unable to determine JAVA_HOME; please set JAVA_HOME environment variable as described in pyCOMPS README.txt')

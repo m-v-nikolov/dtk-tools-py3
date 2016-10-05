@@ -116,7 +116,7 @@ def run(args, unknownArgs):
             additional_args['node_group'] = args.node_group
 
     # Create the experiment manager based on the setup and run simulation.
-    sm = ExperimentManagerFactory.from_setup(setup, location=setup.get('type'), **additional_args)
+    sm = ExperimentManagerFactory.from_setup(setup, **additional_args)
     sm.run_simulations(**mod.run_sim_args)
 
 
