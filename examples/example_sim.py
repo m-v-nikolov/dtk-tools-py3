@@ -14,5 +14,6 @@ run_sim_args =  {'config_builder': cb,
 
 
 if __name__ == "__main__":
-    sm = ExperimentManagerFactory.from_setup(SetupParser())
+    sm = ExperimentManagerFactory.from_setup()
     sm.run_simulations(**run_sim_args)
+    sm.commission_simulations()

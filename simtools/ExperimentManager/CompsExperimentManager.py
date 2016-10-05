@@ -103,7 +103,7 @@ class CompsExperimentManager(BaseExperimentManager):
             c.join()
         self.collect_sim_metadata()
 
-    def commission_simulations(self, states):
+    def commission_simulations(self, states={}):
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
 

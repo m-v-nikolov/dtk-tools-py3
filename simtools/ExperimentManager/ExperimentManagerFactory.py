@@ -36,10 +36,13 @@ class ExperimentManagerFactory(object):
         return cls.factory(location)(model_file, None, setup)
 
     @classmethod
-    def from_setup(cls, setup=None, location='LOCAL', **kwargs):
+    def from_setup(cls, setup=None, **kwargs):
         if not setup:
             setup = SetupParser()
+
+        location = setup.get('type')
         logger.info('Initializing %s ExperimentManager from parsed setup', location)
+
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)
         return cls.factory(location)(setup.get('exe_path'), None, setup)
