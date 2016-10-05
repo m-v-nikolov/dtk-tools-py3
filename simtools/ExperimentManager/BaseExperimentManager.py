@@ -347,6 +347,7 @@ class BaseExperimentManager:
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
         getch = helpers.find_getch()
+        self.check_overseer()
         while True:
             time.sleep(init_sleep)
 
