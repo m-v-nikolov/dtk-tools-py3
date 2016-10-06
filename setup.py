@@ -118,19 +118,6 @@ def download_file(url):
     """
     Download package
     """
-    import urllib
-
-    local_file = get_local_file_path(url)
-    urllib.urlretrieve(url, local_file)
-
-    return local_file
-
-
-def download_file2(url):
-    """
-    Download package
-    If we want to add headers, may consider use this version
-    """
     import urllib2
 
     local_file = get_local_file_path(url)
