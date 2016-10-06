@@ -4,6 +4,7 @@ import numpy as np  # for reading spatial output data by node and timestep
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
 import pandas as pd  # for reading csv files
+import gc # for garbage collection
 
 import logging
 
@@ -37,6 +38,7 @@ class SimulationOutputParser(threading.Thread):
                 self.selected_data[id(analyzer)] = analyzer.apply(self)
 
             del self.raw_data
+            gc.collect()    # clean up after apply()
         finally:
             if self.semaphore:
                 self.semaphore.release()
