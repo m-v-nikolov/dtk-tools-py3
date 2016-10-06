@@ -99,6 +99,7 @@ requirements = {
 }
 
 
+# Installation orders are required for some packages
 order_requirements = ['curses', 'numpy',  'scipy', 'matplotlib']
 
 
@@ -274,19 +275,18 @@ def get_os():
     """
     Retrieve OS
     """
-    ar = platform.architecture()
     sy = platform.system()
 
     my_os = None
     # OS: windows
-    if ar == ('64bit', 'WindowsPE') or sy == 'Windows':
+    if sy == 'Windows':
         my_os = 'win'
-    # OS: Mac
-    elif ar == ('64bit', '') or sy == 'Darwin':
-        my_os = 'mac'
     # OS: Linux
-    elif ar == ('64bit', 'ELF') or sy == 'Linux':
+    elif sy == 'Linux':
         my_os = 'lin'
+    # OS: Mac
+    else:
+        my_os = 'mac'
 
     return my_os
 
@@ -312,17 +312,17 @@ def get_requirements_by_os(my_os):
                 reqs[name].pop('test')
 
     # Keep packages in order
-    reqs_OrderedDict = OrderedDict()
+    reqs_ordered_dict = OrderedDict()
 
     for i in range(len(order_requirements)):
         name = order_requirements[i]
         if name in reqs:
-            reqs_OrderedDict[name] = reqs.pop(name)
+            reqs_ordered_dict[name] = reqs.pop(name)
 
     for (name, val) in reqs.iteritems():
-        reqs_OrderedDict[name] = val
+        reqs_ordered_dict[name] = val
 
-    return reqs_OrderedDict
+    return reqs_ordered_dict
 
 
 def install_linux_pre_requisites():
