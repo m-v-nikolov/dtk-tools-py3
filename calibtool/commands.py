@@ -24,7 +24,7 @@ def get_calib_manager_args(args, unknownArgs, force_metadata=False):
     calib_args = mod.run_calib_args
 
     # force_metadata == True for resume case
-    exp = manager.get_experiment_from_iteration(args.iteration if force_metadata else None)
+    exp = manager.get_experiment_from_iteration(args.iteration if force_metadata else None, force_metadata)
 
     # update selected_block
     if ('selected_block' not in calib_args or not calib_args['selected_block']) or force_metadata:

@@ -233,7 +233,7 @@ class CalibManager(object):
             if 'location' in kwargs:
                 kwargs.pop('location')
 
-            self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, self.location, **kwargs)
+            self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, **kwargs)
 
             # Generate the suite ID if not present
             if (self.location == "LOCAL" and not self.local_suite_id) or (self.location=="HPC" and not self.comps_suite_id):
