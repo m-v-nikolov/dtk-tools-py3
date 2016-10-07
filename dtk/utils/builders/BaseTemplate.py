@@ -132,7 +132,7 @@ class BaseTemplate(ITemplate):
 
         return param, contents[key]
 
-    def set_param(self, param, value):
+    def set_param(self, param, value, allow_new_parameters = False, include_filename_in_tag = False):
         """
         Call set_param to set a parameter in the template file.  List indices can be provided via brackets or dots, e.g.
         * Events[3].Whatever
@@ -142,10 +142,17 @@ class BaseTemplate(ITemplate):
         :param value: The value to place at expanded parameter loci.
         :return: Simulation tags
         """
-        contents, key = self.get_param_handle(param)
-        contents[key] = self.cast_value(value)
 
-        return {"[" + self.get_filename() + "] " + param: value}
+        contents, key = self.get_param_handle(param)
+        if key in contents or \
+            (type(contents) is list and type(key) is int and len(contents) > key) or \
+            allow_new_parameters:
+
+            contents[key] = self.cast_value(value)
+            if include_filename_in_tag:
+                return {"[" + self.get_filename() + "] " + param: value}
+            return {param: value}
+        return {}
 
     def set_params(self, params):
         """
