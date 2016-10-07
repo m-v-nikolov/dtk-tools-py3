@@ -48,7 +48,7 @@ Step 1: install Homebrew with command
 
 Refer to http://brew.sh/index.html
 
-Note: above command will install pip and git for you automatically.
+Note: above command will install pip for you automatically.
 
 Make sure pip got installed, otherwise install pip manually.
 
