@@ -34,6 +34,35 @@ dtk -h
 ```
 If the command succeed and present you with the details of the dtk command you are all set!
 
+
+#### MAC users
+Tested with macOS Sierra (Version 10.12)
+
+By default, MAC will install Python 2.7.10 for system use and users may not have certain permissions to upgrade some packages!
+
+Steps to follow:
+
+Step 1: install Homebrew with command
+
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+Refer to http://brew.sh/index.html
+
+Note: above command will install pip and git for you automatically.
+
+Make sure pip got installed, otherwise install pip manually.
+
+Step 2: install Python with command
+
+    brew install python
+
+Step 3: run setup
+
+    python setup.py
+
+Note: From a command-prompt (as admin), run the above from the **dtk-tools** directory.
+
+
 **Note:** if you setup dtk-tools on MacBook with virtualenv, you may encounter an error below:
 
 RuntimeError: Python is not installed as a framework. The Mac OS X backend will not be able to function correctly if Python is not installed as a framework. See the Python documentation for more information on installing Python as a framework on Mac OS X. Please either reinstall Python as a framework, or try one of the other backends. If you are Working with Matplotlib in a virtual enviroment see 'Working with Matplotlib in Virtual environments' in the Matplotlib FAQ
