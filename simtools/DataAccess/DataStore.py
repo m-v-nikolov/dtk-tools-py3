@@ -38,6 +38,11 @@ class DataStore:
     Class to abstract access to the data.
     """
     @classmethod
+    def batch(cls, iterable, n=1):
+        l = len(iterable)
+        for ndx in range(0, l, n):
+            yield iterable[ndx:min(ndx + n, l)]
+    @classmethod
     def batch_simulations_update(cls, batch):
         if len(batch) == 0: return
 
@@ -46,10 +51,13 @@ class DataStore:
             session.execute(stmt, batch)
     @classmethod
     def get_simulation_states(cls,simids):
-        with session_scope() as session:
-            states = session.query(Simulation.id, Simulation.status).filter(Simulation.id.in_(simids)).all()
-            session.expunge_all()
-        return states
+        states_ret = []
+        for ids in DataStore.batch(simids, 50):
+            with session_scope() as session:
+                states = session.query(Simulation.id, Simulation.status).filter(Simulation.id.in_(ids)).all()
+                session.expunge_all()
+            states_ret.extend(states)
+        return states_ret
 
     @classmethod
     def create_simulation(cls, **kwargs):

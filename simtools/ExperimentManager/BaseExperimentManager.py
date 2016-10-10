@@ -123,7 +123,7 @@ class BaseExperimentManager:
         else:
             runner_pid = None
 
-        if runner_pid and psutil.pid_exists(runner_pid) and psutil.Process(runner_pid).name() == 'python.exe':
+        if runner_pid and psutil.pid_exists(runner_pid) and (psutil.Process(runner_pid).name() == 'python.exe' or 'Overseer' in psutil.Process(runner_pid).name()):
             return
 
         # Run the runner
