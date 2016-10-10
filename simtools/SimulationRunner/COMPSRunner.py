@@ -20,6 +20,12 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         # Imports for COMPS
         os.environ['COMPS_REST_HOST'] = self.experiment.endpoint
 
+        # Check if we need to run
+        states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
+                                           self.experiment.endpoint).query()
+        if not any(v  == 'Created' for v in states.itervalues()):
+            return
+
         # Commission the experiment
         from COMPS.Data import Experiment
         e = Experiment.GetById(self.experiment.exp_id)
