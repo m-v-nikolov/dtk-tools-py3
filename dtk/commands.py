@@ -15,6 +15,7 @@ from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
@@ -396,6 +397,9 @@ def sync(args, unknownArgs):
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
     else:
         logger.info("The database was already up to date.")
+
+    # Start overseer
+    BaseExperimentManager.check_overseer()
 
 
 def create_experiment(exp_id, sp, verbose=False):
