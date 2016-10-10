@@ -417,8 +417,8 @@ class BaseExperimentManager:
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id
-        analyzer.exp_name = self.experiment.exe_name
-        analyzer.working_dir = working_dir
+        analyzer.exp_name = self.experiment.exp_name
+        analyzer.working_dir = working_dir if working_dir else os.getcwd()
         # Add to the list
         self.analyzers.append(analyzer)
 
