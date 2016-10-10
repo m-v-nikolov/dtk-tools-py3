@@ -35,12 +35,14 @@ dtk -h
 If the command succeed and present you with the details of the dtk command you are all set!
 
 
-#### MAC users
+#### MAC users ####
 Tested with macOS Sierra (Version 10.12)
 
 By default, MAC will install Python 2.7.10 for system use and users may not have certain permissions to upgrade some packages!
 
-Steps to follow:
+We will leave the system Python unchanged and install our own Python instead.
+
+From a command-prompt (as admin), follow the steps below in order:
 
 Step 1: install Homebrew with command
 
@@ -50,17 +52,24 @@ Refer to http://brew.sh/index.html
 
 Note: above command will install pip for you automatically.
 
-Make sure pip got installed, otherwise install pip manually.
+Make sure pip got installed, otherwise install pip manually by following the steps below:
 
-Step 2: install Python with command
+First, download get-pip.py from,
+
+	https://bootstrap.pypa.io/get-pip.py
+
+then run the following
+
+	sudo python get-pip.py
+
+
+Step 2: install Python with command:
 
     brew install python
 
-Step 3: run setup
+Step 3: run setup with command below from the **dtk-tools** directory:
 
-    python setup.py
-
-Note: From a command-prompt (as admin), run the above from the **dtk-tools** directory.
+    sudo python setup.py
 
 
 **Note:** if you setup dtk-tools on MacBook with virtualenv, you may encounter an error below:
