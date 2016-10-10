@@ -23,7 +23,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         # Check if we need to run
         states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
                                            self.experiment.endpoint).query()
-        if not any(v  == 'Created' for v in states.itervalues()):
+        if not any(v == 'Created' for v in states.itervalues()):
             return
 
         # Commission the experiment
