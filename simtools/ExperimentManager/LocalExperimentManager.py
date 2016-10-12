@@ -53,26 +53,7 @@ class LocalExperimentManager(BaseExperimentManager):
         Check file exist and return the missing files as dict
         """
         input_root = self.setup.get('input_root')
-
-        missing_files = {}
-        for (filename, filepath) in input_files.iteritems():
-            if isinstance(filepath, basestring):
-                filepath = filepath.strip()
-                # Skip empty files
-                if len(filepath) == 0:
-                    continue
-                # Only keep un-existing files
-                if not os.path.exists(os.path.join(input_root, filepath)):
-                    missing_files[filename] = filepath
-            elif isinstance(filepath, list):
-                # Skip empty and only keep un-existing files
-                missing_files[filename] = [f.strip() for f in filepath if len(f.strip()) > 0
-                                           and not os.path.exists(os.path.join(input_root, f.strip()))]
-                # Remove empty list
-                if len(missing_files[filename]) == 0:
-                    missing_files.pop(filename)
-
-        return missing_files
+        return self.find_missing_files(input_files, input_root)
 
     def cancel_all_simulations(self, states=None):
         if not states:
