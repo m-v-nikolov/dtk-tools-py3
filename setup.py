@@ -17,90 +17,86 @@ installed_packages = dict()
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
-requirements = {
-    'curses': {
+requirements = OrderedDict([
+    ('curses', {
         'platform': ['win'],
         'version': '2.2',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
-    },
-    'matplotlib': {
+    }),
+    ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
         'test': '>=',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
-    },
-    'numpy': {
+    }),
+    ('numpy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.11.2rc1+mkl',
         'test': '>=',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2rc1%2Bmkl-cp27-cp27m-win_amd64.whl'
-    },
-    'scipy': {
+    }),
+    ('scipy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
-    },
-    'pandas': {
+    }),
+    ('pandas', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
-    },
-    'psutil': {
+    }),
+    ('psutil', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
-    },
-    'python-snappy': {
+    }),
+    ('python-snappy', {
         'platform': ['win', 'lin'],
         'version': '0.5',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/python_snappy-0.5-cp27-none-win_amd64.whl'
-    },
-    'seaborn': {
+    }),
+    ('seaborn', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.7.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/seaborn-0.7.1-py2.py3-none-any.whl'
-    },
-    'statsmodels': {
+    }),
+    ('statsmodels', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.6.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/statsmodels-0.6.1-cp27-none-win_amd64.whl'
-    },
-    'SQLAlchemy': {
+    }),
+    ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.1.0b3',
         'test': '=='
-    },
-    'npyscreen': {
+    }),
+    ('npyscreen', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.10.5',
         'test': '=='
-    },
-    'decorator': {
+    }),
+    ('decorator', {
         'platform': ['mac'],
         'version': '4.0.10',
         'test': '=='
-    },
-    'validators': {
+    }),
+    ('validators', {
         'platform': ['win', 'lin', 'mac'],
-    },
-    'networkx': {
+    }),
+    ('networkx', {
         'platform': ['win', 'lin', 'mac'],
-    },
-    'dill': {
+    }),
+    ('dill', {
         'platform': ['win', 'lin', 'mac'],
-    }
-}
-
-
-# Installation orders are required for some packages
-order_requirements = ['curses', 'numpy',  'scipy', 'matplotlib']
+    })
+])
 
 
 def get_installed_packages():
@@ -295,7 +291,7 @@ def get_requirements_by_os(my_os):
     """
     Update requirements based on OS
     """
-    reqs = {name: val for (name, val) in requirements.iteritems() if my_os in val['platform']}
+    reqs = OrderedDict([(name, val) for (name, val) in requirements.iteritems() if my_os in val['platform']])
 
     # OS: Mac or Linux. No wheel needed
     if my_os in ['mac', 'lin']:
@@ -311,18 +307,7 @@ def get_requirements_by_os(my_os):
             if 'test' in reqs[name]:
                 reqs[name].pop('test')
 
-    # Keep packages in order
-    reqs_ordered_dict = OrderedDict()
-
-    for i in range(len(order_requirements)):
-        name = order_requirements[i]
-        if name in reqs:
-            reqs_ordered_dict[name] = reqs.pop(name)
-
-    for (name, val) in reqs.iteritems():
-        reqs_ordered_dict[name] = val
-
-    return reqs_ordered_dict
+    return reqs
 
 
 def install_linux_pre_requisites():
