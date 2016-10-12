@@ -24,6 +24,12 @@ requirements = {
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
     },
+    'matplotlib': {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.5.3',
+        'test': '>=',
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
+    },
     'numpy': {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.11.2rc1+mkl',
@@ -35,12 +41,6 @@ requirements = {
         'version': '0.18.1',
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
-    },
-    'matplotlib': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.5.3',
-        'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
     },
     'pandas': {
         'platform': ['win', 'lin', 'mac'],
