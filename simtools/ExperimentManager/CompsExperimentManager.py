@@ -30,19 +30,7 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         input_root = self.setup.get('input_root')
         input_root_real = utils.translate_COMPS_path(input_root)
-
-        missing_files = {}
-        for (filename, filepath) in input_files.iteritems():
-            if isinstance(filepath, basestring):
-                if not os.path.exists(os.path.join(input_root_real, filepath)):
-                    missing_files[filename] = filepath
-            elif isinstance(filepath, list):
-                missing_files[filename] = [f for f in filepath if not os.path.exists(os.path.join(input_root_real, f))]
-                # Remove empty list
-                if len(missing_files[filename]) == 0:
-                    missing_files.pop(filename)
-
-        return missing_files
+        return self.find_missing_files(input_files, input_root_real)
 
     def analyze_experiment(self):
         if not self.assets_service:
