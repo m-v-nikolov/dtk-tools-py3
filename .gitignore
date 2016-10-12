@@ -46,3 +46,6 @@ test/tmp/
 # User configuration
 simtools.ini
 db.sqlite
+
+install/*.whl
+simtools/simtools.ini.bak
