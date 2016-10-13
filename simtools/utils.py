@@ -15,7 +15,7 @@ logging_initialized = False
 def init_logging():
     if logging_initialized: return
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    logging.config.fileConfig(os.path.join(current_dir,'logging.conf'))
+    logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
 
 
 @contextlib.contextmanager

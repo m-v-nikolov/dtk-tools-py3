@@ -32,7 +32,7 @@ def SimulationStateUpdater(states, loop=True):
 
 
 if __name__ == "__main__":
-    logging.info('Start Overseer')
+    logger.info('Start Overseer')
     # Retrieve the threads number
     sp = SetupParser()
     max_local_sims = int(sp.get('max_local_sims'))
@@ -56,21 +56,21 @@ if __name__ == "__main__":
     while True:
         # Retrieve the active LOCAL experiments
         active_experiments = DataStore.get_active_experiments()
-        logging.info('Overseer - Waiting')
-        logging.info('Overseer - Active experiments')
-        logging.info(active_experiments)
-        logging.info('Overseer - Managers')
-        logging.info(managers.keys())
+        logger.info('Overseer - Waiting')
+        logger.info('Overseer - Active experiments')
+        logger.info(active_experiments)
+        logger.info('Overseer - Managers')
+        logger.info(managers.keys())
 
         # Create all the managers
         for experiment in active_experiments:
             if not managers.has_key(experiment.id):
-                logging.info('Overseer - Created manager for experiment id: %s' % experiment.id)
+                logger.info('Overseer - Created manager for experiment id: %s' % experiment.id)
                 try:
                     manager = ExperimentManagerFactory.from_experiment(experiment)
                 except Exception as e:
-                    logging.error('Exception in creation manager for experiment %s' % experiment.id)
-                    logging.error(e)
+                    logger.error('Exception in creation manager for experiment %s' % experiment.id)
+                    logger.error(e)
                     exit()
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore
@@ -80,9 +80,9 @@ if __name__ == "__main__":
         for manager in managers.values():
             # If the runners have not been created -> create them
             if not manager.runner_created:
-                logging.info('Overseer - Commission simulations for experiment id: %s' % manager.experiment.id)
+                logger.info('Overseer - Commission simulations for experiment id: %s' % manager.experiment.id)
                 manager.commission_simulations(update_states)
-                logging.info('Overseer - Experiment done commissioning ? %s' % manager.runner_created)
+                logger.info('Overseer - Experiment done commissioning ? %s' % manager.runner_created)
 
             # If the manager is done -> analyze
             if manager.finished():
@@ -105,4 +105,4 @@ if __name__ == "__main__":
 
         time.sleep(5)
 
-logging.info('Overseer - No more work to do, exiting...')
+logger.info('Overseer - No more work to do, exiting...')
