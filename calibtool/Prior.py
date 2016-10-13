@@ -9,9 +9,7 @@ logger = logging.getLogger(__name__)
 '''
 TODO:
 - discrete distributions
-- log-uniform, i.e. 10**uniform
 - independent combinations of multi-variate normals
-- Latin Hypercube Sampling?
 '''
 
 # TODO: fix unit tests
@@ -35,9 +33,9 @@ class SampleRange(object):
         self.range_type = range_type
         self.range_min = range_min
         self.range_max = range_max
+        self.function = self.get_sample_function()
 
-    @property
-    def function(self):
+    def get_sample_function(self):
         """
         Converts sample-range variables into scipy.stats frozen function
         :return: Frozen scipy.stats function
@@ -54,6 +52,12 @@ class SampleRange(object):
             return scipy.stats.uniform(loc=self.range_min, scale=(self.range_max - self.range_min))
         else:
             raise Exception('Unknown range_type (%s). Supported types: linear, log, linear_int.' % self.range_type)
+
+    def get_bins(self, n):
+        if 'log' in self.range_type:
+            return np.logspace(np.log10(self.range_min), np.log10(self.range_max), n)
+        else:
+            return np.linspace(self.range_min, self.range_max, n)
 
 
 class SampleFunction(object):
@@ -93,6 +97,10 @@ class MultiVariatePrior(object):
     @property
     def params(self):
         return self.sample_functions.keys()
+
+    @property
+    def ranges(self):
+        return [sf.sample_range for sf in self.sample_functions.values() if sf.sample_range is not None]
 
     @classmethod
     def by_range(cls, **param_sample_ranges):
@@ -167,9 +175,29 @@ class MultiVariatePrior(object):
         : param size : the number of random points to sample.
         """
 
-        # TODO: assess whether it wouldn't be better to return pd.DataFrame(data=prior.rvs(), columns=prior.params)
+        values = np.array([[f.rvs() for f in self.functions] for _ in range(size)]).squeeze()
+        return values
 
-        return np.array([[f.rvs() for f in self.functions] for _ in range(size)]).squeeze()
+        # TODO: consider updating next-point algorithm to expect pandas DataFrame?
+        # return pd.DataFrame(data=values, columns=prior.param)
+
+    def lhs(self, size=1):
+        """
+        Returns a Latin Hypercube sample, drawn from the sampling ranges of the component dimensions
+        :param size: the number of random points to sample
+        """
+
+        n_ranges = len(self.ranges)
+        if n_ranges == 0:
+            raise Exception("No sample ranges from which to do LHS sampling.")
+
+        samples = np.zeros((size, n_ranges))
+        for i, sample_range in enumerate(self.ranges):
+            sample_bins = sample_range.get_bins(size)
+            np.random.shuffle(sample_bins)
+            samples[:, i] = sample_bins
+
+        return samples
 
 
 if __name__ == '__main__':
@@ -182,28 +210,33 @@ if __name__ == '__main__':
         Nonspecific_Antigenicity_Factor=SampleRange('linear', 0.1, 0.9),
         Base_Gametocyte_Production_Rate=SampleRange('log', 0.001, 0.5))
 
-    df = pd.DataFrame(data=prior.rvs(size=5000), columns=prior.params)
-
+    n_random = 5000
     n_bins = 50
-    f, axs = plt.subplots(1, len(prior.params), figsize=(12, 4))
-    for i, p in enumerate(prior.params):
-        ax = axs[i]
-        sample_range = prior.sample_functions[p].sample_range
-        xscale = 'linear'
-        if sample_range is None:
-            stats = df[p].describe()
-            vmin, vmax = stats.loc['min'], stats.loc['max']
-            bins = np.linspace(stats.loc['min'], stats.loc['max'], n_bins)
-        else:
-            vmin, vmax = sample_range.range_min, sample_range.range_max
-            if 'log' in sample_range.range_type:
-                bins = np.logspace(np.log10(vmin), np.log10(vmax), n_bins)
-                xscale = 'log'
-            else:
-                bins = np.linspace(vmin, vmax, n_bins)
 
-        df[p].plot(kind='hist', ax=ax, bins=bins, alpha=0.5)
-        ax.set(xscale=xscale, xlim=(vmin, vmax), title=p)
+    # Latin Hypercube sample and independent random variable samples
+    dfs = [pd.DataFrame(data=prior.lhs(size=n_random), columns=prior.params),
+           pd.DataFrame(data=prior.rvs(size=n_random), columns=prior.params)]
+
+    f, axs = plt.subplots(2, len(prior.params), figsize=(12, 8))
+    for j, df in enumerate(dfs):
+        for i, p in enumerate(prior.params):
+            ax = axs[j][i]
+            sample_range = prior.sample_functions[p].sample_range
+            xscale = 'linear'
+            if sample_range is None:
+                stats = df[p].describe()
+                vmin, vmax = stats.loc['min'], stats.loc['max']
+                bins = np.linspace(stats.loc['min'], stats.loc['max'], n_bins)
+            else:
+                vmin, vmax = sample_range.range_min, sample_range.range_max
+                if 'log' in sample_range.range_type:
+                    bins = np.logspace(np.log10(vmin), np.log10(vmax), n_bins)
+                    xscale = 'log'
+                else:
+                    bins = np.linspace(vmin, vmax, n_bins)
+
+            df[p].plot(kind='hist', ax=ax, bins=bins, alpha=0.5)
+            ax.set(xscale=xscale, xlim=(vmin, vmax), title=p)
 
     f.set_tight_layout(True)
 
