@@ -1,14 +1,11 @@
 import datetime
 import json
-import logging
 
-from simtools.DataAccess import session_scope
+from simtools.DataAccess import session_scope, logger
 from simtools.DataAccess.Schema import Experiment, Simulation, Analyzer, Settings
+from simtools.DataAccess.SimulationDataStore import SimulationDataStore
 from simtools.utils import remove_null_values
-from sqlalchemy import bindparam
-from sqlalchemy import update
 from sqlalchemy.orm import joinedload
-logger = logging.getLogger("DataStore")
 
 
 def dumper(obj):
@@ -31,37 +28,30 @@ def dumper(obj):
         return obj.__dict__
 
 
-class DataStore:
+def batch(iterable, n=1):
     """
-    Class to abstract access to the data.
+    Batch an iterable passed as argument into lists of n elements.
+
+    Examples:
+        batch([1,2,3,4,5,6],2) returns [[1,2],[2,3],[4,5],[6]]
+
+    Args:
+        iterable: The iterable to split
+        n: split in lists of n elements
+
+    Returns: List of lists of n elements
     """
-    @classmethod
-    def batch(cls, iterable, n=1):
-        l = len(iterable)
-        for ndx in range(0, l, n):
-            yield iterable[ndx:min(ndx + n, l)]
+    logger.debug('batch function - %s in %s elements' % (iterable, n))
 
-    @classmethod
-    def batch_simulations_update(cls, batch):
-        if len(batch) == 0: return
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
 
-        with session_scope() as session:
-            stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
-            session.execute(stmt, batch)
 
-    @classmethod
-    def get_simulation_states(cls,simids):
-        states_ret = []
-        for ids in DataStore.batch(simids, 50):
-            with session_scope() as session:
-                states = session.query(Simulation.id, Simulation.status).filter(Simulation.id.in_(ids)).all()
-                session.expunge_all()
-            states_ret.extend(states)
-        return states_ret
-
-    @classmethod
-    def create_simulation(cls, **kwargs):
-        return Simulation(**kwargs)
+class DataStore(SimulationDataStore):
+    """
+    Class holding static methods to abstract the access to the database.
+    """
 
     @classmethod
     def create_experiment(cls, **kwargs):
@@ -84,10 +74,7 @@ class DataStore:
 
         return experiment
 
-    @classmethod
-    def save_simulation(cls, simulation):
-        with session_scope() as session:
-            session.merge(simulation)
+
 
     @classmethod
     def batch_save_experiments(cls, batch):
