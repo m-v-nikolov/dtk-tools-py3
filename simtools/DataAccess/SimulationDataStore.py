@@ -1,3 +1,5 @@
+import datetime
+
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Simulation
 from sqlalchemy import bindparam
@@ -39,7 +41,7 @@ class SimulationDataStore:
 
     @classmethod
     def create_simulation(cls, **kwargs):
-        return Simulation(**kwargs)
+        return Simulation(date_created=datetime.datetime.now(), **kwargs)
 
     @classmethod
     def save_simulation(cls, simulation):

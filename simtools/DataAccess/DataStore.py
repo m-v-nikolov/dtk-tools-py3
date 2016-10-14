@@ -55,7 +55,7 @@ class DataStore(SimulationDataStore):
 
     @classmethod
     def create_experiment(cls, **kwargs):
-        return Experiment(**kwargs)
+        return Experiment(date_created=datetime.datetime.now(), **kwargs)
 
     @classmethod
     def create_analyzer(cls, **kwargs):
