@@ -8,9 +8,7 @@ from simtools.utils import remove_null_values
 from sqlalchemy import bindparam
 from sqlalchemy import update
 from sqlalchemy.orm import joinedload
-
-logging.basicConfig(format='%(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("DataStore")
 
 
 def dumper(obj):
@@ -42,6 +40,7 @@ class DataStore:
         l = len(iterable)
         for ndx in range(0, l, n):
             yield iterable[ndx:min(ndx + n, l)]
+
     @classmethod
     def batch_simulations_update(cls, batch):
         if len(batch) == 0: return
@@ -49,6 +48,7 @@ class DataStore:
         with session_scope() as session:
             stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, batch)
+
     @classmethod
     def get_simulation_states(cls,simids):
         states_ret = []
