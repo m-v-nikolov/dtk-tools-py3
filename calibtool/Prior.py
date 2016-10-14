@@ -6,13 +6,8 @@ import scipy.stats
 
 logger = logging.getLogger(__name__)
 
-'''
-TODO:
-- discrete distributions
-- independent combinations of multi-variate normals
-'''
-
 # TODO: fix unit tests
+# TODO: independent combinations of multi-variate normals?
 
 
 class SampleRange(object):
@@ -48,8 +43,9 @@ class SampleRange(object):
                 raise Exception('range_min (%f) must be greater than zero for range_type=log.' % self.range_min)
             return scipy.stats.reciprocal(a=self.range_min, b=self.range_max)
         elif self.range_type == 'linear_int':
-            # TODO: make discrete
-            return scipy.stats.uniform(loc=self.range_min, scale=(self.range_max - self.range_min))
+            xx = range(int(self.range_min), int(self.range_max) + 1)
+            ww = [1.0 / len(xx)] * len(xx)
+            return scipy.stats.rv_discrete(name='linear_int', values=(xx, ww))
         else:
             raise Exception('Unknown range_type (%s). Supported types: linear, log, linear_int.' % self.range_type)
 
@@ -73,6 +69,13 @@ class SampleFunction(object):
     @classmethod
     def from_range(cls, sample_range):
         return cls(sample_range.function, sample_range)
+
+    def get_even_spaced_samples(self, n):
+        """
+        Returns an evenly spaced sampling of the percent-point function (inverse CDF)
+        :param n: number of evenly spaced samples
+        """
+        return self.function.ppf(np.linspace(0.001, 0.999, n))
 
 
 class MultiVariatePrior(object):
@@ -98,10 +101,6 @@ class MultiVariatePrior(object):
     def params(self):
         return self.sample_functions.keys()
 
-    @property
-    def ranges(self):
-        return [sf.sample_range for sf in self.sample_functions.values() if sf.sample_range is not None]
-
     @classmethod
     def by_range(cls, **param_sample_ranges):
         """
@@ -114,7 +113,7 @@ class MultiVariatePrior(object):
 
         > prior = MultiVariatePrior.by_range(
               MSP1_Merozoite_Kill_Fraction=SampleRange('linear', 0.4, 0.7),
-              Nonspecific_Antigenicity_Factor=SampleRange('linear', 0.1, 0.9),
+              Max_Individual_Infections=SampleRange('linear_int', 3, 8),
               Base_Gametocyte_Production_Rate=SampleRange('log', 0.001, 0.5))
         """
 
@@ -187,13 +186,9 @@ class MultiVariatePrior(object):
         :param size: the number of random points to sample
         """
 
-        n_ranges = len(self.ranges)
-        if n_ranges == 0:
-            raise Exception("No sample ranges from which to do LHS sampling.")
-
-        samples = np.zeros((size, n_ranges))
-        for i, sample_range in enumerate(self.ranges):
-            sample_bins = sample_range.get_bins(size)
+        samples = np.zeros((size, len(self.functions)))
+        for i, sample_function in enumerate(self.sample_functions.values()):
+            sample_bins = sample_function.get_even_spaced_samples(size)
             np.random.shuffle(sample_bins)
             samples[:, i] = sample_bins
 
@@ -207,7 +202,7 @@ if __name__ == '__main__':
 
     prior = MultiVariatePrior.by_range(
         MSP1_Merozoite_Kill_Fraction=SampleRange('linear', 0.4, 0.7),
-        Nonspecific_Antigenicity_Factor=SampleRange('linear', 0.1, 0.9),
+        Max_Individual_Infections=SampleRange('linear_int', 3, 8),
         Base_Gametocyte_Production_Rate=SampleRange('log', 0.001, 0.5))
 
     n_random = 5000
@@ -217,7 +212,7 @@ if __name__ == '__main__':
     dfs = [pd.DataFrame(data=prior.lhs(size=n_random), columns=prior.params),
            pd.DataFrame(data=prior.rvs(size=n_random), columns=prior.params)]
 
-    f, axs = plt.subplots(2, len(prior.params), figsize=(12, 8))
+    f, axs = plt.subplots(2, len(prior.params), figsize=(15, 8))
     for j, df in enumerate(dfs):
         for i, p in enumerate(prior.params):
             ax = axs[j][i]
@@ -229,11 +224,9 @@ if __name__ == '__main__':
                 bins = np.linspace(stats.loc['min'], stats.loc['max'], n_bins)
             else:
                 vmin, vmax = sample_range.range_min, sample_range.range_max
+                bins = sample_range.get_bins(n_bins)
                 if 'log' in sample_range.range_type:
-                    bins = np.logspace(np.log10(vmin), np.log10(vmax), n_bins)
                     xscale = 'log'
-                else:
-                    bins = np.linspace(vmin, vmax, n_bins)
 
             df[p].plot(kind='hist', ax=ax, bins=bins, alpha=0.5)
             ax.set(xscale=xscale, xlim=(vmin, vmax), title=p)
