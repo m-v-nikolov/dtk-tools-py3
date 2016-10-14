@@ -1,12 +1,11 @@
 import argparse
+import datetime
 import json
-import logging
 import os
 import subprocess
 import sys
 from importlib import import_module
 
-import datetime
 import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
@@ -19,11 +18,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
-logger = logging.getLogger(__name__)
-# Do we have to specify the log path?
-fh = logging.FileHandler('DtkTools_log.log')
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
+logger = utils.init_logging('DTK Commands')
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -347,7 +342,7 @@ def sync(args, unknownArgs):
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
     utils.COMPS_login(sp.get('server_endpoint'))
-    from COMPS.Data import Experiment, Suite, QueryCriteria
+    from COMPS.Data import Experiment, QueryCriteria
 
     day_limit_default = 30
 
@@ -407,7 +402,7 @@ def create_experiment(exp_id, sp, verbose=False):
     Create a new experiment in local db given COMPS experiment id
     If experiment exists in local db, just update it
     """
-    from COMPS.Data import Experiment, Suite, QueryCriteria
+    from COMPS.Data import Experiment, QueryCriteria
 
     with utils.nostdout():
         experiment = DataStore.get_experiment(exp_id)

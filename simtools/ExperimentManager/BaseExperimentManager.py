@@ -1,24 +1,24 @@
 import copy
 import json
-import logging
 import os
+import subprocess
+import sys
 import threading
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-import subprocess
-import sys
+
 import dill
 import psutil
+from dtk import helpers
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.SetupParser import SetupParser
-from dtk import helpers
+from simtools.utils import init_logging
 
-logging.basicConfig(format='%(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = init_logging('ExperimentManager')
 
 
 class BaseExperimentManager:

@@ -11,11 +11,11 @@ from hashlib import md5
 logger = logging.getLogger(__name__)
 max_exp_name_len = 100
 
-logging_initialized = False
-def init_logging():
-    if logging_initialized: return
+
+def init_logging(name):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
+    return logging.getLogger(name)
 
 
 @contextlib.contextmanager
