@@ -177,7 +177,7 @@ def kill(args, unknownArgs):
         return
 
     if args.simIds:
-        logger.info('KIlling job(s) with ids: ' + str(args.simIds))
+        logger.info('Killing job(s) with ids: ' + str(args.simIds))
         params = {'ids': args.simIds}
     else:
         logger.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
