@@ -7,8 +7,6 @@ import scipy.stats
 
 logger = logging.getLogger(__name__)
 
-# TODO: use SampleRange in LikelihoodPlotter ax.set_xlim
-
 
 class SampleRange(object):
 
@@ -54,6 +52,9 @@ class SampleRange(object):
             return np.logspace(np.log10(self.range_min), np.log10(self.range_max), n)
         else:
             return np.linspace(self.range_min, self.range_max, n)
+
+    def get_xlim(self):
+        return self.range_min, self.range_max
 
     def is_log(self):
         return 'log' in self.range_type
