@@ -1,6 +1,7 @@
 import cStringIO
 import contextlib
 import logging
+import logging.config
 import os
 import re
 import shutil
@@ -8,8 +9,13 @@ import sys
 from hashlib import md5
 
 logger = logging.getLogger(__name__)
-
 max_exp_name_len = 100
+
+
+def init_logging(name):
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
+    return logging.getLogger(name)
 
 
 @contextlib.contextmanager

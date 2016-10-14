@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
 
+from simtools.utils import init_logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -23,3 +24,6 @@ def session_scope(session=None):
         raise
     finally:
         session.close()
+
+
+logger = init_logging('DataAccess')

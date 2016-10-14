@@ -247,11 +247,18 @@ class CalibManager(object):
                 [ModBuilder.ModFn(self.sample_point_fn(idx), sample_point)
                  for idx, sample_point in enumerate(next_params)])
 
+            analyzers = []
+            for site in self.sites:
+                for analyzer in site.analyzers:
+                    if analyzer not in analyzers:
+                        analyzers.append(analyzer)
+
             self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
                 exp_name='%s_iter%d' % (self.name, self.iteration),
                 exp_builder=exp_builder,
-                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id)
+                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id,
+                analyzers=analyzers)
 
             self.iteration_state.simulations = self.exp_manager.experiment.toJSON()['simulations']
             self.iteration_state.experiment_id = self.exp_manager.experiment.exp_id
@@ -329,14 +336,17 @@ class CalibManager(object):
         if self.iteration_state.results:
             logger.info('Reloading results from cached iteration state.')
             return self.iteration_state.results['total']
+        if self.exp_manager:
+            exp_manager = self.exp_manager
+        else:
+            exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
 
-        exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
-
-        for site in self.sites:
-            for analyzer in site.analyzers:
-                logger.debug(site, analyzer)
-                exp_manager.add_analyzer(analyzer, self.iteration_directory())
-        exp_manager.analyze_experiment()
+        try:
+            for a in exp_manager.analyzers:
+                a.load()
+        except:
+            # print "LOADING FAILED"
+            exp_manager.analyze_experiment()
 
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
