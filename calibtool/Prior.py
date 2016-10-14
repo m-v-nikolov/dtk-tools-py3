@@ -2,12 +2,12 @@ import logging
 from operator import mul
 
 import numpy as np
+import pandas as pd
 import scipy.stats
 
 logger = logging.getLogger(__name__)
 
-# TODO: fix unit tests
-# TODO: independent combinations of multi-variate normals?
+# TODO: use SampleRange in LikelihoodPlotter ax.set_xlim
 
 
 class SampleRange(object):
@@ -50,13 +50,19 @@ class SampleRange(object):
             raise Exception('Unknown range_type (%s). Supported types: linear, log, linear_int.' % self.range_type)
 
     def get_bins(self, n):
-        if 'log' in self.range_type:
+        if self.is_log():
             return np.logspace(np.log10(self.range_min), np.log10(self.range_max), n)
         else:
             return np.linspace(self.range_min, self.range_max, n)
 
+    def is_log(self):
+        return 'log' in self.range_type
 
-class SampleFunction(object):
+    def is_int(self):
+        return 'int' in self.range_type
+
+
+class SampleFunctionContainer(object):
 
     """
     Container for a frozen function and optionally its associated sample-range properties
@@ -70,12 +76,33 @@ class SampleFunction(object):
     def from_range(cls, sample_range):
         return cls(sample_range.function, sample_range)
 
+    @classmethod
+    def from_tuple(cls, *args):
+        return cls.from_range(SampleRange(*args))
+
     def get_even_spaced_samples(self, n):
         """
         Returns an evenly spaced sampling of the percent-point function (inverse CDF)
         :param n: number of evenly spaced samples
         """
         return self.function.ppf(np.linspace(0.001, 0.999, n))
+
+    def pdf(self, X):
+        """
+        Wrapper for contained function pdf with check for discrete distributions
+        :return:
+        """
+        if isinstance(self.function, scipy.stats._distn_infrastructure.rv_frozen):
+            return self.function.pdf(X)
+        elif isinstance(self.function, scipy.stats._distn_infrastructure.rv_sample):
+            if self.sample_range is not None and 'int' in self.sample_range.range_type:
+                return self.function.pmf(np.round(X))  # round to NEAREST integer
+            else:
+                X_cdfs = self.function.cdf(X)
+                X_rounded = self.function.ppf(X_cdfs)  # this will round down to value of non-zero PMF
+                return self.function.pmf(X_rounded)
+        else:
+            raise Exception("Expecting a frozen scipy.stats function.")
 
 
 class MultiVariatePrior(object):
@@ -86,41 +113,59 @@ class MultiVariatePrior(object):
     Different dimensions are drawn independently
     from the univariate distributions.
 
-    : param sample_functions : dictionary of parameter names to SampleFunction containers
+    : param sample_functions : list of scipy.stats frozen functions
+    : param params : list of parameter names associated with functions (optional)
+    : param ranges : list of SampleRange objects associated with functions (optional)
+    : param name : name of MultiVariatePrior object (optional)
     """
 
-    def __init__(self, sample_functions, name=None):
-        self.sample_functions = sample_functions
+    def __init__(self, functions, params=[], ranges=[], name=None):
+
         self.name = name
+
+        if not params:
+            params = range(len(functions))
+        elif len(functions) != len(params):
+            raise Exception("params and functions lists must have same length")
+
+        if not ranges:
+            ranges = [None] * len(functions)
+        elif len(functions) != len(ranges):
+            raise Exception("ranges and functions lists must have same length")
+
+        self.sample_functions = {p: SampleFunctionContainer(f, r) for (p, f, r) in zip(params, functions, ranges)}
 
     @property
     def functions(self):
-        return [sample_function.function for sample_function in self.sample_functions.values()]
+        return [sfc.function for sfc in self.sample_functions.values()]
 
     @property
     def params(self):
         return self.sample_functions.keys()
+
+    @property
+    def ndim(self):
+        return len(self.functions)
 
     @classmethod
     def by_range(cls, **param_sample_ranges):
         """
         Builds multi-variate wrapper from keyword arguments of parameter names to SampleRange (min, max, type)
 
-        :param param_sample_ranges: keyword arguments of parameter names to SampleRange container
+        :param param_sample_ranges: keyword arguments of parameter names to SampleRange tuple
         :return: MultiVariatePrior instance
 
         An example usage:
 
         > prior = MultiVariatePrior.by_range(
-              MSP1_Merozoite_Kill_Fraction=SampleRange('linear', 0.4, 0.7),
-              Max_Individual_Infections=SampleRange('linear_int', 3, 8),
-              Base_Gametocyte_Production_Rate=SampleRange('log', 0.001, 0.5))
+              MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+              Max_Individual_Infections=('linear_int', 3, 8),
+              Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
         """
 
-        sample_functions = {param_name: SampleFunction.from_range(sample_range)
-                            for param_name, sample_range in param_sample_ranges.items()}
+        ranges = [SampleRange(*sample_range_tuple) for sample_range_tuple in param_sample_ranges.values()]
 
-        return cls(sample_functions)
+        return cls(functions=[r.function for r in ranges], ranges=ranges, params=param_sample_ranges.keys())
 
     @classmethod
     def by_param(cls, **param_sample_functions):
@@ -138,12 +183,7 @@ class MultiVariatePrior(object):
               Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
         """
 
-        # TODO: adjust sample-point function in example_calibration.py to param dictionary
-
-        sample_functions = {param_name: SampleFunction(sample_function)
-                            for param_name, sample_function in param_sample_functions.items()}
-
-        return cls(sample_functions)
+        return cls(functions=param_sample_functions.values(), params=param_sample_functions.keys())
 
     def pdf(self, X):
         """
@@ -151,21 +191,28 @@ class MultiVariatePrior(object):
         : param X : array of points, where each point is an array of correct dimension.
         """
 
-        # TODO: should this function implicitly accept more input types? list, np.array, list(list), etc.
+        if isinstance(X, list):
+            X = np.array(X)  # allow equivalent python list or np.ndarray inputs
 
-        input_dim = X.ndim if X.ndim == 1 else X.shape[1]
-
-        if input_dim == 1:
-            X = np.reshape(X, (X.shape[0], 1))
-
-        if len(self.functions) == input_dim:
-            logger.debug('Input dimension = %d', input_dim)
+        if X.ndim == 2:
+            npts, ndim = X.shape  # the default case
+        elif X.ndim == 1:
+            if len(self.functions) == 1:
+                npts, ndim = X.size, 1  # multiple 1-d measurements: [1, 2, 3] --> [[1], [2], [3]]
+            else:
+                npts, ndim = 1, X.size  # a single multi-dimensional measurement: [1, 2, 3] --> [[1, 2, 3]]
+            X = np.reshape(X, (npts, ndim))
         else:
-            raise Exception('Wrong shape')
+            raise Exception('Expecting 1- or 2-dimensional array input.')
+
+        if self.ndim == ndim:
+            logger.debug('Input dimension = %d', ndim)
+        else:
+            raise Exception('Dimensionality of sample points (%d) does not match function (%d)' % (ndim, self.ndim))
 
         pdfs = []
         for params in X:
-            pdfs.append(reduce(mul, [f.pdf(x) for f, x in zip(self.functions, params)], 1))
+            pdfs.append(reduce(mul, [f.pdf(x) for f, x in zip(self.sample_functions.values(), params)], 1))
         return np.array(pdfs)
 
     def rvs(self, size=1):
@@ -176,9 +223,6 @@ class MultiVariatePrior(object):
 
         values = np.array([[f.rvs() for f in self.functions] for _ in range(size)]).squeeze()
         return values
-
-        # TODO: consider updating next-point algorithm to expect pandas DataFrame?
-        # return pd.DataFrame(data=values, columns=prior.param)
 
     def lhs(self, size=1):
         """
@@ -194,23 +238,37 @@ class MultiVariatePrior(object):
 
         return samples
 
+    def to_dataframe(self, param_value_array):
+        """
+        Transforms an array of parameter-value arrays to a pandas.DataFrame with appropriate column names
+        """
+        return pd.DataFrame(data=param_value_array, columns=self.params)
+
+    def to_dict(self, param_point):
+        """
+        Transforms an individual point in parameter space to a dictionary of parameter names to values.
+        Also will round parameters where the range_type requires integer-only values.
+        """
+        int_param = [sfc.sample_range.is_int() if sfc.sample_range else False for sfc in self.sample_functions.values()]
+        param_point = [int(np.round(p)) if i else p for p, i in zip(param_point, int_param)]
+        return dict(zip(self.params, param_point))
+
 
 if __name__ == '__main__':
 
-    import pandas as pd
     import matplotlib.pyplot as plt
 
     prior = MultiVariatePrior.by_range(
-        MSP1_Merozoite_Kill_Fraction=SampleRange('linear', 0.4, 0.7),
-        Max_Individual_Infections=SampleRange('linear_int', 3, 8),
-        Base_Gametocyte_Production_Rate=SampleRange('log', 0.001, 0.5))
+        MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+        Max_Individual_Infections=('linear_int', 3, 8),
+        Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
 
     n_random = 5000
     n_bins = 50
 
     # Latin Hypercube sample and independent random variable samples
-    dfs = [pd.DataFrame(data=prior.lhs(size=n_random), columns=prior.params),
-           pd.DataFrame(data=prior.rvs(size=n_random), columns=prior.params)]
+    dfs = [prior.to_dataframe(prior.lhs(size=n_random)),
+           prior.to_dataframe(prior.rvs(size=n_random))]
 
     f, axs = plt.subplots(2, len(prior.params), figsize=(15, 8))
     for j, df in enumerate(dfs):
@@ -225,7 +283,7 @@ if __name__ == '__main__':
             else:
                 vmin, vmax = sample_range.range_min, sample_range.range_max
                 bins = sample_range.get_bins(n_bins)
-                if 'log' in sample_range.range_type:
+                if sample_range.is_log():
                     xscale = 'log'
 
             df[p].plot(kind='hist', ax=ax, bins=bins, alpha=0.5)

@@ -1,8 +1,6 @@
 # Execute directly: 'python example_calibration.py'
 # or via the calibtool.py script: 'calibtool run example_calibration.py'
 
-from scipy.stats import uniform
-
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
@@ -21,26 +19,31 @@ analyzer = DTKCalibFactory.get_analyzer(
 sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer]),
          DTKCalibFactory.get_site('Ndiop', analyzers=[analyzer])]
 
-prior = MultiVariatePrior.by_param(
-    MSP1_Merozoite_Kill_Fraction=uniform(loc=0.4, scale=0.3),  # from 0.4 to 0.7
-    Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
+prior = MultiVariatePrior.by_range(
+    MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+    Max_Individual_Infections=('linear_int', 3, 8),
+    Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
 
-plotters = [LikelihoodPlotter(True), SiteDataPlotter(True)]
+plotters = [
+    LikelihoodPlotter(True),
+    SiteDataPlotter(True)
+]
+
 
 def sample_point_fn(cb, param_values):
-    '''
+    """
     A simple example function that takes a list of sample-point values
     and sets parameters accordingly using the parameter names from the prior.
     Note that more complicated logic, e.g. setting campaign event coverage or habitat abundance by species,
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
-    '''
-    params_dict = dict(zip(prior.params, param_values))
+    """
+    params_dict = prior.to_dict(param_values)  # aligns names and values; also rounds integer-range_type params
     params_dict['Simulation_Duration'] = 365  # shorter for quick test
     return cb.update_params(params_dict)
 
 
 next_point_kwargs = dict(initial_samples=4,
-                         samples_per_iteration=3,
+                         samples_per_iteration=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='ExampleCalibration',

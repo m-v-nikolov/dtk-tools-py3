@@ -12,7 +12,7 @@ import pandas as pd
 from scipy.stats import norm, uniform, multivariate_normal
 
 from calibtool.IterationState import IterationState
-from calibtool.Prior import MultiVariatePrior
+from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContainer
 from calibtool.algo.IMIS import IMIS
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -113,8 +113,36 @@ class TestCommands(unittest.TestCase):
 
 
 class TestMultiVariatePrior(unittest.TestCase):
+
+    def test_sample_range(self):
+        linear_range = SampleRange('linear', 0.4, 0.7)
+        log_range = SampleRange('log', 0.4, 0.7)
+        linearint_range = SampleRange('linear_int', 1, 6)
+
+        self.assertRaises(lambda: SampleRange('linear', 0.4, 0.1))  # bad: min > max
+        self.assertRaises(lambda: SampleRange('log', -0.4, 0.1))  # bad: log(negative)
+
+    def test_container_sampling(self):
+        container = SampleFunctionContainer(uniform(loc=-5, scale=10))
+        equal_spaced = container.get_even_spaced_samples(11)
+        np.testing.assert_almost_equal(equal_spaced, np.arange(-5, 6), decimal=2)
+
+    def test_discrete_pdf(self):
+        container_continuous = SampleFunctionContainer.from_tuple('linear', 1, 6)
+        continuous_pdfs = container_continuous.pdf([3.2, 0.6, -3, 6.1, 7])
+        np.testing.assert_equal(continuous_pdfs, [0.2, 0, 0, 0, 0])
+
+        container_discrete = SampleFunctionContainer.from_tuple('linear_int', 1, 5)
+        discrete_pdfs = container_discrete.pdf([3.2, 0.6, -3, 5.1, 7])
+        np.testing.assert_equal(discrete_pdfs, [0.2, 0.2, 0, 0.2, 0])
+
+        container_wo_range = SampleFunctionContainer(container_discrete.function)
+        rangeless_pdfs = container_wo_range.pdf([3.2, 0.6, -3, 5.1, 7])
+        np.testing.assert_equal(rangeless_pdfs, [0.2, 0, 0, 0.2, 0.2])
+
     def test_two_normals(self):
-        two_normals = MultiVariatePrior(name='two_normals', functions=(norm(loc=0, scale=1), norm(loc=-10, scale=1)))
+        two_normals = MultiVariatePrior(name='two_normals',
+                                        functions=((norm(loc=0, scale=1)), (norm(loc=-10, scale=1))))
 
         xx = two_normals.rvs(size=1000)
         np.testing.assert_almost_equal(xx.mean(axis=0), np.array([0, -10]), decimal=1)
@@ -123,9 +151,11 @@ class TestMultiVariatePrior(unittest.TestCase):
         xx = two_normals.rvs(size=1)
         self.assertEqual(xx.shape, (2,))
 
+        self.assertEqual(two_normals.params, range(2))
+
     def test_normal_by_uniform(self):
         normal_by_uniform = MultiVariatePrior(name='normal_by_uniform',
-                                              functions=(norm(loc=0, scale=1), uniform(loc=-10, scale=5)))
+                                              functions=((norm(loc=0, scale=1)), (uniform(loc=-10, scale=5))))
 
         xx = normal_by_uniform.rvs(size=1000)
         np.testing.assert_almost_equal(xx.mean(axis=0), np.array([0, -7.5]), decimal=1)
@@ -143,6 +173,53 @@ class TestMultiVariatePrior(unittest.TestCase):
         test = np.array([[-1, 0], [0, 1], [1.5, 2], [-1, 2.5]])
         output = uniform_prior.pdf(test).tolist()
         self.assertListEqual(output, [0, 0.25, 0.25, 0])
+
+    def test_ranges(self):
+        prior = MultiVariatePrior.by_range(
+            MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+            Max_Individual_Infections=('linear_int', 3, 8),
+            Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
+
+        df_rvs = prior.to_dataframe(prior.rvs(1000))
+        df_rvs['Log10_Base_Gametocyte_Production_Rate'] = np.log10(df_rvs.Base_Gametocyte_Production_Rate)
+
+        df_lhs = prior.to_dataframe(prior.lhs(1000))
+        df_lhs['Log10_Base_Gametocyte_Production_Rate'] = np.log10(df_lhs.Base_Gametocyte_Production_Rate)
+
+        np.testing.assert_almost_equal(df_rvs[['MSP1_Merozoite_Kill_Fraction',
+                                               'Max_Individual_Infections',
+                                               'Log10_Base_Gametocyte_Production_Rate']].mean(axis=0),
+                                       np.array([0.55, 5.5, -1.65]), decimal=1)
+
+        np.testing.assert_almost_equal(df_lhs[['MSP1_Merozoite_Kill_Fraction',
+                                               'Max_Individual_Infections',
+                                               'Log10_Base_Gametocyte_Production_Rate']].mean(axis=0),
+                                       np.array([0.55, 5.5, -1.65]), decimal=1)
+
+    def test_ranges_pdf(self):
+        prior = MultiVariatePrior.by_range(
+            MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+            Max_Individual_Infections=('linear_int', 3, 8),
+            Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
+
+        test_ok = np.array([[0.5, 6, 0.3], [0, 1, 0.9], [1.5, 2, 12.5], [-1, 2.5, 63]])
+        test_list = [[-1, 0, 0.3], [0, 1, 0.9], [1.5, 2, 12.5], [-1, 3, 63]]
+        prior.pdf(test_ok)
+        prior.pdf(test_list)
+
+        # Forgiving of 1-d input
+        test_point_list = [1, 2, 3]
+        test_point_array = np.array([1, 2, 3])
+        prior.pdf(test_point_list)
+        prior.pdf(test_point_array)
+
+        transformed = prior.to_dict([2.5, 3.2, 0.4])
+        self.assertTrue(isinstance(transformed['Max_Individual_Infections'], int))
+
+        test_wrong_shape = np.array([[-1, 0], [0, 1], [1.5, 2], [-1, 2.5]])
+        test_empty = []
+        self.assertRaises(lambda: prior.pdf(test_wrong_shape))  # bad: wrong shape
+        self.assertRaises(lambda: prior.pdf(test_empty))  # bad: empty array
 
 
 class NextPointTestWrapper(object):
