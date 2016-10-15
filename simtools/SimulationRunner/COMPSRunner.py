@@ -49,18 +49,17 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         for simulation in self.experiment.simulations:
             last_states[simulation.id] = simulation.status
 
+        # Create the monitor
+        monitor = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id, self.experiment.endpoint)
+
         # Until done, update the status
         while True:
             logger.debug('COMPS - Waiting loop')
-            # Make sure we are logged in
-            utils.COMPS_login(self.experiment.endpoint)
-
             try:
-                states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
-                                                   self.experiment.endpoint).query()
+                states, _ = monitor.query()
             except Exception as e:
-                logger.critical('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
-                logger.critical(e)
+                logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
+                logger.error(e)
                 break
 
             diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key]]
@@ -73,8 +72,10 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                     self.states[key] = DataStore.create_simulation(status=states[key])
 
                     if states[key] == "Succeeded":
+                        logger.debug("Simulation %s has succeeded, calling ths success callback" % key)
                         simulation = DataStore.get_simulation(key)
                         self.success(simulation)
+                        logger.debut("Callback done for %s" % key)
 
                 last_states = states
 
@@ -85,4 +86,4 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                     self.states[id] = DataStore.create_simulation(status="Succeeded")
                 break
 
-            time.sleep(5)
+            time.sleep(8)
