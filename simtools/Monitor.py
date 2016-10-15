@@ -1,10 +1,7 @@
-import json
-import logging
-
 import utils
 from simtools.DataAccess.DataStore import DataStore
 
-logger = logging.getLogger(__name__)
+logger = utils.init_logging('Monitor')
 
 
 class SimulationMonitor(object):
@@ -32,12 +29,14 @@ class CompsSimulationMonitor(SimulationMonitor):
     """
 
     def __init__(self, exp_id, suite_id, endpoint):
+        logger.debug("Create a COMPS Monitor with exp_id=%s, suite_id=%s, endpoint=%s" % (exp_id,suite_id,endpoint))
         self.exp_id = exp_id
         self.suite_id = suite_id
         self.server_endpoint = endpoint
 
     def query(self):
-        from COMPS.Data import Experiment, Suite, QueryCriteria, Simulation
+        logger.debug("Monitor queries")
+        from COMPS.Data import Suite, QueryCriteria, Simulation
         utils.COMPS_login(self.server_endpoint)
 
         def sims_from_experiment(e):
