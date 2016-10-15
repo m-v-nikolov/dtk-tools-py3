@@ -390,8 +390,10 @@ def sync(args, unknownArgs):
         DataStore.batch_save_experiments(exp_to_save)
         logger.info("%s experiments have been updated in the DB." % len(exp_to_save))
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
+        print("%s experiments have been updated in the DB." % len(exp_to_save))
+        print("%s experiments have been deleted from the DB." % exp_deleted)
     else:
-        logger.info("The database was already up to date.")
+        print("The database was already up to date.")
 
     # Start overseer
     BaseExperimentManager.check_overseer()
