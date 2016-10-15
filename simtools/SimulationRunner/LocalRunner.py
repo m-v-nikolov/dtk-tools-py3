@@ -12,8 +12,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, thread_queue, states, success):
-        super(LocalSimulationRunner, self).__init__(experiment, states, success)
+    def __init__(self, simulation, experiment, thread_queue, states, success,lock):
+        super(LocalSimulationRunner, self).__init__(experiment, states, success,lock)
         self.queue = thread_queue
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
@@ -84,7 +84,14 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        self.states[self.simulation.id] = self.simulation
+        try:
+            self.lock.acquire()
+            self.states[self.simulation.id] = self.simulation
+        except Exception as e:
+            pass
+        finally:
+            self.lock.release()
+
 
     def last_status_line(self):
         """

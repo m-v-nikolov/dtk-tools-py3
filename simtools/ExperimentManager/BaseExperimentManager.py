@@ -171,6 +171,7 @@ class BaseExperimentManager:
         For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
         logger.debug("Status of simulations run on '%s':" % self.location)
+        self.check_overseer()
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
