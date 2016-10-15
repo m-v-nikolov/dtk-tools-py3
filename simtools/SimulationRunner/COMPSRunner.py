@@ -80,6 +80,9 @@ class COMPSSimulationRunner(BaseSimulationRunner):
 
             if CompsExperimentManager.status_finished(states):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
+                # For now for security, set a last state update
+                for id in states.keys():
+                    self.states[id] = DataStore.create_simulation(status="Succeeded")
                 break
 
             time.sleep(5)
