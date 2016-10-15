@@ -96,7 +96,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                     pass
                 finally:
                     self.lock.release()
-                    
+
                 break
 
             time.sleep(8)
