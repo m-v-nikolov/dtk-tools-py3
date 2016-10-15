@@ -10,7 +10,9 @@ from sqlalchemy.orm import joinedload
 class ExperimentDataStore:
     @classmethod
     def create_experiment(cls, **kwargs):
-        return Experiment(date_created=datetime.datetime.now(), **kwargs)
+        if 'date_created' not in kwargs:
+            kwargs['date_created'] = datetime.datetime.now()
+        return Experiment(**kwargs)
 
     @classmethod
     def get_experiment(cls, exp_id):

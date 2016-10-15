@@ -41,7 +41,9 @@ class SimulationDataStore:
 
     @classmethod
     def create_simulation(cls, **kwargs):
-        return Simulation(date_created=datetime.datetime.now(), **kwargs)
+        if 'date_created' not in kwargs:
+            kwargs['date_created'] = datetime.datetime.now()
+        return Simulation(**kwargs)
 
     @classmethod
     def save_simulation(cls, simulation):
