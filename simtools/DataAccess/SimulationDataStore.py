@@ -47,3 +47,11 @@ class SimulationDataStore:
     def save_simulation(cls, simulation):
         with session_scope() as session:
             session.merge(simulation)
+
+    @classmethod
+    def get_simulation(cls, sim_id):
+        with session_scope() as session:
+            simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
+            session.expunge_all()
+
+        return simulation
