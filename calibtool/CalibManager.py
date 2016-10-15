@@ -17,7 +17,7 @@ from simtools.ModBuilder import ModBuilder
 from utils import NumpyEncoder
 from core.utils.time import verbose_timedelta
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Calibration")
 
 
 class SampleIndexWrapper(object):
@@ -266,7 +266,7 @@ class CalibManager(object):
 
         self.wait_for_finished()
 
-    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time = 3):
+    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time = 10):
         while True:
             time.sleep(init_sleep)
 
