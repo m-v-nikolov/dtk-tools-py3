@@ -33,14 +33,14 @@ class LocalExperimentManager(BaseExperimentManager):
         self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
-    def commission_simulations(self, states={}):
+    def commission_simulations(self, states={},lock=None):
         if not self.local_queue:
             from Queue import Queue
             self.local_queue = Queue()
         while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
             self.local_queue.put('run 1')
             simulation = self.experiment.simulations[self.simulations_commissioned]
-            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback,lock))
             t1.daemon = True
             t1.start()
             self.simulations_commissioned += 1

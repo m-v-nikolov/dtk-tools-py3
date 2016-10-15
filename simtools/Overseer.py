@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import threading
 import time
 from Queue import Queue
@@ -11,21 +12,29 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
 
 logger = init_logging('Overseer')
+lock = multiprocessing.Lock()
 
 def SimulationStateUpdater(states, loop=True):
     while True:
         if states:
-            batch = []
-            # First retrieve our simulation state
-            for db_state in DataStore.get_simulation_states(states.keys()):
-                if db_state[1] in ('Succeeded','Failed','Canceled'):
-                    continue
-                else:
-                    new_state = states[db_state[0]]
-                    batch.append({'sid':db_state[0], "status": new_state.status, "message":new_state.message, "pid":new_state.pid})
+            lock.acquire()
+            try:
+                batch = []
+                # First retrieve our simulation state
+                for db_state in DataStore.get_simulation_states(states.keys()):
+                    if db_state[1] in ('Succeeded','Failed','Canceled'):
+                        continue
+                    else:
+                        new_state = states[db_state[0]]
+                        batch.append({'sid':db_state[0], "status": new_state.status, "message":new_state.message, "pid":new_state.pid})
 
-            DataStore.batch_simulations_update(batch)
-            states.clear()
+                DataStore.batch_simulations_update(batch)
+                states.clear()
+            except Exception as e:
+                logger.error("Exception in the status updater")
+                logger.error(e)
+            finally:
+                lock.release()
             if not loop: return
 
         time.sleep(5)
@@ -82,7 +91,7 @@ if __name__ == "__main__":
             # If the runners have not been created -> create them
             if not manager.runner_created:
                 logger.debug('Commission simulations for experiment id: %s' % manager.experiment.id)
-                manager.commission_simulations(update_states)
+                manager.commission_simulations(update_states, lock)
                 logger.debug('Experiment done commissioning ? %s' % manager.runner_created)
                 continue
 

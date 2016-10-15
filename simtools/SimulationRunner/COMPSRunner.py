@@ -13,9 +13,9 @@ logger = init_logging('Runner')
 
 class COMPSSimulationRunner(BaseSimulationRunner):
 
-    def __init__(self, experiment, states, success, commission=True):
+    def __init__(self, experiment, states, success, lock, commission=True):
         logger.debug('Create COMPSSimulationRunner with experiment: %s, commission: %s'% (experiment.id,commission))
-        super(COMPSSimulationRunner, self).__init__(experiment, states, success)
+        super(COMPSSimulationRunner, self).__init__(experiment, states, success, lock)
 
         states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
                                            self.experiment.endpoint).query()
@@ -67,23 +67,36 @@ class COMPSSimulationRunner(BaseSimulationRunner):
             logger.debug(diff_list)
 
             if len(diff_list) > 0:
-                for key in diff_list:
-                    # Create the simulation to send to the update
-                    self.states[key] = DataStore.create_simulation(status=states[key])
+                try:
+                    self.lock.acquire()
+                    for key in diff_list:
+                        # Create the simulation to send to the update
+                        self.states[key] = DataStore.create_simulation(status=states[key])
 
-                    if states[key] == "Succeeded":
-                        logger.debug("Simulation %s has succeeded, calling ths success callback" % key)
-                        simulation = DataStore.get_simulation(key)
-                        self.success(simulation)
-                        logger.debut("Callback done for %s" % key)
+                        if states[key] == "Succeeded":
+                            logger.debug("Simulation %s has succeeded, calling ths success callback" % key)
+                            simulation = DataStore.get_simulation(key)
+                            self.success(simulation)
+                            logger.debug("Callback done for %s" % key)
+                except Exception as e:
+                    logger.error(e)
+                finally:
+                    self.lock.release()
 
                 last_states = states
 
             if CompsExperimentManager.status_finished(states):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
                 # For now for security, set a last state update
-                for id in states.keys():
-                    self.states[id] = DataStore.create_simulation(status="Succeeded")
+                try:
+                    self.lock.acquire()
+                    for id in states.keys():
+                        self.states[id] = DataStore.create_simulation(status="Succeeded")
+                except:
+                    pass
+                finally:
+                    self.lock.release()
+                    
                 break
 
             time.sleep(8)
