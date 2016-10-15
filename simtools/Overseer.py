@@ -4,6 +4,7 @@ import time
 from Queue import Queue
 from collections import OrderedDict
 
+import sys
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
@@ -66,10 +67,13 @@ if __name__ == "__main__":
             if not managers.has_key(experiment.id):
                 logger.debug('Creation of manager for experiment id: %s' % experiment.id)
                 try:
+                    sys.path.append(experiment.working_directory)
                     manager = ExperimentManagerFactory.from_experiment(experiment)
                 except Exception as e:
-                    logger.critical('Exception in creation manager for experiment %s' % experiment.id)
-                    logger.critical(e)
+                    print "FAILURE IN THE CREATION OF THE MANAGER, CANNOT CONTINUE..."
+                    print e
+                    logger.error('Exception in creation manager for experiment %s' % experiment.id)
+                    logger.error(e)
                     exit()
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore
