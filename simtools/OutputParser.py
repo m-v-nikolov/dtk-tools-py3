@@ -30,6 +30,10 @@ class SimulationOutputParser(threading.Thread):
                 filenames.update(a.filenames)
             filenames = list(filenames)
 
+            # Wait a little bit to ensure all files are successfully written
+            import time
+            time.sleep(2)
+
             # parse output files for analysis
             self.load_all_files(filenames)
 
