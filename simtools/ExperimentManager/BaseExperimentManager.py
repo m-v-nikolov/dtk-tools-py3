@@ -438,7 +438,7 @@ class BaseExperimentManager:
                 plotting_processes.append(plotting_process)
             except Exception as e:
                 logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
-                logger.erro(e)
+                logger.error(e)
 
         for p in plotting_processes:
             p.join()

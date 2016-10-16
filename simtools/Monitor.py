@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 
 import utils
 from simtools.DataAccess.DataStore import DataStore
@@ -24,7 +25,7 @@ class SimulationMonitor(object):
             states[sim.id] = sim.status if sim.status else "Waiting"
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
-        logger.debug(json.dumps(states, indent=3))
+        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
         return states, msgs
 
 
@@ -79,6 +80,6 @@ class CompsSimulationMonitor(SimulationMonitor):
             msgs[id_string] = ''
 
         logger.debug("States returned")
-        logger.debug(json.dumps(states, indent=3))
+        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
 
         return states, msgs

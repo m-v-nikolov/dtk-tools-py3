@@ -16,6 +16,8 @@ lock = multiprocessing.Lock()
 
 def SimulationStateUpdater(states, loop=True):
     while True:
+        logger.debug("Simulation updated waiting loop")
+        logger.debug(states)
         if states:
             lock.acquire()
             try:
