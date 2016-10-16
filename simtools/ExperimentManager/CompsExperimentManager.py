@@ -3,6 +3,7 @@ from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
+from simtools.utils import init_logging
 
 
 class CompsExperimentManager(BaseExperimentManager):
@@ -94,7 +95,7 @@ class CompsExperimentManager(BaseExperimentManager):
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
 
         t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,
-                                                                  self.success_callback,lock ))
+                                                                  self.success_callback,lock))
         t1.daemon = True
         t1.start()
         self.runner_created = True
