@@ -13,6 +13,8 @@ max_exp_name_len = 100
 
 
 def init_logging(name):
+    # if not os.path.exists(os.path.join(os.getcwd(),'dtk-tools-logs')):
+    #     os.mkdir(os.path.join(os.getcwd(),'dtk-tools-logs'))
     current_dir = os.path.dirname(os.path.realpath(__file__))
     logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
     return logging.getLogger(name)
@@ -39,9 +41,9 @@ def nostdout(stdout = False, stderr=False):
         sys.stderr = cStringIO.StringIO()
 
     # Deactivate logging
-    logger.propagate = False
-    previous_level = logging.root.manager.disable
-    logging.disable(logging.CRITICAL)
+    # logger.propagate = False
+    # previous_level = logging.root.manager.disable
+    # logging.disable(logging.CRITICAL)
 
     yield
 
@@ -50,8 +52,9 @@ def nostdout(stdout = False, stderr=False):
         sys.stdout = save_stdout
     if not stderr:
         sys.stderr = save_stderr
-    logger.propagate = True
-    logging.disable(previous_level)
+
+    # logger.propagate = True
+    # logging.disable(previous_level)
 
 
 def caller_name(skip=2):

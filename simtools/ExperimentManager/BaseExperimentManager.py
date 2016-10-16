@@ -170,7 +170,7 @@ class BaseExperimentManager:
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
-        logger.debug("Status of simulations run on '%s':" % self.location)
+        logger.debug("get_simulation_status for %s" % self.experiment.id)
         self.check_overseer()
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
@@ -431,10 +431,14 @@ class BaseExperimentManager:
             a.finalize()
 
             # Plot in a separate process
-            from multiprocessing import Process
-            plotting_process = Process(target=a.plot)
-            plotting_process.start()
-            plotting_processes.append(plotting_process)
+            try:
+                from multiprocessing import Process
+                plotting_process = Process(target=a.plot)
+                plotting_process.start()
+                plotting_processes.append(plotting_process)
+            except Exception as e:
+                logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
+                logger.erro(e)
 
         for p in plotting_processes:
             p.join()

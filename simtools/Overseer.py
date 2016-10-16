@@ -109,7 +109,7 @@ if __name__ == "__main__":
         # Cleanup the analyze thread list
         for ap in analysis_threads:
             if not ap.is_alive(): analysis_threads.remove(ap)
-        logger.debug("Analysis thread length: %s" % len(analysis_threads))
+        logger.debug("Analysis thread: %s" % analysis_threads)
 
         # No more active managers  -> Exit if our analzers threads are done
         # Do not use len() to not block anything
