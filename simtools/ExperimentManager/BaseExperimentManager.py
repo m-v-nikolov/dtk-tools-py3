@@ -1,9 +1,9 @@
 import copy
 import json
+import multiprocessing
 import os
 import subprocess
 import sys
-import threading
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
@@ -38,7 +38,7 @@ class BaseExperimentManager:
 
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
-        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('max_threads')))
+        self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
 
         self.analyzers = []
         self.parsers = {}
