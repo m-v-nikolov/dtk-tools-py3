@@ -16,15 +16,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         logger.debug('Create COMPSSimulationRunner with experiment: %s, commission: %s'% (experiment.id,commission))
         super(COMPSSimulationRunner, self).__init__(experiment, states, success, lock)
 
-        states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
-                                           self.experiment.endpoint).query()
-        needs_commission = False
-        for state in states.values():
-            if state == "Created":
-                needs_commission = True
-                break
-
-        if commission and needs_commission:
+        if commission:
             self.run()
         else:
             self.monitor()
@@ -88,4 +80,4 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
                 break
 
-            time.sleep(8)
+            time.sleep(15)

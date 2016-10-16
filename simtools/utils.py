@@ -8,17 +8,16 @@ import shutil
 import sys
 from hashlib import md5
 
-logger = logging.getLogger(__name__)
 max_exp_name_len = 100
 
-
 def init_logging(name):
-    # if not os.path.exists(os.path.join(os.getcwd(),'dtk-tools-logs')):
-    #     os.mkdir(os.path.join(os.getcwd(),'dtk-tools-logs'))
+    # if not os.path.exists(os.path.join(os.getcwd(),'dtk_tools_logs')):
+    #     os.mkdir(os.path.join(os.getcwd(),'dtk_tools_logs'))
     current_dir = os.path.dirname(os.path.realpath(__file__))
     logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
     return logging.getLogger(name)
 
+logger = init_logging('Utils')
 
 @contextlib.contextmanager
 def nostdout(stdout = False, stderr=False):
@@ -28,9 +27,6 @@ def nostdout(stdout = False, stderr=False):
     Args:
         stdout: If False, hides. If True Shows. False by default
         stderr: If False, hides. If True Shows. False by default
-
-    Returns:
-
     """
     # Save current state and disable outut
     if not stdout:

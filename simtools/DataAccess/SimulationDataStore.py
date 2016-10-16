@@ -1,8 +1,10 @@
 import datetime
 
-from simtools.DataAccess import session_scope
+from simtools.DataAccess import session_scope, logger
 from simtools.DataAccess.Schema import Simulation
+from sqlalchemy import and_
 from sqlalchemy import bindparam
+from sqlalchemy import not_
 from sqlalchemy import update
 
 class SimulationDataStore:
@@ -22,14 +24,17 @@ class SimulationDataStore:
         Args:
             batch: Batch of simulations to save
         """
+        logger.debug("Batch simulations update")
         if len(simulation_batch) == 0: return
 
         with session_scope() as session:
-            stmt = update(Simulation).where(Simulation.id == bindparam("sid")).values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
+            stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"), not_(Simulation.status in ('Succeeded','Failed','Canceled'))))\
+                .values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
 
     @classmethod
     def get_simulation_states(cls, simids):
+        logger.debug("Get simulation states")
         states_ret = []
         from simtools.DataAccess.DataStore import batch
         for ids in batch(simids, 50):
@@ -41,17 +46,20 @@ class SimulationDataStore:
 
     @classmethod
     def create_simulation(cls, **kwargs):
+        logger.debug("Create simulation")
         if 'date_created' not in kwargs:
             kwargs['date_created'] = datetime.datetime.now()
         return Simulation(**kwargs)
 
     @classmethod
     def save_simulation(cls, simulation):
+        logger.debug("Save simulation")
         with session_scope() as session:
             session.merge(simulation)
 
     @classmethod
     def get_simulation(cls, sim_id):
+        logger.debug("Get simulation")
         with session_scope() as session:
             simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
             session.expunge_all()

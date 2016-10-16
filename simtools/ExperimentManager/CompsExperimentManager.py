@@ -93,9 +93,9 @@ class CompsExperimentManager(BaseExperimentManager):
     def commission_simulations(self, states={}, lock=None):
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-
         t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,
-                                                                  self.success_callback,lock))
+                                                                  self.success_callback,lock,
+                                                                  not self.done_commissioning()))
         t1.daemon = True
         t1.start()
         self.runner_created = True

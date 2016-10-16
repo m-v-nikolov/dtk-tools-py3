@@ -10,12 +10,14 @@ from sqlalchemy.orm import joinedload
 class ExperimentDataStore:
     @classmethod
     def create_experiment(cls, **kwargs):
+        logger.debug("Create Experiment")
         if 'date_created' not in kwargs:
             kwargs['date_created'] = datetime.datetime.now()
         return Experiment(**kwargs)
 
     @classmethod
     def get_experiment(cls, exp_id):
+        logger.debug("Get Experiment")
         with session_scope() as session:
             # Get the experiment
             # Also load the associated simulations eagerly
@@ -30,23 +32,26 @@ class ExperimentDataStore:
 
     @classmethod
     def batch_save_experiments(cls, batch):
+        logger.debug("Batch save experiments")
         with session_scope() as session:
             for exp in batch:
                 cls.save_experiment(exp, False, session)
 
     @classmethod
     def save_experiment(cls, experiment, verbose=True, session=None):
+        logger.debug("Save experiment")
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
             from simtools.DataAccess.DataStore import dumper
             logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
 
-        with session_scope(session) as session:
-            session.merge(experiment)
+        with session_scope(session) as sess:
+            sess.merge(experiment)
 
     @classmethod
     def get_most_recent_experiment(cls, id_or_name):
+        logger.debug("Get most recent experiment")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiment = session.query(Experiment) \
@@ -59,6 +64,7 @@ class ExperimentDataStore:
 
     @classmethod
     def get_active_experiments(cls, location=None):
+        logger.debug("Get active experiments")
         with session_scope() as session:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
@@ -74,6 +80,7 @@ class ExperimentDataStore:
 
     @classmethod
     def get_experiments(cls, id_or_name, current_dir=None):
+        logger.debug("Get experiments")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name))
@@ -85,6 +92,7 @@ class ExperimentDataStore:
 
     @classmethod
     def delete_experiment(cls, experiment):
+        logger.debug("Delete experiment")
         with session_scope() as session:
             session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
 

@@ -8,12 +8,14 @@ from sqlalchemy.orm import sessionmaker
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
-engine = create_engine('sqlite:///%s/db.sqlite' % current_dir, echo=False)
+engine = create_engine('sqlite:///%s/db.sqlite' % current_dir, echo=False, connect_args={'timeout': 45})
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
+logger = init_logging('DataAccess')
 
 @contextmanager
 def session_scope(session=None):
+
     """Provide a transactional scope around a series of operations."""
     session = Session() if not session else session
     try:
@@ -26,4 +28,3 @@ def session_scope(session=None):
         session.close()
 
 
-logger = init_logging('DataAccess')

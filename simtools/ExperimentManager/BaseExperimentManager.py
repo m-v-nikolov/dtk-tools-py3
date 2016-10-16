@@ -105,7 +105,7 @@ class BaseExperimentManager:
     def done_commissioning(self):
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
         for sim in self.experiment.simulations:
-            if sim.status == 'Waiting' or not sim.status:
+            if sim.status == 'Waiting' or not sim.status or sim.status=="Created":
                 return False
 
         return True
@@ -117,13 +117,14 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        setting = DataStore.get_setting('runner_pid')
-        if setting:
-            runner_pid = int(setting.value)
-        else:
-            runner_pid = None
+        setting = DataStore.get_setting('overseer_pid')
 
-        if runner_pid and psutil.pid_exists(runner_pid) and 'python' in psutil.Process(runner_pid).name().lower():
+        if setting:
+            overseer_pid = int(setting.value)
+        else:
+            overseer_pid = None
+
+        if overseer_pid and psutil.pid_exists(overseer_pid) and 'python' in psutil.Process(overseer_pid).name().lower():
             return
 
         # Run the runner
@@ -136,7 +137,7 @@ class BaseExperimentManager:
             p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
         # Save the pid in the settings
-        DataStore.save_setting(DataStore.create_setting(key='runner_pid', value=str(p.pid)))
+        DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
 
     def success_callback(self, simulation):
         """
@@ -370,7 +371,7 @@ class BaseExperimentManager:
             # Wait for successful cancellation.
             self.wait_for_finished(verbose=True)
 
-    def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
+    def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
         getch = helpers.find_getch()
         self.check_overseer()
         while True:
