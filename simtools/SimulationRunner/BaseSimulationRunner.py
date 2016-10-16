@@ -1,5 +1,5 @@
+import multiprocessing
 from abc import ABCMeta, abstractmethod
-
 
 class BaseSimulationRunner:
     __metaclass__ = ABCMeta
@@ -8,7 +8,10 @@ class BaseSimulationRunner:
         self.experiment = experiment
         self.states = states
         self.success = success
-        self.lock = lock
+        if not lock:
+            self.lock = multiprocessing.Lock
+        else:
+            self.lock = lock
 
     @abstractmethod
     def run(self):

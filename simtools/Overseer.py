@@ -16,17 +16,14 @@ lock = multiprocessing.Lock()
 
 def SimulationStateUpdater(states, loop=True):
     while True:
+        logger.debug("Simulation updated waiting loop")
+        logger.debug(states)
         if states:
             lock.acquire()
             try:
                 batch = []
-                # First retrieve our simulation state
-                for db_state in DataStore.get_simulation_states(states.keys()):
-                    if db_state[1] in ('Succeeded','Failed','Canceled'):
-                        continue
-                    else:
-                        new_state = states[db_state[0]]
-                        batch.append({'sid':db_state[0], "status": new_state.status, "message":new_state.message, "pid":new_state.pid})
+                for id,sim in states.iteritems():
+                    batch.append({'sid':id, 'status':sim.status, 'message':sim.message,'pid':sim.pid})
 
                 DataStore.batch_simulations_update(batch)
                 states.clear()
@@ -109,12 +106,12 @@ if __name__ == "__main__":
         # Cleanup the analyze thread list
         for ap in analysis_threads:
             if not ap.is_alive(): analysis_threads.remove(ap)
-        logger.debug("Analysis thread length: %s" % len(analysis_threads))
+        logger.debug("Analysis thread: %s" % analysis_threads)
 
         # No more active managers  -> Exit if our analzers threads are done
         # Do not use len() to not block anything
         if managers == OrderedDict() and analysis_threads == []: break
 
-        time.sleep(5)
+        time.sleep(10)
 
 logger.debug('No more work to do, exiting...')

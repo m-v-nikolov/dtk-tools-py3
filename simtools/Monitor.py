@@ -1,3 +1,6 @@
+import json
+from collections import Counter
+
 import utils
 from simtools.DataAccess.DataStore import DataStore
 
@@ -11,14 +14,18 @@ class SimulationMonitor(object):
     """
 
     def __init__(self, exp_id):
+        logger.debug("Create a LOCAL Monitor with exp_id=%s" % exp_id)
         self.exp_id = exp_id
 
     def query(self):
+        logger.debug("Query the LOCAL Monitor for Experiment %s" % self.exp_id)
         states, msgs = {}, {}
         experiment = DataStore.get_experiment(self.exp_id)
         for sim in experiment.simulations:
             states[sim.id] = sim.status if sim.status else "Waiting"
             msgs[sim.id] = sim.message if sim.message else ""
+        logger.debug("States returned")
+        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
         return states, msgs
 
 
@@ -35,7 +42,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         self.server_endpoint = endpoint
 
     def query(self):
-        logger.debug("Monitor queries")
+        logger.debug("Query the HPC Monitor for Experiment %s" % self.exp_id)
         from COMPS.Data import Suite, QueryCriteria, Simulation
         utils.COMPS_login(self.server_endpoint)
 
@@ -71,5 +78,8 @@ class CompsSimulationMonitor(SimulationMonitor):
             id_string = sim.getId().toString()
             states[id_string] = sim.getState().toString()
             msgs[id_string] = ''
+
+        logger.debug("States returned")
+        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
 
         return states, msgs

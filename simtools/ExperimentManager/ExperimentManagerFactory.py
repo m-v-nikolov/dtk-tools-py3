@@ -1,13 +1,8 @@
-import json
-
-from dtk.utils.ioformat.OutputMessage import OutputMessage
 from simtools import utils
-import logging
-from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
+from simtools.utils import init_logging
 
-logging.basicConfig(format='%(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = init_logging('ExperimentManager')
 
 
 class ExperimentManagerFactory(object):
@@ -23,12 +18,12 @@ class ExperimentManagerFactory(object):
 
     @classmethod
     def from_experiment(cls, experiment):
-        logger.info("Reloading ExperimentManager from %s" % experiment)
+        logger.debug("Factory - Reloading ExperimentManager from experiment %s" % experiment.id)
         return cls.factory(type=experiment.location)('', experiment)
 
     @classmethod
     def from_model(cls, model_file, location='LOCAL', setup=None, **kwargs):
-        logger.info('Initializing %s ExperimentManager from: %s', location, model_file)
+        logger.debug('Factory - Initializing %s ExperimentManager from: %s', location, model_file)
         if not setup:
             setup = SetupParser()
         if location == 'HPC' and kwargs:
@@ -41,7 +36,7 @@ class ExperimentManagerFactory(object):
             setup = SetupParser()
 
         location = setup.get('type')
-        logger.info('Initializing %s ExperimentManager from parsed setup', location)
+        logger.debug('Factory - Initializing %s ExperimentManager from parsed setup', location)
 
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)

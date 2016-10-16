@@ -1,7 +1,6 @@
 import os
 import time
 
-from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
@@ -17,15 +16,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         logger.debug('Create COMPSSimulationRunner with experiment: %s, commission: %s'% (experiment.id,commission))
         super(COMPSSimulationRunner, self).__init__(experiment, states, success, lock)
 
-        states, _ = CompsSimulationMonitor(self.experiment.exp_id, self.experiment.suite_id,
-                                           self.experiment.endpoint).query()
-        needs_commission = False
-        for state in states.values():
-            if state == "Created":
-                needs_commission = True
-                break
-
-        if commission and needs_commission:
+        if commission:
             self.run()
         else:
             self.monitor()
@@ -87,16 +78,6 @@ class COMPSSimulationRunner(BaseSimulationRunner):
 
             if CompsExperimentManager.status_finished(states):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
-                # For now for security, set a last state update
-                try:
-                    self.lock.acquire()
-                    for id in states.keys():
-                        self.states[id] = DataStore.create_simulation(status="Succeeded")
-                except:
-                    pass
-                finally:
-                    self.lock.release()
-
                 break
 
-            time.sleep(8)
+            time.sleep(15)

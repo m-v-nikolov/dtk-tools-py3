@@ -1,9 +1,9 @@
 import copy
 import json
+import multiprocessing
 import os
 import subprocess
 import sys
-import threading
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
@@ -38,7 +38,7 @@ class BaseExperimentManager:
 
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
-        self.maxThreadSemaphore = threading.Semaphore(int(self.setup.get('max_threads')))
+        self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
 
         self.analyzers = []
         self.parsers = {}
@@ -105,7 +105,7 @@ class BaseExperimentManager:
     def done_commissioning(self):
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
         for sim in self.experiment.simulations:
-            if sim.status == 'Waiting' or not sim.status:
+            if sim.status == 'Waiting' or not sim.status or sim.status=="Created":
                 return False
 
         return True
@@ -117,13 +117,14 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        setting = DataStore.get_setting('runner_pid')
-        if setting:
-            runner_pid = int(setting.value)
-        else:
-            runner_pid = None
+        setting = DataStore.get_setting('overseer_pid')
 
-        if runner_pid and psutil.pid_exists(runner_pid) and 'python' in psutil.Process(runner_pid).name().lower():
+        if setting:
+            overseer_pid = int(setting.value)
+        else:
+            overseer_pid = None
+
+        if overseer_pid and psutil.pid_exists(overseer_pid) and 'python' in psutil.Process(overseer_pid).name().lower():
             return
 
         # Run the runner
@@ -136,7 +137,7 @@ class BaseExperimentManager:
             p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
         # Save the pid in the settings
-        DataStore.save_setting(DataStore.create_setting(key='runner_pid', value=str(p.pid)))
+        DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
 
     def success_callback(self, simulation):
         """
@@ -170,7 +171,7 @@ class BaseExperimentManager:
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
-        logger.debug("Status of simulations run on '%s':" % self.location)
+        logger.debug("get_simulation_status for %s" % self.experiment.id)
         self.check_overseer()
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
@@ -370,7 +371,7 @@ class BaseExperimentManager:
             # Wait for successful cancellation.
             self.wait_for_finished(verbose=True)
 
-    def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=3):
+    def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
         getch = helpers.find_getch()
         self.check_overseer()
         while True:
@@ -431,10 +432,14 @@ class BaseExperimentManager:
             a.finalize()
 
             # Plot in a separate process
-            from multiprocessing import Process
-            plotting_process = Process(target=a.plot)
-            plotting_process.start()
-            plotting_processes.append(plotting_process)
+            try:
+                from multiprocessing import Process
+                plotting_process = Process(target=a.plot)
+                plotting_process.start()
+                plotting_processes.append(plotting_process)
+            except Exception as e:
+                logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
+                logger.error(e)
 
         for p in plotting_processes:
             p.join()
