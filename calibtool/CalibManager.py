@@ -287,7 +287,8 @@ class CalibManager(object):
                 states, msgs = self.exp_manager.get_simulation_status()
             except Exception as ex:
                 # logger.info(ex)
-                logger.info('[%s] cannot get simulation status. Calibration cannot continue. Exiting...' % self.location)
+                logger.error('Cannot get simulation status. Calibration cannot continue. Exiting...' % self.location)
+                logger.error(ex)
                 exit()
 
             # Separate Failed from Canceled case, so that we can handle the following situation later:

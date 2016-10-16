@@ -1,5 +1,3 @@
-import os
-
 from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
