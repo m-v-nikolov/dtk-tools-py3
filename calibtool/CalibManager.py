@@ -257,8 +257,8 @@ class CalibManager(object):
                 config_builder=self.config_builder,
                 exp_name='%s_iter%d' % (self.name, self.iteration),
                 exp_builder=exp_builder,
-                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id,
-                analyzers=analyzers)
+                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id)
+                #,analyzers=analyzers)
 
             self.iteration_state.simulations = self.exp_manager.experiment.toJSON()['simulations']
             self.iteration_state.experiment_id = self.exp_manager.experiment.exp_id
@@ -342,12 +342,17 @@ class CalibManager(object):
         else:
             exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
 
-        try:
-            for a in exp_manager.analyzers:
-                a.load()
-        except:
-            # print "LOADING FAILED"
-            exp_manager.analyze_experiment()
+
+        # try:
+        #     for a in exp_manager.analyzers:
+        #         a.load()
+        # except:
+        #     # print "LOADING FAILED"
+        #     exp_manager.analyze_experiment()
+        for site in self.sites:
+            for analyzer in site.analyzers:
+                exp_manager.add_analyzer(analyzer)
+        exp_manager.analyze_experiment()
 
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
