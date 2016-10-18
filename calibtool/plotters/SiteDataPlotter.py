@@ -3,20 +3,20 @@ import os
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import seaborn as sns
+
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
 from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
+
+sns.set_style('white')
+
 logger = logging.getLogger(__name__)
 
-try:
-    import seaborn as sns
-    sns.set_style('white')
-except:
-    pass
 
 class SiteDataPlotter(BasePlotter):
-    def __init__(self, combine_sites=True):
-        super(SiteDataPlotter, self).__init__( combine_sites)
+    def __init__(self, combine_sites=True, prior_fn={}):
+        super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
 
     def visualize(self, calib_manager):
         self.all_results = calib_manager.all_results.reset_index()
@@ -115,7 +115,6 @@ class SiteDataPlotter(BasePlotter):
             ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
-
 
     def cleanup_plot(self, calib_manager):
         """

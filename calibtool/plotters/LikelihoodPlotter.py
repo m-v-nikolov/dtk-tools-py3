@@ -2,21 +2,19 @@ import logging
 import os
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
 
+sns.set_style('white')
+
 logger = logging.getLogger(__name__)
 
-try:
-    import seaborn as sns
-    sns.set_style('white')
-except:
-    pass
 
 class LikelihoodPlotter(BasePlotter):
-    def __init__(self, combine_sites=True):
-        super(LikelihoodPlotter, self).__init__( combine_sites)
+    def __init__(self, combine_sites=True, prior_fn={}):
+        super(LikelihoodPlotter, self).__init__(combine_sites, prior_fn)
 
     def visualize(self, calib_manager):
         self.all_results = calib_manager.all_results
@@ -49,10 +47,15 @@ class LikelihoodPlotter(BasePlotter):
             results = self.all_results[[total, 'iteration', param]]
             self.plot1d_by_iteration(results, param, total, **kwargs)
 
-            ax.set(
-                # TODO: get source for sample range and type info
-                # xlim=(), xscale='log' if is_log(param) else 'linear',
-                xlabel=param, ylabel='log likelihood')
+            try:
+                sample_range = self.prior_fn.sample_functions[param].sample_range
+                if sample_range.is_log():
+                    ax.set_xscale('log')
+                ax.set_xlim(sample_range.get_xlim())
+            except (KeyError, AttributeError):
+                pass
+
+            ax.set(xlabel=param, ylabel='log likelihood')
 
             try:
                 os.makedirs(os.path.join(self.directory, site))
