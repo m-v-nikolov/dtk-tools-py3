@@ -15,7 +15,7 @@ class DemographicsGenerator:
     *-ed columns are optional
     """
 
-    def __init__(self, cb, nodes, demographics_type='static', res_in_arcsec=30.0, update_demographics=None,
+    def __init__(self, cb, nodes, demographics_type='static', res_in_arcsec=30, update_demographics=None,
                  default_pop=1000):
         """
         Initialize the SpatialManager
