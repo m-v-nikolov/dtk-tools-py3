@@ -359,17 +359,20 @@ class BaseExperimentManager:
         # Display the counter no matter the number of simulations
         logger.info(dict(Counter(states.values())))
 
+    def delete_experiment(self, hard=False):
+        """
+        Delete experiment
+        """
+        if hard:
+            self.hard_delete()
+        else:
+            self.soft_delete()
+
     def soft_delete(self):
         """
         Delete experiment in the DB
         """
-        states, msgs = self.get_simulation_status()
-        if not self.status_finished(states):
-            # If the experiment is not done -> cancel
-            self.cancel_all_simulations(states)
-
-            # Wait for successful cancellation.
-            self.wait_for_finished(verbose=True)
+        DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
         getch = helpers.find_getch()
