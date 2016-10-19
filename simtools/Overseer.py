@@ -23,6 +23,12 @@ def SimulationStateUpdater(states, loop=True):
             try:
                 batch = []
                 for id,sim in states.iteritems():
+                    if sim.status not in (
+                    'Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed', 'Canceled', 'CancelRequested',
+                    "Retry", "CommissionRequested", "Provisioning", "Created"):
+                        logger.warn(
+                            "Failed to retrieve correct status for simulation %s. Status returned: %s" % (sim.id,sim.status))
+                        continue
                     batch.append({'sid':id, 'status':sim.status, 'message':sim.message,'pid':sim.pid})
 
                 DataStore.batch_simulations_update(batch)
