@@ -76,7 +76,12 @@ class CompsSimulationMonitor(SimulationMonitor):
         states, msgs = {}, {}
         for sim in sims:
             id_string = sim.getId().toString()
-            states[id_string] = sim.getState().toString()
+            state_string = sim.getState().toString()
+            if state_string not in ('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
+                         "Retry", "CommissionRequested", "Provisioning", "Created"):
+                logger.warn("Failed to retrieve correct status for simulation %s. Status returned: %s" % state_string)
+                continue
+            states[id_string] = state_string
             msgs[id_string] = ''
 
         logger.debug("States returned")
