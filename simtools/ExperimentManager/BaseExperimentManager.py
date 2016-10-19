@@ -422,9 +422,11 @@ class BaseExperimentManager:
                 continue
 
             self.analyze_simulation(simulation)
+
         # We are all done, finish analyzing
         for p in self.parsers.values():
             p.join()
+
         plotting_processes = []
         for a in self.analyzers:
             a.combine(self.parsers)

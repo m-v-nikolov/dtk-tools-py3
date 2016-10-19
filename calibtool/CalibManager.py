@@ -344,7 +344,6 @@ class CalibManager(object):
         else:
             exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
 
-
         # try:
         #     for a in exp_manager.analyzers:
         #         a.load()
@@ -454,7 +453,7 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-
+        return
         # Deep copy all_results and pnames to not disturb the calibration
         pnames = copy.deepcopy(self.param_names())
         all_results = self.all_results.copy(True)
@@ -952,6 +951,9 @@ class CalibManager(object):
         """
         calib_data = self.read_calib_data()
 
+        # Override our setup with what is in the file
+        self.setup.override_block(calib_data['selected_block'])
+
         if calib_data['location'] == 'HPC':
             utils.COMPS_login(self.setup.get('server_endpoint'))
 
@@ -961,9 +963,12 @@ class CalibManager(object):
 
         # Get the count of iterations and save the suite_id
         iter_count = calib_data.get('iteration')
+        logger.info("Reanalyze will go through %s iterations." % iter_count)
 
         # Go through each already ran iterations
         for i in range(0, iter_count+1):
+            logger.info("\n")
+            logger.info("Reanalyze Iteration %s" % i)
             # Create the path for the iteration dir
             iter_directory = os.path.join(self.name, 'iter%d' % i)
 
@@ -981,8 +986,9 @@ class CalibManager(object):
             # update next point
             self.update_next_point(res)
 
-        # Before leaving -> increase the iteration / set back the suite_id
-        self.iteration_state.iteration += 1
+            logger.info("Iteration %s reanalyzed." % i)
+
+        # Before leaving -> set back the suite_id
         self.local_suite_id = calib_data.get('local_suite_id')
         self.comps_suite_id = calib_data.get('comps_suite_id')
         self.location = calib_data['location']
