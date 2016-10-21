@@ -1,10 +1,12 @@
 import datetime
 
-from simtools.DataAccess import session_scope, logger
+from simtools.DataAccess import session_scope
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.Schema import Analyzer, Settings
 from simtools.DataAccess.SimulationDataStore import SimulationDataStore
+from simtools.utils import init_logging
 
+logger = init_logging('DataAccess')
 
 def dumper(obj):
     """
