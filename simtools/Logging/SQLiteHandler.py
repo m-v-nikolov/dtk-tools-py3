@@ -38,8 +38,8 @@ class SQLiteHandler(logging.Handler):
             func_name=record_info['funcName'],
             line_no=record_info['lineno'],
             exception=record_info['exc_text'],
-            process=record_info['process'],
-            thread=record_info['thread'],
+            #process=record_info['process'],
+            #thread=record_info['thread'],
             thread_name=record_info['threadName']
         )
 

@@ -22,8 +22,8 @@ class LogRecord(Base_logs):
     func_name = Column(String)
     line_no = Column(Integer)
     exception = Column(String)
-    process = Column(Integer)
-    thread = Column(String)
+    #process = Column(Integer)
+    #thread = Column(String)
     thread_name = Column(String)
     cwd = Column(String, default=os.getcwd())
 
