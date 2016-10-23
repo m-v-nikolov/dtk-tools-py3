@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 import sys
 from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
@@ -61,6 +62,10 @@ if __name__ == "__main__":
     t1 = threading.Thread(target=SimulationStateUpdater, args=(update_states, True))
     t1.daemon = True
     t1.start()
+
+    # Take this opportunity to cleanup the logs
+    t2 = multiprocessing.Process(target=LoggingDataStore.cleanup)
+    t2.start()
 
     # will hold the analyze threads
     analysis_threads = []
