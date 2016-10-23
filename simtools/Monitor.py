@@ -9,16 +9,15 @@ logger = utils.init_logging('Monitor')
 
 class SimulationMonitor(object):
     """
-    A class to monitor the status of local simulation.
-    Threads are spawned to query each simulation in parallel.
+    A class to monitor the status of simulations in the local DB.
     """
 
     def __init__(self, exp_id):
-        logger.debug("Create a LOCAL Monitor with exp_id=%s" % exp_id)
+        logger.debug("Create a DB Monitor with exp_id=%s" % exp_id)
         self.exp_id = exp_id
 
     def query(self):
-        logger.debug("Query the LOCAL Monitor for Experiment %s" % self.exp_id)
+        logger.debug("Query the DB Monitor for Experiment %s" % self.exp_id)
         states, msgs = {}, {}
         experiment = DataStore.get_experiment(self.exp_id)
         for sim in experiment.simulations:
@@ -77,10 +76,6 @@ class CompsSimulationMonitor(SimulationMonitor):
         for sim in sims:
             id_string = sim.getId().toString()
             state_string = sim.getState().toString()
-            if state_string not in ('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
-                         "Retry", "CommissionRequested", "Provisioning", "Created"):
-                logger.warn("Failed to retrieve correct status for simulation %s. Status returned: %s" % state_string)
-                continue
             states[id_string] = state_string
             msgs[id_string] = ''
 

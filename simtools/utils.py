@@ -28,7 +28,7 @@ def nostdout(stdout = False, stderr=False):
         stdout: If False, hides. If True Shows. False by default
         stderr: If False, hides. If True Shows. False by default
     """
-    # Save current state and disable outut
+    # Save current state and disable output
     if not stdout:
         save_stdout = sys.stdout
         sys.stdout  = cStringIO.StringIO()

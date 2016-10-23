@@ -1,11 +1,12 @@
 import datetime
 import json
 
-from simtools.DataAccess import session_scope, logger
+from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
-from simtools.utils import remove_null_values
+from simtools.utils import remove_null_values, init_logging
 from sqlalchemy.orm import joinedload
 
+logger = init_logging('DataAccess')
 
 class ExperimentDataStore:
     @classmethod

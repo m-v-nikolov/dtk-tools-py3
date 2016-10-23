@@ -14,6 +14,7 @@ from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
@@ -336,6 +337,29 @@ def analyze(args, unknownArgs):
 
 def analyze_list(args, unknownArgs):
     logger.error('\n' + '\n'.join(builtinAnalyzers.keys()))
+
+def log(args,unknownArgs):
+    # Create the level
+    level = 0
+    if args.level == "INFO":
+        level = 20
+    elif args.level == "ERROR":
+        level = 30
+
+    modules = args.module.split(',') if args.module else LoggingDataStore.get_all_modules()
+
+    print "Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level)
+    records = LoggingDataStore.get_records(level,modules,args.number)
+
+    records_str = "\n".join(map(str, records))
+    print records_str
+
+    if args.export:
+        with open(args.export, 'w') as fp:
+            fp.write(records_str)
+
+        print "Log written to %s" % args.export
+
 
 def sync(args, unknownArgs):
     """
@@ -663,6 +687,14 @@ def main():
     # 'dtk test' options
     parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
     parser_test.set_defaults(func=test)
+
+    # 'dtk log' options
+    parser_log = subparsers.add_parser('log', help="Allow to query and export the logs.")
+    parser_log.add_argument('-l', '--level', help="Only display logs for a certain level and above (DEBUG,INFO,ERROR)", dest="level", default="DEBUG")
+    parser_log.add_argument('-m','--module', help="Only display logs for a given module.", dest="module")
+    parser_log.add_argument('-n','--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
+    parser_log.add_argument('-e','--export', help="Export the log to the given file.", dest="export")
+    parser_log.set_defaults(func=log)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
