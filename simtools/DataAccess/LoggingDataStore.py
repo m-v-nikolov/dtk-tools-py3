@@ -1,3 +1,5 @@
+from datetime import date,timedelta
+
 from sqlalchemy import and_
 from sqlalchemy import distinct
 
@@ -34,3 +36,11 @@ class LoggingDataStore:
             session.expunge_all()
 
         return modules
+
+    @classmethod
+    def cleanup(cls):
+        try:
+            with session_scope(Session_logs()) as session:
+                session.query(LogRecord).filter(LogRecord.created < date.today() - timedelta(days=30)).delete()
+        except Exception as e:
+            print "Could not clean the logs.\n%s" % e
