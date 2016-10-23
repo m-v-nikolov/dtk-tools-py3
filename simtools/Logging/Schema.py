@@ -27,4 +27,7 @@ class LogRecord(Base_logs):
     thread_name = Column(String)
     cwd = Column(String, default=os.getcwd())
 
+    def __repr__(self):
+        return "%s [%s] [%s] %s" % (self.created.strftime("%m/%d %H:%M:%S"), self.log_level_name, self.module, self.message)
+
 Base_logs.metadata.create_all(engine_logs)
