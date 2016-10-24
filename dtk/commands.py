@@ -708,10 +708,10 @@ def main():
     # 'dtk log' options
     parser_log = subparsers.add_parser('log', help="Allow to query and export the logs.")
     parser_log.add_argument('-l', '--level', help="Only display logs for a certain level and above (DEBUG,INFO,ERROR)", dest="level", default="DEBUG")
-    parser_log.add_argument('-m','--module', help="Only display logs for a given module.", dest="module")
-    parser_log.add_argument('-n','--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
-    parser_log.add_argument('-e','--export', help="Export the log to the given file.", dest="export")
-    parser_log.add_argument('-c','--complete', help="Export the complete log to a CSV file (dtk_logs.csv).", action='store_true')
+    parser_log.add_argument('-m', '--module', help="Only display logs for a given module.", dest="module")
+    parser_log.add_argument('-n', '--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
+    parser_log.add_argument('-e', '--export', help="Export the log to the given file.", dest="export")
+    parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
     parser_log.set_defaults(func=log)
 
     # run specified function passing in function-specific arguments
