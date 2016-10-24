@@ -36,7 +36,7 @@ class ExperimentManagerFactory(object):
             setup = SetupParser()
 
         location = setup.get('type')
-        logger.debug('Factory - Initializing %s ExperimentManager from parsed setup', location)
+        logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
 
         if location == 'HPC' and kwargs:
             utils.override_HPC_settings(setup, **kwargs)

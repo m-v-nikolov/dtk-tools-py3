@@ -87,7 +87,7 @@ class IMIS(NextPointAlgorithm):
 
         self.n_initial_samples = self.samples.shape[0]
         self.prior_covariance = np.cov(self.samples.T)
-        logger.debug('Covariance of prior samples:\n%s', self.prior_covariance)
+        logger.debug('Covariance of prior samples:\n%s' % self.prior_covariance)
 
     def update_iteration(self, iteration):
         '''

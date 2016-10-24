@@ -171,11 +171,11 @@ class CalibManager(object):
             # Restart the time for each iteration
             self.iteration_start = datetime.now().replace(microsecond=0)
 
-            logger.info('---- Starting Iteration %d ----', self.iteration)
+            logger.info('---- Starting Iteration %d ----' % self.iteration)
 
             # Output verbose resume point
             if self.iteration_state.resume_point > 0:
-                logger.info('-- Resuming Point %d (%s) --', self.iteration_state.resume_point, self.get_resume_map())
+                logger.info('-- Resuming Point %d (%s) --' % self.iteration_state.resume_point, self.get_resume_map())
 
             # Start from simulation
             if self.iteration_state.resume_point <= 1:

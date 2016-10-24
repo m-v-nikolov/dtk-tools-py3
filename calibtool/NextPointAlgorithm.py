@@ -26,9 +26,9 @@ class NextPointAlgorithm(object):
         self.max_resampling_attempts = 100
         self.n_dimensions = self.samples[0].size
 
-        logger.info('%s instance with %d initial %d-dimensional samples and %d per iteration',
-                    self.__class__.__name__, self.samples.shape[0], 
-                    self.n_dimensions, self.samples_per_iteration)
+        logger.info('%s instance with %d initial %d-dimensional samples and %d per iteration' %
+                    (self.__class__.__name__, self.samples.shape[0],
+                     self.n_dimensions, self.samples_per_iteration))
 
     def set_current_state(self, state):
         '''
