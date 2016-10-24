@@ -242,18 +242,10 @@ class CalibManager(object):
                 self.generate_suite_id(self.exp_manager)
 
             exp_builder = ModBuilder.from_combos(
-                [ModBuilder.ModFn(self.config_builder.__class__.set_param, 'Run_Number', i)
-                 for i in range(self.sim_runs_per_param_set)],
-                [ModBuilder.ModFn(site.setup_fn)
-                 for site in self.sites],
+                [ModBuilder.ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
+                [ModBuilder.ModFn(site.setup_fn) for site in self.sites],
                 [ModBuilder.ModFn(self.sample_point_fn(idx), sample_point)
                  for idx, sample_point in enumerate(next_params)])
-
-            analyzers = []
-            for site in self.sites:
-                for analyzer in site.analyzers:
-                    if analyzer not in analyzers:
-                        analyzers.append(analyzer)
 
             self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
@@ -280,7 +272,7 @@ class CalibManager(object):
             logger.info('\n\nCalibration: %s' % self.name)
             logger.info('Calibration started: %s' % self.calibration_start)
             logger.info('Current iteration: Iteration %s' % self.iteration)
-            logger.info('Current Iteration Started: %s', self.iteration_start)
+            logger.info('Current Iteration Started: %s' % self.iteration_start)
             logger.info('Time since iteration started: %s' % verbose_timedelta(iteration_time_elapsed))
             logger.info('Time since calibration started: %s\n' % verbose_timedelta(calibration_time_elapsed))
 

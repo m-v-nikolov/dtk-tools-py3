@@ -23,10 +23,11 @@ class LoggingDataStore:
         with session_scope(Session_logs()) as session:
             query = session.query(LogRecord)\
                 .filter(and_(LogRecord.module.in_(modules), LogRecord.log_level >= level))\
+                .order_by(LogRecord.created.desc()) \
                 .limit(number)
             records = query.all()
             session.expunge_all()
-        return records
+        return reversed(records)
 
     @classmethod
     def get_all_modules(cls):
