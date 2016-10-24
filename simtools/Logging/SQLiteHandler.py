@@ -33,7 +33,7 @@ class SQLiteHandler(logging.Handler):
             log_level=record_info['levelno'],
             log_level_name=record_info['levelname'],
             message=str(record_info['msg']),
-            args=record_info['args'],
+            # args=record_info['args'],
             module=record_info['module'],
             func_name=record_info['funcName'],
             line_no=record_info['lineno'],
