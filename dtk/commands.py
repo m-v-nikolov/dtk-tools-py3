@@ -347,13 +347,13 @@ def log(args, unknownArgs):
     # Check if complete
     if args.complete:
         records = [r.__dict__ for r in LoggingDataStore.get_all_records()]
-        with open('log.csv', 'wb') as output_file:
+        with open('dtk_tools_log.csv', 'wb') as output_file:
             dict_writer = csv.DictWriter(output_file,
                                          fieldnames=[r for r in records[0].keys()if not r[0] == '_'],
                                          extrasaction='ignore')
             dict_writer.writeheader()
             dict_writer.writerows(records)
-        print "Complete log written to log.csv."
+        print "Complete log written to dtk_tools_log.csv."
         return
 
     # Create the level
