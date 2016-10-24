@@ -1,4 +1,5 @@
 import argparse
+import csv
 import datetime
 import json
 import os
@@ -338,7 +339,23 @@ def analyze(args, unknownArgs):
 def analyze_list(args, unknownArgs):
     logger.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
-def log(args,unknownArgs):
+
+def log(args, unknownArgs):
+    # Take this opportunity to cleanup the logs
+    LoggingDataStore.cleanup()
+
+    # Check if complete
+    if args.complete:
+        records = [r.__dict__ for r in LoggingDataStore.get_all_records()]
+        with open('log.csv', 'wb') as output_file:
+            dict_writer = csv.DictWriter(output_file,
+                                         fieldnames=[r for r in records[0].keys()if not r[0] == '_'],
+                                         extrasaction='ignore')
+            dict_writer.writeheader()
+            dict_writer.writerows(records)
+        print "Complete log written to log.csv."
+        return
+
     # Create the level
     level = 0
     if args.level == "INFO":
@@ -694,6 +711,7 @@ def main():
     parser_log.add_argument('-m','--module', help="Only display logs for a given module.", dest="module")
     parser_log.add_argument('-n','--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
     parser_log.add_argument('-e','--export', help="Export the log to the given file.", dest="export")
+    parser_log.add_argument('-c','--complete', help="Export the complete log to a CSV file (dtk_logs.csv).", action='store_true')
     parser_log.set_defaults(func=log)
 
     # run specified function passing in function-specific arguments

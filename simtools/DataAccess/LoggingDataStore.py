@@ -32,7 +32,7 @@ class LoggingDataStore:
     def get_all_modules(cls):
         modules = None
         with session_scope(Session_logs()) as session:
-            modules = [module[0] for module in session.query(distinct(LogRecord.module)).order_by(LogRecord.created).all()]
+            modules = [module[0] for module in session.query(distinct(LogRecord.module)).all()]
             session.expunge_all()
 
         return modules
@@ -44,3 +44,12 @@ class LoggingDataStore:
                 session.query(LogRecord).filter(LogRecord.created < date.today() - timedelta(days=30)).delete()
         except Exception as e:
             print "Could not clean the logs.\n%s" % e
+
+    @classmethod
+    def get_all_records(cls):
+        all_records = None
+        with session_scope(Session_logs()) as session:
+            all_records = session.query(LogRecord).all()
+            session.expunge_all()
+
+        return all_records
