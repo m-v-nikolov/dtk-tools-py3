@@ -17,7 +17,7 @@ class LogRecord(Base_logs):
     log_level = Column(Integer)
     log_level_name = Column(String)
     message = Column(String)
-    args = Column(PickleType(pickler=json))
+    #args = Column(PickleType(pickler=json))
     module = Column(String)
     func_name = Column(String)
     line_no = Column(Integer)
