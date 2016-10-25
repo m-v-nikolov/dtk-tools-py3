@@ -175,7 +175,7 @@ class CalibManager(object):
 
             # Output verbose resume point
             if self.iteration_state.resume_point > 0:
-                logger.info('-- Resuming Point %d (%s) --' % self.iteration_state.resume_point, self.get_resume_map())
+                logger.info('-- Resuming Point %d (%s) --' % (self.iteration_state.resume_point, self.get_resume_map()))
 
             # Start from simulation
             if self.iteration_state.resume_point <= 1:
