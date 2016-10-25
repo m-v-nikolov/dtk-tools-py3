@@ -29,7 +29,7 @@ def configure_site(cb, site, pop_scale=1):
     cb.set_param("Config_Name", StudySite.site)
     cfg_fn = globals().get('configure_' + StudySite.site.lower(), None)
     if cfg_fn:
-        logging.debug('StudySite.site = %s', StudySite.site)
+        logging.debug('StudySite.site = %s' % StudySite.site)
         StudySite.set_geography(cb, geography_from_site(StudySite.site), pop_scale)
         cfg_fn(cb)
         if pop_scale != 1:

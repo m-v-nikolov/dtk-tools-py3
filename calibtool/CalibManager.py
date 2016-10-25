@@ -171,11 +171,11 @@ class CalibManager(object):
             # Restart the time for each iteration
             self.iteration_start = datetime.now().replace(microsecond=0)
 
-            logger.info('---- Starting Iteration %d ----', self.iteration)
+            logger.info('---- Starting Iteration %d ----' % self.iteration)
 
             # Output verbose resume point
             if self.iteration_state.resume_point > 0:
-                logger.info('-- Resuming Point %d (%s) --', self.iteration_state.resume_point, self.get_resume_map())
+                logger.info('-- Resuming Point %d (%s) --' % self.iteration_state.resume_point, self.get_resume_map())
 
             # Start from simulation
             if self.iteration_state.resume_point <= 1:
@@ -445,7 +445,6 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        return
         # Deep copy all_results and pnames to not disturb the calibration
         pnames = copy.deepcopy(self.param_names())
         all_results = self.all_results.copy(True)
