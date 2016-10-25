@@ -445,7 +445,6 @@ class CalibManager(object):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        return
         # Deep copy all_results and pnames to not disturb the calibration
         pnames = copy.deepcopy(self.param_names())
         all_results = self.all_results.copy(True)
