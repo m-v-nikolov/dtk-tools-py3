@@ -6,6 +6,12 @@ import shutil
 import unittest
 from subprocess import Popen, PIPE, STDOUT
 
+from argparse import Namespace
+from calibtool.commands import get_calib_manager_args
+from calibtool.commands import load_config_module
+from simtools import utils
+from simtools.utils import nostdout
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,6 +22,7 @@ from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContai
 from calibtool.algo.IMIS import IMIS
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.ExperimentManager import LocalExperimentManager
 
 
 class TestCommands(unittest.TestCase):
@@ -43,12 +50,16 @@ class TestCommands(unittest.TestCase):
         # Clear the dir
         shutil.rmtree(self.calibration_dir)
 
+    def exec_calib(self, params):
+        """
+        params is a list like ['calibtool', 'run', 'dummy_calib.py']
+        """
+        os.chdir(self.calibration_dir)
+        ctool = Popen(params, stdout=PIPE, stderr=STDOUT)
+        ctool.communicate()
 
     def test_run_calibration(self):
-        os.chdir(self.calibration_dir)
-
-        ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
-        ctool.communicate()
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
 
         # Test if files are present
         calibpath = os.path.abspath('test_dummy_calibration')
@@ -59,6 +70,344 @@ class TestCommands(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(calibpath, 'iter1')))
         self.assertTrue(os.path.exists(os.path.join(calibpath, 'CalibManager.json')))
         self.assertTrue(os.path.exists(os.path.join(calibpath, 'LL_all.csv')))
+
+    def test_init_samples(self):
+        mod = load_config_module('dummy_calib.py')
+
+        # print mod.next_point_kwargs
+        self.initial_samples = mod.next_point_kwargs['initial_samples']
+        self.samples_per_iteration = mod.next_point_kwargs['samples_per_iteration']
+
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+
+        # Open the IterationState.json and save the values
+        with open('test_dummy_calibration/iter0/IterationState.json', 'r') as fp:
+            it = json.load(fp)
+            self.assertEqual(self.initial_samples, len(it['parameters']['values']))
+
+        with open('test_dummy_calibration/iter1/IterationState.json', 'r') as fp:
+            it = json.load(fp)
+            self.assertEqual(self.samples_per_iteration, len(it['parameters']['values']))
+
+    def test_last_iteration(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+        self.max_iterations = manager.max_iterations
+
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+
+        # retrieve last iteration number
+        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
+            cm = json.load(fp)
+            self.iteration = cm['iteration']
+
+        it_list = glob.glob('test_dummy_calibration/iter*')
+
+        # make sure numbers are match!
+        self.assertEqual(self.max_iterations, len(it_list))
+        self.assertEqual(self.max_iterations - 1, self.iteration)
+
+        # make sure folder names are match!
+        it_dirs = [os.path.basename(it) for it in it_list]
+        it_flds = ['iter%s' % i for i in range(self.max_iterations)]
+        self.assertListEqual(it_flds, it_dirs)
+
+    def test_experiment_length(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+
+        self.assertTrue(utils.validate_exp_name(manager.name))
+
+    def test_missing_files(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+
+        input_files = manager.config_builder.get_input_file_paths()
+        input_files = {'Air_Migration_Filename': '   ', 'Land_Temperature_Filename': '',
+                       'Family_Migration_Filename': '', 'Relative_Humidity_Filename': '', 'Load_Balance_Filename': '',
+                       'Vector_Migration_Filename_Local': '', 'Air_Temperature_Filename': '',
+                       'Vector_Migration_Filename_Regional': '', 'Demographics_Filenames': [],
+                       'Test_Filenames': ['', ' ', ""],
+                       "Demo_Filename": " ",
+                       'Local_Migration_Filename': '', 'Regional_Migration_Filename': '',
+                       'Sea_Migration_Filename': '', 'Rainfall_Filename': '', 'Campaign_Filename': 'campaign.json'}
+
+        exp_manager = ExperimentManagerFactory.from_setup(manager.setup)
+        missing_files = exp_manager.check_input_files(input_files)
+
+        # Py-passing 'Campaign_Filename' for now.
+        if 'Campaign_Filename' in missing_files:
+            print "By-passing file '%s'..." % missing_files['Campaign_Filename']
+            missing_files.pop('Campaign_Filename')
+
+        self.assertEqual(len(missing_files), 0)
+
+        # check empty files
+        empty_files = [f for f in missing_files if len(f.strip()) == 0]
+        self.assertEqual(len(empty_files), 0)
+
+    def test_validate_input_files(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+
+        exp_manager = ExperimentManagerFactory.from_setup(manager.setup)
+        self.assertTrue(exp_manager.validate_input_files(manager.config_builder))
+
+    def test_find_best_iteration_for_resume(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+
+        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
+            calib_data = json.load(fp)
+
+        # resume from latest iteration
+        iteration = manager.find_best_iteration_for_resume(None, calib_data)
+        self.assertEqual(iteration, 1)
+
+        # given iteration for resume
+        iteration = manager.find_best_iteration_for_resume(1, calib_data)
+        self.assertEqual(iteration, 1)
+
+        # given iteration for resume
+        iteration = manager.find_best_iteration_for_resume(0, calib_data)
+        self.assertEqual(iteration, 0)
+
+        # given fake iteration for resume
+        iteration = manager.find_best_iteration_for_resume(2, calib_data)
+        self.assertEqual(iteration, 1)
+
+    def test_resume_point_white_box(self):
+        os.chdir(self.calibration_dir)
+        mod = load_config_module('dummy_calib.py')
+        manager = mod.calib_manager
+
+        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
+            calib_data = json.load(fp)
+
+        # scenario: resume from farthest point by default #
+
+        # resume from latest iteration
+        iteration = manager.find_best_iteration_for_resume(None, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+        # resume from given iteration 1
+        iteration = manager.find_best_iteration_for_resume(1, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+        # resume from given iteration 0
+        iteration = manager.find_best_iteration_for_resume(0, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+        # scenario: resume from commission #
+        manager.iter_step = 'commission'
+
+        # resume from latest iteration
+        iteration = manager.find_best_iteration_for_resume(None, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+        self.assertEqual(manager.iteration_state.resume_point, 1)  # commission
+
+        # resume from given iteration 1
+        iteration = manager.find_best_iteration_for_resume(1, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 1)  # commission
+
+        # resume from given iteration 0
+        iteration = manager.find_best_iteration_for_resume(0, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 1)  # commission
+
+        # scenario: resume from analyze #
+        manager.iter_step = 'analyze'
+
+        # resume from latest iteration
+        iteration = manager.find_best_iteration_for_resume(None, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+        self.assertEqual(manager.iteration_state.resume_point, 2)  # analyze
+
+        # resume from given iteration 1
+        iteration = manager.find_best_iteration_for_resume(1, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 2)  # analyze
+
+        # resume from given iteration 0
+        iteration = manager.find_best_iteration_for_resume(0, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 2)  # analyze
+
+        # scenario: resume from next_point #
+        manager.iter_step = 'next_point'
+
+        # resume from latest iteration
+        iteration = manager.find_best_iteration_for_resume(None, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+        # resume from given iteration 1
+        iteration = manager.find_best_iteration_for_resume(1, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+        # resume from given iteration 0
+        iteration = manager.find_best_iteration_for_resume(0, calib_data)
+        with nostdout():
+            manager.prepare_resume_point_for_iteration(iteration)
+
+        self.assertEqual(manager.iteration_state.resume_point, 3)  # next_point
+
+    def test_resume_point_black_box(self):
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+        self.run_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                         os.stat('test_dummy_calibration/iter0/IterationState.json').st_size]
+
+        self.exec_calib(['calibtool', 'resume', 'dummy_calib.py'])
+        self.resume_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                            os.stat('test_dummy_calibration/iter0/IterationState.json').st_size]
+
+        self.assertEqual(self.run_info[0], self.resume_info[0])
+        self.assertEqual(self.run_info[1], self.resume_info[1])
+
+    def test_resume_point_black_box2(self):
+        print 'test_resume_point_black_box2'
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+        self.run_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                         os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
+                         os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
+                         os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
+
+        self.exec_calib(['calibtool', 'resume', 'dummy_calib.py', '--iter_step', 'commission'])
+        self.resume_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                            os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
+                            os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
+                            os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
+
+        # print self.run_info
+        # print self.resume_info
+        self.assertEqual(self.run_info[0], self.resume_info[0])
+        self.assertEqual(self.run_info[1], self.resume_info[1])
+        self.assertNotEquals(self.run_info[2], self.resume_info[2])
+        self.assertNotEquals(self.run_info[3], self.resume_info[3])
+
+    def test_resume_point_black_box3(self):
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+        self.run_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                         os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
+                         os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
+                         os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
+
+        self.exec_calib(['calibtool', 'resume', 'dummy_calib.py', '--iteration', '0', '--iter_step', 'commission'])
+        self.resume_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
+                            os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
+                            os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
+                            os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
+
+        # print self.run_info
+        # print self.resume_info
+        self.assertNotEquals(self.run_info[0], self.resume_info[0])
+        self.assertLess(self.run_info[0], self.resume_info[0])
+        self.assertNotEquals(self.run_info[2], self.resume_info[2])
+        self.assertLess(self.run_info[2], self.resume_info[2])
+
+    @unittest.skip("demonstrating skipping")
+    def test_selected_block_hpc_white_box(self):
+        os.chdir(self.calibration_dir)
+        args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
+                         priority=None)
+
+        unknownArgs = ['--HPC']  # will require COMPS login
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'HPC')
+
+    def test_selected_block_white_box(self):
+        os.chdir(self.calibration_dir)
+        args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
+                         priority=None)
+
+        unknownArgs = []
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+        unknownArgs = ['--LOCAL']
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+        unknownArgs = ['--AZU']
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+    def test_selected_block_resume_white_box(self):
+        # Make sure we have calibration before resume
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+
+        args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=1, ini=None, node_group=None,
+                         priority=None)
+
+        # Case: take location from iteration 1
+        unknownArgs = []
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+        # Case: use location passed in
+        unknownArgs = ['LOCAL']
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+        # Case: take default (LOCAL) for unknown location
+        unknownArgs = ['AZU']
+        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        self.assertEqual(manager.setup.selected_block, 'LOCAL')
+
+    def test_experiment_type_white_box(self):
+        # Make sure we have calibration before resume
+        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
+
+        args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
+                         priority=None)
+
+        # Case: default location (LOCAL), LOCAL, AZU
+        unknownArgs = []
+        # unknownArgs = ['--LOCAL']
+        # unknownArgs = ['--AZU']
+        manager, kwargs = get_calib_manager_args(args, unknownArgs)
+
+        manager.location = manager.setup.get('type')
+        if 'location' in kwargs:
+            kwargs.pop('location')
+
+        # Save the selected block the user wants
+        user_selected_block = manager.setup.selected_block
+        manager.create_calibration(manager.location, **kwargs)
+        # Restore the selected block
+        manager.setup.selected_block = user_selected_block
+
+        exp_manager = ExperimentManagerFactory.from_setup(manager.setup, **kwargs)
+
+        self.assertTrue(isinstance(exp_manager, LocalExperimentManager.LocalExperimentManager))
 
     def test_reanalyze(self):
         # Run the calibration
