@@ -38,6 +38,7 @@ def get_calib_manager_args(args, unknownArgs, force_metadata=False):
 
     return manager, calib_args
 
+
 def update_calib_args(args, unknownArgs, calib_args):
     if hasattr(args,'priority') and args.priority:
         calib_args['priority'] = args.priority

@@ -50,14 +50,6 @@ class LocalExperimentManager(BaseExperimentManager):
         input_root = self.setup.get('input_root')
         return self.find_missing_files(input_files, input_root)
 
-    def cancel_all_simulations(self, states=None):
-        if not states:
-            states = self.get_simulation_status()[0]
-
-        logger.info('Killing all simulations in experiment: %s' % self.experiment.id)
-        if len(states.keys()) == 0 : return
-        self.cancel_simulations(states.keys())
-
     def create_experiment(self, experiment_name, suite_id=None):
         # Create a unique id
         exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
@@ -95,26 +87,29 @@ class LocalExperimentManager(BaseExperimentManager):
         # Delete local simulation data.
         shutil.rmtree(self.experiment.get_path())
 
-    def kill_job(self, simId):
+    def cancel_experiment(self):
+        sim_list = self.experiment.simulations
+        sim_id_list = [sim.id for sim in sim_list]
+        self.cancel_simulations(sim_id_list)
 
-        simulation = DataStore.get_simulation(simId)
-
+    def kill_simulation(self, sim_id):
+        sim = DataStore.get_simulation(sim_id)
         # No need of trying to kill simulation already done
-        if simulation.status in ('Succeeded', 'Failed', 'Canceled'):
+        if sim.status in ('Succeeded', 'Failed', 'Canceled'):
             return
 
         # if the status has not been set -> set it to Canceled
-        if not simulation.status or simulation.status == 'Waiting':
-            simulation.status = 'Canceled'
-            DataStore.save_simulation(simulation)
+        if not sim.status or sim.status == 'Waiting':
+            sim.status = 'Canceled'
+            DataStore.save_simulation(sim)
             return
 
         # It was running -> Kill it if pid is there
-        if simulation.pid:
+        if sim.pid:
             try:
-                simulation.status = 'Canceled'
-                DataStore.save_simulation(simulation)
-                os.kill(int(simulation.pid), signal.SIGTERM)
+                sim.status = 'Canceled'
+                DataStore.save_simulation(sim)
+                os.kill(int(sim.pid), signal.SIGTERM)
             except Exception as e:
                 print e
 

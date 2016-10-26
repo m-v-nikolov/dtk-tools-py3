@@ -55,10 +55,6 @@ class BaseExperimentManager:
         self.runner_created = False
 
     @abstractmethod
-    def cancel_all_simulations(self, states=None):
-        pass
-
-    @abstractmethod
     def commission_simulations(self):
         pass
 
@@ -75,7 +71,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def kill_job(self, simId):
+    def kill_simulation(self, sim_id):
         pass
 
     @abstractmethod
@@ -245,7 +241,7 @@ class BaseExperimentManager:
 
         # Py-passing 'Campaign_Filename' for now.
         if 'Campaign_Filename' in missing_files:
-            logger.info("By-passing file '%s'...", missing_files['Campaign_Filename'])
+            logger.info("By-passing file '%s'..." % missing_files['Campaign_Filename'])
             missing_files.pop('Campaign_Filename')
 
         if len(missing_files) > 0:
@@ -253,10 +249,10 @@ class BaseExperimentManager:
             print json.dumps(missing_files, indent=2)
             var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
-                logger.info("Answer is '%s'. Continue...", var.upper())
+                print "Answer is '%s'. Continue..." % var.upper()
                 return True
             else:
-                logger.info("Answer is '%s'. Exiting...", var.upper())
+                print "Answer is '%s'. Exiting..." % var.upper()
                 return False
 
         return True
@@ -352,7 +348,7 @@ class BaseExperimentManager:
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
-        logger.info('Job states:')
+        logger.info("Job ('%s') states:" % self.experiment.exp_id)
         if len(long_states) < 20 and verbose:
             # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
@@ -456,34 +452,40 @@ class BaseExperimentManager:
         # Add to the list
         self.analyzers.append(analyzer)
 
-    def cancel_simulations(self, ids=[], killall=False):
+    def kill(self, args, unknownArgs):
+        if args.simIds:
+            self.cancel_simulations(args.simIds)
+        else:
+            self.cancel_experiment()
+
+    def cancel_experiment(self):
+        pass
+
+    def cancel_simulations(self, sim_id_list):
         """
-        Cancel currently some or all currently running simulations.
-        Keyword arguments:
-        ids -- a list of job ids to cancel
-        killall -- a Boolean flag to kill all running simulations (default: False)
+        Cancel all the simulations provided in id list.
         """
+        for sim_id in sim_id_list:
+            if type(sim_id) is str:
+                # arguments come in as strings (as they should for COMPS)
+                sim_id = int(sim_id) if sim_id.isdigit() else sim_id
 
-        states, msgs = self.get_simulation_status()
+            simulation = DataStore.get_simulation(sim_id)
+            if simulation is None:
+                continue
 
-        if killall:
-            self.cancel_all_simulations(states)
-            return
+            state = simulation.status
 
-        for id in ids:
-            logger.info("Killing Job %s" % id)
-            if type(id) is str:
-                id = int(id) if id.isdigit() else id  # arguments come in as strings (as they should for COMPS)
-
-            state = states.get(id)
             if not state:
-                logger.warning('No job in experiment with ID = %s' % id)
+                logger.warning('No job in experiment with ID = %s' % sim_id)
                 continue
 
             if state not in ['Succeeded', 'Failed', 'Canceled', 'Unknown']:
-                self.kill_job(id)
+                logger.info("Killing Job %s" % sim_id)
+                print "Killing Job %s" % sim_id
+                self.kill_simulation(sim_id)
             else:
-                logger.warning("JobID %s is already in a '%s' state." % (str(id), state))
+                logger.warning("JobID %s is already in a '%s' state." % (str(sim_id), state))
 
     @staticmethod
     def status_succeeded(states):

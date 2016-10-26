@@ -51,7 +51,7 @@ class ExperimentDataStore:
             sess.merge(experiment)
 
     @classmethod
-    def get_most_recent_experiment(cls, id_or_name):
+    def get_most_recent_experiment(cls, id_or_name=None):
         logger.debug("Get most recent experiment")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
@@ -84,12 +84,27 @@ class ExperimentDataStore:
         logger.debug("Get experiments")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
-            experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name))
+            experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name)) \
+                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers'))
             if current_dir:
                 experiments = experiments.filter(Experiment.working_directory == current_dir)
+
+            experiments = experiments.all()
             session.expunge_all()
 
         return experiments
+
+    @classmethod
+    def get_experiments_with_options(cls, id_or_name=None, current_dir=None, location=None):
+        """
+        Get specified experiment given expId or all active experiments
+        """
+        logger.debug("Get experiments by options")
+
+        if id_or_name:
+            return cls.get_experiments(id_or_name, current_dir)
+        else:
+            return cls.get_active_experiments(location)
 
     @classmethod
     def delete_experiment(cls, experiment):

@@ -107,7 +107,7 @@ class CompsExperimentManager(BaseExperimentManager):
                 sim = DataStore.create_simulation(id=simid, tags=simdata)
                 self.experiment.simulations.append(sim)
 
-    def cancel_all_simulations(self, states=None):
+    def cancel_experiment(self):
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
@@ -127,8 +127,8 @@ class CompsExperimentManager(BaseExperimentManager):
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
         e.Delete()
 
-    def kill_job(self, simId):
+    def kill_simulation(self, sim_id):
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import QueryCriteria, Simulation
-        s = Simulation.GetById(simId, QueryCriteria().Select('Id'))
+        s = Simulation.GetById(sim_id, QueryCriteria().Select('Id'))
         s.Cancel()
