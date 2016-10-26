@@ -292,7 +292,7 @@ class CalibManager(object):
             if self.exp_manager.any_canceled(states):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
                 # Kill the remaining simulations
-                map(self.exp_manager.kill_job, states.keys())
+                map(self.exp_manager.cancel_simulations, states.keys())
                 OutputMessage("Calibration got canceled. Exiting...")
                 exit()
 
@@ -300,7 +300,7 @@ class CalibManager(object):
             if self.exp_manager.any_failed(states):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
                 # Kill the remaining simulations
-                map(self.exp_manager.kill_job, states.keys())
+                map(self.exp_manager.cancel_simulations, states.keys())
                 # Show a last status
                 self.exp_manager.print_status(states, msgs)
                 OutputMessage("One or more simulations failed. Calibration cannot continue. Exiting...")
@@ -870,25 +870,34 @@ class CalibManager(object):
         # finally restore all_results for current iteration
         self.all_results = self.all_results[self.all_results.iteration <= iteration]
 
+    def load_experiment_from_iteration(self, iteration=None):
+        """
+        Load experiment for a given or the latest iteration
+        """
+        if iteration is None:
+            # restore the existing calibration data
+            calib_data = self.read_calib_data()
+
+            # Get the last iteration
+            latest_iteration = calib_data.get('iteration', None)
+        else:
+            latest_iteration = iteration
+
+        # Restore IterationState
+        it = IterationState.from_file(os.path.join(self.name, 'iter%d' % latest_iteration, 'IterationState.json'))
+
+        # Get experiment by id
+        return DataStore.get_experiment(it.experiment_id)
+
     def kill(self):
         """
         Kill the current calibration
         """
-        # Find the latest iteration
-        iterations = glob.glob(os.path.join(self.name, "iter*"))
-        latest_iteration = iterations[-1]
+        exp = self.load_experiment_from_iteration()
 
-        # Load it
-        it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
-
-        # Retrieve the experiment manager and cancel all
-        exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
-
-        if self.location == "LOCAL":
-            # LOCAL calibration
-            exp_manager.cancel_simulations(killall=True)
-        else:
-            exp_manager.cancel_all_simulations()
+        # Cancel simulations for all active managers
+        exp_manager = ExperimentManagerFactory.from_experiment(exp)
+        exp_manager.cancel_experiment()
 
         # Print confirmation
         print "Calibration %s successfully cancelled!" % self.name

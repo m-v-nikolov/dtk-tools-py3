@@ -165,6 +165,7 @@ def kill(args, unknownArgs):
         exp_manager = reload_experiment(args)
 
     logger.info("Killing Experiment %s" % exp_manager.experiment.id)
+    print "Killing Experiment %s" % exp_manager.experiment.id
     states, msgs = exp_manager.get_simulation_status()
     exp_manager.print_status(states, msgs, verbose=False)
 
@@ -175,10 +176,8 @@ def kill(args, unknownArgs):
 
     if args.simIds:
         logger.info('Killing job(s) with ids: ' + str(args.simIds))
-        params = {'ids': args.simIds}
     else:
         logger.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
-        params = {'killall': True}
 
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -186,7 +185,8 @@ def kill(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    exp_manager.cancel_simulations(**params)
+    exp_manager.kill(args, unknownArgs)
+    print "'Kill' has been executed successfully."
 
 
 def exterminate(args, unknownArgs):
@@ -210,7 +210,9 @@ def exterminate(args, unknownArgs):
         return
 
     for exp_manager in exp_managers:
-        exp_manager.cancel_simulations(killall=True)
+        exp_manager.cancel_experiment()
+
+    print "'Exterminate' has been executed successfully."
 
 
 def delete(args, unknownArgs):
@@ -573,14 +575,10 @@ def reload_experiment(args=None):
 
 
 def reload_experiments(args=None):
-    if args:
-        id = args.expId
-    else:
-        id = None
-
+    id = args.expId if args else None
     current_dir = args.current_dir if 'current_dir' in args else None
 
-    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments(id, current_dir))
+    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
 
 
 def main():

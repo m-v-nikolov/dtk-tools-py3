@@ -65,7 +65,7 @@ class SimulationDataStore:
     def get_simulation(cls, sim_id):
         logger.debug("Get simulation")
         with session_scope() as session:
-            simulation = session.query(Simulation).filter(Simulation.id == sim_id).one()
+            simulation = session.query(Simulation).filter(Simulation.id == sim_id).one_or_none()
             session.expunge_all()
 
         return simulation
