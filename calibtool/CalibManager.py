@@ -884,7 +884,7 @@ class CalibManager(object):
             latest_iteration = iteration
 
         # Restore IterationState
-        it = IterationState.from_file(os.path.join(latest_iteration, 'IterationState.json'))
+        it = IterationState.from_file(os.path.join(self.name, 'iter%d' % latest_iteration, 'IterationState.json'))
 
         # Get experiment by id
         return DataStore.get_experiment(it.experiment_id)
