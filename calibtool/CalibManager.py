@@ -292,7 +292,7 @@ class CalibManager(object):
             if self.exp_manager.any_canceled(states):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
                 # Kill the remaining simulations
-                map(self.exp_manager.cancel_simulations, states.keys())
+                self.exp_manager.cancel_simulations(states.keys())
                 OutputMessage("Calibration got canceled. Exiting...")
                 exit()
 
