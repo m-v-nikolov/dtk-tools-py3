@@ -29,7 +29,7 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         input_root = self.setup.get('input_root')
         input_root_real = utils.translate_COMPS_path(input_root)
-        return self.find_missing_files(input_files, input_root_real)
+        return input_root_real, self.find_missing_files(input_files, input_root_real)
 
     def analyze_experiment(self):
         if not self.assets_service:

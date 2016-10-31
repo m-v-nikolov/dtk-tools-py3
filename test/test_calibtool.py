@@ -136,7 +136,7 @@ class TestCommands(unittest.TestCase):
                        'Sea_Migration_Filename': '', 'Rainfall_Filename': '', 'Campaign_Filename': 'campaign.json'}
 
         exp_manager = ExperimentManagerFactory.from_setup(manager.setup)
-        missing_files = exp_manager.check_input_files(input_files)
+        input_root, missing_files = exp_manager.check_input_files(input_files)
 
         # Py-passing 'Campaign_Filename' for now.
         if 'Campaign_Filename' in missing_files:

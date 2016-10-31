@@ -48,7 +48,7 @@ class LocalExperimentManager(BaseExperimentManager):
         Check file exist and return the missing files as dict
         """
         input_root = self.setup.get('input_root')
-        return self.find_missing_files(input_files, input_root)
+        return input_root, self.find_missing_files(input_files, input_root)
 
     def create_experiment(self, experiment_name, suite_id=None):
         # Create a unique id
