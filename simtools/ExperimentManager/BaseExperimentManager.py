@@ -237,7 +237,7 @@ class BaseExperimentManager:
             return True
 
         input_files = config_builder.get_input_file_paths()
-        missing_files = self.check_input_files(input_files)
+        input_root, missing_files = self.check_input_files(input_files)
 
         # Py-passing 'Campaign_Filename' for now.
         if 'Campaign_Filename' in missing_files:
@@ -246,6 +246,7 @@ class BaseExperimentManager:
 
         if len(missing_files) > 0:
             print 'Missing files list:'
+            print 'input_root: %s' % input_root
             print json.dumps(missing_files, indent=2)
             var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
