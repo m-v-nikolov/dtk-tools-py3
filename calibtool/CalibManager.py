@@ -260,7 +260,7 @@ class CalibManager(object):
 
         self.wait_for_finished()
 
-    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time = 10):
+    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time=10):
         while True:
             time.sleep(init_sleep)
 

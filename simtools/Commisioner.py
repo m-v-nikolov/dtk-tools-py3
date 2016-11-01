@@ -114,10 +114,10 @@ class CompsSimulationCommissioner(threading.Thread):
             for tag in sim.getTags().entrySet().toArray():
                 # COMPS turns nested tags into strings like "{'key':'value'}"
                 try:
-                    v=eval(tag.getValue())
-                    logging.debug('Converting string to value: %s' % v)
+                    v = eval(tag.getValue())
+                    # logging.debug('Converting string to value: %s' % v)
                 except:
-                    v=tag.getValue()
+                    v = tag.getValue()
                 md[tag.getKey()]=v
             sim_md[sim.getId().toString()] = md
         logging.debug(sim_md)
