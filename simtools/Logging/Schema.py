@@ -10,9 +10,10 @@ from simtools.DataAccess import Base_logs, engine_logs
 
 class LogRecord(Base_logs):
     __tablename__ = "Logs"
-    created = Column(DateTime(timezone=True), primary_key=True)
-    name = Column(String, primary_key=True)
-    log_level = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime(timezone=True), index=True)
+    name = Column(String, index=True)
+    log_level = Column(Integer, index=True)
     log_level_name = Column(String)
     message = Column(String)
     #args = Column(PickleType(pickler=json))
