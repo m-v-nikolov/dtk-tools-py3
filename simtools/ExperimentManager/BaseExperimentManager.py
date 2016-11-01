@@ -23,6 +23,7 @@ logger = init_logging('ExperimentManager')
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
+    overseer_check_lock = multiprocessing.Lock()
 
     def __init__(self, model_file, experiment, setup=None):
         self.model_file = model_file
@@ -101,7 +102,7 @@ class BaseExperimentManager:
     def done_commissioning(self):
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
         for sim in self.experiment.simulations:
-            if sim.status == 'Waiting' or not sim.status or sim.status=="Created":
+            if sim.status == 'Waiting' or not sim.status or sim.status == "Created":
                 return False
 
         return True
@@ -113,27 +114,29 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        setting = DataStore.get_setting('overseer_pid')
+        BaseExperimentManager.overseer_check_lock.acquire()
+        try:
+            setting = DataStore.get_setting('overseer_pid')
 
-        if setting:
-            overseer_pid = int(setting.value)
-        else:
-            overseer_pid = None
+            if setting:
+                overseer_pid = int(setting.value)
+            else:
+                overseer_pid = None
 
-        if overseer_pid and psutil.pid_exists(overseer_pid) and 'python' in psutil.Process(overseer_pid).name().lower():
-            return
+            if not overseer_pid or not psutil.pid_exists(overseer_pid) or 'python' not in psutil.Process(overseer_pid).name().lower():
+                # Run the runner
+                current_dir = os.path.dirname(os.path.realpath(__file__))
+                runner_path = os.path.join(current_dir, '..', 'Overseer.py')
+                import platform
+                if platform.system() == 'Windows':
+                    p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
+                else:
+                    p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
-        # Run the runner
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        runner_path = os.path.join(current_dir, '..', 'Overseer.py')
-        import platform
-        if platform.system() == 'Windows':
-            p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
-        else:
-            p = subprocess.Popen([sys.executable, runner_path], shell=False)
-
-        # Save the pid in the settings
-        DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
+                # Save the pid in the settings
+                DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
+        finally:
+            BaseExperimentManager.overseer_check_lock.release()
 
     def success_callback(self, simulation):
         """

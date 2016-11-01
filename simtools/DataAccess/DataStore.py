@@ -3,6 +3,7 @@ import datetime
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.Schema import Analyzer, Settings
+from simtools.DataAccess.SettingsDataStore import SettingsDataStore
 from simtools.DataAccess.SimulationDataStore import SimulationDataStore
 from simtools.utils import init_logging
 
@@ -48,7 +49,7 @@ def batch(iterable, n=1):
         yield iterable[ndx:min(ndx + n, l)]
 
 
-class DataStore(SimulationDataStore, ExperimentDataStore):
+class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore):
     """
     Class holding static methods to abstract the access to the database.
     """
@@ -56,23 +57,6 @@ class DataStore(SimulationDataStore, ExperimentDataStore):
     @classmethod
     def create_analyzer(cls, **kwargs):
         return Analyzer(**kwargs)
-
-    @classmethod
-    def get_setting(cls,setting):
-        with session_scope() as session:
-            setting = session.query(Settings).filter(Settings.key == setting).one_or_none()
-            session.expunge_all()
-
-        return setting
-
-    @classmethod
-    def save_setting(cls, setting):
-        with session_scope() as session:
-            session.merge(setting)
-
-    @classmethod
-    def create_setting(cls, **kwargs):
-        return Settings(**kwargs)
 
     @classmethod
     def clear_leftover(cls, suite_ids, exp_ids):

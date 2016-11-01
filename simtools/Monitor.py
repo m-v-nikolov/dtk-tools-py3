@@ -24,7 +24,7 @@ class SimulationMonitor(object):
             states[sim.id] = sim.status if sim.status else "Waiting"
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
-        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
+        logger.debug(dict(Counter(states.values())))
         return states, msgs
 
 
