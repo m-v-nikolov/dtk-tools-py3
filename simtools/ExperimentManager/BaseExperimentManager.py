@@ -19,11 +19,10 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
 
 logger = init_logging('ExperimentManager')
-
+overseer_check_lock = multiprocessing.Lock()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
-    overseer_check_lock = multiprocessing.Lock()
 
     def __init__(self, model_file, experiment, setup=None):
         self.model_file = model_file
@@ -114,7 +113,7 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        BaseExperimentManager.overseer_check_lock.acquire()
+        overseer_check_lock.acquire()
         try:
             setting = DataStore.get_setting('overseer_pid')
 
@@ -136,7 +135,7 @@ class BaseExperimentManager:
                 # Save the pid in the settings
                 DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
         finally:
-            BaseExperimentManager.overseer_check_lock.release()
+            overseer_check_lock.release()
 
     def success_callback(self, simulation):
         """
