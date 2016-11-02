@@ -15,11 +15,13 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
 
 logger = init_logging('Overseer')
+simulation_states_lock = multiprocessing.Lock()
 
 def SimulationStateUpdater(states):
     logger.debug("Simulation update function")
     logger.debug(states)
     if states:
+        simulation_states_lock.acquire()
         try:
             batch = []
             for id,sim in states.iteritems():
@@ -36,6 +38,8 @@ def SimulationStateUpdater(states):
         except Exception as e:
             logger.error("Exception in the status updater")
             logger.error(e)
+        finally:
+            simulation_states_lock.release()
 
 
 if __name__ == "__main__":
@@ -91,7 +95,7 @@ if __name__ == "__main__":
             # If the runners have not been created -> create them
             if not manager.runner_created:
                 logger.debug('Commission simulations for experiment id: %s' % manager.experiment.id)
-                manager.commission_simulations(update_states, lock)
+                manager.commission_simulations(update_states, simulation_states_lock)
                 logger.debug('Experiment done commissioning ? %s' % manager.runner_created)
                 continue
 
