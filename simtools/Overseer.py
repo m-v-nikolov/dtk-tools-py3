@@ -17,26 +17,25 @@ from simtools.utils import init_logging
 logger = init_logging('Overseer')
 
 def SimulationStateUpdater(states):
-    while True:
-        logger.debug("Simulation update function")
-        logger.debug(states)
-        if states:
-            try:
-                batch = []
-                for id,sim in states.iteritems():
-                    if sim.status not in (
-                    'Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed', 'Canceled', 'CancelRequested',
-                    "Retry", "CommissionRequested", "Provisioning", "Created"):
-                        logger.warn(
-                            "Failed to retrieve correct status for simulation %s. Status returned: %s" % (sim.id,sim.status))
-                        continue
-                    batch.append({'sid':id, 'status':sim.status, 'message':sim.message,'pid':sim.pid})
+    logger.debug("Simulation update function")
+    logger.debug(states)
+    if states:
+        try:
+            batch = []
+            for id,sim in states.iteritems():
+                if sim.status not in (
+                'Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed', 'Canceled', 'CancelRequested',
+                "Retry", "CommissionRequested", "Provisioning", "Created"):
+                    logger.warn(
+                        "Failed to retrieve correct status for simulation %s. Status returned: %s" % (sim.id,sim.status))
+                    continue
+                batch.append({'sid':id, 'status':sim.status, 'message':sim.message,'pid':sim.pid})
 
-                DataStore.batch_simulations_update(batch)
-                states.clear()
-            except Exception as e:
-                logger.error("Exception in the status updater")
-                logger.error(e)
+            DataStore.batch_simulations_update(batch)
+            states.clear()
+        except Exception as e:
+            logger.error("Exception in the status updater")
+            logger.error(e)
 
 
 if __name__ == "__main__":
