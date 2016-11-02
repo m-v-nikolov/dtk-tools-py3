@@ -15,14 +15,12 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
 
 logger = init_logging('Overseer')
-lock = multiprocessing.Lock()
 
-def SimulationStateUpdater(states, loop=True):
+def SimulationStateUpdater(states):
     while True:
-        logger.debug("Simulation updated waiting loop")
+        logger.debug("Simulation update function")
         logger.debug(states)
         if states:
-            lock.acquire()
             try:
                 batch = []
                 for id,sim in states.iteritems():
@@ -39,11 +37,6 @@ def SimulationStateUpdater(states, loop=True):
             except Exception as e:
                 logger.error("Exception in the status updater")
                 logger.error(e)
-            finally:
-                lock.release()
-            if not loop: return
-
-        time.sleep(5)
 
 
 if __name__ == "__main__":
@@ -60,14 +53,9 @@ if __name__ == "__main__":
     update_states = {}
     managers = OrderedDict()
 
-    # Start the simulation updater
-    t1 = threading.Thread(target=SimulationStateUpdater, args=(update_states, True))
-    t1.daemon = True
-    t1.start()
-
     # Take this opportunity to cleanup the logs
-    t2 = multiprocessing.Process(target=LoggingDataStore.cleanup)
-    t2.start()
+    # t2 = multiprocessing.Process(target=LoggingDataStore.cleanup)
+    # t2.start()
 
     # will hold the analyze threads
     analysis_threads = []
@@ -80,6 +68,9 @@ if __name__ == "__main__":
         logger.debug(active_experiments)
         logger.debug('Managers')
         logger.debug(managers.keys())
+
+        # Update the states
+        SimulationStateUpdater(update_states)
 
         # Create all the managers
         for experiment in active_experiments:
