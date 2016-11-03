@@ -318,31 +318,6 @@ class BaseExperimentManager:
         self.complete_sim_creation(commissioners)
         DataStore.save_experiment(self.experiment, verbose=verbose)
 
-    def resubmit_simulations(self, ids=[], resubmit_all_failed=False):
-        """
-        Resubmit some or all canceled or failed simulations.
-        Keyword arguments:
-        ids -- a list of job ids to resubmit
-        resubmit_all_failed -- a Boolean flag to resubmit all canceled/failed simulations (default: False)
-        """
-
-        states, msgs = self.get_simulation_status()
-
-        if resubmit_all_failed:
-            ids = [id for (id, state) in states.iteritems() if state in ['Failed', 'Canceled']]
-            logger.info('Resubmitting all failed simulations in experiment: ' + str(ids))
-
-        for id in ids:
-            state = states.get(id)
-            if not state:
-                logger.warning('No job in experiment with ID = %s' % id)
-                continue
-
-            if state in ['Failed', 'Canceled']:
-                self.resubmit_job(id)
-            else:
-                logger.warning("JobID %d is in a '%s' state and will not be requeued." % (id, state))
-
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():

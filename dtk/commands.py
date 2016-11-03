@@ -141,25 +141,6 @@ def status(args, unknownArgs):
         exp_manager.print_status(states, msgs)
 
 
-def resubmit(args, unknownArgs):
-    exp_manager = reload_experiment(args)
-
-    if args.simIds:
-        logger.info('Resubmitting job(s) with ids: ' + str(args.simIds))
-        params = {'ids': args.simIds}
-    else:
-        logger.info('No job IDs were specified.  Resubmitting all failed and canceled jobs in experiment.')
-        params = {'resubmit_all_failed': True}
-
-    if args.all:
-        exp_managers = reload_experiments(args)
-        for exp_manager in exp_managers:
-            exp_manager.resubmit_simulations(**params)
-    else:
-        exp_manager = reload_experiment(args)
-        exp_manager.resubmit_simulations(**params)
-
-
 def kill(args, unknownArgs):
     with utils.nostdout():
         exp_manager = reload_experiment(args)
@@ -615,16 +596,6 @@ def main():
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
     parser_list.add_argument('-n', '--number',  help='Get given number recent experiment list', dest='limit')
     parser_list.set_defaults(func=db_list)
-
-    # 'dtk resubmit' options
-    parser_resubmit = subparsers.add_parser('resubmit',
-                                            help='Resubmit failed or canceled simulations specified by experiment ID or name.')
-    parser_resubmit.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_resubmit.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
-                                 help='Process or job IDs of simulations to resubmit.')
-    parser_resubmit.add_argument('-a', '--all', action='store_true',
-                                 help='Resubmit all failed or canceled simulations in selected experiments.')
-    parser_resubmit.set_defaults(func=resubmit)
 
     # 'dtk kill' options
     parser_kill = subparsers.add_parser('kill', help='Kill most recent running experiment specified by ID or name.')
