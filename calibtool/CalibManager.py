@@ -953,6 +953,7 @@ class CalibManager(object):
 
         # Override our setup with what is in the file
         self.setup.override_block(calib_data['selected_block'])
+        self.location = self.setup.get('type')
 
         if calib_data['location'] == 'HPC':
             utils.COMPS_login(self.setup.get('server_endpoint'))
