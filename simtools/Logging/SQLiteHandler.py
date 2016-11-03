@@ -16,7 +16,6 @@ class SQLiteHandler(logging.Handler):
         record.dbtime = datetime.datetime.now()
 
     def emit(self, record):
-
         # Use default formatting:
         self.format(record)
         # Set the database time up:
@@ -26,6 +25,10 @@ class SQLiteHandler(logging.Handler):
         else:
             record.exc_text = ""
         record_info = record.__dict__
+
+        # Pass if module is built-in
+        if record_info['module'] in ['init', 'pep425tags']: return
+
         # Insert log record
         record = LoggingDataStore.create_record(
             created=record_info['dbtime'],

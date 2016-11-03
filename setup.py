@@ -8,7 +8,6 @@ from collections import OrderedDict
 from urlparse import urlparse
 from ConfigParser import ConfigParser
 from distutils.version import LooseVersion
-from simtools.utils import nostdout
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -32,9 +31,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.2rc1+mkl',
+        'version': '1.11.2+mkl',
         'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2rc1%2Bmkl-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2+mkl-cp27-cp27m-win_amd64.whl'
     }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
@@ -368,6 +367,7 @@ def install_packages(my_os, reqs):
 
     from setuptools import setup, find_packages
     # Suppress the outputs except the errors
+    from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
               version='0.4',
