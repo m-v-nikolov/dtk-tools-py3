@@ -370,11 +370,23 @@ def install_packages(my_os, reqs):
     from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
-              version='0.4',
+              version='0.5',
               description='Facilitating submission and analysis of simulations',
               url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
-              author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
-              author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
+              author='Edward Wenger,'
+                     'Benoit Raybaud,'
+                     'Daniel Klein,'
+                     'Jaline Gerardin,'
+                     'Milen Nikolov,'
+                     'Aaron Roney,'
+                     'Zhaowei Du',
+              author_email='ewenger@intven.com,'
+                           'braybaud@intven.com,'
+                           'dklein@idmod.org,'
+                           'jgerardin@intven.com,'
+                           'mnikolov@intven.com,'
+                           'aroney@intven.com,'
+                           'zdu@intven.com',
               packages=find_packages(),
               install_requires=[],
               entry_points={
