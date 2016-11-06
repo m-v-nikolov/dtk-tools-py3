@@ -1,10 +1,8 @@
-from simtools import utils
 from simtools.Commisioner import CompsSimulationCommissioner
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
-from simtools.utils import init_logging
-
+from simtools import utils
 
 class CompsExperimentManager(BaseExperimentManager):
     """
@@ -62,7 +60,7 @@ class CompsExperimentManager(BaseExperimentManager):
             # until it can actually go, but asymmetrical acquire()/release() is not
             # ideal...
 
-            self.commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore)
+            self.commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore, self.setup.get('server_endpoint'))
             ret = self.commissioner
         else:
             ret = None
@@ -84,18 +82,16 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def complete_sim_creation(self, commissioners):
         lastBatch = commissioners[-1]
-        if not lastBatch.isAlive() and len(lastBatch.sims) > 0:
+        if not lastBatch.is_alive() and len(lastBatch.sims) > 0:
             lastBatch.start()
         for c in commissioners:
             c.join()
         self.collect_sim_metadata()
 
-    def commission_simulations(self, states={}, lock=None):
+    def commission_simulations(self, states):
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-        t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,
-                                                                  self.success_callback,lock,
-                                                                  not self.done_commissioning()))
+        t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,self.success_callback, not self.done_commissioning()))
         t1.daemon = True
         t1.start()
         self.runner_created = True

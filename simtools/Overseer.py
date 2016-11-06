@@ -1,15 +1,12 @@
 import gc
-
-import logging
 import multiprocessing
+import sys
 import threading
 import time
-from Queue import Queue
 from collections import OrderedDict
+from datetime import datetime
 
-import sys
 from simtools.DataAccess.DataStore import DataStore
-from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
@@ -17,32 +14,38 @@ from simtools.utils import init_logging
 logger = init_logging('Overseer')
 simulation_states_lock = multiprocessing.Lock()
 
+
 def SimulationStateUpdater(states):
-    logger.debug("Simulation update function")
-    logger.debug(states)
-    if states:
-        simulation_states_lock.acquire()
-        try:
-            batch = []
-            for id,sim in states.iteritems():
-                if sim.status not in (
-                'Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed', 'Canceled', 'CancelRequested',
-                "Retry", "CommissionRequested", "Provisioning", "Created"):
-                    logger.warn(
-                        "Failed to retrieve correct status for simulation %s. Status returned: %s" % (sim.id,sim.status))
-                    continue
-                batch.append({'sid':id, 'status':sim.status, 'message':sim.message,'pid':sim.pid})
+    while True:
+        logger.debug("Simulation update function")
+        logger.debug(states)
+        if states:
+            try:
+                while not states.empty():
+                    batch = []
+                    while len(batch) < 250 and not states.empty():
+                        batch.append(states.get())
+                    DataStore.batch_simulations_update(batch)
+                    time.sleep(1)
+            except Exception as e:
+                logger.error("Exception in the status updater")
+                logger.error(e)
 
-            DataStore.batch_simulations_update(batch)
-            states.clear()
-        except Exception as e:
-            logger.error("Exception in the status updater")
-            logger.error(e)
-        finally:
-            simulation_states_lock.release()
+        time.sleep(5)
 
+
+def LogCleaner():
+    # Get the last time a cleanup happened
+    last_cleanup = DataStore.get_setting('last_log_cleanup')
+    print last_cleanup.value
+    if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' '),'YYYY-MM-DD')).days > 1:
+        # Do the cleanup
+        print "WE CLEAN"
+        DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup',value=datetime.today()))
 
 if __name__ == "__main__":
+    # LogCleaner()
+    # exit()
     logger.debug('Start Overseer')
     # Retrieve the threads number
     sp = SetupParser()
@@ -50,11 +53,15 @@ if __name__ == "__main__":
     max_analysis_threads = int(sp.get('max_threads'))
 
     # Create the queues and semaphore
-    local_queue = Queue(max_local_sims)
+    local_queue = multiprocessing.Queue(max_local_sims)
     analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
     update_states = {}
     managers = OrderedDict()
+    states_queue = multiprocessing.Queue()
+
+    update_state_thread = threading.Thread(target=SimulationStateUpdater, args=(states_queue,))
+    update_state_thread.start()
 
     # Take this opportunity to cleanup the logs
     # t2 = multiprocessing.Process(target=LoggingDataStore.cleanup)
@@ -71,9 +78,6 @@ if __name__ == "__main__":
         logger.debug(active_experiments)
         logger.debug('Managers')
         logger.debug(managers.keys())
-
-        # Update the states
-        SimulationStateUpdater(update_states)
 
         # Create all the managers
         for experiment in active_experiments:
@@ -95,13 +99,13 @@ if __name__ == "__main__":
             # If the runners have not been created -> create them
             if not manager.runner_created:
                 logger.debug('Commission simulations for experiment id: %s' % manager.experiment.id)
-                manager.commission_simulations(update_states, simulation_states_lock)
+                manager.commission_simulations(states_queue)
                 logger.debug('Experiment done commissioning ? %s' % manager.runner_created)
                 continue
 
             # If the manager is done -> analyze
             if manager.finished():
-                logging.debug('Manager for experiment id: %s is done' % manager.experiment.id)
+                logger.debug('Manager for experiment id: %s is done' % manager.experiment.id)
                 # Analyze
                 athread = threading.Thread(target=manager.analyze_experiment)
                 athread.start()

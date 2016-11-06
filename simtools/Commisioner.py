@@ -1,23 +1,33 @@
-import logging
+import multiprocessing
 import os
 import re
-import threading
 from datetime import datetime
 
+import logging
 import utils
+from COMPS.Data import Configuration
+from COMPS.Data import Experiment
+from COMPS.Data import Priority
+from COMPS.Data import QueryCriteria
+from COMPS.Data import Simulation
+from COMPS.Data import SimulationFile
+from COMPS.Data import Suite
+
+logger = logging.getLogger('Commissioner')
 
 
-class CompsSimulationCommissioner(threading.Thread):
+class CompsSimulationCommissioner(multiprocessing.Process):
     """
     A class to commission COMPS experiments and simulations.
     Threads are spawned for each batch submission of created simulation (and associated) objects.
     Commissioning and meta-data retrieval are done by single calls by passing the experiment ID.
     """
 
-    def __init__(self, exp_id, maxThreadSemaphore):
-        threading.Thread.__init__(self)
+    def __init__(self, exp_id, maxThreadSemaphore, endpoint):
+        multiprocessing.Process.__init__(self)
         self.exp_id = exp_id
         self.maxThreadSemaphore = maxThreadSemaphore
+        self.endpoint = endpoint
         self.sims = []
 
     def create_simulation(self, name, files, tags):
@@ -26,24 +36,21 @@ class CompsSimulationCommissioner(threading.Thread):
         self.sims.append(sim)
 
     def run(self):
-
-        from COMPS.Data import Simulation, SimulationFile
-        from java.util import HashMap
-
+        utils.COMPS_login(self.endpoint)
         try:
             for sim in self.sims:
-                s = Simulation(sim.pop('name'))
-                s.setExperimentId(self.exp_id)
+                # Create the simulation
+                s = Simulation(name=sim.pop('name'), experiment_id=self.exp_id)
 
-                m = HashMap()
-                for k,v in sim.pop('tags').items():
-                    m.put(str(k), str(v))
-                s.SetTags(m)
+                # Sets the tags
+                s.set_tags(sim.pop('tags'))
 
+                # Add the files
                 for name, content in sim.items():
-                    s.AddFile(SimulationFile('%s' % name, 'input', 'The %s configuration file' % name), content)
+                    s.add_file(simulationfile=SimulationFile(name, 'input'), data=content)
 
-            Simulation.SaveAll()  # Batch save after all sims in list have been added
+            Simulation.save_all()  # Batch save after all sims in list have been added
+
             self.sims = []
 
         finally:
@@ -51,75 +58,53 @@ class CompsSimulationCommissioner(threading.Thread):
 
     @staticmethod
     def create_suite(setup, suite_name):
-
-        from COMPS.Data import Suite
         utils.COMPS_login(setup.get('server_endpoint'))
 
-        logging.debug('suite_name - ' + str(suite_name))
+        logger.debug('Suite_name - ' + str(suite_name))
 
         suite = Suite(suite_name)
-        suite.Save()
+        suite.save()
 
-        return suite.getId().toString()
+        return str(suite.id)
 
     @staticmethod
     def create_experiment(setup, config_builder, exp_name, bin_path, input_args, suite_id=None):
-        from COMPS.Data import Configuration, HPCJob__Priority, Experiment
-
         utils.COMPS_login(setup.get('server_endpoint'))
 
-        bldr = Configuration.getBuilderInstance()
+        config = Configuration(
+            environment_name=setup.get('environment'),
+            simulation_input_args=input_args,
+            working_directory_root=os.path.join(setup.get('sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) )),
+            executable_path=bin_path,
+            node_group_name=setup.get('node_group'),
+            maximum_number_of_retries=int(setup.get('num_retries')),
+            priority=Priority[setup.get('priority')],
+            min_cores=config_builder.get_param('Num_Cores',1),
+            max_cores=config_builder.get_param('Num_Cores',1),
+            exclusive=config_builder.get_param('Exclusive',False)
+        )
 
-        # When new version of pyCOMPS
-        config = bldr.setSimulationInputArgs(input_args) \
-                     .setWorkingDirectoryRoot(os.path.join(setup.get('sim_root'), exp_name + '_' + re.sub( '[ :.-]', '_', str( datetime.now() ) ))) \
-                     .setExecutablePath(bin_path) \
-                     .setNodeGroupName(setup.get('node_group')) \
-                     .setMaximumNumberOfRetries(int(setup.get('num_retries'))) \
-                     .setPriority(HPCJob__Priority.valueOf(setup.get('priority'))) \
-                     .setMinCores(config_builder.get_param('Num_Cores',1)) \
-                     .setMaxCores(config_builder.get_param('Num_Cores',1)) \
-                     .setEnvironmentName(setup.get('environment')) \
-                     .build()
+        logger.debug('exp_name - ' + str(exp_name))
+        logger.debug('config - ' + str(config))
 
-        logging.debug('exp_name - ' + str(exp_name))
-        logging.debug('config - ' + str(config))
+        e = Experiment(name=exp_name,
+                       configuration=config,
+                       suite_id=suite_id)
+        e.save()
 
-        e = Experiment(exp_name, config)
-        if suite_id:
-            e.setSuiteId(suite_id)
-        e.Save()
-
-        return e.getId().toString()
-
-    @staticmethod
-    def commission_experiment(exp_id):
-
-        from COMPS.Data import Experiment
-
-        e = Experiment.GetById(exp_id)
-        e.Commission()
+        return e.id
 
     @staticmethod
     def get_sim_metadata_for_exp(exp_id):
-
-        from COMPS.Data import Experiment, QueryCriteria
-
-        e = Experiment.GetById(exp_id)
-        sims = e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('Tags')).toArray()
+        e = Experiment.get(exp_id)
+        sims = e.get_simulations(QueryCriteria().select('Id').select_children('Tags'))
 
         sim_md = {}
         for sim in sims:
-            md={}
-            for tag in sim.getTags().entrySet().toArray():
-                # COMPS turns nested tags into strings like "{'key':'value'}"
-                try:
-                    v = eval(tag.getValue())
-                    # logging.debug('Converting string to value: %s' % v)
-                except:
-                    v = tag.getValue()
-                md[tag.getKey()]=v
-            sim_md[sim.getId().toString()] = md
-        logging.debug(sim_md)
+            md = {}
+            for tag,value in sim.tags.iteritems():
+                md[tag] = value
+            sim_md[str(sim.id)] = md
+            logger.debug(sim_md)
 
         return sim_md
