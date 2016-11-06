@@ -42,7 +42,7 @@ class CompsExperimentManager(BaseExperimentManager):
     def create_suite(self, suite_name):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
 
-    def create_experiment(self, experiment_name, suite_id=None):
+    def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
         self.sims_created = 0
         # Also create the experiment in COMPS to get the ID
         exp_id = CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,

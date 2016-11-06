@@ -55,7 +55,7 @@ class BaseExperimentManager:
         self.runner_created = False
 
     @abstractmethod
-    def commission_simulations(self):
+    def commission_simulations(self, states):
         pass
 
     @abstractmethod
@@ -292,6 +292,12 @@ class BaseExperimentManager:
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
                                                                        analyzer=dill.dumps(analyzer)))
 
+        # If the assets service is in use, the path needs to come from COMPS
+        if self.assets_service:
+            lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
+        else:
+            lib_staging_root = self.setup.get('lib_staging_root')
+
         cached_cb = copy.deepcopy(self.config_builder)
         commissioners = []
         for mod_fn_list in self.exp_builder.mod_generator:
@@ -300,12 +306,6 @@ class BaseExperimentManager:
 
             # modify next simulation according to experiment builder
             map(lambda func: func(self.config_builder), mod_fn_list)
-
-            # If the assets service is in use, the path needs to come from COMPS
-            if self.assets_service:
-                lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
-            else:
-                lib_staging_root = self.setup.get('lib_staging_root')
 
             # Stage the required dll for the experiment
             self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
