@@ -27,6 +27,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
             self.monitor()
 
+
     def run(self):
         try:
             with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
