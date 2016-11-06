@@ -8,6 +8,8 @@ import shutil
 import sys
 from hashlib import md5
 
+from COMPS import Client
+
 max_exp_name_len = 100
 
 def init_logging(name):
@@ -86,9 +88,11 @@ def caller_name(skip=2):
 
 def COMPS_login(endpoint):
     from COMPS import Client
-    with nostdout():
-        if not Client.getRemoteServer():
-            Client.Login(endpoint)
+    #with nostdout():
+    try:
+        am= Client.auth_manager()
+    except:
+        Client.Login(endpoint)
 
     return Client
 
@@ -152,9 +156,9 @@ def translate_COMPS_path(path, setup=None):
         # Prepare the variables we will need
         environment = setup.get('environment')
 
-        # Query COMPS to get the path corresponding to the variable
-        Client = COMPS_login(setup.get('server_endpoint'))
-        abs_path = Client.getAuthManager().getEnvironmentMacros(environment).get(groups[1])
+        #Q uery COMPS to get the path corresponding to the variable
+        COMPS_login(setup.get('server_endpoint'))
+        abs_path = Client.auth_manager().get_environment_macros(environment)[groups[1]]
 
         # Cache
         path_translations[comps_variable] = abs_path

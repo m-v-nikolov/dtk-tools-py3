@@ -921,7 +921,7 @@ class CalibManager(object):
             for i in range(0, iter_count + 1):
                 # Get the iteration cache
                 iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState.json')
-                print iteration_cache
+
                 if not os.path.exists(iteration_cache):
                     break
                 # Retrieve the iteration state

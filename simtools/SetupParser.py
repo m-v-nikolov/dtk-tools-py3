@@ -113,7 +113,6 @@ class SetupParser:
         if self.get('type') == "HPC":
             try:
                 os.environ['COMPS_REST_HOST'] = self.get('server_endpoint')
-                from pyCOMPS import pyCOMPS
                 from simtools import utils
                 utils.COMPS_login(self.get('server_endpoint'))
 

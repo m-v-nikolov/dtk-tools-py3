@@ -3,6 +3,7 @@ from collections import Counter
 
 import utils
 from simtools.DataAccess.DataStore import DataStore
+from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id
 
 logger = utils.init_logging('Monitor')
 
@@ -42,27 +43,8 @@ class CompsSimulationMonitor(SimulationMonitor):
 
     def query(self):
         logger.debug("Query the HPC Monitor for Experiment %s" % self.exp_id)
-        from COMPS.Data import Suite, QueryCriteria, Simulation
+
         utils.COMPS_login(self.server_endpoint)
-
-        def sims_from_experiment(e):
-            # logger.info('Monitoring simulations for ExperimentId = %s', e.getId().toString())
-            return e.GetSimulations(QueryCriteria().Select('Id,SimulationState')).toArray()
-
-        def sims_from_experiment_id(exp_id):
-            return Simulation.Get(QueryCriteria().Where('ExperimentId=%s'%exp_id)).toArray()
-            # e = Experiment.GetById(exp_id)
-            # return sims_from_experiment(e)
-
-        def sims_from_suite_id(suite_id):
-            #logger.info('Monitoring simulations for SuiteId = %s', suite_id)
-            s = Suite.GetById(suite_id)
-            exps = s.GetExperiments(QueryCriteria().Select('Id')).toArray()
-            sims = []
-            for e in exps:
-                sims += sims_from_experiment(e)
-            return sims
-
         if self.suite_id:
             sims = sims_from_suite_id(self.suite_id)
         elif self.exp_id:
@@ -74,8 +56,8 @@ class CompsSimulationMonitor(SimulationMonitor):
 
         states, msgs = {}, {}
         for sim in sims:
-            id_string = sim.getId().toString()
-            state_string = sim.getState().toString()
+            id_string = str(sim.id)
+            state_string = sim.state.name
             states[id_string] = state_string
             msgs[id_string] = ''
 
