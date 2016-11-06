@@ -12,8 +12,6 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging
 
 logger = init_logging('Overseer')
-simulation_states_lock = multiprocessing.Lock()
-
 
 def SimulationStateUpdater(states):
     while True:
@@ -38,9 +36,10 @@ def LogCleaner():
     # Get the last time a cleanup happened
     last_cleanup = DataStore.get_setting('last_log_cleanup')
     print last_cleanup.value
-    if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' '),'YYYY-MM-DD')).days > 1:
+    if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' ')[0],'%Y-%m-%d')).days < 1:
         # Do the cleanup
-        print "WE CLEAN"
+        from simtools.DataAccess.LoggingDataStore import LoggingDataStore
+        LoggingDataStore.log_cleanup()
         DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup',value=datetime.today()))
 
 if __name__ == "__main__":
@@ -56,16 +55,16 @@ if __name__ == "__main__":
     local_queue = multiprocessing.Queue(max_local_sims)
     analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
-    update_states = {}
     managers = OrderedDict()
-    states_queue = multiprocessing.Queue()
 
+    # Queue to be shared among all runners in order to set the new simulation states
+    states_queue = multiprocessing.Queue()
     update_state_thread = threading.Thread(target=SimulationStateUpdater, args=(states_queue,))
     update_state_thread.start()
 
     # Take this opportunity to cleanup the logs
-    # t2 = multiprocessing.Process(target=LoggingDataStore.cleanup)
-    # t2.start()
+    t2 = multiprocessing.Process(target=LogCleaner)
+    t2.start()
 
     # will hold the analyze threads
     analysis_threads = []
