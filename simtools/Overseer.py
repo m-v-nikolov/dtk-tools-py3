@@ -16,7 +16,6 @@ logger = init_logging('Overseer')
 def SimulationStateUpdater(states):
     while True:
         logger.debug("Simulation update function")
-        logger.debug(states)
         if states:
             try:
                 while not states.empty():
@@ -35,7 +34,6 @@ def SimulationStateUpdater(states):
 def LogCleaner():
     # Get the last time a cleanup happened
     last_cleanup = DataStore.get_setting('last_log_cleanup')
-    print last_cleanup.value
     if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' ')[0],'%Y-%m-%d')).days < 1:
         # Do the cleanup
         from simtools.DataAccess.LoggingDataStore import LoggingDataStore
@@ -60,6 +58,7 @@ if __name__ == "__main__":
     # Queue to be shared among all runners in order to set the new simulation states
     states_queue = multiprocessing.Queue()
     update_state_thread = threading.Thread(target=SimulationStateUpdater, args=(states_queue,))
+    update_state_thread.daemon = True
     update_state_thread.start()
 
     # Take this opportunity to cleanup the logs
