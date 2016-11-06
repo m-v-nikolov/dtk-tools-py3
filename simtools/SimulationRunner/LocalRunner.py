@@ -12,8 +12,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, thread_queue, states, success,lock):
-        super(LocalSimulationRunner, self).__init__(experiment, states, success,lock)
+    def __init__(self, simulation, experiment, thread_queue, states, success):
+        super(LocalSimulationRunner, self).__init__(experiment, states, success)
         self.queue = thread_queue
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
@@ -26,6 +26,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
                 return
 
             self.monitor()
+
 
     def run(self):
         try:
@@ -63,8 +64,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
             while psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
                 self.simulation.message = self.last_status_line()
                 self.update_status()
-
-                time.sleep(4)
+                time.sleep(5)
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
@@ -84,14 +84,10 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        try:
-            self.lock.acquire()
-            self.states[self.simulation.id] = self.simulation
-        except Exception as e:
-            pass
-        finally:
-            self.lock.release()
-
+        self.states.put({'sid':self.simulation.id,
+                         'status':self.simulation.status,
+                         'message':self.simulation.message,
+                         'pid':self.simulation.pid})
 
     def last_status_line(self):
         """
