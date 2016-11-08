@@ -324,9 +324,6 @@ def analyze_list(args, unknownArgs):
 
 
 def log(args, unknownArgs):
-    # Take this opportunity to cleanup the logs
-    LoggingDataStore.cleanup()
-
     # Check if complete
     if args.complete:
         records = [r.__dict__ for r in LoggingDataStore.get_all_records()]

@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import re
+import threading
 from datetime import datetime
 
 import logging
@@ -13,10 +14,10 @@ from COMPS.Data import Simulation
 from COMPS.Data import SimulationFile
 from COMPS.Data import Suite
 
-logger = logging.getLogger('Commissioner')
+logger = utils.init_logging('Commissioner')
 
 
-class CompsSimulationCommissioner(multiprocessing.Process):
+class CompsSimulationCommissioner(threading.Thread):
     """
     A class to commission COMPS experiments and simulations.
     Threads are spawned for each batch submission of created simulation (and associated) objects.
@@ -24,15 +25,14 @@ class CompsSimulationCommissioner(multiprocessing.Process):
     """
 
     def __init__(self, exp_id, maxThreadSemaphore, endpoint):
-        multiprocessing.Process.__init__(self)
+        threading.Thread.__init__(self)
         self.exp_id = exp_id
         self.maxThreadSemaphore = maxThreadSemaphore
         self.endpoint = endpoint
         self.sims = []
+        self.created_simulations = []
 
-    def create_simulation(self, name, files, tags):
-        sim = {'name': name, 'tags': tags}
-        sim.update(files)
+    def create_simulation(self, sim):
         self.sims.append(sim)
 
     def run(self):
@@ -40,18 +40,22 @@ class CompsSimulationCommissioner(multiprocessing.Process):
         try:
             for sim in self.sims:
                 # Create the simulation
-                s = Simulation(name=sim.pop('name'), experiment_id=self.exp_id)
+                s = Simulation(name=sim['name'], experiment_id=self.exp_id)
 
                 # Sets the tags
-                s.set_tags(sim.pop('tags'))
+                s.set_tags(sim['tags'])
 
                 # Add the files
-                for name, content in sim.items():
+                for name, content in sim['files'].iteritems():
                     s.add_file(simulationfile=SimulationFile(name, 'input'), data=content)
+
+                # Add to the created_simulations list
+                self.created_simulations.append(s)
 
             Simulation.save_all()  # Batch save after all sims in list have been added
 
-            self.sims = []
+            # Delete the metadata
+            del self.sims
 
         finally:
             self.maxThreadSemaphore.release()
