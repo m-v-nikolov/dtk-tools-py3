@@ -23,7 +23,6 @@ def SimulationStateUpdater(states):
                     while len(batch) < 250 and not states.empty():
                         batch.append(states.get())
                     DataStore.batch_simulations_update(batch)
-                    time.sleep(1)
             except Exception as e:
                 logger.error("Exception in the status updater")
                 logger.error(e)
@@ -122,6 +121,6 @@ if __name__ == "__main__":
         # Do not use len() to not block anything
         if managers == OrderedDict() and analysis_threads == []: break
 
-        time.sleep(10)
+        time.sleep(5)
 
 logger.debug('No more work to do, exiting...')

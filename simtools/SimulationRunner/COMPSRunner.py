@@ -51,6 +51,9 @@ class COMPSSimulationRunner(BaseSimulationRunner):
             logger.debug('COMPS - Waiting loop')
             try:
                 states, _ = monitor.query()
+                if states == {}:
+                    # No states returned... Consider failed
+                    states = {sim_id:'Failed' for sim_id in last_states.keys()}
             except KeyError as e:
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)

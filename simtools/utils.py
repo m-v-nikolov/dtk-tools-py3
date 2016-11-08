@@ -16,7 +16,7 @@ def init_logging(name):
     # if not os.path.exists(os.path.join(os.getcwd(),'dtk_tools_logs')):
     #     os.mkdir(os.path.join(os.getcwd(),'dtk_tools_logs'))
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    logging.config.fileConfig(os.path.join(current_dir,'logging.ini'))
+    logging.config.fileConfig(os.path.join(current_dir, 'logging.ini'), disable_existing_loggers=False )
     return logging.getLogger(name)
 
 logger = init_logging('Utils')

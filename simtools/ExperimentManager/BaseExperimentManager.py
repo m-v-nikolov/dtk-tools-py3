@@ -46,7 +46,6 @@ class BaseExperimentManager:
             for analyzer in experiment.analyzers:
                 self.add_analyzer(dill.loads(analyzer.analyzer))
 
-        self.sims_created = 0
         self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
@@ -59,7 +58,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def create_simulation(self, suite_id=None):
+    def create_simulation(self):
         pass
 
     @abstractmethod
@@ -67,7 +66,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def complete_sim_creation(self, commissioners):
+    def complete_sim_creation(self):
         pass
 
     @abstractmethod
@@ -299,7 +298,6 @@ class BaseExperimentManager:
             lib_staging_root = self.setup.get('lib_staging_root')
 
         cached_cb = copy.deepcopy(self.config_builder)
-        commissioners = []
         for mod_fn_list in self.exp_builder.mod_generator:
             # reset to base config/campaign
             self.config_builder = copy.deepcopy(cached_cb)
@@ -311,11 +309,9 @@ class BaseExperimentManager:
             self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
                                                          self.assets_service)
 
-            commissioner = self.create_simulation()
-            if commissioner is not None:
-                commissioners.append(commissioner)
+            self.create_simulation()
 
-        self.complete_sim_creation(commissioners)
+        self.complete_sim_creation()
         DataStore.save_experiment(self.experiment, verbose=verbose)
 
     def print_status(self,states, msgs, verbose=True):

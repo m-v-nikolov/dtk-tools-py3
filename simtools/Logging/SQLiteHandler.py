@@ -27,7 +27,7 @@ class SQLiteHandler(logging.Handler):
         record_info = record.__dict__
 
         # Pass if module is built-in
-        if record_info['module'] in ['init', 'pep425tags']: return
+        if record_info['module'] in ['init', 'pep425tags', 'SerializableEntity']: return
 
         # Insert log record
         record = LoggingDataStore.create_record(
