@@ -4,6 +4,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools import utils
 
+
 class CompsExperimentManager(BaseExperimentManager):
     """
     Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
@@ -15,8 +16,8 @@ class CompsExperimentManager(BaseExperimentManager):
     def __init__(self, experiment, exp_data, setup=None):
         BaseExperimentManager.__init__(self, experiment, exp_data, setup)
         self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
-        self.commissioner = None
-        self.sims_created = 0
+        self.sims_to_create = []
+        self.commissioners = []
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
         self.endpoint = self.setup.get('server_endpoint')
         self.compress_assets = self.setup.getboolean('compress_assets')
@@ -43,7 +44,6 @@ class CompsExperimentManager(BaseExperimentManager):
         return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
 
     def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
-        self.sims_created = 0
         # Also create the experiment in COMPS to get the ID
         exp_id = CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
                                                                experiment_name, self.staged_bin_path,
@@ -55,38 +55,45 @@ class CompsExperimentManager(BaseExperimentManager):
         self.experiment.endpoint = self.endpoint
 
     def create_simulation(self):
-        if self.sims_created % self.comps_sims_to_batch == 0:
-            self.maxThreadSemaphore.acquire()  # Is this okay outside the thread?  Stops the thread from being created
-            # until it can actually go, but asymmetrical acquire()/release() is not
-            # ideal...
-
-            self.commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore, self.setup.get('server_endpoint'))
-            ret = self.commissioner
-        else:
-            ret = None
-
         files = self.config_builder.dump_files_to_string()
+
+        # Create the tags and append the environment to the tag
         tags = self.exp_builder.metadata
-        # Append the environment to the tag
         tags['environment'] = self.setup.get('environment')
         tags.update(self.exp_builder.tags if hasattr(self.exp_builder, 'tags') else {})
-        self.commissioner.create_simulation(self.config_builder.get_param('Config_Name'), files, tags)
 
-        self.sims_created += 1
+        # Add the simulation to the batch
+        self.sims_to_create.append({'name': self.config_builder.get_param('Config_Name'), 'files':files, 'tags':tags})
 
-        if self.sims_created % self.comps_sims_to_batch == 0:
-            self.commissioner.start()
-            self.commissioner = None
+        # Commission the batch if we filled it
+        if len(self.sims_to_create) % self.comps_sims_to_batch == 0:
+            # Acquire the semaphore
+            self.maxThreadSemaphore.acquire()
 
-        return ret
+            # Create a commissioner
+            commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore, self.setup.get('server_endpoint'))
 
-    def complete_sim_creation(self, commissioners):
-        lastBatch = commissioners[-1]
-        if not lastBatch.is_alive() and len(lastBatch.sims) > 0:
-            lastBatch.start()
-        for c in commissioners:
+            # Add all the simulation
+            for sim in self.sims_to_create:
+                commissioner.create_simulation(sim)
+
+            # Start the commission
+            commissioner.start()
+
+            # Add it to the list
+            self.commissioners.append(commissioner)
+
+    def complete_sim_creation(self):
+        # Make sure all commissioners are done
+        for c in self.commissioners:
             c.join()
-        self.collect_sim_metadata()
+
+        # collect the metadata
+        for c in self.commissioners:
+            for sim in c.created_simulations:
+                if not self.experiment.contains_simulation(sim.id):
+                    sim = DataStore.create_simulation(id=sim.id, tags=sim.tags)
+                    self.experiment.simulations.append(sim)
 
     def commission_simulations(self, states):
         import threading
@@ -95,13 +102,6 @@ class CompsExperimentManager(BaseExperimentManager):
         t1.daemon = True
         t1.start()
         self.runner_created = True
-
-    def collect_sim_metadata(self):
-        for simid, simdata in CompsSimulationCommissioner.get_sim_metadata_for_exp(self.experiment.exp_id).iteritems():
-            # Only add simulation if not yet present in the experiment
-            if not self.experiment.contains_simulation(simid):
-                sim = DataStore.create_simulation(id=simid, tags=simdata)
-                self.experiment.simulations.append(sim)
 
     def cancel_experiment(self):
         utils.COMPS_login(self.endpoint)
