@@ -12,10 +12,11 @@ import dill
 import psutil
 from dtk import helpers
 from simtools import utils
-from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.DataStore import DataStore, batch
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.SetupParser import SetupParser
+from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 from simtools.utils import init_logging
 
 logger = init_logging('ExperimentManager')
@@ -23,6 +24,7 @@ overseer_check_lock = multiprocessing.Lock()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
+    creatorClass = BaseSimulationCreator
 
     def __init__(self, model_file, experiment, setup=None):
         self.model_file = model_file
@@ -52,21 +54,14 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
+        self.commissioners = []
 
     @abstractmethod
     def commission_simulations(self, states):
         pass
 
     @abstractmethod
-    def create_simulation(self):
-        pass
-
-    @abstractmethod
     def create_suite(self, suite_name):
-        pass
-
-    @abstractmethod
-    def complete_sim_creation(self):
         pass
 
     @abstractmethod
@@ -282,7 +277,6 @@ class BaseExperimentManager:
         else:
             # Refresh the experiment
             self.experiment = DataStore.get_experiment(self.experiment.exp_id)
-            self.sims_created = 0
 
         # Add the analyzers
         for analyzer in analyzers:
@@ -291,27 +285,24 @@ class BaseExperimentManager:
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
                                                                        analyzer=dill.dumps(analyzer)))
 
-        # If the assets service is in use, the path needs to come from COMPS
-        if self.assets_service:
-            lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
-        else:
-            lib_staging_root = self.setup.get('lib_staging_root')
+        # Separate the experiment builder generator into batches
+        fn_batches = batch(list(self.exp_builder.mod_generator), n=int(self.setup.get('sims_per_thread',10)))
+        for fn_batch in fn_batches:
+            self.maxThreadSemaphore.acquire()
+            c = self.creatorClass(config_builder=self.config_builder,
+                                  experiment_builder=self.exp_builder,
+                                  function_set=fn_batch,
+                                  setup=self.setup,
+                                  experiment=self.experiment,
+                                  semaphore=self.maxThreadSemaphore)
 
-        cached_cb = copy.deepcopy(self.config_builder)
-        for mod_fn_list in self.exp_builder.mod_generator:
-            # reset to base config/campaign
-            self.config_builder = copy.deepcopy(cached_cb)
+            self.commissioners.append(c)
+            c.start()
 
-            # modify next simulation according to experiment builder
-            map(lambda func: func(self.config_builder), mod_fn_list)
+        # Wait for all commissioner to be done
+        map(lambda c: c.join(), self.commissioners)
 
-            # Stage the required dll for the experiment
-            self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
-                                                         self.assets_service)
-
-            self.create_simulation()
-
-        self.complete_sim_creation()
+        # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)
 
     def print_status(self,states, msgs, verbose=True):

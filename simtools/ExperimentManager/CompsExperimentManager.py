@@ -1,8 +1,15 @@
-from simtools.Commisioner import CompsSimulationCommissioner
-from simtools.DataAccess.DataStore import DataStore
+import os
+
+import re
+from COMPS.Data import Configuration
+from COMPS.Data import Experiment
+from COMPS.Data import Priority
+from COMPS.Data import Suite
+from datetime import datetime
+from simtools import utils
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
-from simtools import utils
+from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
 
 
 class CompsExperimentManager(BaseExperimentManager):
@@ -12,6 +19,7 @@ class CompsExperimentManager(BaseExperimentManager):
     """
     location = 'HPC'
     parserClass = CompsDTKOutputParser
+    creatorClass = COMPSSimulationCreator
 
     def __init__(self, experiment, exp_data, setup=None):
         BaseExperimentManager.__init__(self, experiment, exp_data, setup)
@@ -41,15 +49,36 @@ class CompsExperimentManager(BaseExperimentManager):
         super(CompsExperimentManager, self).analyze_experiment()
 
     def create_suite(self, suite_name):
-        return CompsSimulationCommissioner.create_suite(self.setup, suite_name)
+        utils.COMPS_login(self.setup.get('server_endpoint'))
+        suite = Suite(suite_name)
+        suite.save()
+
+        return str(suite.id)
 
     def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
-        exp_id = CompsSimulationCommissioner.create_experiment(self.setup, self.config_builder,
-                                                               experiment_name, self.staged_bin_path,
-                                                               self.commandline.Options, suite_id)
+        utils.COMPS_login(self.setup.get('server_endpoint'))
+
+        config = Configuration(
+            environment_name=self.setup.get('environment'),
+            simulation_input_args=self.commandline.Options,
+            working_directory_root=os.path.join(self.setup.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
+            executable_path=self.staged_bin_path,
+            node_group_name=self.setup.get('node_group'),
+            maximum_number_of_retries=int(self.setup.get('num_retries')),
+            priority=Priority[self.setup.get('priority')],
+            min_cores=self.config_builder.get_param('Num_Cores', 1),
+            max_cores=self.config_builder.get_param('Num_Cores', 1),
+            exclusive=self.config_builder.get_param('Exclusive', False)
+        )
+
+        e = Experiment(name=experiment_name,
+                       configuration=config,
+                       suite_id=suite_id)
+        e.save()
+
         # Create experiment in the base class
-        super(CompsExperimentManager, self).create_experiment(experiment_name, exp_id, suite_id)
+        super(CompsExperimentManager, self).create_experiment(experiment_name,  e.id, suite_id)
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint
@@ -64,36 +93,6 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Add the simulation to the batch
         self.sims_to_create.append({'name': self.config_builder.get_param('Config_Name'), 'files':files, 'tags':tags})
-
-        # Commission the batch if we filled it
-        if len(self.sims_to_create) % self.comps_sims_to_batch == 0:
-            # Acquire the semaphore
-            self.maxThreadSemaphore.acquire()
-
-            # Create a commissioner
-            commissioner = CompsSimulationCommissioner(self.experiment.exp_id, self.maxThreadSemaphore, self.setup.get('server_endpoint'))
-
-            # Add all the simulation
-            for sim in self.sims_to_create:
-                commissioner.create_simulation(sim)
-
-            # Start the commission
-            commissioner.start()
-
-            # Add it to the list
-            self.commissioners.append(commissioner)
-
-    def complete_sim_creation(self):
-        # Make sure all commissioners are done
-        for c in self.commissioners:
-            c.join()
-
-        # collect the metadata
-        for c in self.commissioners:
-            for sim in c.created_simulations:
-                if not self.experiment.contains_simulation(sim.id):
-                    sim = DataStore.create_simulation(id=sim.id, tags=sim.tags)
-                    self.experiment.simulations.append(sim)
 
     def commission_simulations(self, states):
         import threading

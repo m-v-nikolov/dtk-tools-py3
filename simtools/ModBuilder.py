@@ -28,7 +28,11 @@ class ModBuilder(object):
             md = self.func(cb, *self.args, **self.kwargs)
             if not md:
                 md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
+            # Store the metadata in a class variable
             ModBuilder.metadata.update(md)
+            # But also return the metadata because of muddleheaded use
+            # TODO: Unify the way we handle emtadata by removing the storage in the ModBuilder.metadata
+            return md
 
     def __init__(self, mod_generator):
         self.tags = {}

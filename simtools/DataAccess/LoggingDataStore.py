@@ -4,7 +4,7 @@ from sqlalchemy import and_
 from sqlalchemy import distinct
 
 from simtools.DataAccess import  session_scope, Session_logs, engine_logs
-from simtools.Logging.Schema import LogRecord
+from simtools.DBLogging.Schema import LogRecord
 
 
 class LoggingDataStore:
