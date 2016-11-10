@@ -14,7 +14,8 @@ class COMPSSimulationCreator(BaseSimulationCreator):
             self.lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
 
     def create_simulation(self, cb):
-        return Simulation(name=cb.get_param('Config_Name'), experiment_id=self.experiment.exp_id)
+        name = cb.get_param('Config_Name') if cb.get_param('Config_Name') else self.experiment.exp_name
+        return Simulation(name=name, experiment_id=self.experiment.exp_id)
 
     def post_creation(self):
         # Batch save after all sims in list have been added

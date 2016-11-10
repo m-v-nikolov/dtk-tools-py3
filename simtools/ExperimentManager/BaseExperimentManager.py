@@ -15,6 +15,7 @@ from simtools import utils
 from simtools.DataAccess.DataStore import DataStore, batch
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
+from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 from simtools.utils import init_logging
@@ -25,6 +26,8 @@ overseer_check_lock = multiprocessing.Lock()
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
     creatorClass = BaseSimulationCreator
+    parserClass=SimulationOutputParser
+    location = None
 
     def __init__(self, model_file, experiment, setup=None):
         self.model_file = model_file
@@ -54,7 +57,7 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
-        self.commissioners = []
+        self.creators = []
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -286,7 +289,7 @@ class BaseExperimentManager:
                                                                        analyzer=dill.dumps(analyzer)))
 
         # Separate the experiment builder generator into batches
-        fn_batches = batch(list(self.exp_builder.mod_generator), n=int(self.setup.get('sims_per_thread',10)))
+        fn_batches = batch(list(self.exp_builder.mod_generator), n=int(self.setup.get('sims_per_thread',50)))
         for fn_batch in fn_batches:
             self.maxThreadSemaphore.acquire()
             c = self.creatorClass(config_builder=self.config_builder,
@@ -296,11 +299,11 @@ class BaseExperimentManager:
                                   experiment=self.experiment,
                                   semaphore=self.maxThreadSemaphore)
 
-            self.commissioners.append(c)
+            self.creators.append(c)
             c.start()
 
         # Wait for all commissioner to be done
-        map(lambda c: c.join(), self.commissioners)
+        map(lambda c: c.join(), self.creators)
 
         # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)
