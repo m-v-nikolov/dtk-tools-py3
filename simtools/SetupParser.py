@@ -197,9 +197,10 @@ class SetupParser:
             for item in cp.items(section):
                 self.setup.set(section, item[0], item[1])
 
-    def get(self, parameter):
+    def get(self, parameter, default=None):
         if not self.has_option(parameter):
-            raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
+            if default is not None: return default
+            else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.get(self.selected_block,parameter)
 
     def has_option(self,option):

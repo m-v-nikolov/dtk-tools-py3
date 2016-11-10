@@ -1,7 +1,5 @@
 import cStringIO
 import contextlib
-import logging
-import logging.config
 import os
 import re
 import shutil
@@ -11,12 +9,16 @@ from hashlib import md5
 from COMPS import Client
 
 max_exp_name_len = 100
-
+logging_initialized = False
 def init_logging(name):
-    # if not os.path.exists(os.path.join(os.getcwd(),'dtk_tools_logs')):
-    #     os.mkdir(os.path.join(os.getcwd(),'dtk_tools_logs'))
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    logging.config.fileConfig(os.path.join(current_dir, 'logging.ini'), disable_existing_loggers=False )
+    import logging
+    import logging.config
+    global logging_initialized
+
+    if not logging_initialized:
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        logging.config.fileConfig(os.path.join(current_dir, 'logging.ini'), disable_existing_loggers=False)
+        logging_initialized = True
     return logging.getLogger(name)
 
 logger = init_logging('Utils')

@@ -9,6 +9,7 @@ from datetime import datetime
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import SimulationOutputParser
+from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 from simtools.utils import init_logging
 
@@ -22,6 +23,7 @@ class LocalExperimentManager(BaseExperimentManager):
     """
     location = 'LOCAL'
     parserClass = SimulationOutputParser
+    creatorClass = LocalSimulationCreator
 
     def __init__(self, model_file, experiment, setup=None):
         self.local_queue = None
@@ -63,15 +65,6 @@ class LocalExperimentManager(BaseExperimentManager):
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
 
-    def create_simulation(self):
-        time.sleep(0.01)  # to avoid identical datetime
-        sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
-        logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
-        os.makedirs(sim_dir)
-        self.config_builder.dump_files(sim_dir)
-        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata, status='Waiting'))
-
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating suite_id = " + suite_id)
@@ -112,6 +105,3 @@ class LocalExperimentManager(BaseExperimentManager):
                 os.kill(int(sim.pid), signal.SIGTERM)
             except Exception as e:
                 print e
-
-    def complete_sim_creation(self,commissioners):
-        pass
