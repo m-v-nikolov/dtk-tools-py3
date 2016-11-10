@@ -66,7 +66,7 @@ class BaseSimulationCreator(threading.Thread):
                 self.experiment.simulations.append(sim)
 
     @abstractmethod
-    def create_simulation(self):
+    def create_simulation(self, cb):
         pass
 
     @abstractmethod
@@ -74,9 +74,9 @@ class BaseSimulationCreator(threading.Thread):
         pass
 
     @abstractmethod
-    def add_files_to_simulation(self,s,cb):
+    def add_files_to_simulation(self, s, cb):
         pass
 
     @abstractmethod
-    def set_tags_to_simulation(self,s, tags):
+    def set_tags_to_simulation(self, s, tags):
         pass
