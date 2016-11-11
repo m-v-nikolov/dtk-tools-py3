@@ -300,33 +300,28 @@ class BaseExperimentManager:
 
         # Create the processes needed
         creator_processes = []
-        results_pipes = []
 
         # Create the simulation queue
+        simulations_expected = len(work_list)
+        result_queue = multiprocessing.Queue(simulations_expected)
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_thread)
 
         for fn_batch in fn_batches:
-            receiver, sender = multiprocessing.Pipe(False)
             c = self.creatorClass(config_builder=self.config_builder,
                                   initial_tags=self.exp_builder.tags,
-                                  result_pipe=sender,
+                                  result_queue=result_queue,
                                   function_set=fn_batch,
                                   max_sims_per_batch=sim_per_thread,
                                   experiment=self.experiment,
                                   setup=self.setup,
                                   callback=lambda: print('.', end=""))
             creator_processes.append(c)
-            results_pipes.append(receiver)
             c.start()
 
-        # Wait for all the creators to be done
-        map(lambda c: c.join(), creator_processes)
-
-        # Retrieve the simulations in the pipe
-        for p in results_pipes:
-            while p.poll():
-                sim = p.recv()
-                self.experiment.simulations.append(DataStore.create_simulation(id=sim['id'], tags=sim['tags'], experiment_id=self.experiment.exp_id))
+        while simulations_expected >0:
+            sim = result_queue.get()
+            self.experiment.simulations.append(DataStore.create_simulation(id=sim['id'], tags=sim['tags'], experiment_id=self.experiment.exp_id))
+            simulations_expected -= 1
 
         # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)
