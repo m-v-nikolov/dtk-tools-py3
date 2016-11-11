@@ -58,7 +58,6 @@ class BaseExperimentManager:
         self.config_builder = None
         self.commandline = None
         self.runner_created = False
-        self.creators = []
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -290,33 +289,44 @@ class BaseExperimentManager:
                                                                        analyzer=dill.dumps(analyzer)))
 
         # Separate the experiment builder generator into batches
-        sim_per_thread = int(self.setup.get('sims_per_thread',50))
-        fn_batches = batch(list(self.exp_builder.mod_generator), n=sim_per_thread)
+        sim_per_thread = int(self.setup.get('sims_per_thread',10))
+        max_threads = int(self.setup.get('max_threads',multiprocessing.cpu_count()))
+        work_list = list(self.exp_builder.mod_generator)
+
+        if len(work_list) > sim_per_thread*max_threads:
+            fn_batches = batch(work_list, n=int(len(work_list)/max_threads))
+        else:
+            fn_batches = batch(work_list, n=sim_per_thread)
+
+        # Create the processes needed
+        creator_processes = []
+        results_pipes = []
 
         # Create the simulation queue
-        sim_queue = multiprocessing.Queue(30000)
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_thread)
 
         for fn_batch in fn_batches:
-            self.maxThreadSemaphore.acquire()
+            receiver, sender = multiprocessing.Pipe(False)
             c = self.creatorClass(config_builder=self.config_builder,
                                   initial_tags=self.exp_builder.tags,
-                                  sim_queue=sim_queue,
+                                  result_pipe=sender,
                                   function_set=fn_batch,
+                                  max_sims_per_batch=sim_per_thread,
                                   experiment=self.experiment,
-                                  semaphore=self.maxThreadSemaphore,
                                   setup=self.setup,
                                   callback=lambda: print('.', end=""))
-
-            self.creators.append(c)
+            creator_processes.append(c)
+            results_pipes.append(receiver)
             c.start()
 
-        # Wait for all commissioner to be done
-        map(lambda c: c.join(), self.creators)
+        # Wait for all the creators to be done
+        map(lambda c: c.join(), creator_processes)
 
-        # Add all the sims to the experiment
-        while not sim_queue.empty():
-            self.experiment.simulations.append(sim_queue.get())
+        # Retrieve the simulations in the pipe
+        for p in results_pipes:
+            while p.poll():
+                sim = p.recv()
+                self.experiment.simulations.append(DataStore.create_simulation(id=sim['id'], tags=sim['tags'], experiment_id=self.experiment.exp_id))
 
         # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)

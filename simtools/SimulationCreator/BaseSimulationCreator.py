@@ -10,20 +10,21 @@ from simtools.DataAccess.DataStore import DataStore
 class BaseSimulationCreator(Process):
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, experiment, semaphore, sim_queue, setup, callback):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, result_pipe, setup, callback):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
         self.initial_tags = initial_tags
         self.function_set = function_set
-        self.sim_queue = sim_queue
-        self.semaphore = semaphore
+        self.result_pipe = result_pipe
+        self.max_sims_per_batch = max_sims_per_batch
         # Extract the path we want from the setup
         # Cannot use self.setup because the selected_block selection is lost during forking
         self.lib_staging_root = utils.translate_COMPS_path(setup.get('lib_staging_root'))
         self.asset_service = setup.get('use_comps_asset_svc',False)
         self.dll_path = setup.get('dll_path')
         self.callback = callback
+        self.created_simulations = []
 
     def run(self):
         try:
@@ -32,13 +33,12 @@ class BaseSimulationCreator(Process):
             print("Exception during commission")
             import traceback
             traceback.print_exc()
-        finally:
-            self.semaphore.release()
 
     def process(self):
         self.pre_creation()
-        created_simulations = []
-        for mod_fn_list in self.function_set:
+
+        while self.function_set:
+            mod_fn_list = self.function_set.pop()
             cb = copy.deepcopy(self.config_builder)
 
             # modify next simulation according to experiment builder
@@ -61,22 +61,20 @@ class BaseSimulationCreator(Process):
             self.add_files_to_simulation(s, cb)
 
             # Add to the created simulations array
-            created_simulations.append(s)
+            self.created_simulations.append(s)
 
-        self.post_creation()
+            if len(self.created_simulations) % self.max_sims_per_batch == 0 or not self.function_set:
+                self.process_batch()
 
-        # Now that the save is done, we have the ids ready -> add the simulations to the experiment
-        for sim in created_simulations:
-            if not self.experiment.contains_simulation(sim.id):
-                self.sim_queue.put(DataStore.create_simulation(id=sim.id, tags=sim.tags, experiment_id=self.experiment.exp_id))
+    def process_batch(self):
+        self.save_batch()
+
+        # Now that the save is done, we have the ids ready -> send the created simulations down the pipe
+        while self.created_simulations:
+            sim = self.created_simulations.pop()
+            self.result_pipe.send({'id':sim.id,'tags':sim.tags})
 
         if self.callback: self.callback()
-
-        # A process which uses a Queue will not exit until all the items of the queue has been flushed
-        # In our case we want the process to exit when done even if items still remains in the queue
-        # So need to call the cancel_join_thread function
-        # (see https://docs.python.org/2/library/multiprocessing.html#multiprocessing.Queue.cancel_join_thread)
-        self.sim_queue.cancel_join_thread()
 
     @abstractmethod
     def create_simulation(self, cb):
@@ -87,7 +85,7 @@ class BaseSimulationCreator(Process):
         pass
 
     @abstractmethod
-    def post_creation(self):
+    def save_batch(self):
         pass
 
     @abstractmethod
