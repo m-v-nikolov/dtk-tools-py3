@@ -30,6 +30,9 @@ class LocalSimulationCreator(BaseSimulationCreator):
     def post_creation(self):
         pass
 
+    def pre_creation(self):
+        pass
+
     def add_files_to_simulation(self, s, cb):
        cb.dump_files(s.sim_dir)
 
