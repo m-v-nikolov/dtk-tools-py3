@@ -72,6 +72,12 @@ class BaseSimulationCreator(Process):
 
         if self.callback: self.callback()
 
+        # A process which uses a Queue will not exit until all the items of the queue has been flushed
+        # In our case we want the process to exit when done even if items still remains in the queue
+        # So need to call the cancel_join_thread function
+        # (see https://docs.python.org/2/library/multiprocessing.html#multiprocessing.Queue.cancel_join_thread)
+        self.sim_queue.cancel_join_thread()
+
     @abstractmethod
     def create_simulation(self, cb):
         pass
