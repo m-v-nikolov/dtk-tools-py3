@@ -14,7 +14,7 @@ from IterationState import IterationState
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.ModBuilder import ModBuilder
+from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.OutputParser import CompsDTKOutputParser
 from utils import NumpyEncoder
 from core.utils.time import verbose_timedelta
@@ -242,9 +242,9 @@ class CalibManager(object):
                 self.generate_suite_id(self.exp_manager)
 
             exp_builder = ModBuilder.from_combos(
-                [ModBuilder.ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
-                [ModBuilder.ModFn(site.setup_fn) for site in self.sites],
-                [ModBuilder.ModFn(self.sample_point_fn(idx), sample_point)
+                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
+                [ModFn(site.setup_fn) for site in self.sites],
+                [ModFn(self.sample_point_fn(idx), sample_point)
                  for idx, sample_point in enumerate(next_params)])
 
             self.exp_manager.run_simulations(
