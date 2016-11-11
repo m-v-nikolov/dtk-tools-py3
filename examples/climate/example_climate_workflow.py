@@ -57,7 +57,7 @@ while (wi.getState().toString() not in ['Succeeded', 'Failed', 'Canceled']):
 
 print "Successfully generated"
 
-wi.Refresh(QueryCriteria().SelectChildren('Files'))
+wi.Refresh(QueryCriteria().select_children('files'))
 wifiles = wi.getFiles().toArray()
 wifilenames = [wif.getFileName() for wif in wifiles if wif.getFileType() == 'Output']
 if len(wifilenames) > 0:

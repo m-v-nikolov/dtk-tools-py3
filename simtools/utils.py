@@ -1,5 +1,6 @@
 import cStringIO
 import contextlib
+import logging
 import os
 import re
 import shutil
@@ -41,9 +42,8 @@ def nostdout(stdout = False, stderr=False):
         sys.stderr = cStringIO.StringIO()
 
     # Deactivate logging
-    # logger.propagate = False
-    # previous_level = logging.root.manager.disable
-    # logging.disable(logging.CRITICAL)
+    previous_level = logging.root.manager.disable
+    logging.disable(logging.ERROR)
 
     yield
 
@@ -53,8 +53,7 @@ def nostdout(stdout = False, stderr=False):
     if not stderr:
         sys.stderr = save_stderr
 
-    # logger.propagate = True
-    # logging.disable(previous_level)
+    logging.disable(previous_level)
 
 
 def caller_name(skip=2):
@@ -94,7 +93,7 @@ def COMPS_login(endpoint):
     try:
         am= Client.auth_manager()
     except:
-        Client.Login(endpoint)
+        Client.login(endpoint)
 
     return Client
 

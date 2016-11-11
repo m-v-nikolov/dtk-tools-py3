@@ -400,7 +400,7 @@ def sync(args, unknownArgs):
         limit_date = today - datetime.timedelta(days=int(day_limit))
         limit_date_str = limit_date.strftime("%Y-%m-%d")
 
-        exps = Experiment.get(query_criteria=QueryCriteria().where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str)))
+        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,date_created>%s' % (sp.get('user'), limit_date_str)))
 
         # For each of them, check if they are in the db
         for exp in exps:
@@ -459,7 +459,7 @@ def create_experiment(exp_id, sp, verbose=False):
 
     # Note: experiment may be new or comes from local db
     # Get associated simulations of the experiment
-    sims = exp_comps.get_simulations(QueryCriteria().select('Id,SimulationState,DateCreated').select_children('Tags'))
+    sims = exp_comps.get_simulations(QueryCriteria().select(['id', 'state', 'date_created']).select_children('tags'))
 
     # Skip empty experiments or experiments that have the same number of sims
     if len(sims) == 0 or len(sims) == len(experiment.simulations):

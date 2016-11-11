@@ -29,6 +29,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
         self.endpoint = self.setup.get('server_endpoint')
         self.compress_assets = self.setup.getboolean('compress_assets')
+        utils.COMPS_login(self.endpoint)
 
     def check_input_files(self, input_files):
         """
@@ -49,7 +50,6 @@ class CompsExperimentManager(BaseExperimentManager):
         super(CompsExperimentManager, self).analyze_experiment()
 
     def create_suite(self, suite_name):
-        utils.COMPS_login(self.setup.get('server_endpoint'))
         suite = Suite(suite_name)
         suite.save()
 
@@ -105,7 +105,7 @@ class CompsExperimentManager(BaseExperimentManager):
     def cancel_experiment(self):
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
-        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
+        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().select('id'))
         if e:
             e.Cancel()
 
@@ -119,11 +119,11 @@ class CompsExperimentManager(BaseExperimentManager):
         # Mark experiment for deletion in COMPS.
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import Experiment, QueryCriteria
-        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().Select('Id'))
+        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().select('id'))
         e.Delete()
 
     def kill_simulation(self, sim_id):
         utils.COMPS_login(self.endpoint)
         from COMPS.Data import QueryCriteria, Simulation
-        s = Simulation.GetById(sim_id, QueryCriteria().Select('Id'))
+        s = Simulation.GetById(sim_id, QueryCriteria().select('id'))
         s.Cancel()

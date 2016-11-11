@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 import copy
 import json
 import multiprocessing
@@ -7,7 +9,6 @@ import sys
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
-
 import dill
 import psutil
 from dtk import helpers
@@ -244,15 +245,15 @@ class BaseExperimentManager:
             missing_files.pop('Campaign_Filename')
 
         if len(missing_files) > 0:
-            print 'Missing files list:'
-            print 'input_root: %s' % input_root
-            print json.dumps(missing_files, indent=2)
+            print('Missing files list:')
+            print('input_root: %s' % input_root)
+            print(json.dumps(missing_files, indent=2))
             var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
-                print "Answer is '%s'. Continue..." % var.upper()
+                print("Answer is '%s'. Continue..." % var.upper())
                 return True
             else:
-                print "Answer is '%s'. Exiting..." % var.upper()
+                print("Answer is '%s'. Exiting..." % var.upper())
                 return False
 
         return True
@@ -289,21 +290,33 @@ class BaseExperimentManager:
                                                                        analyzer=dill.dumps(analyzer)))
 
         # Separate the experiment builder generator into batches
-        fn_batches = batch(list(self.exp_builder.mod_generator), n=int(self.setup.get('sims_per_thread',50)))
+        sim_per_thread = int(self.setup.get('sims_per_thread',50))
+        fn_batches = batch(list(self.exp_builder.mod_generator), n=sim_per_thread)
+
+        # Create the simulation queue
+        sim_queue = multiprocessing.Queue(30000)
+        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_thread)
+
         for fn_batch in fn_batches:
             self.maxThreadSemaphore.acquire()
             c = self.creatorClass(config_builder=self.config_builder,
-                                  experiment_builder=self.exp_builder,
+                                  initial_tags=self.exp_builder.tags,
+                                  sim_queue=sim_queue,
                                   function_set=fn_batch,
-                                  setup=self.setup,
                                   experiment=self.experiment,
-                                  semaphore=self.maxThreadSemaphore)
+                                  semaphore=self.maxThreadSemaphore,
+                                  setup=self.setup,
+                                  callback=lambda: print('.', end=""))
 
             self.creators.append(c)
             c.start()
 
         # Wait for all commissioner to be done
         map(lambda c: c.join(), self.creators)
+
+        # Add all the sims to the experiment
+        while not sim_queue.empty():
+            self.experiment.simulations.append(sim_queue.get())
 
         # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)
@@ -348,7 +361,7 @@ class BaseExperimentManager:
             try:
                 states, msgs = self.get_simulation_status()
             except:
-                print "Exception occurred while retrieving status"
+                print("Exception occurred while retrieving status")
                 return
 
             if self.status_finished(states):
@@ -450,7 +463,7 @@ class BaseExperimentManager:
 
             if state not in ['Succeeded', 'Failed', 'Canceled', 'Unknown']:
                 logger.info("Killing Job %s" % sim_id)
-                print "Killing Job %s" % sim_id
+                print ("Killing Job %s" % sim_id)
                 self.kill_simulation(sim_id)
             else:
                 logger.warning("JobID %s is already in a '%s' state." % (str(sim_id), state))
