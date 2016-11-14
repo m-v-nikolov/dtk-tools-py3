@@ -90,6 +90,9 @@ if __name__ == "__main__":
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore
                 if manager.location == "LOCAL": manager.local_queue = local_queue
+            else:
+                # Refresh the experiment
+                managers[experiment.id].experiment = experiment
 
         # Check every one of them
         for manager in managers.values():

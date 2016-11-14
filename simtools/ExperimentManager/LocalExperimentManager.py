@@ -3,7 +3,6 @@ import re
 import shutil
 import signal
 import threading
-import time
 from datetime import datetime
 
 from simtools.DataAccess.DataStore import DataStore
@@ -35,8 +34,13 @@ class LocalExperimentManager(BaseExperimentManager):
             from Queue import Queue
             self.local_queue = Queue()
         while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
-            self.local_queue.put('run 1')
             simulation = self.experiment.simulations[self.simulations_commissioned]
+            # If the simulation is not waiting, we can go to the next one
+            # Useful if the simulation is cancelled before being commission
+            if simulation.status != "Waiting":
+                self.simulations_commissioned += 1
+                continue
+            self.local_queue.put('run 1')
             t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
             t1.daemon = True
             t1.start()
@@ -52,13 +56,11 @@ class LocalExperimentManager(BaseExperimentManager):
         input_root = self.setup.get('input_root')
         return input_root, self.find_missing_files(input_files, input_root)
 
-    def create_experiment(self, experiment_name, suite_id=None):
-        # Create a unique id
-        exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
-        logger.info("Creating exp_id = " + exp_id)
+    def create_experiment(self, experiment_name, experiment_id=re.sub('[ :.-]', '_', str(datetime.now())),suite_id=None):
+        logger.info("Creating exp_id = " + experiment_id)
 
         # Create the experiment in the base class
-        super(LocalExperimentManager,self).create_experiment(experiment_name, exp_id, suite_id)
+        super(LocalExperimentManager,self).create_experiment(experiment_name, experiment_id, suite_id)
 
         # Get the path and create it if needed
         experiment_path = self.experiment.get_path()
