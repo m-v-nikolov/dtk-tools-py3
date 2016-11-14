@@ -12,7 +12,7 @@ class StdoutAnalyzer(BaseAnalyzer):
         self.error = error
 
     def filter(self, sim_metadata):
-        return lambda x: True
+        return sim_metadata['sim_id'] in self.simIds
 
     def apply(self, parser):
         try:
