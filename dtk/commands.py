@@ -146,7 +146,6 @@ def kill(args, unknownArgs):
         exp_manager = reload_experiment(args)
 
     logger.info("Killing Experiment %s" % exp_manager.experiment.id)
-    print "Killing Experiment %s" % exp_manager.experiment.id
     states, msgs = exp_manager.get_simulation_status()
     exp_manager.print_status(states, msgs, verbose=False)
 

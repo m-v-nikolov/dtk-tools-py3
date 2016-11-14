@@ -83,27 +83,18 @@ class LocalExperimentManager(BaseExperimentManager):
         shutil.rmtree(self.experiment.get_path())
 
     def cancel_experiment(self):
-        sim_list = self.experiment.simulations
-        sim_id_list = [sim.id for sim in sim_list]
-        self.cancel_simulations(sim_id_list)
+        super(LocalExperimentManager, self).cancel_experiment()
+        sim_list = [sim for sim in self.experiment.simulations if sim.status in ["Waiting","Running"]]
+        self.cancel_simulations(sim_list)
 
-    def kill_simulation(self, sim_id):
-        sim = DataStore.get_simulation(sim_id)
+    def kill_simulation(self, simulation):
         # No need of trying to kill simulation already done
-        if sim.status in ('Succeeded', 'Failed', 'Canceled'):
-            return
-
-        # if the status has not been set -> set it to Canceled
-        if not sim.status or sim.status == 'Waiting':
-            sim.status = 'Canceled'
-            DataStore.save_simulation(sim)
+        if simulation.status in ('Succeeded', 'Failed', 'Canceled'):
             return
 
         # It was running -> Kill it if pid is there
-        if sim.pid:
+        if simulation.pid:
             try:
-                sim.status = 'Canceled'
-                DataStore.save_simulation(sim)
-                os.kill(int(sim.pid), signal.SIGTERM)
+                os.kill(int(simulation.pid), signal.SIGTERM)
             except Exception as e:
                 print e

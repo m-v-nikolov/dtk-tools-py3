@@ -289,21 +289,11 @@ class CalibManager(object):
             #   If some simulations failed, we may continue...
 
             # If Calibration has been canceled -> exit
-            if self.exp_manager.any_canceled(states):
+            if self.exp_manager.any_canceled(states) or self.exp_manager.any_failed(states):
                 from dtk.utils.ioformat.OutputMessage import OutputMessage
                 # Kill the remaining simulations
-                self.exp_manager.cancel_simulations(states.keys())
-                OutputMessage("Calibration got canceled. Exiting...")
-                exit()
-
-            # If one or more simulation failed -> exit
-            if self.exp_manager.any_failed(states):
-                from dtk.utils.ioformat.OutputMessage import OutputMessage
-                # Kill the remaining simulations
-                self.exp_manager.cancel_simulations(states.keys())
-                # Show a last status
-                self.exp_manager.print_status(states, msgs)
-                OutputMessage("One or more simulations failed. Calibration cannot continue. Exiting...")
+                OutputMessage("One or more simulations failed/cancelled. Calibration cannot continue. Exiting...")
+                self.kill()
                 exit()
 
             # Test if we are all done
