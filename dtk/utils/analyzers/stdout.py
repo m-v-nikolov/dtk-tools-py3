@@ -25,7 +25,6 @@ class StdoutAnalyzer(BaseAnalyzer):
 
     def combine(self, parsers):
         selected = []
-
         try:
             if self.simIds is not None:
                 selected = [parsers.get(k).stdout for k in self.simIds]

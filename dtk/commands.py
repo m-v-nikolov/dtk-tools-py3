@@ -261,6 +261,8 @@ def stdout(args, unknownArgs):
         args.simIds = [k for k in states if states.get(k) in ['Succeeded']][:1]
     elif args.failed:
         args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
+    else:
+        args.simIds = [states.keys()[0]]
 
     if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
