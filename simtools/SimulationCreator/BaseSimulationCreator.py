@@ -10,13 +10,12 @@ from simtools.DataAccess.DataStore import DataStore
 class BaseSimulationCreator(Process):
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, result_queue, setup, callback):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
         self.initial_tags = initial_tags
         self.function_set = function_set
-        self.result_queue = result_queue
         self.max_sims_per_batch = max_sims_per_batch
         # Extract the path we want from the setup
         # Cannot use self.setup because the selected_block selection is lost during forking
@@ -69,10 +68,12 @@ class BaseSimulationCreator(Process):
     def process_batch(self):
         self.save_batch()
 
-        # Now that the save is done, we have the ids ready -> send the created simulations down the pipe
+        # Now that the save is done, we have the ids ready -> create the simulations
+        batch = []
         while self.created_simulations:
             sim = self.created_simulations.pop()
-            self.result_queue.put({'id':sim.id,'tags':sim.tags})
+            batch.append(DataStore.create_simulation(id=sim.id, tags=sim.tags, experiment_id=self.experiment.exp_id))
+        DataStore.bulk_insert_simulations(batch)
 
         if self.callback: self.callback()
 

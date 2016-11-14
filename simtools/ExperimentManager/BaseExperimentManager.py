@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
 import copy
 import json
 import multiprocessing
@@ -9,11 +10,12 @@ import sys
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
+
 import dill
 import psutil
 from dtk import helpers
 from simtools import utils
-from simtools.DataAccess.DataStore import DataStore, batch
+from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
@@ -289,27 +291,33 @@ class BaseExperimentManager:
                                                                        analyzer=dill.dumps(analyzer)))
 
         # Separate the experiment builder generator into batches
-        sim_per_thread = int(self.setup.get('sims_per_thread',10))
-        max_threads = int(self.setup.get('max_threads',multiprocessing.cpu_count()))
+        sim_per_thread = int(self.setup.get('sims_per_thread',50))
+        max_threads = min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()*2)
         work_list = list(self.exp_builder.mod_generator)
+        total_sims = len(work_list)
 
-        if len(work_list) > sim_per_thread*max_threads:
-            fn_batches = batch(work_list, n=int(len(work_list)/max_threads))
+        # Batch differently depending on number of simulations
+        if total_sims > sim_per_thread*max_threads:
+            nbatches = int(total_sims/max_threads)
         else:
-            fn_batches = batch(work_list, n=sim_per_thread)
+            nbatches = sim_per_thread
+
+        fn_batches = batch(work_list, n=nbatches)
+
+        # Save the experiment in the DB
+        DataStore.save_experiment(self.experiment, verbose=verbose)
 
         # Create the processes needed
         creator_processes = []
 
-        # Create the simulation queue
-        simulations_expected = len(work_list)
-        result_queue = multiprocessing.Queue(simulations_expected)
+        # Create the simulation processes
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_thread)
+        logger.info(" | Max creator threads: %s\n | Simulations per batch: %s\n | Simulations Count: %s\n | Simulations per threads: %s"% (max_threads, sim_per_thread, total_sims, nbatches))
 
         for fn_batch in fn_batches:
+            print ("CREATE A CREATOR %s" % len(fn_batch))
             c = self.creatorClass(config_builder=self.config_builder,
                                   initial_tags=self.exp_builder.tags,
-                                  result_queue=result_queue,
                                   function_set=fn_batch,
                                   max_sims_per_batch=sim_per_thread,
                                   experiment=self.experiment,
@@ -318,13 +326,14 @@ class BaseExperimentManager:
             creator_processes.append(c)
             c.start()
 
-        while simulations_expected >0:
-            sim = result_queue.get()
-            self.experiment.simulations.append(DataStore.create_simulation(id=sim['id'], tags=sim['tags'], experiment_id=self.experiment.exp_id))
-            simulations_expected -= 1
+        # Wait for all to finish
+        map(lambda c:c.join(), creator_processes)
 
-        # Save the experiment in the DB
-        DataStore.save_experiment(self.experiment, verbose=verbose)
+        # Refresh the experiment
+        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+
+        # Display sims
+        print(json.dumps(self.experiment.simulations, indent=3, default=dumper, sort_keys=True))
 
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)

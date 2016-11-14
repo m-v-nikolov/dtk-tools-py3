@@ -35,6 +35,11 @@ class SimulationDataStore:
             stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"), not_(Simulation.status in ('Succeeded','Failed','Canceled'))))\
                 .values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
+    @classmethod
+    def bulk_insert_simulations(cls,simulations):
+        with session_scope() as session:
+            session.bulk_save_objects(simulations)
+
 
     @classmethod
     def get_simulation_states(cls, simids):
@@ -56,9 +61,9 @@ class SimulationDataStore:
         return Simulation(**kwargs)
 
     @classmethod
-    def save_simulation(cls, simulation):
+    def save_simulation(cls, simulation, session=None):
         logger.debug("Save simulation")
-        with session_scope() as session:
+        with session_scope(session) as session:
             session.merge(simulation)
 
     @classmethod
