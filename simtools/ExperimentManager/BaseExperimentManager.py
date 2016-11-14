@@ -315,7 +315,6 @@ class BaseExperimentManager:
         logger.info(" | Max creator threads: %s\n | Simulations per batch: %s\n | Simulations Count: %s\n | Simulations per threads: %s"% (max_threads, sim_per_thread, total_sims, nbatches))
 
         for fn_batch in fn_batches:
-            print ("CREATE A CREATOR %s" % len(fn_batch))
             c = self.creatorClass(config_builder=self.config_builder,
                                   initial_tags=self.exp_builder.tags,
                                   function_set=fn_batch,
@@ -333,6 +332,7 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
+        print ("")
         print(json.dumps(self.experiment.simulations, indent=3, default=dumper, sort_keys=True))
 
     def print_status(self,states, msgs, verbose=True):
