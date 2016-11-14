@@ -96,8 +96,11 @@ if __name__ == "__main__":
 
         # Check every one of them
         for manager in managers.values():
+
             # If the runners have not been created -> create them
             if not manager.runner_created:
+                # Refresh the experiment first
+                manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
                 logger.debug('Commission simulations for experiment id: %s' % manager.experiment.id)
                 manager.commission_simulations(states_queue)
                 logger.debug('Experiment done commissioning ? %s' % manager.runner_created)

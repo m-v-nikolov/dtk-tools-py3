@@ -1,12 +1,13 @@
 import os
-
 import re
+from datetime import datetime
+
 from COMPS.Data import Configuration
 from COMPS.Data import Experiment
 from COMPS.Data import Priority
 from COMPS.Data import Suite
-from datetime import datetime
 from simtools import utils
+from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
@@ -103,11 +104,11 @@ class CompsExperimentManager(BaseExperimentManager):
         self.runner_created = True
 
     def cancel_experiment(self):
+        super(CompsExperimentManager, self).cancel_experiment()
         utils.COMPS_login(self.endpoint)
-        from COMPS.Data import Experiment, QueryCriteria
-        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().select('id'))
+        e = Experiment.get(self.experiment.exp_id)
         if e:
-            e.Cancel()
+            e.cancel()
 
     def hard_delete(self):
         """
@@ -122,8 +123,7 @@ class CompsExperimentManager(BaseExperimentManager):
         e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().select('id'))
         e.Delete()
 
-    def kill_simulation(self, sim_id):
+    def kill_simulation(self, simulation):
         utils.COMPS_login(self.endpoint)
-        from COMPS.Data import QueryCriteria, Simulation
-        s = Simulation.GetById(sim_id, QueryCriteria().select('id'))
-        s.Cancel()
+        s = Simulation.get(simulation.id)
+        s.cancel()

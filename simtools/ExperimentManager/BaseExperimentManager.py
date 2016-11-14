@@ -70,7 +70,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def kill_simulation(self, sim_id):
+    def kill_simulation(self, simulation):
         pass
 
     @abstractmethod
@@ -449,38 +449,30 @@ class BaseExperimentManager:
 
     def kill(self, args, unknownArgs):
         if args.simIds:
-            self.cancel_simulations(args.simIds)
+            self.cancel_simulations([DataStore.get_simulation(id) for id in args.simIds])
         else:
             self.cancel_experiment()
 
     def cancel_experiment(self):
-        pass
+        logger.info("Cancelling experiment %s" % self.experiment.id)
 
-    def cancel_simulations(self, sim_id_list):
+    def cancel_simulations(self, sim_list):
         """
         Cancel all the simulations provided in id list.
         """
-        for sim_id in sim_id_list:
-            if type(sim_id) is str:
-                # arguments come in as strings (as they should for COMPS)
-                sim_id = int(sim_id) if sim_id.isdigit() else sim_id
-
-            simulation = DataStore.get_simulation(sim_id)
+        sim_batch = []
+        for simulation in sim_list:
             if simulation is None:
                 continue
 
-            state = simulation.status
+            if simulation.status not in ['Succeeded', 'Failed', 'Canceled', 'Waiting', 'Unknown']:
+                self.kill_simulation(simulation)
 
-            if not state:
-                logger.warning('No job in experiment with ID = %s' % sim_id)
-                continue
+            # Add to the batch
+            sim_batch.append({'sid':simulation.id, 'status':'Canceled','message':None, 'pid':None})
 
-            if state not in ['Succeeded', 'Failed', 'Canceled', 'Unknown']:
-                logger.info("Killing Job %s" % sim_id)
-                print ("Killing Job %s" % sim_id)
-                self.kill_simulation(sim_id)
-            else:
-                logger.warning("JobID %s is already in a '%s' state." % (str(sim_id), state))
+        # Batch update the statuses
+        DataStore.batch_simulations_update(sim_batch)
 
     @staticmethod
     def status_succeeded(states):
