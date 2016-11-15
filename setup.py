@@ -450,6 +450,21 @@ def upgrade_pip(my_os):
         subprocess.call("python -m pip install --upgrade pip", shell=True)
 
 
+def verify_matplotlibrc(my_os):
+    """
+    on MAC: make sure file matplotlibrc has content
+    backend: Agg
+    """
+    if my_os not in ['mac']:
+        return
+
+    home = os.path.expanduser('~')
+    rc_file = os.path.join(home, '.matplotlib/matplotlibrc')
+
+    with open(rc_file, "wb") as code:
+        code.write('backend : Agg')
+
+
 def main():
     # Check OS
     my_os = get_os()
@@ -466,6 +481,9 @@ def main():
 
     # Consider config file
     handle_init()
+
+    # Make sure matplotlibrc file is valid
+    verify_matplotlibrc(my_os)
 
     # Success !
     print "\n======================================================="
