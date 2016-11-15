@@ -6,8 +6,8 @@ from simtools.utils import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback):
-        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, setup, callback)
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list):
+        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, setup, callback, return_list)
 
         # Store the environment and endpoint
         self.environment = setup.get('environment')
