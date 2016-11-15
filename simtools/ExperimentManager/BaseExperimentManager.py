@@ -383,8 +383,9 @@ class BaseExperimentManager:
             # Get the new status
             try:
                 states, msgs = self.get_simulation_status()
-            except:
+            except Exception as e:
                 print("Exception occurred while retrieving status")
+                print (e)
                 return
 
             if self.status_finished(states):
