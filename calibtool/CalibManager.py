@@ -100,7 +100,6 @@ class CalibManager(object):
             self.cache_calibration()
         except OSError:
             from time import sleep
-            sleep(0.5)
             print "Calibration with name %s already exists in current directory" % self.name
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
@@ -115,7 +114,6 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "C":
                 self.cleanup()
-                time.sleep(1)
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
