@@ -33,15 +33,13 @@ def SimulationStateUpdater(states):
 def LogCleaner():
     # Get the last time a cleanup happened
     last_cleanup = DataStore.get_setting('last_log_cleanup')
-    if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' ')[0],'%Y-%m-%d')).days < 1:
+    if not last_cleanup or (datetime.today() - datetime.strptime(last_cleanup.value.split(' ')[0],'%Y-%m-%d')).days > 1:
         # Do the cleanup
         from simtools.DataAccess.LoggingDataStore import LoggingDataStore
         LoggingDataStore.log_cleanup()
         DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup',value=datetime.today()))
 
 if __name__ == "__main__":
-    # LogCleaner()
-    # exit()
     logger.debug('Start Overseer')
     # Retrieve the threads number
     sp = SetupParser()
@@ -61,8 +59,8 @@ if __name__ == "__main__":
     update_state_thread.start()
 
     # Take this opportunity to cleanup the logs
-    t2 = multiprocessing.Process(target=LogCleaner)
-    t2.start()
+    lc = threading.Thread(target=LogCleaner)
+    lc.start()
 
     # will hold the analyze threads
     analysis_threads = []
