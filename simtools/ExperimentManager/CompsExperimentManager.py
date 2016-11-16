@@ -119,9 +119,8 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Mark experiment for deletion in COMPS.
         utils.COMPS_login(self.endpoint)
-        from COMPS.Data import Experiment, QueryCriteria
-        e = Experiment.GetById(self.experiment.exp_id, QueryCriteria().select('id'))
-        e.Delete()
+        e = Experiment.get(self.experiment.exp_id)
+        e.delete()
 
     def kill_simulation(self, simulation):
         utils.COMPS_login(self.endpoint)

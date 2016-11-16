@@ -5,7 +5,7 @@ from simtools.SetupParser import SetupParser
 from dtk.interventions.outbreakindividualdengue import add_OutbreakIndivisualDengue
 
 # For example only -- Force the selected block to be EXAMPLE
-SetupParser("EXAMPLE")
+SetupParser("TESTDENGUE")
 
 cb = DTKConfigBuilder.from_defaults('DENGUE_SIM')
 configure_site(cb, 'Puerto_Rico')
