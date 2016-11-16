@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import sys
+from datetime import datetime
 from collections import OrderedDict
 from urlparse import urlparse
 from ConfigParser import ConfigParser
@@ -459,10 +460,36 @@ def verify_matplotlibrc(my_os):
         return
 
     home = os.path.expanduser('~')
-    rc_file = os.path.join(home, '.matplotlib/matplotlibrc')
+    rc = 'matplotlibrc'
+    rc_file = os.path.join(home, '.matplotlib', rc)
 
-    with open(rc_file, "wb") as code:
-        code.write('backend : Agg')
+    def has_Agg(rc_file):
+        with open(rc_file, "r") as f:
+            for line in f:
+                ok = re.match('^\s*backend\s*:\s*Agg\s*$', line)
+                if ok:
+                    return True
+
+        return False
+
+    if os.path.exists(rc_file):
+        ok = has_Agg(rc_file)
+        if not ok:
+            # make a backup of existing rc file
+            directory = os.path.dirname(rc_file)
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
+            shutil.copy(rc_file, os.path.join(directory, '%s_%s' % (rc, backup_id)))
+
+            # append 'backend : Agg' to existing file
+            with open(rc_file, "a") as f:
+                f.write('\nbackend : Agg')
+        else:
+            # do nothing
+            pass
+    else:
+        # create a rc file
+        with open(rc_file, "wb") as f:
+            f.write('backend : Agg')
 
 
 def main():
