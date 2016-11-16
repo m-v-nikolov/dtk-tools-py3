@@ -109,7 +109,11 @@ class Experiment(Base):
     def toJSON(self):
         ret = {}
         for name in dir(self):
+            # For now skip the analyzers
+            if name == "analyzers": continue
+
             value = getattr(self, name)
+
             # Weed out the internal parameters/methods
             if name.startswith('_') or name in ('metadata') or inspect.ismethod(value):
                 continue
