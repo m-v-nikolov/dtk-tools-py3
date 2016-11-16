@@ -87,7 +87,7 @@ class CalibManager(object):
         user_selected_block = self.setup.selected_block
         self.create_calibration(self.location, **kwargs)
         # Restore the selected block
-        self.setup.selected_block = user_selected_block
+        self.setup.override_block(user_selected_block)
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location, **kwargs):
