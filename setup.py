@@ -4,6 +4,7 @@ import os
 import platform
 import shutil
 import sys
+from datetime import datetime
 from collections import OrderedDict
 from urlparse import urlparse
 from ConfigParser import ConfigParser
@@ -450,6 +451,47 @@ def upgrade_pip(my_os):
         subprocess.call("python -m pip install --upgrade pip", shell=True)
 
 
+def verify_matplotlibrc(my_os):
+    """
+    on MAC: make sure file matplotlibrc has content
+    backend: Agg
+    """
+    if my_os not in ['mac']:
+        return
+
+    home = os.path.expanduser('~')
+    rc = 'matplotlibrc'
+    rc_file = os.path.join(home, '.matplotlib', rc)
+
+    def has_Agg(rc_file):
+        with open(rc_file, "r") as f:
+            for line in f:
+                ok = re.match('^\s*backend\s*:\s*Agg\s*$', line)
+                if ok:
+                    return True
+
+        return False
+
+    if os.path.exists(rc_file):
+        ok = has_Agg(rc_file)
+        if not ok:
+            # make a backup of existing rc file
+            directory = os.path.dirname(rc_file)
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
+            shutil.copy(rc_file, os.path.join(directory, '%s_%s' % (rc, backup_id)))
+
+            # append 'backend : Agg' to existing file
+            with open(rc_file, "a") as f:
+                f.write('\nbackend : Agg')
+        else:
+            # do nothing
+            pass
+    else:
+        # create a rc file
+        with open(rc_file, "wb") as f:
+            f.write('backend : Agg')
+
+
 def main():
     # Check OS
     my_os = get_os()
@@ -466,6 +508,9 @@ def main():
 
     # Consider config file
     handle_init()
+
+    # Make sure matplotlibrc file is valid
+    verify_matplotlibrc(my_os)
 
     # Success !
     print "\n======================================================="
