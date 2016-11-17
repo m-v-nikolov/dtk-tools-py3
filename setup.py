@@ -483,9 +483,6 @@ def verify_matplotlibrc(my_os):
             # append 'backend : Agg' to existing file
             with open(rc_file, "a") as f:
                 f.write('\nbackend : Agg')
-        else:
-            # do nothing
-            pass
     else:
         # create a rc file
         with open(rc_file, "wb") as f:

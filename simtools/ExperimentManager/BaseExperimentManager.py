@@ -332,7 +332,7 @@ class BaseExperimentManager:
             c.start()
 
         # Wait for all to finish
-        map(lambda c:c.join(), creator_processes)
+        map(lambda c: c.join(), creator_processes)
 
         # Insert all those newly created simulations to the DB
         DataStore.bulk_insert_simulations(return_list)
