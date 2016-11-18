@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import re
 from datetime import datetime
@@ -20,7 +21,6 @@ class CompsExperimentManager(BaseExperimentManager):
     """
     location = 'HPC'
     parserClass = CompsDTKOutputParser
-    creatorClass = COMPSSimulationCreator
 
     def __init__(self, experiment, exp_data, setup=None):
         BaseExperimentManager.__init__(self, experiment, exp_data, setup)
@@ -31,6 +31,21 @@ class CompsExperimentManager(BaseExperimentManager):
         self.endpoint = self.setup.get('server_endpoint')
         self.compress_assets = self.setup.getboolean('compress_assets')
         utils.COMPS_login(self.endpoint)
+        self.creator_semaphore = None
+
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+        if not self.creator_semaphore:
+            self.creator_semaphore = multiprocessing.Semaphore(4)
+
+        return COMPSSimulationCreator(config_builder=self.config_builder,
+                                      initial_tags=self.exp_builder.tags,
+                                      function_set=function_set,
+                                      max_sims_per_batch=max_sims_per_batch,
+                                      experiment=self.experiment,
+                                      setup=self.setup,
+                                      callback=callback,
+                                      return_list=return_list,
+                                      save_semaphore=self.creator_semaphore)
 
     def check_input_files(self, input_files):
         """
