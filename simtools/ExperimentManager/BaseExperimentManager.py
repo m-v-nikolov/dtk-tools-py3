@@ -375,7 +375,7 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
-        getch = helpers.find_getch()
+        # getch = helpers.find_getch()
         self.check_overseer()
         while True:
             time.sleep(init_sleep)
@@ -394,14 +394,15 @@ class BaseExperimentManager:
                 if verbose:
                     self.print_status(states, msgs)
 
-                for i in range(sleep_time):
-                    if helpers.kbhit():
-                        if getch() == '\r':
-                            break
-                        else:
-                            return
-                    else:
-                        time.sleep(1)
+                # for i in range(sleep_time):
+                #     if helpers.kbhit():
+                #         if getch() == '\r':
+                #             break
+                #         else:
+                #             return
+                #     else:
+                #         time.sleep(1)
+                time.sleep(sleep_time)
 
         if verbose:
             self.print_status(states, msgs)
