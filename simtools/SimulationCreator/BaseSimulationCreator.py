@@ -2,12 +2,16 @@ from __future__ import print_function
 import copy
 from abc import abstractmethod, ABCMeta
 from multiprocessing import Process
-
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
+from threading import Thread
+import sys
 
-
-class BaseSimulationCreator(Process):
+class BaseSimulationCreator(Thread if sys.platform == 'darwin' else Process):
+    """
+    Simulation creator base class.
+    For compatibility issues, for now forces to be a Thread if ran on MacOS.
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list):
