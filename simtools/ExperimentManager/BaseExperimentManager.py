@@ -125,7 +125,7 @@ class BaseExperimentManager:
                 runner_path = os.path.join(current_dir, '..', 'Overseer.py')
                 import platform
                 if platform.system() in ['Windows','darwin']:
-                    p = subprocess.Popen([sys.executable, runner_path], shell=True, creationflags=512)
+                    p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
                 else:
                     p = subprocess.Popen([sys.executable, runner_path], shell=False)
 

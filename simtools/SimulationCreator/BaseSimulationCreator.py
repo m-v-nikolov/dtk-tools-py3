@@ -74,7 +74,7 @@ class BaseSimulationCreator(Process):
         # Now that the save is done, we have the ids ready -> create the simulations
         while self.created_simulations:
             sim = self.created_simulations.pop()
-            self.return_list.append(DataStore.create_simulation(id=sim.id, tags=sim.tags, experiment_id=self.experiment.exp_id))
+            self.return_list.append(DataStore.create_simulation(id=str(sim.id), tags=sim.tags, experiment_id=self.experiment.exp_id))
 
         if self.callback: self.callback()
 

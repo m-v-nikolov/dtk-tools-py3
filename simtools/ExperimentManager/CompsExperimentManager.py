@@ -79,7 +79,7 @@ class CompsExperimentManager(BaseExperimentManager):
         e.save()
 
         # Create experiment in the base class
-        super(CompsExperimentManager, self).create_experiment(experiment_name,  e.id, suite_id)
+        super(CompsExperimentManager, self).create_experiment(experiment_name,  str(e.id), suite_id)
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint

@@ -88,7 +88,7 @@ class Experiment(Base):
 
     @hybrid_property
     def id(self):
-        return self.exp_name + "_" + self.exp_id
+        return "%s_%s" % (self.exp_name,self.exp_id)
 
     def get_path(self):
         if self.location == "LOCAL":
