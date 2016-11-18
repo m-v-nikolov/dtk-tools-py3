@@ -26,9 +26,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': ['win','lin','mac'],
-        'version': '1.0b9',
+        'version': '1.0b10',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0b9-py2.py3-none-any.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0b10-py2.py3-none-any.whl'
     }),
     ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],

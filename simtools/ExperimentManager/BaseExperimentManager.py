@@ -113,6 +113,7 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
+        global overseer_check_lock
         overseer_check_lock.acquire()
         try:
             setting = DataStore.get_setting('overseer_pid')
