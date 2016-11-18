@@ -1,13 +1,11 @@
 from __future__ import print_function
 import copy
 from abc import abstractmethod, ABCMeta
-from multiprocessing import Process
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
-from threading import Thread
-import sys
+from multiprocessing import Process
 
-class BaseSimulationCreator(Thread if sys.platform == 'darwin' else Process):
+class BaseSimulationCreator(Process):
     """
     Simulation creator base class.
     For compatibility issues, for now forces to be a Thread if ran on MacOS.
@@ -74,7 +72,6 @@ class BaseSimulationCreator(Thread if sys.platform == 'darwin' else Process):
         self.save_batch()
 
         # Now that the save is done, we have the ids ready -> create the simulations
-        batch = []
         while self.created_simulations:
             sim = self.created_simulations.pop()
             self.return_list.append(DataStore.create_simulation(id=sim.id, tags=sim.tags, experiment_id=self.experiment.exp_id))

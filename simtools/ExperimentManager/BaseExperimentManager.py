@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
 from __future__ import print_function
 
 import copy
 import json
 import multiprocessing
-import os
 import subprocess
 import sys
 import time
-from abc import ABCMeta, abstractmethod
 from collections import Counter
 
 import dill
+import os
 import psutil
-from dtk import helpers
+from abc import ABCMeta, abstractmethod
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
@@ -126,8 +124,8 @@ class BaseExperimentManager:
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 runner_path = os.path.join(current_dir, '..', 'Overseer.py')
                 import platform
-                if platform.system() == 'Windows':
-                    p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
+                if platform.system() in ['Windows','darwin']:
+                    p = subprocess.Popen([sys.executable, runner_path], shell=True, creationflags=512)
                 else:
                     p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
