@@ -68,7 +68,7 @@ class ClimateGenerator:
 
         om("Climate files SUCCESSFULLY generated")
 
-        wi.Refresh(QueryCriteria().SelectChildren('Files'))
+        wi.Refresh(QueryCriteria().SelectChildren('files'))
         wifiles = wi.getFiles().toArray()
 
         wifilenames = [wif.getFileName() for wif in wifiles if wif.getFileType() == 'Output']

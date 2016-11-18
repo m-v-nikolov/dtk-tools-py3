@@ -1,21 +1,24 @@
+from __future__ import print_function
+
 import copy
 import json
 import multiprocessing
-import os
 import subprocess
 import sys
 import time
-from abc import ABCMeta, abstractmethod
 from collections import Counter
 
 import dill
+import os
 import psutil
-from dtk import helpers
+from abc import ABCMeta, abstractmethod
 from simtools import utils
-from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
+from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
+from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 from simtools.utils import init_logging
 
 logger = init_logging('ExperimentManager')
@@ -23,6 +26,9 @@ overseer_check_lock = multiprocessing.Lock()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
+    creatorClass = BaseSimulationCreator
+    parserClass=SimulationOutputParser
+    location = None
 
     def __init__(self, model_file, experiment, setup=None):
         self.model_file = model_file
@@ -46,7 +52,6 @@ class BaseExperimentManager:
             for analyzer in experiment.analyzers:
                 self.add_analyzer(dill.loads(analyzer.analyzer))
 
-        self.sims_created = 0
         self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
@@ -55,11 +60,7 @@ class BaseExperimentManager:
         self.runner_created = False
 
     @abstractmethod
-    def commission_simulations(self):
-        pass
-
-    @abstractmethod
-    def create_simulation(self, suite_id=None):
+    def commission_simulations(self, states):
         pass
 
     @abstractmethod
@@ -67,11 +68,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def complete_sim_creation(self, commissioners):
-        pass
-
-    @abstractmethod
-    def kill_simulation(self, sim_id):
+    def kill_simulation(self, simulation):
         pass
 
     @abstractmethod
@@ -127,7 +124,7 @@ class BaseExperimentManager:
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 runner_path = os.path.join(current_dir, '..', 'Overseer.py')
                 import platform
-                if platform.system() == 'Windows':
+                if platform.system() in ['Windows','darwin']:
                     p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
                 else:
                     p = subprocess.Popen([sys.executable, runner_path], shell=False)
@@ -247,15 +244,15 @@ class BaseExperimentManager:
             missing_files.pop('Campaign_Filename')
 
         if len(missing_files) > 0:
-            print 'Missing files list:'
-            print 'input_root: %s' % input_root
-            print json.dumps(missing_files, indent=2)
+            print('Missing files list:')
+            print('input_root: %s' % input_root)
+            print(json.dumps(missing_files, indent=2))
             var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
-                print "Answer is '%s'. Continue..." % var.upper()
+                print("Answer is '%s'. Continue..." % var.upper())
                 return True
             else:
-                print "Answer is '%s'. Exiting..." % var.upper()
+                print("Answer is '%s'. Exiting..." % var.upper())
                 return False
 
         return True
@@ -283,7 +280,6 @@ class BaseExperimentManager:
         else:
             # Refresh the experiment
             self.experiment = DataStore.get_experiment(self.experiment.exp_id)
-            self.sims_created = 0
 
         # Add the analyzers
         for analyzer in analyzers:
@@ -292,31 +288,59 @@ class BaseExperimentManager:
             self.experiment.analyzers.append(DataStore.create_analyzer(name=str(analyzer.__class__.__name__),
                                                                        analyzer=dill.dumps(analyzer)))
 
-        cached_cb = copy.deepcopy(self.config_builder)
-        commissioners = []
-        for mod_fn_list in self.exp_builder.mod_generator:
-            # reset to base config/campaign
-            self.config_builder = copy.deepcopy(cached_cb)
-
-            # modify next simulation according to experiment builder
-            map(lambda func: func(self.config_builder), mod_fn_list)
-
-            # If the assets service is in use, the path needs to come from COMPS
-            if self.assets_service:
-                lib_staging_root = utils.translate_COMPS_path(self.setup.get('lib_staging_root'), self.setup)
-            else:
-                lib_staging_root = self.setup.get('lib_staging_root')
-
-            # Stage the required dll for the experiment
-            self.config_builder.stage_required_libraries(self.setup.get('dll_path'), lib_staging_root,
-                                                         self.assets_service)
-
-            commissioner = self.create_simulation()
-            if commissioner is not None:
-                commissioners.append(commissioner)
-
-        self.complete_sim_creation(commissioners)
+        # Save the experiment in the DB
         DataStore.save_experiment(self.experiment, verbose=verbose)
+
+        # Separate the experiment builder generator into batches
+        sim_per_batch = int(self.setup.get('sims_per_thread',50))
+        max_creator_threads = min(int(self.setup.get('max_threads')), multiprocessing.cpu_count())
+        work_list = list(self.exp_builder.mod_generator)
+        total_sims = len(work_list)
+
+        # Batch the work to do differently depending on number of simulations
+        if total_sims > sim_per_batch*max_creator_threads:
+            nbatches = int(total_sims/max_creator_threads)
+        else:
+            nbatches = sim_per_batch
+        fn_batches = batch(work_list, n=nbatches)
+
+        # Create a manager for sharing the list of simulations created back with the main thread
+        manager = multiprocessing.Manager()
+        return_list = manager.list()
+
+        # Display some info
+        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
+        logger.info(" | Max creator threads: %s"% max_creator_threads)
+        logger.info(" | Simulations per batch: %s"% sim_per_batch)
+        logger.info(" | Simulations Count: %s" % total_sims)
+        logger.info(" | Simulations per threads: %s"% nbatches)
+
+        # Create the simulation processes
+        creator_processes = []
+        for fn_batch in fn_batches:
+            c = self.creatorClass(config_builder=self.config_builder,
+                                  initial_tags=self.exp_builder.tags,
+                                  function_set=fn_batch,
+                                  max_sims_per_batch=sim_per_batch,
+                                  experiment=self.experiment,
+                                  setup=self.setup,
+                                  callback=lambda: print('.', end=""),
+                                  return_list=return_list)
+            creator_processes.append(c)
+            c.start()
+
+        # Wait for all to finish
+        map(lambda c: c.join(), creator_processes)
+
+        # Insert all those newly created simulations to the DB
+        DataStore.bulk_insert_simulations(return_list)
+
+        # Refresh the experiment
+        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+
+        # Display sims
+        print ("")
+        print(json.dumps(self.experiment.simulations, indent=3, default=dumper, sort_keys=True))
 
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
@@ -349,7 +373,7 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
-        getch = helpers.find_getch()
+        # getch = helpers.find_getch()
         self.check_overseer()
         while True:
             time.sleep(init_sleep)
@@ -357,8 +381,9 @@ class BaseExperimentManager:
             # Get the new status
             try:
                 states, msgs = self.get_simulation_status()
-            except:
-                print "Exception occurred while retrieving status"
+            except Exception as e:
+                print("Exception occurred while retrieving status")
+                print (e)
                 return
 
             if self.status_finished(states):
@@ -367,14 +392,15 @@ class BaseExperimentManager:
                 if verbose:
                     self.print_status(states, msgs)
 
-                for i in range(sleep_time):
-                    if helpers.kbhit():
-                        if getch() == '\r':
-                            break
-                        else:
-                            return
-                    else:
-                        time.sleep(1)
+                # for i in range(sleep_time):
+                #     if helpers.kbhit():
+                #         if getch() == '\r':
+                #             break
+                #         else:
+                #             return
+                #     else:
+                #         time.sleep(1)
+                time.sleep(sleep_time)
 
         if verbose:
             self.print_status(states, msgs)
@@ -432,38 +458,30 @@ class BaseExperimentManager:
 
     def kill(self, args, unknownArgs):
         if args.simIds:
-            self.cancel_simulations(args.simIds)
+            self.cancel_simulations([DataStore.get_simulation(id) for id in args.simIds])
         else:
             self.cancel_experiment()
 
     def cancel_experiment(self):
-        pass
+        logger.info("Cancelling experiment %s" % self.experiment.id)
 
-    def cancel_simulations(self, sim_id_list):
+    def cancel_simulations(self, sim_list):
         """
         Cancel all the simulations provided in id list.
         """
-        for sim_id in sim_id_list:
-            if type(sim_id) is str:
-                # arguments come in as strings (as they should for COMPS)
-                sim_id = int(sim_id) if sim_id.isdigit() else sim_id
-
-            simulation = DataStore.get_simulation(sim_id)
+        sim_batch = []
+        for simulation in sim_list:
             if simulation is None:
                 continue
 
-            state = simulation.status
+            if simulation.status not in ['Succeeded', 'Failed', 'Canceled', 'Waiting', 'Unknown']:
+                self.kill_simulation(simulation)
 
-            if not state:
-                logger.warning('No job in experiment with ID = %s' % sim_id)
-                continue
+            # Add to the batch
+            sim_batch.append({'sid':simulation.id, 'status':'Canceled','message':None, 'pid':None})
 
-            if state not in ['Succeeded', 'Failed', 'Canceled', 'Unknown']:
-                logger.info("Killing Job %s" % sim_id)
-                print "Killing Job %s" % sim_id
-                self.kill_simulation(sim_id)
-            else:
-                logger.warning("JobID %s is already in a '%s' state." % (str(sim_id), state))
+        # Batch update the statuses
+        DataStore.batch_simulations_update(sim_batch)
 
     @staticmethod
     def status_succeeded(states):

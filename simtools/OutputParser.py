@@ -7,6 +7,8 @@ import pandas as pd  # for reading csv files
 import gc # for garbage collection
 
 import logging
+from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id
+from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
 
@@ -139,29 +141,6 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
     @classmethod
     def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True):
-        from COMPS.Data import Experiment, Suite, QueryCriteria
-
-        def workdirs_from_simulations(sims):
-            return {sim.getId().toString(): sim.getHPCJobs().toArray()[-1].getWorkingDirectory() for sim in sims}
-
-        def sims_from_experiment(e):
-            #print('Simulation working directories for ExperimentId = %s' % e.getId().toString())
-            return e.GetSimulations(QueryCriteria().Select('Id').SelectChildren('HPCJobs')).toArray()
-
-        def workdirs_from_experiment_id(exp_id):
-            e = Experiment.GetById(exp_id)
-            sims = sims_from_experiment(e)
-            return workdirs_from_simulations(sims)
-
-        def workdirs_from_suite_id(suite_id):
-            #print('Simulation working directories for SuiteId = %s' % suite_id)
-            s = Suite.GetById(suite_id)
-            exps = s.GetExperiments(QueryCriteria().Select('Id')).toArray()
-            sims = []
-            for e in exps:
-                sims += sims_from_experiment(e)
-            return workdirs_from_simulations(sims)
-
         if suite_id:
             sim_map = workdirs_from_suite_id(suite_id)
         elif exp_id:
@@ -176,7 +155,6 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
     def load_all_files(self, filenames):
         from COMPS.Data import Simulation, AssetType
-        from java.util import ArrayList, UUID
 
         if self.sim_dir_map is not None:
             # sim_dir_map -> we can just open files locally...
@@ -184,14 +162,13 @@ class CompsDTKOutputParser(SimulationOutputParser):
             return
 
         # can't open files locally... we have to go through the COMPS asset service
-        paths = ArrayList()
-        for filename in filenames:
-            paths.add(filename.replace('\\', '/'))
+        paths =[filename.replace('\\', '/') for filename in filenames]
 
-        assets = Simulation.RetrieveAssets(UUID.fromString(self.sim_id), AssetType.Output, paths, self.use_compression, None)
-        asset_byte_arrays = assets.toArray() if assets else []
-
-        # print('done retrieving files; starting load')
+        # Get the simulation
+        sim = Simulation.get(self.sim_id)
+        asset_byte_arrays = sim.retrieve_assets(asset_type=AssetType.Output,
+                                                paths=paths,
+                                                use_compression=self.use_compression)
 
         for filename, byte_array in zip(filenames, asset_byte_arrays):
             self.load_single_file(filename, byte_array)
@@ -200,16 +177,13 @@ class CompsDTKOutputParser(SimulationOutputParser):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_json_file(filename)
         else:
-            jsonstr = args[0].tostring()
-            self.raw_data[filename] = json.loads(jsonstr)
+            self.raw_data[filename] = json.loads(str(args[0]))
 
     def load_csv_file(self, filename, *args):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_csv_file(filename)
         else:
-            from StringIO import StringIO
-            csvstr = StringIO(args[0].tostring())
-            self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
+            self.raw_data[filename] = pd.read_csv(str(args[0]), skipinitialspace=True)
             #self.raw_data[filename] = args[0].tostring()
 
     def load_xlsx_file(self, filename, *args):
@@ -224,8 +198,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_txt_file(filename)
         else:
-            str = args[0].tostring()
-            self.raw_data[filename] = str
+            self.raw_data[filename] = str(args[0])
 
     def load_bin_file(self, filename, *args):
         if self.sim_dir_map is not None:

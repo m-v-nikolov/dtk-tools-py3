@@ -3,8 +3,8 @@ from datetime import date,timedelta
 from sqlalchemy import and_
 from sqlalchemy import distinct
 
-from simtools.DataAccess import  session_scope, Session_logs
-from simtools.Logging.Schema import LogRecord
+from simtools.DataAccess import  session_scope, Session_logs, engine_logs
+from simtools.DBLogging.Schema import LogRecord
 
 
 class LoggingDataStore:
@@ -39,10 +39,10 @@ class LoggingDataStore:
         return modules
 
     @classmethod
-    def cleanup(cls):
+    def log_cleanup(cls):
         try:
-            with session_scope(Session_logs()) as session:
-                session.query(LogRecord).filter(LogRecord.created < date.today() - timedelta(days=30)).delete()
+            limit_date = date.today() - timedelta(days=30)
+            engine_logs.execute("DELETE FROM Logs WHERE created < '%s'" % limit_date)
         except Exception as e:
             print "Could not clean the logs.\n%s" % e
 

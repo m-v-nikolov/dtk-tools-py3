@@ -12,7 +12,7 @@ class StdoutAnalyzer(BaseAnalyzer):
         self.error = error
 
     def filter(self, sim_metadata):
-        return lambda x: True
+        return sim_metadata['sim_id'] in self.simIds
 
     def apply(self, parser):
         try:
@@ -25,7 +25,6 @@ class StdoutAnalyzer(BaseAnalyzer):
 
     def combine(self, parsers):
         selected = []
-
         try:
             if self.simIds is not None:
                 selected = [parsers.get(k).stdout for k in self.simIds]

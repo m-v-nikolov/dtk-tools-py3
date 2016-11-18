@@ -88,7 +88,7 @@ class Experiment(Base):
 
     @hybrid_property
     def id(self):
-        return self.exp_name + "_" + self.exp_id
+        return "%s_%s" % (self.exp_name,self.exp_id)
 
     def get_path(self):
         if self.location == "LOCAL":
@@ -109,7 +109,11 @@ class Experiment(Base):
     def toJSON(self):
         ret = {}
         for name in dir(self):
+            # For now skip the analyzers
+            if name == "analyzers": continue
+
             value = getattr(self, name)
+
             # Weed out the internal parameters/methods
             if name.startswith('_') or name in ('metadata') or inspect.ismethod(value):
                 continue

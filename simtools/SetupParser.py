@@ -113,7 +113,6 @@ class SetupParser:
         if self.get('type') == "HPC":
             try:
                 os.environ['COMPS_REST_HOST'] = self.get('server_endpoint')
-                from pyCOMPS import pyCOMPS
                 from simtools import utils
                 utils.COMPS_login(self.get('server_endpoint'))
 
@@ -198,9 +197,10 @@ class SetupParser:
             for item in cp.items(section):
                 self.setup.set(section, item[0], item[1])
 
-    def get(self, parameter):
+    def get(self, parameter, default=None):
         if not self.has_option(parameter):
-            raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
+            if default is not None: return default
+            else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.get(self.selected_block,parameter)
 
     def has_option(self,option):

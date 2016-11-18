@@ -10,6 +10,7 @@ from collections import OrderedDict
 import struct
 
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
+from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.climate.WorkOrderGenerator import WorkOrderGenerator
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
 from dtk.tools.demographics.node import Node
@@ -56,7 +57,7 @@ while (wi.getState().toString() not in ['Succeeded', 'Failed', 'Canceled']):
 
 print "Successfully generated"
 
-wi.Refresh(QueryCriteria().SelectChildren('Files'))
+wi.Refresh(QueryCriteria().select_children('files'))
 wifiles = wi.getFiles().toArray()
 wifilenames = [wif.getFileName() for wif in wifiles if wif.getFileType() == 'Output']
 if len(wifilenames) > 0:
@@ -76,15 +77,6 @@ if len(wifilenames) > 0:
 
 # We now have the intermediate weather -> Create the list of nodes
 # Extract the nodes from the demog
-
-class WeatherNode(Node):
-    def __init__(self):
-        self.air_temperature = []
-        self.land_temperature = []
-        self.rainfall = []
-        self.humidity = []
-        self.id = 0
-
 
 def extract_data_from_bin(node, binary_file):
     meta = json.load(open(binary_file+'.json','rb'))
