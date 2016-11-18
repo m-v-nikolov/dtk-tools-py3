@@ -26,7 +26,6 @@ overseer_check_lock = multiprocessing.Lock()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
-    creatorClass = BaseSimulationCreator
     parserClass=SimulationOutputParser
     location = None
 
@@ -77,6 +76,10 @@ class BaseExperimentManager:
 
     @abstractmethod
     def check_input_files(self, input_files):
+        pass
+
+    @abstractmethod
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         pass
 
     @abstractmethod
@@ -318,14 +321,10 @@ class BaseExperimentManager:
         # Create the simulation processes
         creator_processes = []
         for fn_batch in fn_batches:
-            c = self.creatorClass(config_builder=self.config_builder,
-                                  initial_tags=self.exp_builder.tags,
-                                  function_set=fn_batch,
-                                  max_sims_per_batch=sim_per_batch,
-                                  experiment=self.experiment,
-                                  setup=self.setup,
-                                  callback=lambda: print('.', end=""),
-                                  return_list=return_list)
+            c = self.get_simulation_creator(function_set=fn_batch,
+                                            max_sims_per_batch=sim_per_batch,
+                                            callback=lambda: print('.', end=""),
+                                            return_list=return_list)
             creator_processes.append(c)
             c.start()
 

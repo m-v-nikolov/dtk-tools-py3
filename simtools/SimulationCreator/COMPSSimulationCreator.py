@@ -6,12 +6,13 @@ from simtools.utils import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list, save_semaphore):
         super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, setup, callback, return_list)
 
         # Store the environment and endpoint
         self.environment = setup.get('environment')
         self.server_endpoint = setup.get('server_endpoint')
+        self.save_semaphore = save_semaphore
 
     def create_simulation(self, cb):
         name = cb.get_param('Config_Name') if cb.get_param('Config_Name') else self.experiment.exp_name
@@ -19,8 +20,13 @@ class COMPSSimulationCreator(BaseSimulationCreator):
 
     def save_batch(self):
         # Batch save after all sims in list have been added
-        with nostdout():
-            Simulation.save_all()
+        # with nostdout():
+        self.save_semaphore.acquire()
+        try:
+            with nostdout(stderr=True):
+                Simulation.save_all(lambda *args: None)
+        finally:
+            self.save_semaphore.release()
 
     def add_files_to_simulation(self,s,cb):
         files = cb.dump_files_to_string()

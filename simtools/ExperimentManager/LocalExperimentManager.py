@@ -21,7 +21,6 @@ class LocalExperimentManager(BaseExperimentManager):
     """
     location = 'LOCAL'
     parserClass = SimulationOutputParser
-    creatorClass = LocalSimulationCreator
 
     def __init__(self, model_file, experiment, setup=None):
         self.local_queue = None
@@ -97,3 +96,13 @@ class LocalExperimentManager(BaseExperimentManager):
                 os.kill(int(simulation.pid), signal.SIGTERM)
             except Exception as e:
                 print e
+
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+        return LocalSimulationCreator(config_builder=self.config_builder,
+                                      initial_tags=self.exp_builder.tags,
+                                      function_set=function_set,
+                                      max_sims_per_batch=max_sims_per_batch,
+                                      experiment=self.experiment,
+                                      setup=self.setup,
+                                      callback=callback,
+                                      return_list=return_list)
