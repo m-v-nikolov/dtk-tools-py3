@@ -24,6 +24,12 @@ requirements = OrderedDict([
         'test': '==',
         'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
     }),
+    ('pyCOMPS', {
+        'platform': ['win','lin','mac'],
+        'version': '1.0b9',
+        'test': '==',
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0b9-py2.py3-none-any.whl'
+    }),
     ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
