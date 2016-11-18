@@ -26,10 +26,11 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         logger.debug('COMPS - Start Commissioning for experiment %s' % self.experiment.id)
         # Commission the experiment
         e = Experiment.get(id=self.experiment.exp_id)
-        sims = e.get_simulations()
-        for sim in sims:
-            if sim.state == SimulationState.Created:
-                sim.commission()
+        e.commission()
+        # sims = e.get_simulations()
+        # for sim in sims:
+        #     if sim.state == SimulationState.Created:
+        #         sim.commission()
         self.monitor()
 
     def update_simulations_statuses(self,simids,states):
