@@ -10,6 +10,8 @@ from collections import Counter
 
 import dill
 import os
+
+import fasteners
 import psutil
 from abc import ABCMeta, abstractmethod
 from simtools import utils
@@ -107,36 +109,32 @@ class BaseExperimentManager:
         return True
 
     @staticmethod
+    @fasteners.interprocess_locked('overseer_check_lock')
     def check_overseer():
         """
         Ensure that the overseer thread is running.
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
-        global overseer_check_lock
-        overseer_check_lock.acquire()
-        try:
-            setting = DataStore.get_setting('overseer_pid')
+        setting = DataStore.get_setting('overseer_pid')
 
-            if setting:
-                overseer_pid = int(setting.value)
+        if setting:
+            overseer_pid = int(setting.value)
+        else:
+            overseer_pid = None
+
+        if not overseer_pid or not psutil.pid_exists(overseer_pid) or 'python' not in psutil.Process(overseer_pid).name().lower():
+            # Run the runner
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            runner_path = os.path.join(current_dir, '..', 'Overseer.py')
+            import platform
+            if platform.system() in ['Windows','darwin']:
+                p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
             else:
-                overseer_pid = None
+                p = subprocess.Popen([sys.executable, runner_path], shell=False)
 
-            if not overseer_pid or not psutil.pid_exists(overseer_pid) or 'python' not in psutil.Process(overseer_pid).name().lower():
-                # Run the runner
-                current_dir = os.path.dirname(os.path.realpath(__file__))
-                runner_path = os.path.join(current_dir, '..', 'Overseer.py')
-                import platform
-                if platform.system() in ['Windows','darwin']:
-                    p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
-                else:
-                    p = subprocess.Popen([sys.executable, runner_path], shell=False)
-
-                # Save the pid in the settings
-                DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
-        finally:
-            overseer_check_lock.release()
+            # Save the pid in the settings
+            DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
 
     def success_callback(self, simulation):
         """

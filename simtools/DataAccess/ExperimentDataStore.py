@@ -1,5 +1,6 @@
 import datetime
 import json
+from operator import or_
 
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
@@ -56,7 +57,7 @@ class ExperimentDataStore:
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
             experiment = session.query(Experiment) \
-                .filter(Experiment.id.like('%%%s%%' % id_or_name)) \
+                .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
                 .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
                 .order_by(Experiment.date_created.desc()).first()
 

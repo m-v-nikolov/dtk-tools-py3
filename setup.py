@@ -88,6 +88,11 @@ requirements = OrderedDict([
         'version': '4.10.5',
         'test': '=='
     }),
+    ('fasteners', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.14.1',
+        'test': '=='
+    }),
     ('decorator', {
         'platform': ['mac'],
         'version': '4.0.10',
