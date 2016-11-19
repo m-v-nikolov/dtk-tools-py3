@@ -136,7 +136,6 @@ class BaseExperimentManager:
             # Save the pid in the settings
             DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
 
-
     def success_callback(self, simulation):
         """
         Called when the given simulation is done successfully
