@@ -85,7 +85,8 @@ class ExperimentDataStore:
         logger.debug("Get experiments")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
-            experiments = session.query(Experiment).filter(Experiment.id.like('%%%s%%' % id_or_name)) \
+            experiments = session.query(Experiment)\
+                .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
                 .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers'))
             if current_dir:
                 experiments = experiments.filter(Experiment.working_directory == current_dir)
@@ -111,7 +112,7 @@ class ExperimentDataStore:
     def delete_experiment(cls, experiment):
         logger.debug("Delete experiment")
         with session_scope() as session:
-            session.delete(session.query(Experiment).filter(Experiment.id == experiment.id).one())
+            session.delete(session.query(Experiment).filter(Experiment.exp_id == experiment.exp_id).one())
 
     @classmethod
     def delete_experiments_by_suite(cls, suite_ids, verbose=False):

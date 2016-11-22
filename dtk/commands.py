@@ -384,9 +384,8 @@ def sync(args, unknownArgs):
                 exp_deleted += 1
 
     # Consider experiment id option
-    #exp_id = args.exp_id if args.exp_id else None
+    exp_id = args.exp_id if args.exp_id else None
 
-    exp_id = None
     if exp_id:
         # Create a new experiment
         experiment = create_experiment(exp_id, sp, True)
@@ -401,7 +400,7 @@ def sync(args, unknownArgs):
         limit_date = today - datetime.timedelta(days=int(day_limit))
         limit_date_str = limit_date.strftime("%Y-%m-%d")
 
-        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,date_created>%s' % (sp.get('user'), limit_date_str)))
+        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str)))
 
         # For each of them, check if they are in the db
         for exp in exps:
