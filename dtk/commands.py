@@ -368,8 +368,6 @@ def sync(args, unknownArgs):
     utils.COMPS_login(sp.get('server_endpoint'))
     from COMPS.Data import Experiment, QueryCriteria
 
-    day_limit_default = 30
-
     exp_to_save = list()
     exp_deleted = 0
 
@@ -416,8 +414,6 @@ def sync(args, unknownArgs):
         DataStore.batch_save_experiments(exp_to_save)
         logger.info("%s experiments have been updated in the DB." % len(exp_to_save))
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
-        print("%s experiments have been updated in the DB." % len(exp_to_save))
-        print("%s experiments have been deleted from the DB." % exp_deleted)
     else:
         print("The database was already up to date.")
 
@@ -531,14 +527,18 @@ def analyze_from_script(args, sim_manager):
         sim_manager.add_analyzer(analyzer)
 
 
-def reload_experiment(args=None):
+def reload_experiment(args=None, try_sync=True):
     """
     Return the experiment (for given expId) or most recent experiment
     """
     exp_id = args.expId if args else None
     exp = DataStore.get_most_recent_experiment(exp_id)
     if exp is None:
-        return None
+        if try_sync:
+            subprocess.call(['dtk','sync','-id',args.expId])
+            return reload_experiment(args,False)
+        else:
+            raise Exception("No experiment found with this ID Locally or on COMPS.")
     else:
         return ExperimentManagerFactory.from_experiment(exp)
 
