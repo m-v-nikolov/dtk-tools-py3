@@ -384,9 +384,8 @@ def sync(args, unknownArgs):
                 exp_deleted += 1
 
     # Consider experiment id option
-    #exp_id = args.exp_id if args.exp_id else None
+    exp_id = args.exp_id if args.exp_id else None
 
-    exp_id = None
     if exp_id:
         # Create a new experiment
         experiment = create_experiment(exp_id, sp, True)
