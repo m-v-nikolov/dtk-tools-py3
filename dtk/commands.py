@@ -534,11 +534,11 @@ def reload_experiment(args=None, try_sync=True):
     exp_id = args.expId if args else None
     exp = DataStore.get_most_recent_experiment(exp_id)
     if exp is None:
-        if try_sync:
+        if try_sync and exp_id:
             subprocess.call(['dtk','sync','-id',args.expId])
             return reload_experiment(args,False)
         else:
-            raise Exception("No experiment found with this ID Locally or on COMPS.")
+            raise Exception("No experiment found with this ID Locally or on COMPS or no experiment running.")
     else:
         return ExperimentManagerFactory.from_experiment(exp)
 
