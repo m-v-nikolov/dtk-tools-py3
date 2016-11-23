@@ -171,6 +171,9 @@ class CalibManager(object):
 
             logger.info('---- Starting Iteration %d ----' % self.iteration)
 
+            # Make a backup only in resume case!
+            self.cache_iteration_state(backup_existing=(self.iteration_state.resume_point > 0))
+
             # Output verbose resume point
             if self.iteration_state.resume_point > 0:
                 logger.info('-- Resuming Point %d (%s) --' % (self.iteration_state.resume_point, self.get_resume_map()))
@@ -196,6 +199,11 @@ class CalibManager(object):
                     # Make sure the following iteration always starts from very beginning as normal iteration!
                     self.iteration_state.resume_point = 0
                 else:
+                    # fix bug: next_point is not updated with the latest results for the last iteration!
+                    # More thought, may cause issue when resume from the latest iteration at next_point
+                    # Final thought: actuall if it resume for last iteration at next_point, we should do nothing and just return!
+                    self.iteration_state.next_point = self.next_point.get_current_state()
+                    self.cache_iteration_state()
                     break
 
         # Print the calibration finish time
@@ -212,11 +220,14 @@ class CalibManager(object):
         if self.iteration_state.parameters:
             logger.info('Reloading next set of sample points from cached iteration state.')
             next_params = self.iteration_state.parameters['values']
+            self.iteration_state.parameters = {'names': self.param_names(), 'values': next_params}
         else:
             next_params = self.next_point.get_next_samples()
             self.iteration_state.parameters = {'names': self.param_names(), 'values': next_params.tolist()}
-            self.iteration_state.next_point = self.next_point.get_current_state()
-            self.cache_iteration_state(backup_existing=True)
+
+        self.iteration_state.next_point = self.next_point.get_current_state()
+        self.cache_iteration_state()
+
         return next_params
 
     def commission_iteration(self, next_params, **kwargs):
@@ -358,14 +369,15 @@ class CalibManager(object):
         map(lambda plotter: plotter.visualize(self), self.plotters)
 
         # Write the CSV
-        self.write_LL_csv(exp_manager.experiment)
+        # Note: no user uses it and also there is a bug in it.
+        # self.write_LL_csv(exp_manager.experiment)
 
         return results.total.tolist()
 
     def update_next_point(self, results):
         """
         Pass the latest evaluated results back to the next-point algorithm,
-        which will update its state to either truncate the calibration 
+        which will update its state to either truncate the calibration
         or generate the next set of sample points.
         """
         self.next_point.update_results(results)
@@ -461,8 +473,18 @@ class CalibManager(object):
         # Transform the ids in actual paths
         def find_path(el):
             paths = list()
-            for e in el:
-                paths.append(sims_paths[e])
+            try:
+                for e in el:
+                    paths.append(sims_paths[e])
+            except Exception as ex:
+                # print 'Exception: %s' % ex
+                # print 'e: %s' % e
+                # # print 'e in sims_paths: %s' (e in sims_paths)
+                # print 'paths: %s' % paths
+                # # print 'sims_paths[e]: %s' % sims_paths[e]
+                # print 'sims_paths: \n%s' % sims_paths
+                # # exit()      # zdu: for now testing
+                pass # [TODO]: fix issue later.
             return ",".join(paths)
 
         results_df['outputs'] = results_df['simid'].apply(find_path)
@@ -488,7 +510,7 @@ class CalibManager(object):
             pass
 
         iter_state_path = os.path.join(iter_directory, 'IterationState.json')
-        if backup_existing and os.path.exists(iter_state_path):
+        if backup_existing and os.path.exists(iter_state_path) and self.iteration_state.resume_point > 0:
             backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
             os.rename(iter_state_path, os.path.join(iter_directory, 'IterationState_%s.json' % backup_id))
 
@@ -612,12 +634,8 @@ class CalibManager(object):
         # Cleanup iteration state
         self.iteration_state.reset_state()
 
-        # Catch up the Next Point
-        if iteration > 0:
-            self.restore_next_point_for_iteration(self.iteration - 1)
-
         # Restore IterationState
-        self.iteration_state = IterationState.restore_state(self.name, iteration)
+        self.restore_next_point_for_iteration(iteration)
 
         # Store iteration #:
         self.iteration_state.iteration = iteration
@@ -633,22 +651,26 @@ class CalibManager(object):
         if not self.iteration_state.simulations:
             # need to resume from commission
             self.iteration_state.resume_point = 1
-            # Cleanup iteration state
-            self.iteration_state.reset_state()
-            return
-
         # Assume simulations exits
-        if not self.iteration_state.results:
+        elif not self.iteration_state.results:
             # need to resume from analyze
             self.iteration_state.resume_point = 2
-            self.iteration_state.results = {}
-            return
-
         # Assume both simulations and results exist
         # Need to resume from next_point
-        self.iteration_state.resume_point = 3
-        # To resume from resume_point, we need to update next_point
-        self.update_next_point(self.iteration_state.results['total'])
+        else:
+            self.iteration_state.resume_point = 3
+            if iteration + 1 == self.max_iterations:
+                print 'For the last iteration, Next_Point resume will do nothing. Exiting...'
+                exit()
+
+        self.restore_next_point()
+
+        # Adjust resuming point again based on input options in case self.iteration_state got modified.
+        if self.iter_step:
+            self.adjust_resume_point()
+
+        # Restore iteration # in case self.iteration_state got modified.
+        self.iteration_state.iteration = iteration
 
     def adjust_resume_point(self):
         """
@@ -665,17 +687,51 @@ class CalibManager(object):
         elif self.iter_step == 'next_point':
             pass
 
+    def restore_next_point(self):
+        """
+        Restore next_point up to this iteration
+        """
+
+        # Handel the general cases for resume
+        if self.iteration == 0:
+            self.next_point.gaussian_probs = {}
+            self.next_point.gaussian_covariances = []
+            self.next_point.gaussian_centers = []
+            self.next_point.gaussian_covariances = []
+            self.next_point.results = []
+            self.next_point.priors = []
+        else:
+            # both results and priors will be calculated and concatenated to previous iteration data!
+            iteration_state = IterationState.restore_state(self.name, self.iteration - 1)
+            self.next_point.results = iteration_state.next_point['results']
+            self.next_point.priors = iteration_state.next_point['priors']
+            self.next_point.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
+            self.next_point.gaussian_centers = iteration_state.next_point['gaussian_centers']
+
+        if self.iteration_state.resume_point == 1:
+            # need to the existing state
+            self.iteration_state.reset_state()
+        elif self.iteration_state.resume_point == 2:
+            # just do the general clean-up
+            pass
+        elif self.iteration_state.resume_point == 3:
+            # we need to call self.update_next_point to prepare next_point for the next iteration
+            results = self.iteration_state.results
+            results = results.get('total', [])
+            self.update_next_point(results)
+        else:
+            pass
+
     def restore_next_point_for_iteration(self, iteration):
         """
         Restore next_point up to this iteration
         """
-        i = 0
-        while i <= iteration:
-            # Restore IterationState
-            self.iteration_state = IterationState.restore_state(self.name, i)
-            # Update next point
-            self.update_next_point(self.iteration_state.results['total'])
-            i += 1
+        # Restore IterationState and keep the resume_point
+        resume_point = self.iteration_state.resume_point
+        self.iteration_state = IterationState.restore_state(self.name, iteration)
+        self.iteration_state.resume_point = resume_point
+        # Update next point
+        self.next_point.set_state(self.iteration_state.next_point)
 
     def find_best_iteration_for_resume(self, iteration=None, calib_data=None):
         """
@@ -760,17 +816,10 @@ class CalibManager(object):
         self.location = self.setup.get('type')
 
         calib_data = self.read_calib_data()
-        self.local_suite_id = calib_data.get('local_suite_id')
-        self.comps_suite_id = calib_data.get('comps_suite_id')
         iteration = self.find_best_iteration_for_resume(iteration, calib_data)
         self.prepare_resume_point_for_iteration(iteration)
 
-        if self.iteration_state.resume_point < 3:
-            # for resume_point < 3, it will combine current results with previous results
-            self.restore_results(calib_data.get('results'), iteration - 1)
-        else:
-            # for resume_point = 3, it will use the current results and resume from next iteration
-            self.restore_results(calib_data.get('results'), iteration)
+        self.restore_calibration_for_resume(calib_data, iteration)
 
         # enter iteration loop
         self.run_iterations(**kwargs)
@@ -780,6 +829,20 @@ class CalibManager(object):
 
         # delete all backup file for CalibManger and each of iterations
         self.cleanup_backup_files()
+
+    def restore_calibration_for_resume(self, calib_data, iteration):
+        if not calib_data:
+            calib_data = self.read_calib_data()
+
+        self.local_suite_id = calib_data.get('local_suite_id')
+        self.comps_suite_id = calib_data.get('comps_suite_id')
+
+        if self.iteration_state.resume_point < 3:
+            # for resume_point < 3, it will combine current results with previous results
+            self.restore_results(calib_data.get('results'), iteration - 1)
+        else:
+            # for resume_point = 3, it will use the current results and resume from next iteration
+            self.restore_results(calib_data.get('results'), iteration)
 
     def replot_calibration(self, **kwargs):
         """

@@ -185,7 +185,7 @@ class IMIS(NextPointAlgorithm):
         logger.debug('N-closest samples:\n%s', n_closest_samples)
 
         weighted_covariance = self.calculate_weighted_covariance(
-            samples=n_closest_samples, 
+            samples=n_closest_samples,
             weights=n_closest_weights + 1./len(self.weights),
             center=self.gaussian_centers[-1])
 
@@ -267,7 +267,7 @@ class IMIS(NextPointAlgorithm):
         '''
         Resample Stage:
             Once the stopping criterion is satisfied, resample J inputs with replacement
-            from \theta_1, ... , \theta_{N_k} with weights w1, ... , w_{N_K}, where K is the number 
+            from \theta_1, ... , \theta_{N_k} with weights w1, ... , w_{N_K}, where K is the number
             of iterations at the importance sampling stage.
         '''
         nonzero_idxs = self.weights > 0
@@ -291,3 +291,11 @@ class IMIS(NextPointAlgorithm):
                           gaussian_covariances=self.gaussian_covariances)
         state.update(imis_state)
         return state
+
+    def set_state(self, state):
+        super(IMIS, self).set_state(state)
+
+        self.n_initial_samples = state.get('n_initial_samples', 0)
+        self.gaussian_probs = state.get('gaussian_probs', [])
+        self.gaussian_centers = state.get('gaussian_centers', [])
+        self.gaussian_covariances = state.get('gaussian_covariances', [])

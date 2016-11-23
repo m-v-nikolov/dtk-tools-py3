@@ -156,6 +156,12 @@ class NextPointAlgorithm(object):
 
         return next_samples
 
+    def set_state(self, state):
+        self.samples = state.get('samples', np.array([]))
+        self.latest_samples = state.get('latest_samples', np.array([]))
+        self.priors = state.get('priors', [])
+        self.results = state.get('results', [])
+
     @staticmethod
     def sample_from_function(function, N):
         return np.array([function.rvs() for i in range(N)])

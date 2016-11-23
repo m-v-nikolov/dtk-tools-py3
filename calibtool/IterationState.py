@@ -30,7 +30,7 @@ class IterationState(object):
         self.simulations = {}
         self.experiment_id = None
         self.analyzers = {}
-        self.results = []
+        self.results = {}
 
     def reset_to_step(self, iter_step=None):
         last_state_by_step = [('commission', ('parameters',)),
