@@ -70,6 +70,7 @@ class CalibManager(object):
         self.calibration_start = None
         self.iteration_start = None
         self.iter_step = ''
+        self.resume_point = 0
 
     def run_calibration(self, **kwargs):
         """
@@ -166,6 +167,8 @@ class CalibManager(object):
 
         while self.iteration < self.max_iterations:
 
+            self.resume_point = 0
+
             # Restart the time for each iteration
             self.iteration_start = datetime.now().replace(microsecond=0)
 
@@ -182,11 +185,13 @@ class CalibManager(object):
             if self.iteration_state.resume_point <= 1:
                 next_params = self.get_next_parameters()
                 self.commission_iteration(next_params, **kwargs)
+                self.resume_point = 1
 
             # Start from analyze
             if self.iteration_state.resume_point <= 2:
                 results = self.analyze_iteration()
                 self.update_next_point(results)
+                self.resume_point = 2
 
             if self.finished():
                 break
@@ -198,12 +203,14 @@ class CalibManager(object):
                     self.increment_iteration()
                     # Make sure the following iteration always starts from very beginning as normal iteration!
                     self.iteration_state.resume_point = 0
+                    self.resume_point = 3
                 else:
                     # fix bug: next_point is not updated with the latest results for the last iteration!
                     # More thought, may cause issue when resume from the latest iteration at next_point
                     # Final thought: actuall if it resume for last iteration at next_point, we should do nothing and just return!
                     self.iteration_state.next_point = self.next_point.get_current_state()
                     self.cache_iteration_state()
+                    self.resume_point = 3
                     break
 
         # Print the calibration finish time
@@ -424,6 +431,7 @@ class CalibManager(object):
                  'local_suite_id': self.local_suite_id,
                  'comps_suite_id': self.comps_suite_id,
                  'iteration': self.iteration,
+                 'resume_point': self.resume_point,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
