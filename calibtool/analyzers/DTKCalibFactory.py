@@ -5,6 +5,7 @@ from calibtool.CalibSite import CalibSite
 from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
 from calibtool.analyzers.PrevalenceByRoundAnalyzer import PrevalenceByRoundAnalyzer
 from calibtool.analyzers.PositiveFractionByDistanceAnalyzer import PositiveFractionByDistanceAnalyzer
+from calibtool.analyzers.PrevalenceByAgeSeasonAnalyzer import PrevalenceByAgeSeasonAnalyzer
 
 
 class DTKCalibFactory(object):
@@ -17,6 +18,8 @@ class DTKCalibFactory(object):
             return PrevalenceByRoundAnalyzer(name, weight)
         elif name == 'PositiveFractionByDistanceAnalyzer':
             return PositiveFractionByDistanceAnalyzer(name, weight)
+        elif name == 'PrevalenceByAgeSeasonAnalyzer':
+            return PrevalenceByAgeSeasonAnalyzer(name, weight)
         else:
             # Last chance: Try to import the analyzer in the working directory
             try:

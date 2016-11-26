@@ -56,9 +56,9 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
         ref_age_bins = self.reference['age_bins']
 
         person_years, counts = accumulate_agebins_cohort(
-            data['Annual Clinical Incidence by Age Bin'],
-            data['Average Population by Age Bin'],
-            data['Age Bins'], ref_age_bins)
+            data['TimeXAgeBin']['Annual Clinical Incidence by Age Bin'],
+            data['TimeXAgeBin']['Average Population by Age Bin'],
+            data['Metadata']['Age Bins'], ref_age_bins)
 
         channel_data = pd.DataFrame({'Person Years': person_years,
                                      'Clinical Incidents': counts},
