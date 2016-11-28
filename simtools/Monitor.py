@@ -21,6 +21,8 @@ class SimulationMonitor(object):
         logger.debug("Query the DB Monitor for Experiment %s" % self.exp_id)
         states, msgs = {}, {}
         experiment = DataStore.get_experiment(self.exp_id)
+        if not experiment.simulations:
+            return states,msgs
         for sim in experiment.simulations:
             states[sim.id] = sim.status if sim.status else "Waiting"
             msgs[sim.id] = sim.message if sim.message else ""
