@@ -477,7 +477,7 @@ def verify_matplotlibrc(my_os):
     def has_Agg(rc_file):
         with open(rc_file, "r") as f:
             for line in f:
-                ok = re.match('^\s*backend\s*:\s*Agg\s*$', line)
+                ok = re.match(r'^.*backend.*:.*$', line)
                 if ok:
                     return True
 
@@ -493,11 +493,11 @@ def verify_matplotlibrc(my_os):
 
             # append 'backend : Agg' to existing file
             with open(rc_file, "a") as f:
-                f.write('\nbackend : Agg')
+                f.write('\nbackend : TkAgg')
     else:
         # create a rc file
         with open(rc_file, "wb") as f:
-            f.write('backend : Agg')
+            f.write('backend : TkAgg')
 
 
 def main():

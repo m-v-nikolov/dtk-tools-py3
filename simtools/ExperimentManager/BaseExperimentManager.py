@@ -435,17 +435,19 @@ class BaseExperimentManager:
             a.finalize()
 
             # Plot in a separate process
+            # Deactivated for now for compatibility with MacOSX
             try:
-                from multiprocessing import Process
-                plotting_process = Process(target=a.plot)
-                plotting_process.start()
-                plotting_processes.append(plotting_process)
+                # from multiprocessing import Process
+                # plotting_process = Process(target=a.plot)
+                # plotting_process.start()
+                # plotting_processes.append(plotting_process)
+                a.plot()
             except Exception as e:
                 logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
                 logger.error(e)
 
-        for p in plotting_processes:
-            p.join()
+        # for p in plotting_processes:
+        #     p.join()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id
