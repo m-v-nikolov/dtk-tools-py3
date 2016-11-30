@@ -1,17 +1,12 @@
-
-# TODO: Generalize this style of CalibAnalyzer as much as possible
-#       to minimize repeated code in e.g. PrevalenceByAgeAnalyzer
 import logging
-
-import pandas as pd
 from collections import OrderedDict
 
 from calibtool import LL_calculators
 from calibtool.analyzers.Helpers import *
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
-import itertools
 
 logger = logging.getLogger(__name__)
+
 
 class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
 
@@ -30,29 +25,25 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         self.site = None
 
     def set_site(self, site):
-        '''
+        """
         Get the reference data that this analyzer needs from the specified site.
-        '''
+        """
 
         self.site = site
         self.reference = self.site.reference_data[self.required_reference_types[0]]
 
     def filter(self, sim_metadata):
-        '''
+        """
         This analyzer only needs to analyze simulations for the site it is linked to.
         N.B. another instance of the same analyzer may exist with a different site
              and correspondingly different reference data.
-        '''
+        """
         return sim_metadata.get('__site__', False) == self.site.name
 
     def apply(self, parser):
-        '''
+        """
         Extract data from output simulation data and accumulate in same bins as reference.
-
-        TODO: if we want to plot with the original analyzer age bins,
-              we will also need to emit a separate table of parsed data:
-              data['Annual Clinical Incidence by Age Bin'], data['Age Bins']
-        '''
+        """
 
         # Reference dataframe
         channel = 'PfPR by Parasitemia and Age Bin'
@@ -91,9 +82,9 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         return sim_data
 
     def combine(self, parsers):
-        '''
+        """
         Combine the simulation data into a single table for all analyzed simulations.
-        '''
+        """
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
         combined = pd.concat(selected, axis=0,
@@ -107,10 +98,10 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         logger.debug(self.data)
 
     def compare(self, sample):
-        '''
+        """
         Assess the result per sample, in this case the likelihood
         comparison between simulation and reference data.
-        '''
+        """
 
         sample = sample.reset_index()
         sample.rename(columns={sample.keys()[-1]: 'sim'}, inplace=True)
@@ -123,17 +114,17 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         return LL_calculators.dirichlet_multinomial_pandas(sample)
 
     def finalize(self):
-        '''
+        """
         Calculate the output result for each sample.
-        '''
+        """
         self.result = self.data.apply(self.compare)
         logger.debug(self.result)
 
     def cache(self):
-        '''
+        """
         Return a cache of the minimal data required for plotting sample comparisons
         to reference comparisons.
-        '''
+        """
 
         cache = self.data.copy()
         sample_dicts = [{self.y:[cache[i][j] for j in range(len(cache[i])) ]} for i in range(len(cache.keys()))] # i cycles through simulation id, y cycles through sim values
@@ -143,5 +134,5 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         return {'sims': sample_dicts, 'reference': ref_dicts, 'axis_names': [self.x, self.y]}
 
     def uid(self):
-        ''' A unique identifier of site-name and analyzer-name. '''
+        """ A unique identifier of site-name and analyzer-name. """
         return '_'.join([self.site.name, self.name])

@@ -1,15 +1,15 @@
 import json
-import pandas as pd
-import numpy as np
-# import os
+import os
 from collections import OrderedDict
 import itertools
 
+import pandas as pd
+import numpy as np
 
-fileName = 'C:/Users/pselvaraj/Desktop/MalariaSummaryReport_Monthly_Report.json'
+
+fileName = os.path.join('input', 'test_malaria_summary_report.json')
 
 json_data = open(fileName)
-# json_data = open('C:/Users/pselvaraj/Desktop/MalariaSummaryReport_Monthly_Report.json')
 data = json.load(json_data)
 
 bins = OrderedDict([('Time', [i * 1 for i, _ in enumerate(data['Annual EIR'])]), ('Age Bins', data['Age Bins']), ('PfPR bins', data['Parasitemia Bins'])])
@@ -110,9 +110,9 @@ channel = 'Population by Age Bin'
 ageSer = pd.Series(np.array(pop).flatten(), index=multi_index, name=channel)
 ageSer = ageSer.reset_index()
 
-pd.merge(df,ageSer,left_on='Time',right_on='Time')['Population by Age Bin']
+pd.merge(df, ageSer, left_on='Time', right_on='Time')['Population by Age Bin']
 
-pop = pd.merge(df_sim,df_pop,left_on=['Time','Age Bins'],right_on=['Time','Age Bins'])
+pop = pd.merge(df_sim, df_pop, left_on=['Time','Age Bins'], right_on=['Time','Age Bins'])
 
 
 df = pd.DataFrame(np.random.random((3,3)), columns=range(3))
