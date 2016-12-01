@@ -23,6 +23,7 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         self.name = name
         self.weight = weight
         self.site = None
+        self.reference = None
 
     def set_site(self, site):
         """

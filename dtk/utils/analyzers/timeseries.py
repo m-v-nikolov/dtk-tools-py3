@@ -8,6 +8,7 @@ from plot import plot_by_channel
 
 logger = logging.getLogger(__name__)
 
+
 def default_plot_fn(df, ax):
     grouped = df.groupby(level=['group'], axis=1)
     m = grouped.mean()

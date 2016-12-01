@@ -1,19 +1,24 @@
-import pandas as pd
-import numpy as np
 import itertools
 import calendar
+import logging
+
+import pandas as pd
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def json_to_pandas(simdata, bins, channel):
     """
-    A function to convert simulation data from a json file to
-    a Pandas dataframe
+    A function to convert nested array channel data from a json file to
+    a pandas.Series with the specified MultiIndex binning.
     """
 
+    logger.debug("Converting JSON data from '%s' channel to pandas.Series with %s MultiIndex.", channel, bins.keys())
     bin_tuples = list(itertools.product(*bins.values()))
     multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
 
-    channel_series = pd.Series(np.array(simdata).flatten(), index=multi_index, name=channel)
+    channel_series = pd.Series(np.array(simdata[channel]).flatten(), index=multi_index, name=channel)
 
     return channel_series
 

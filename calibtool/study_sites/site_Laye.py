@@ -7,7 +7,7 @@ reference_data = {
         "Metadata": {
             "parasitemia_bins": [0, 50, 500, 5000, 50000, 500000],
             "age_bins": [5, 15, 100],
-            "months": ['April','August','December']
+            "months": ['April', 'August', 'December']
             },
         "Seasons": {
             "start_wet": {
