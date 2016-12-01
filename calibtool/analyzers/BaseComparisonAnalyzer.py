@@ -13,13 +13,12 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
 
     __metaclass__ = ABCMeta
 
-    compare_fn = lambda ref, sim: 1  # formerly LL_fn
-
-    def __init__(self, name, weight, reference_type):
+    def __init__(self, name, weight, reference_type, compare_fn=lambda s: True):
         super(BaseComparisonAnalyzer, self).__init__()
         self.name = name
         self.weight = weight
         self.reference_type = reference_type
+        self.compare_fn = compare_fn
 
         # CalibSite and its reference are linked in set_site function
         self.site = None
@@ -50,13 +49,12 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
     #     # TODO: Deprecate with CalibSite.get_reference_data putting the relevant info (e.g. sample times) into Index
     #     pass
 
-    @abstractmethod
-    def compare(self):
+    def compare(self, sample):
         """
         Assess the result per sample, e.g. the log-likelihood,
         of a comparison between simulation and reference data.
         """
-        pass
+        return self.compare_fn(sample)
 
     def finalize(self):
         """
