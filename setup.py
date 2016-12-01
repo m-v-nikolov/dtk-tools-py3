@@ -471,8 +471,11 @@ def verify_matplotlibrc(my_os):
         return
 
     home = os.path.expanduser('~')
-    rc = 'matplotlibrc'
-    rc_file = os.path.join(home, '.matplotlib', rc)
+    matplotlib_dir = os.path.join(home,'.matplotlib')
+    rc_file = os.path.join(matplotlib_dir, 'matplotlibrc')
+
+    if not os.path.exists(matplotlib_dir):
+        os.mkdir(matplotlib_dir)
 
     def has_Agg(rc_file):
         with open(rc_file, "r") as f:

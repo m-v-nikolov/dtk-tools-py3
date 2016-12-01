@@ -24,7 +24,6 @@ from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreat
 from simtools.utils import init_logging
 
 logger = init_logging('ExperimentManager')
-overseer_check_lock = multiprocessing.Lock()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -109,7 +108,7 @@ class BaseExperimentManager:
         return True
 
     @staticmethod
-    @fasteners.interprocess_locked('overseer_check_lock')
+    @fasteners.interprocess_locked('.overseer_check_lock')
     def check_overseer():
         """
         Ensure that the overseer thread is running.
