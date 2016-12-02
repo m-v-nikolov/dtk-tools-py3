@@ -17,9 +17,8 @@ git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 
 Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
 
-From a command-prompt (as admin), run the following from the **dtk-tools** directory:
+From a command-prompt, run the following from the **dtk-tools** directory:
 ```
-pip install --upgrade setuptools
 python setup.py 
 ```
 
@@ -38,51 +37,51 @@ If the command succeed and present you with the details of the dtk command you a
 #### MAC users ####
 Tested with macOS Sierra (Version 10.12)
 
-By default, MAC will install Python 2.7.10 for system use and users may not have certain permissions to upgrade some packages!
+Make sure you have the Xcode Command Line Tools installed:
+```
+xcode-select --install
+```
 
-We will leave the system Python unchanged and install our own Python instead.
-
-From a command-prompt (as admin), follow the steps below in order:
-
-Step 1: install Homebrew with command
-
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
+By default, MAC will install Python 2.7.10 for system use and users may not have certain permissions to upgrade some packages. We will leave the system Python unchanged and install our own Python instead:
+```
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+```
 Refer to http://brew.sh/index.html
 
-Note: above command will install pip for you automatically.
+Install Python with the command:
+```
+brew install python
+```
 
-Make sure pip got installed, otherwise install pip manually by following the steps below:
+Install virtualenv:
+```
+pip install virtualenv
+```
 
-First, download get-pip.py from,
+Then navigate inside the `NotreDameRelease` directory and create an IDM virtual environment:
+```
+virtualenv idm
+```
 
-	https://bootstrap.pypa.io/get-pip.py
+Activate the virtual environment (you will have to do activate the virtual environment first before using dtk-tools):
+```
+source ./idm/bin/activate
+```
 
-then run the following
+Make sure you are in the virtual environment by checking if the prompt displays `(idm)` at the begining as shown:
+```
+(idm) my-computer:NotreDameRelease
+```
 
-	sudo python get-pip.py
+Install pyCOMPS (wheel available here [https://github.com/InstituteforDiseaseModeling/PythonDependencies/raw/master/pyCOMPS-1.0-py2.py3-none-any.whl])
+```
+pip install pyCOMPS-1.0-py2.py3-none-any.whl
+```
 
-
-Step 2: install Python with command:
-
-    brew install python
-
-Step 3: run setup with command below from the **dtk-tools** directory:
-
-    sudo python setup.py
-
-
-**Note:** if you setup dtk-tools on MacBook with virtualenv, you may encounter an error below:
-
-RuntimeError: Python is not installed as a framework. The Mac OS X backend will not be able to function correctly if Python is not installed as a framework. See the Python documentation for more information on installing Python as a framework on Mac OS X. Please either reinstall Python as a framework, or try one of the other backends. If you are Working with Matplotlib in a virtual enviroment see 'Working with Matplotlib in Virtual environments' in the Matplotlib FAQ
-
-Fix: You can fix this issue by using the backend Agg:
-
-Go to /Users/yourname/.matplotlib and open/create matplotlibrc and add the following line
-
-backend : Agg
-
-it should work for you.
+Navigate inside the `dtk-tools` folder and install dtk-tools:
+```
+python setup.py
+```
 
 **Note:** EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
 
