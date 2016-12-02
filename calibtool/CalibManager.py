@@ -698,19 +698,11 @@ class CalibManager(object):
 
         # Handel the general cases for resume
         if self.iteration == 0:
-            self.next_point.gaussian_probs = {}
-            self.next_point.gaussian_covariances = []
-            self.next_point.gaussian_centers = []
-            self.next_point.gaussian_covariances = []
-            self.next_point.results = []
-            self.next_point.priors = []
+            self.next_point.cleanup()
         else:
             # both results and priors will be calculated and concatenated to previous iteration data!
             iteration_state = IterationState.restore_state(self.name, self.iteration - 1)
-            self.next_point.results = iteration_state.next_point['results']
-            self.next_point.priors = iteration_state.next_point['priors']
-            self.next_point.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
-            self.next_point.gaussian_centers = iteration_state.next_point['gaussian_centers']
+            self.next_point.restore(iteration_state)
 
         if self.iteration_state.resume_point == 1:
             # need to the existing state

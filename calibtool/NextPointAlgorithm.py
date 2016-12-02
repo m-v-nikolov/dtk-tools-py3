@@ -165,3 +165,11 @@ class NextPointAlgorithm(object):
     @staticmethod
     def sample_from_function(function, N):
         return np.array([function.rvs() for i in range(N)])
+
+
+    def cleanup(self):
+        pass
+
+
+    def restore(self, iteration_state):
+        pass
