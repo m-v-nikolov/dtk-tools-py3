@@ -83,7 +83,6 @@ class SiteDataPlotter(BasePlotter):
                     ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
                     ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
                 plt.savefig(fname + '.pdf', format='PDF')
-                plt.close(fig)
 
     def plot_all(self, site_analyzer, iter_samples, clim):
 
@@ -114,7 +113,6 @@ class SiteDataPlotter(BasePlotter):
         except AttributeError:
             ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
-        plt.close(fig)
 
     def cleanup_plot(self, calib_manager):
         """

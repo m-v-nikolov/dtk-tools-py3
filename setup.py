@@ -470,12 +470,9 @@ def verify_matplotlibrc(my_os):
     if my_os not in ['mac']:
         return
 
-    home = os.path.expanduser('~')
-    matplotlib_dir = os.path.join(home,'.matplotlib')
-    rc_file = os.path.join(matplotlib_dir, 'matplotlibrc')
-
-    if not os.path.exists(matplotlib_dir):
-        os.mkdir(matplotlib_dir)
+    import matplotlib as mpl
+    config_dir = mpl.get_configdir()
+    rc_file = os.path.join(config_dir, 'matplotlibrc')
 
     def has_Agg(rc_file):
         with open(rc_file, "r") as f:
@@ -492,7 +489,7 @@ def verify_matplotlibrc(my_os):
             # make a backup of existing rc file
             directory = os.path.dirname(rc_file)
             backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
-            shutil.copy(rc_file, os.path.join(directory, '%s_%s' % (rc, backup_id)))
+            shutil.copy(rc_file, os.path.join(directory, '%s_%s' % ('matplotlibrc', backup_id)))
 
             # append 'backend : Agg' to existing file
             with open(rc_file, "a") as f:
