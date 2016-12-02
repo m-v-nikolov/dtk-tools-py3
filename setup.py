@@ -1,3 +1,4 @@
+from __future__ import print_function
 import ctypes
 import os
 import re
@@ -197,12 +198,11 @@ def test_package_g(my_os, name, val):
     test = val.get('test', None)
 
     if test in ['==', '>=']:
-        print "Package %s (%s) already installed with lower version. Upgrading to (%s)..." % \
-              (name, installed_packages[name], version)
+        print("Package %s (%s) already installed with lower version. Upgrading to (%s)..." %  (name, installed_packages[name], version))
         install_package(my_os, name, val, True)
     else:
         # Usually we don't have this case.
-        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
 
 
 def test_package_e(my_os, name, val):
@@ -212,12 +212,11 @@ def test_package_e(my_os, name, val):
     test = val.get('test', None)
 
     if test in ['>=', '<=']:
-        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
     elif test in ['==']:
-        print "Package %s (%s) with exact version already installed. Skipping..." % \
-              (name, installed_packages[name])
+        print ("Package %s (%s) with exact version already installed. Skipping..." % (name, installed_packages[name]))
     else:
-        print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
 
 
 def test_package_l(my_os, name, val):
@@ -227,8 +226,7 @@ def test_package_l(my_os, name, val):
     version = val.get('version', None)
 
     # Usually we don't have this case.
-    print "Package %s (%s) with higher version installed but require lower version (%s). Installing..." % \
-          (name, installed_packages[name], version)
+    print ("Package %s (%s) with higher version installed but require lower version (%s). Installing..." %  (name, installed_packages[name], version))
     install_package(my_os, name, val)
 
 
@@ -240,7 +238,7 @@ def test_package(my_os, name, val):
 
     if name in installed_packages:
         if not version:
-            print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+            print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
             return
 
         if LooseVersion(version) > LooseVersion(installed_packages[name]):
@@ -250,7 +248,7 @@ def test_package(my_os, name, val):
         else:
             test_package_l(my_os, name, val)
     else:
-        print "Package %s not installed. Installing..." % name
+        print ("Package %s not installed. Installing..." % name)
         install_package(my_os, name, val)
 
 
@@ -327,15 +325,15 @@ def install_linux_pre_requisites():
         check_call('apt-get -h', stdout=open(os.devnull, 'wb'), stderr=STDOUT)
         supports_apt_get = True
     except OSError:
-        print "Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:"
-        print pre_requisites
+        print ("Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:")
+        print (pre_requisites)
     except:
-        print "Unexpected error checking for apt-get:", sys.exc_info()[0]
+        print ("Unexpected error checking for apt-get:", sys.exc_info()[0])
         raise
 
     if supports_apt_get:
         for req in pre_requisites:
-            print "Checking/Installing %s" % req
+            print ("Checking/Installing %s" % req)
             check_call(['apt-get', 'install', '-y', req], stdout=open(os.devnull, 'wb'), stderr=STDOUT)
 
 
@@ -400,17 +398,17 @@ def handle_init():
         shutil.copyfile(default_ini, current_simtools)
     else:
         # A simtools was already present, merge the best we can
-        print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
+        print ("\nA previous simtools.ini configuration file is present. Attempt to auto-merge")
         merge_cp = ConfigParser()
         merge_cp.read([default_ini, current_simtools])
 
         # Backup copy the current
-        print "Backup copy your current simtools.ini to simtools.ini.bak"
+        print ("Backup copy your current simtools.ini to simtools.ini.bak")
         shutil.copy(current_simtools, current_simtools + ".bak")
 
         # Write the merged one
         merge_cp.write(open(current_simtools, 'w'))
-        print "Merged simtools.ini written!\n"
+        print ("Merged simtools.ini written!\n")
 
     # Create the EXAMPLE block for the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
@@ -484,7 +482,7 @@ def verify_matplotlibrc(my_os):
 def main():
     # Check OS
     my_os = get_os()
-    print 'os: %s' % my_os
+    print ('os: %s' % my_os)
 
     # Upgrade pip before install other packages
     upgrade_pip(my_os)
@@ -502,19 +500,19 @@ def main():
     verify_matplotlibrc(my_os)
 
     # Success !
-    print "\n======================================================="
-    print "| Dtk-Tools and dependencies installed successfully.  |"
-    print "======================================================="
+    print ("\n=======================================================")
+    print ("| Dtk-Tools and dependencies installed successfully.  |")
+    print ("=======================================================")
 
 
 if __name__ == "__main__":
     # check os first
     if ctypes.sizeof(ctypes.c_voidp) != 8:
-        print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+        print ("""\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
         - Windows: https://www.python.org/downloads/windows/
         - Mac OSX: https://www.python.org/downloads/mac-osx/
         - Linux: https://www.python.org/downloads/source/\n
-        Installation is now exiting..."""
+        Installation is now exiting...""")
         exit()
 
     main()

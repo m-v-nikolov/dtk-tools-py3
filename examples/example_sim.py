@@ -15,5 +15,4 @@ run_sim_args =  {'config_builder': cb,
 
 if __name__ == "__main__":
     exp_manager = ExperimentManagerFactory.from_setup()
-    exp_manager.create_simulations(**run_sim_args)
-    # exp_manager.run_simulations(**run_sim_args)
+    exp_manager.run_simulations(**run_sim_args)
