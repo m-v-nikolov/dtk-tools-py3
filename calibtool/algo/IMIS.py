@@ -38,6 +38,11 @@ class IMIS(NextPointAlgorithm):
 
         super(IMIS, self).__init__(prior_fn, initial_samples, samples_per_iteration, current_state)
 
+        self.gaussian_probs = {}
+        self.gaussian_centers = []
+        self.gaussian_covariances = []
+
+
         self.n_resamples = n_resamples
 
         self.D = 1  # mixture of D multivariate normal distributions (optimization stage not implemented)
@@ -299,3 +304,18 @@ class IMIS(NextPointAlgorithm):
         self.gaussian_probs = state.get('gaussian_probs', [])
         self.gaussian_centers = state.get('gaussian_centers', [])
         self.gaussian_covariances = state.get('gaussian_covariances', [])
+
+    def cleanup(self):
+        print 'IMIS: cleanup'
+        self.gaussian_probs = {}
+        self.gaussian_covariances = []
+        self.gaussian_centers = []
+        self.results = []
+        self.priors = []
+
+    def restore(self, iteration_state):
+        print 'IMIS: restore'
+        self.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
+        self.gaussian_centers = iteration_state.next_point['gaussian_centers']
+        self.results = iteration_state.next_point['results']
+        self.priors = iteration_state.next_point['priors']
