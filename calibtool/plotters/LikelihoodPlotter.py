@@ -63,6 +63,7 @@ class LikelihoodPlotter(BasePlotter):
                 pass
 
             plt.savefig(os.path.join(self.directory, site, 'LL_%s.pdf' % param), format='PDF')
+            plt.close(fig)
 
     def plot1d_by_iteration(self, results, param, total, **kwargs):
 
