@@ -115,6 +115,26 @@ def get_tools_revision():
     return revision
 
 
+def get_os():
+    """
+    Retrieve OS
+    """
+    import platform
+    sy = platform.system()
+
+    # OS: windows
+    if sy == 'Windows':
+        my_os = 'win'
+    # OS: Linux
+    elif sy == 'Linux':
+        my_os = 'lin'
+    # OS: Mac
+    else:
+        my_os = 'mac'
+
+    return my_os
+
+
 path_translations = {}
 def translate_COMPS_path(path, setup=None):
     """

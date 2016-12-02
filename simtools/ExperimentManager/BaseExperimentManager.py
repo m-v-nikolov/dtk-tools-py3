@@ -3,25 +3,24 @@ from __future__ import print_function
 import copy
 import json
 import multiprocessing
+import os
 import subprocess
 import sys
 import time
+from abc import ABCMeta, abstractmethod
 from collections import Counter
 
 import dill
-import os
-
 import fasteners
 import psutil
-from abc import ABCMeta, abstractmethod
+
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
-from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
-from simtools.utils import init_logging
+from simtools.utils import init_logging, get_os
 
 logger = init_logging('ExperimentManager')
 
@@ -349,7 +348,7 @@ class BaseExperimentManager:
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
-        logger.info("Job ('%s') states:" % self.experiment.exp_id)
+        logger.info("%s ('%s') states:" % (self.experiment.exp_name, self.experiment.exp_id))
         if len(long_states) < 20 and verbose:
             # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
@@ -431,9 +430,12 @@ class BaseExperimentManager:
         for a in self.analyzers:
             a.combine(self.parsers)
             a.finalize()
-
             # Plot in another process
             try:
+                # If on mac just plot and continue
+                if get_os() == 'mac':
+                    a.plot()
+                    continue
                 plotting_process = Process(target=a.plot)
                 plotting_process.start()
                 plotting_processes.append(plotting_process)

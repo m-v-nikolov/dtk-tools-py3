@@ -1,14 +1,15 @@
 import ctypes
-import re
 import os
-import platform
+import re
 import shutil
 import sys
-from datetime import datetime
-from collections import OrderedDict
-from urlparse import urlparse
 from ConfigParser import ConfigParser
+from collections import OrderedDict
+from datetime import datetime
 from distutils.version import LooseVersion
+from urlparse import urlparse
+
+from simtools.utils import get_os
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -276,26 +277,6 @@ def build_package_str(my_os, name, val):
             package_str = "%s" % name
 
     return package_str
-
-
-def get_os():
-    """
-    Retrieve OS
-    """
-    sy = platform.system()
-
-    my_os = None
-    # OS: windows
-    if sy == 'Windows':
-        my_os = 'win'
-    # OS: Linux
-    elif sy == 'Linux':
-        my_os = 'lin'
-    # OS: Mac
-    else:
-        my_os = 'mac'
-
-    return my_os
 
 
 def get_requirements_by_os(my_os):
