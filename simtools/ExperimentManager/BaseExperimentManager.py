@@ -294,13 +294,13 @@ class BaseExperimentManager:
 
         # Separate the experiment builder generator into batches
         sim_per_batch = int(self.setup.get('sims_per_thread',50))
-        max_creator_threads = min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-2)
+        max_creator_processes = min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-2)
         work_list = list(self.exp_builder.mod_generator)
         total_sims = len(work_list)
 
         # Batch the work to do differently depending on number of simulations
-        if total_sims > sim_per_batch*max_creator_threads:
-            nbatches = int(total_sims/max_creator_threads)
+        if total_sims > sim_per_batch*max_creator_processes:
+            nbatches = int(total_sims/max_creator_processes)
         else:
             nbatches = sim_per_batch
         fn_batches = batch(work_list, n=nbatches)
@@ -308,13 +308,6 @@ class BaseExperimentManager:
         # Create a manager for sharing the list of simulations created back with the main thread
         manager = multiprocessing.Manager()
         return_list = manager.list()
-
-        # Display some info
-        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
-        logger.info(" | Max creator threads: %s"% max_creator_threads)
-        logger.info(" | Simulations per batch: %s"% sim_per_batch)
-        logger.info(" | Simulations Count: %s" % total_sims)
-        logger.info(" | Simulations per threads: %s"% nbatches)
 
         # Create the simulation processes
         creator_processes = []
@@ -325,6 +318,13 @@ class BaseExperimentManager:
                                             return_list=return_list)
             creator_processes.append(c)
             c.start()
+
+        # Display some info
+        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
+        logger.info(" | Creator processes: %s (max: %s)"% (len(creator_processes),max_creator_processes))
+        logger.info(" | Simulations per batch: %s"% sim_per_batch)
+        logger.info(" | Simulations Count: %s" % total_sims)
+        logger.info(" | Max simulations per threads: %s"% nbatches)
 
         # Wait for all to finish
         map(lambda c: c.join(), creator_processes)
@@ -337,7 +337,9 @@ class BaseExperimentManager:
 
         # Display sims
         print ("")
-        print(json.dumps(self.experiment.simulations, indent=3, default=dumper, sort_keys=True))
+        display = -1 if total_sims == 1 else -2
+        logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
+        if display != -1: logger.info("... and %s more" % (total_sims + display))
 
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
@@ -369,12 +371,9 @@ class BaseExperimentManager:
         """
         DataStore.delete_experiment(self.experiment)
 
-    def wait_for_finished(self, verbose=False, init_sleep=0.1, sleep_time=5):
+    def wait_for_finished(self, verbose=False, sleep_time=5):
         # getch = helpers.find_getch()
-        self.check_overseer()
         while True:
-            time.sleep(init_sleep)
-
             # Get the new status
             try:
                 states, msgs = self.get_simulation_status()
@@ -428,25 +427,22 @@ class BaseExperimentManager:
             p.join()
 
         plotting_processes = []
+        from multiprocessing import Process
         for a in self.analyzers:
             a.combine(self.parsers)
-
             a.finalize()
 
-            # Plot in a separate process
-            # Deactivated for now for compatibility with MacOSX
+            # Plot in another process
             try:
-                # from multiprocessing import Process
-                # plotting_process = Process(target=a.plot)
-                # plotting_process.start()
-                # plotting_processes.append(plotting_process)
-                a.plot()
+                plotting_process = Process(target=a.plot)
+                plotting_process.start()
+                plotting_processes.append(plotting_process)
             except Exception as e:
                 logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
                 logger.error(e)
 
-        # for p in plotting_processes:
-        #     p.join()
+        for p in plotting_processes:
+            p.join()
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.exp_id = self.experiment.exp_id

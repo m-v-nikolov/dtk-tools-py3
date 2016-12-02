@@ -1,4 +1,3 @@
-import gc
 import multiprocessing
 import sys
 import threading
@@ -108,13 +107,13 @@ if __name__ == "__main__":
             if manager.finished():
                 logger.debug('Manager for experiment id: %s is done' % manager.experiment.id)
                 # Analyze
-                athread = threading.Thread(target=manager.analyze_experiment)
-                athread.start()
-                analysis_threads.append(athread)
+                # For now commented out - Will be reinstated when run_and_analyze comes back
+                # athread = multiprocessing.Thread(target=manager.analyze_experiment)
+                # athread.start()
+                # analysis_threads.append(athread)
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
-                gc.collect()
 
         # Cleanup the analyze thread list
         for ap in analysis_threads:

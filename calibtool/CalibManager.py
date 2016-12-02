@@ -276,10 +276,8 @@ class CalibManager(object):
 
         self.wait_for_finished()
 
-    def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time=10):
+    def wait_for_finished(self, verbose=True, sleep_time=10):
         while True:
-            time.sleep(init_sleep)
-
             # Output time info
             current_time = datetime.now()
             iteration_time_elapsed = current_time - self.iteration_start
@@ -322,11 +320,8 @@ class CalibManager(object):
 
         # Print the status one more time
         iteration_time_elapsed = current_time - self.iteration_start
-        logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
         self.exp_manager.print_status(states, msgs)
-
-        # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(sleep_time)
+        logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
 
     def analyze_iteration(self):
         """
@@ -351,6 +346,7 @@ class CalibManager(object):
         for site in self.sites:
             for analyzer in site.analyzers:
                 exp_manager.add_analyzer(analyzer)
+
         exp_manager.analyze_experiment()
 
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}

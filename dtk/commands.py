@@ -135,7 +135,7 @@ def status(args, unknownArgs):
 
     exp_manager = reload_experiment(args)
     if args.repeat:
-        exp_manager.wait_for_finished(verbose=True, sleep_time=20)
+        exp_manager.wait_for_finished(verbose=True, sleep_time=10)
     else:
         states, msgs = exp_manager.get_simulation_status()
         exp_manager.print_status(states, msgs)
