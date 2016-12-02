@@ -23,6 +23,7 @@ from simtools.SetupParser import SetupParser
 from simtools.utils import init_logging, get_os
 
 logger = init_logging('ExperimentManager')
+current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -107,7 +108,7 @@ class BaseExperimentManager:
         return True
 
     @staticmethod
-    @fasteners.interprocess_locked('.overseer_check_lock')
+    @fasteners.interprocess_locked(os.path.join(current_dir, '.overseer_check_lock'))
     def check_overseer():
         """
         Ensure that the overseer thread is running.
