@@ -306,7 +306,6 @@ class IMIS(NextPointAlgorithm):
         self.gaussian_covariances = state.get('gaussian_covariances', [])
 
     def cleanup(self):
-        print 'IMIS: cleanup'
         self.gaussian_probs = {}
         self.gaussian_covariances = []
         self.gaussian_centers = []
@@ -314,7 +313,6 @@ class IMIS(NextPointAlgorithm):
         self.priors = []
 
     def restore(self, iteration_state):
-        print 'IMIS: restore'
         self.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
         self.gaussian_centers = iteration_state.next_point['gaussian_centers']
         self.results = iteration_state.next_point['results']
