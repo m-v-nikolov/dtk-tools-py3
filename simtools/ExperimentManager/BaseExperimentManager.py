@@ -21,7 +21,7 @@ from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
-from simtools.utils import init_logging
+from simtools.utils import init_logging, get_os
 
 logger = init_logging('ExperimentManager')
 
@@ -431,9 +431,12 @@ class BaseExperimentManager:
         for a in self.analyzers:
             a.combine(self.parsers)
             a.finalize()
-
             # Plot in another process
             try:
+                # If on mac just plot and continue
+                if get_os() == 'mac':
+                    a.plot()
+                    continue
                 plotting_process = Process(target=a.plot)
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
