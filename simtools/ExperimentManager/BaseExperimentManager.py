@@ -294,7 +294,7 @@ class BaseExperimentManager:
 
         # Separate the experiment builder generator into batches
         sim_per_batch = int(self.setup.get('sims_per_thread',50))
-        max_creator_processes = max(min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-2),1)
+        max_creator_processes = max(min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-1),1)
         work_list = list(self.exp_builder.mod_generator)
         total_sims = len(work_list)
 
