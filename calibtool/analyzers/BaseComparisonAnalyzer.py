@@ -13,25 +13,17 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, weight, reference_type, compare_fn=lambda s: True):
-        super(BaseComparisonAnalyzer, self).__init__()
-        self.name = name
+    @abstractmethod
+    def __init__(self, site, weight=1, compare_fn=lambda s: True):
+        super(BaseComparisonAnalyzer, self).__init__()  # self.data = None
+        self.site = site
         self.weight = weight
-        self.reference_type = reference_type
         self.compare_fn = compare_fn
 
-        # CalibSite and its reference are linked in set_site function
-        self.site = None
-        self.reference = None
+        self.name = self.__class__.__name__
 
+        self.reference = None  # site-specific reference data for comparison
         self.result = None  # result of simulation-to-reference comparison
-
-    def set_site(self, site):
-        """
-        Get the reference data that this analyzer needs from the specified site.
-        """
-        self.site = site
-        self.reference = self.site.get_reference_data(self.reference_type)
 
     def uid(self):
         """ A unique identifier of site-name and analyzer-name """
@@ -44,10 +36,6 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
              and correspondingly different reference data.
         """
         return sim_metadata.get('__site__', False) == self.site.name
-
-    # def set_setup(self, setup):
-    #     # TODO: Deprecate with CalibSite.get_reference_data putting the relevant info (e.g. sample times) into Index
-    #     pass
 
     def compare(self, sample):
         """

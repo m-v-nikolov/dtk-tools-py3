@@ -18,7 +18,7 @@ def json_to_pandas(simdata, bins, channel):
     bin_tuples = list(itertools.product(*bins.values()))
     multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
 
-    channel_series = pd.Series(np.array(simdata[channel]).flatten(), index=multi_index, name=channel)
+    channel_series = pd.Series(np.array(simdata).flatten(), index=multi_index, name=channel)
 
     return channel_series
 

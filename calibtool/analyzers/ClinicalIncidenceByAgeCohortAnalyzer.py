@@ -4,14 +4,13 @@ import pandas as pd
 
 from calibtool import LL_calculators
 from calibtool.analyzers.Helpers import accumulate_agebins_cohort
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
+class ClinicalIncidenceByAgeCohortAnalyzer(BaseComparisonAnalyzer):
 
-    required_reference_types = ['annual_clinical_incidence_by_age']
     filenames = ['output/MalariaSummaryReport_Annual_Report.json']
 
     x = 'age_bins'
@@ -19,27 +18,9 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, name, weight):
-        super(ClinicalIncidenceByAgeCohortAnalyzer, self).__init__(name, weight)
-        self.name = name
-        self.weight = weight
-        self.site = None
-
-    def set_site(self, site):
-        """
-        Get the reference data that this analyzer needs from the specified site.
-        """
-
-        self.site = site
-        self.reference = self.site.reference_data['annual_clinical_incidence_by_age']
-
-    def filter(self, sim_metadata):
-        """
-        This analyzer only needs to analyze simulations for the site it is linked to.
-        N.B. another instance of the same analyzer may exist with a different site
-             and correspondingly different reference data.
-        """
-        return sim_metadata.get('__site__', False) == self.site.name
+    def __init__(self, site, weight=1, compare_fn=lambda s: True):
+        super(ClinicalIncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
+        self.reference = site.get_reference_data('annual_clinical_incidence_by_age')
 
     def apply(self, parser):
         """
@@ -54,8 +35,8 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
         ref_age_bins = self.reference['age_bins']
 
         person_years, counts = accumulate_agebins_cohort(
-            data['TimeXAgeBin']['Annual Clinical Incidence by Age Bin'],
-            data['TimeXAgeBin']['Average Population by Age Bin'],
+            data['DataByTimeAndAgeBins']['Annual Clinical Incidence by Age Bin'],
+            data['DataByTimeAndAgeBins']['Average Population by Age Bin'],
             data['Metadata']['Age Bins'], ref_age_bins)
 
         channel_data = pd.DataFrame({'Person Years': person_years,
@@ -92,7 +73,7 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
         sample['n_counts'] = (sample.n_obs * sample.rates).astype('int')
         sample = sample[sample['Person Years'] > 0]
 
-        # TODO: vectorize LL_calculators?!
+        # TODO: use self.compare_fn here?
         return LL_calculators.gamma_poisson(
             sample.n_obs.tolist(),
             sample['Person Years'].tolist(),
@@ -121,7 +102,3 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseAnalyzer):
         logger.debug(sample_dicts)
 
         return {'sims': sample_dicts, 'reference': self.reference, 'axis_names': [self.x, self.y]}
-
-    def uid(self):
-        """ A unique identifier of site-name and analyzer-name. """
-        return '_'.join([self.site.name, self.name])
