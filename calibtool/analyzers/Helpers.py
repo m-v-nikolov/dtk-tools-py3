@@ -86,8 +86,8 @@ def get_bins_for_summary_grouping(data, grouping):
     elif grouping == 'DataByTimeAndPfPRBinsAndAgeBins':
         return OrderedDict([
             ('Time', time),
-            ('Age Bins', metadata['Age Bins']),
-            ('PfPR bins', metadata['Parasitemia Bins'])
+            ('PfPR bins', metadata['Parasitemia Bins']),
+            ('Age Bins', metadata['Age Bins'])
         ])
 
     raise Exception('Unable to find grouping %s in %s' % (grouping, data.keys()))
@@ -143,23 +143,31 @@ def reorder_sim_data(channel_series, ref_channel_series, months, channel, popula
     A function to reorder sim data to match reference data
     """
 
+    print(channel_series.loc[31])
+    print(ref_channel_series.head())
+    print(population)
+
+    # Prepare age bins from multi-index for cuts
+    # TODO: push bins [0, 5), [5, 15) into reference itself?
+    age_bins = ref_channel_series.index.levels[ref_channel_series.index.names.index('Age Bins')]
+    age_bins = sorted(age_bins.tolist() + [0])
+    print(age_bins)
+
     # Data frames
     df_pop = population.reset_index()
     df_sim = channel_series.reset_index()
     df_ref = ref_channel_series.reset_index()
 
-    # Age bins
-    age_bins = list(set(df_ref['Age Bins']))
-    age_bins.append(0)
-    age_bins.sort()
-
     # Seasons
+    # TODO: handle this already in site_Laye reference, e.g. april = [92, 121]
     months_of_year = dict((v,k) for k,v in enumerate(calendar.month_name))
     seasonIndex = []
     for i in range(len(months)):
         seasonIndex.extend([t for t in range(months_of_year[months[i]] - 1, df_sim.Time[-1:] + 1, 12)])
     seasons = list(set(df_ref['Seasons']))
     season_month = dict(zip(months,seasons))
+    print(seasons)
+    print(season_month)
 
     # Reorder simulation data to match reference data
     df_sim = df_sim[df_sim.Time.isin(seasonIndex)]  # Only retain months corresponding to seasons in ref data
