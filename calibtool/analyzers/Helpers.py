@@ -9,7 +9,21 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def json_to_pandas(simdata, bins, channel=None):
+def summary_channel_to_pandas(data, channel):
+    """
+    A function to return a hierarchical binned pandas.Series for a specified MalariaSummaryReport.json channel
+    :param simdata: parsed data from summary report
+    :param channel: channel in summary report
+    :return: pd.Series with MultiIndex binning taken from summary metadata
+    """
+
+    grouping = get_grouping_for_summary_channel(data, channel)
+    bins = get_bins_for_summary_grouping(data, grouping)
+
+    return json_to_pandas(data[grouping][channel], bins, channel)
+
+
+def json_to_pandas(data, bins, channel=None):
     """
     A function to convert nested array channel data from a json file to
     a pandas.Series with the specified MultiIndex binning.
@@ -19,7 +33,7 @@ def json_to_pandas(simdata, bins, channel=None):
     bin_tuples = list(itertools.product(*bins.values()))
     multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
 
-    channel_series = pd.Series(np.array(simdata).flatten(), index=multi_index, name=channel)
+    channel_series = pd.Series(np.array(data).flatten(), index=multi_index, name=channel)
 
     return channel_series
 
@@ -115,9 +129,10 @@ def season_channel_age_density_json_to_pandas(reference, bins):
     df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Seasons', 'PfPR Type'])
 
     # Stack the hierarchical columns into the MultiIndex
-    channel_series = df.stack(['Seasons', 'PfPR Type'])
+    channel_series = df.stack(['Seasons', 'PfPR Type'])\
+                       .reorder_levels(['PfPR Type', 'Seasons', 'Age Bins', 'PfPR bins'])\
+                       .sort_index()
 
-    channel_series = channel_series.reorder_levels(['PfPR Type', 'Seasons', 'Age Bins', 'PfPR bins']).sort_index()
     logger.debug('\n%s', channel_series)
 
     return channel_series
