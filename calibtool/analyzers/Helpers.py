@@ -8,7 +8,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def json_to_pandas(simdata, bins, channel):
+def json_to_pandas(simdata, bins, channel=None):
     """
     A function to convert nested array channel data from a json file to
     a pandas.Series with the specified MultiIndex binning.
@@ -23,25 +23,48 @@ def json_to_pandas(simdata, bins, channel):
     return channel_series
 
 
-def ref_json_to_pandas(refdata, required_reference_types, bins, channel):
+def season_channel_age_density_json_to_pandas(reference, bins):
     """
-    A function to convert reference data from the site_*.py
-    to a Pandas dataframe
+    A helper function to convert reference data from its form in e.g. site_Laye.py:
+
+    "Seasons": {
+        "start_wet": {
+            "PfPR by Parasitemia and Age Bin": [
+                [2, 0, 0, 0, 1, 1], [4, 1, 2, 3, 2, 6], [7, 9, 4, 2, 4, 1]],
+            "PfPR by Gametocytemia and Age Bin": [
+                [0, 0, 0, 5, 0, 0], [3, 9, 8, 1, 0, 0], [16, 4, 6, 1, 0, 0]]
+        },
+        ...
+    }
+
+    To a pd.Series with MultiIndex:
+
+    PfPR Type                          Seasons    Age Bins  PfPR bins
+    PfPR by Gametocytemia and Age Bin  start_wet  5         0             0
+                                                            50            0
+                                                            500           0
+                                                            5000          5
+                                                            50000         0
+                                                            500000        0
     """
 
-    if 'by_age_and_season' in required_reference_types:
-        Para = [[] for i in range(2)]
-        for season in refdata['Seasons']:
-            for Paratype in refdata['Seasons'][season].keys():
-                if 'Gametocytemia' in Paratype:
-                    Para[1].append(refdata['Seasons'][season][Paratype])
-                elif 'Parasitemia' in Paratype:
-                    Para[0].append(refdata['Seasons'][season][Paratype])
-        bin_tuples = list(itertools.product(*bins.values()))
-        multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
-        ref_channel_series = pd.Series(np.array(Para).flatten(), index=multi_index,name=channel)
+    season_dict = {}
+    for season, season_data in reference.items():
+        channel_dict = {}
+        for channel, channel_data in season_data.items():
+            channel_dict[channel] = json_to_pandas(channel_data, bins)
+        season_dict[season] = pd.DataFrame(channel_dict)
 
-    return ref_channel_series
+    # Concatenate the multi-channel (i.e. parasitemia, gametocytemia) dataframes by season
+    df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Seasons', 'PfPR Type'])
+
+    # Stack the hierarchical columns into the MultiIndex
+    channel_series = df.stack(['Seasons', 'PfPR Type'])
+
+    channel_series = channel_series.reorder_levels(['PfPR Type', 'Seasons', 'Age Bins', 'PfPR bins']).sort_index()
+    logger.debug('\n%s', channel_series)
+
+    return channel_series
 
 
 def reorder_sim_data(channel_series, ref_channel_series, months, channel, population):
@@ -114,43 +137,6 @@ def accumulate_agebins_cohort(simdata, average_pop, sim_agebins, raw_agebins):
             num_in_bin[simageindex[j]] += average_pop[i][j]
 
     return num_in_bin, glommed_data
-
-
-# def accumulate_ageseasonbins_cohort(simdata, average_pop, raw_agebins, seasons) :
-#     '''
-#     A function to sum over each year's values in a summary report,
-#     combining incidence rate and average population
-#     to give total counts and population in the reference age binning.
-#     '''
-#     simdata = np.asarray(simdata)
-#     average_pop = np.asarray(average_pop)
-#
-#     num_years = int(simdata.shape[0]/12)
-#     binsCytes = simdata.shape[1]
-#
-#     glommed_data = np.zeros((len(seasons),len(raw_agebins),binsCytes))
-#     num_in_bin = np.zeros((len(seasons),len(raw_agebins)))
-#     seasonindex = np.full([len(seasons),num_years],np.nan)        # Stores indices from the 'data' list that correspond to each of the seasons
-#     simageindex = np.full([len(seasons),num_years],np.nan)  # Stores age bin index for each month in the 'data' file
-#
-#
-#     for i in range(len(seasons)):
-#         seasonindex[i,:] = np.arange(seasons[i]-1,12 * num_years,12)
-#         simageindex[i, :] = np.arange(seasons[i] - 1, 12 * num_years, 12)
-#         for j in range(num_years):
-#             for k, age in enumerate(raw_agebins):
-#                 if simageindex[i,j]/12<age:
-#                     simageindex[i, j] = k
-#                     break
-#
-#
-#     for i in range(len(seasons)):
-#         for k in range(binsCytes):
-#             for j in range(num_years):
-#                 glommed_data[i,simageindex[i,j],k] += simdata[seasonindex[i,j],k,0]#*average_pop[seasonindex[i,j]]
-#                 num_in_bin[i,simageindex[i,j]] += average_pop[seasonindex[i,j]]
-#
-#     return num_in_bin, glommed_data
 
 
 def get_spatial_report_data_at_date(sp_data, date):

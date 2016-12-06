@@ -1,58 +1,44 @@
 import logging
+import itertools
 from collections import OrderedDict
 
+import numpy as np
+import pandas as pd
+
 from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import *
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from calibtool.analyzers.Helpers import json_to_pandas, reorder_sim_data
+from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
 
+# TODO: from site_BFdensity (verify has all been subsumed into class info below?)
+# {'name': 'analyze_seasonal_monthly_density_cohort',
+#  'reporter': 'Monthly Summary Report',
+#  'seasons': {'start_wet': 6, 'peak_wet': 8, 'end_wet': 0},
+#  'fields_to_get': ['PfPR by Parasitemia and Age Bin',
+#                    'PfPR by Gametocytemia and Age Bin',
+#                    'Average Population by Age Bin'],
+#  'LL_fn': 'dirichlet_multinomial'}
 
-class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
 
-    required_reference_types = ['density_by_age_and_season']
+class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
+
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
     x = 'age_bins'
-    y = 'PfPR by Parasitemia and Age Bin'
-    z = 'PfPR by Gametocytemia and Age Bin'
+    y1 = 'PfPR by Parasitemia and Age Bin'
+    y2 = 'PfPR by Gametocytemia and Age Bin'
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, name, weight):
-        self.name = name
-        self.weight = weight
-        self.site = None
-        self.reference = None
-
-    def set_site(self, site):
-        """
-        Get the reference data that this analyzer needs from the specified site.
-        """
-
-        self.site = site
-        self.reference = self.site.reference_data[self.required_reference_types[0]]
-
-    def filter(self, sim_metadata):
-        """
-        This analyzer only needs to analyze simulations for the site it is linked to.
-        N.B. another instance of the same analyzer may exist with a different site
-             and correspondingly different reference data.
-        """
-        return sim_metadata.get('__site__', False) == self.site.name
+    def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas):
+        super(PrevalenceByAgeSeasonAnalyzer, self).__init__(site, weight, compare_fn)
+        self.reference = site.get_reference_data('density_by_age_and_season')
 
     def apply(self, parser):
         """
         Extract data from output simulation data and accumulate in same bins as reference.
         """
-
-        # Reference dataframe
-        channel = 'PfPR by Parasitemia and Age Bin'
-        bins = OrderedDict([('PfPR Type', ['Parasitemia', 'Gametocytemia']),
-                            ('Seasons', self.reference['Seasons'].keys()),
-                            ('Age Bins', self.reference['Metadata']['age_bins']),
-                            ('PfPR bins', self.reference['Metadata']['parasitemia_bins'])])
-        self.ref_data = ref_json_to_pandas(self.reference, self.required_reference_types[0], bins, channel)  # Ref data converted to Pandas
 
         # Load data from simulations
         data = parser.raw_data[self.filenames[0]]
@@ -65,16 +51,19 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         channel_pop = 'Population by Age Bin'
         population = pd.Series(np.array(population).flatten(), index=multi_index, name=channel_pop)
 
+        channel = 'PfPR by Parasitemia and Age Bin'  # TODO: only used in reorder_sim_data?? but both channels??
+
         # Simulation dataframe
         months = self.reference['Metadata']['months']
-        bins = OrderedDict([('Time', [i * 1 for i, _ in enumerate(data['Time']['Annual EIR'])]), ('Age Bins', data['Metadata']['Age Bins']),
+        bins = OrderedDict([('Time', [i * 1 for i, _ in enumerate(data['Time']['Annual EIR'])]),
+                            ('Age Bins', data['Metadata']['Age Bins']),
                             ('PfPR bins', data['Metadata']['Parasitemia Bins'])])
-        simdata1 = [data[type][self.y] for type in data.keys() if self.y in data[type].keys()]
-        simdata2 = [data[type][self.z] for type in data.keys() if self.z in data[type].keys()]
+        simdata1 = [data[type][self.y1] for type in data.keys() if self.y1 in data[type].keys()]
+        simdata2 = [data[type][self.y2] for type in data.keys() if self.y2 in data[type].keys()]
         temp_data1 = json_to_pandas(simdata1[0], bins, channel)  # Sim data converted to Pandas
-        temp_data1 = reorder_sim_data(temp_data1, self.ref_data, months, self.y, population)
+        temp_data1 = reorder_sim_data(temp_data1, self.ref_data, months, self.y1, population)
         temp_data2 = json_to_pandas(simdata2[0], bins, channel)  # Sim data converted to Pandas
-        temp_data2 = reorder_sim_data(temp_data2, self.ref_data, months, self.z, population)
+        temp_data2 = reorder_sim_data(temp_data2, self.ref_data, months, self.y2, population)
         sim_data = pd.concat([temp_data1, temp_data2])
 
         sim_data.sample = parser.sim_data.get('__sample_index__')
@@ -92,7 +81,7 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
                          keys=[(d.sim_id, d.sample) for d in selected],
                              names=self.data_group_names)
         combined = combined.reset_index()
-        groupByColumns = list(combined.keys()[1:-1])          # Only taking sim_id, Age_Bins, Seasons (if available), PfPR Bins (if available), PfPR Type (if available)
+        groupByColumns = list(combined.keys()[1:-1])  # Only taking sim_id, Age_Bins, Seasons (if available), PfPR Bins (if available), PfPR Type (if available)
         combined = pd.DataFrame.dropna(combined.groupby(groupByColumns).mean().reset_index())
         del combined['channel']
         self.data = pd.pivot_table(combined, values=combined.keys()[-1], index=list(combined.keys()[1:-1]), columns=combined.keys()[0])
@@ -110,9 +99,7 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         sample = sample[sample['sim'] > 0]
         sample = sample[sample['ref'] > 0]
 
-
-        # TODO: vectorize LL_calculators?!
-        return LL_calculators.dirichlet_multinomial_pandas(sample)
+        return self.compare_fn(sample)
 
     def finalize(self):
         """
@@ -127,13 +114,11 @@ class PrevalenceByAgeSeasonAnalyzer(BaseAnalyzer):
         to reference comparisons.
         """
 
+        # TODO: this is only caching y1 but not y2?
+
         cache = self.data.copy()
-        sample_dicts = [{self.y:[cache[i][j] for j in range(len(cache[i])) ]} for i in range(len(cache.keys()))] # i cycles through simulation id, y cycles through sim values
-        ref_dicts = {self.y:[self.ref_data[i] for i in range(len(self.ref_data))]}
+        sample_dicts = [{self.y1:[cache[i][j] for j in range(len(cache[i])) ]} for i in range(len(cache.keys()))] # i cycles through simulation id, y cycles through sim values
+        ref_dicts = {self.y1:[self.ref_data[i] for i in range(len(self.ref_data))]}
         logger.debug(sample_dicts)
 
-        return {'sims': sample_dicts, 'reference': ref_dicts, 'axis_names': [self.x, self.y]}
-
-    def uid(self):
-        """ A unique identifier of site-name and analyzer-name. """
-        return '_'.join([self.site.name, self.name])
+        return {'sims': sample_dicts, 'reference': ref_dicts, 'axis_names': [self.x, self.y1]}
