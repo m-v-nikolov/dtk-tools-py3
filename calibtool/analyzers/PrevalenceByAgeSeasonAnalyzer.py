@@ -1,12 +1,9 @@
 import logging
-import itertools
-from collections import OrderedDict
 
-import numpy as np
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import json_to_pandas, reorder_sim_data
+from calibtool.analyzers.Helpers import summary_channel_to_pandas, reorder_sim_data
 from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -40,30 +37,23 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         Extract data from output simulation data and accumulate in same bins as reference.
         """
 
-        # Load data from simulations
+        # Load data from simulation
         data = parser.raw_data[self.filenames[0]]
 
-        # Population dataframe
-        population = data['TimeXAgeBin']['Average Population by Age Bin']
-        bins = OrderedDict([('Time', [i for i in range(13)]), ('Age Bins', [1000])])
-        bin_tuples = list(itertools.product(*bins.values()))
-        multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
-        channel_pop = 'Population by Age Bin'
-        population = pd.Series(np.array(population).flatten(), index=multi_index, name=channel_pop)
-
-        channel = 'PfPR by Parasitemia and Age Bin'  # TODO: only used in reorder_sim_data?? but both channels??
+        # Population by age and time series
+        population = summary_channel_to_pandas(data, 'Average Population by Age Bin')
 
         # Simulation dataframe
-        months = self.reference['Metadata']['months']  # TODO: handle this already in site_Laye reference
-        bins = OrderedDict([('Time', [i * 1 for i, _ in enumerate(data['Time']['Annual EIR'])]),
-                            ('Age Bins', data['Metadata']['Age Bins']),
-                            ('PfPR bins', data['Metadata']['Parasitemia Bins'])])
-        simdata1 = [data[type][self.y1] for type in data.keys() if self.y1 in data[type].keys()]
-        simdata2 = [data[type][self.y2] for type in data.keys() if self.y2 in data[type].keys()]
-        temp_data1 = json_to_pandas(simdata1[0], bins, channel)  # Sim data converted to Pandas
-        temp_data1 = reorder_sim_data(temp_data1, self.ref_data, months, self.y1, population)
-        temp_data2 = json_to_pandas(simdata2[0], bins, channel)  # Sim data converted to Pandas
-        temp_data2 = reorder_sim_data(temp_data2, self.ref_data, months, self.y2, population)
+        temp_data1 = summary_channel_to_pandas(data, self.y1)
+        temp_data2 = summary_channel_to_pandas(data, self.y2)
+
+        # TODO: handle this already in site_Laye reference
+        # months = self.reference['Metadata']['months']
+        months = ['April', 'August', 'December']
+
+        temp_data1 = reorder_sim_data(temp_data1, self.reference, months, self.y1, population)
+        temp_data2 = reorder_sim_data(temp_data2, self.reference, months, self.y2, population)
+
         sim_data = pd.concat([temp_data1, temp_data2])
 
         sim_data.sample = parser.sim_data.get('__sample_index__')
