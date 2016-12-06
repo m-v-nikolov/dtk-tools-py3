@@ -8,6 +8,14 @@ from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
 
+# TODO: from site_clinical_incidence_cohort (verify has all been subsumed into class info below?)
+# {'name': 'analyze_clinical_incidence_by_age_cohort',
+#  'reporter': 'Annual Summary Report',
+#  'fields_to_get': ['Annual Clinical Incidence by Age Bin',
+#                    'Average Population by Age Bin',
+#                    'Age Bins'],
+#  'LL_fn' : 'gamma_poisson'}
+
 
 class ClinicalIncidenceByAgeCohortAnalyzer(BaseComparisonAnalyzer):
 
@@ -18,7 +26,7 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseComparisonAnalyzer):
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, site, weight=1, compare_fn=lambda s: True):
+    def __init__(self, site, weight=1, compare_fn=LL_calculators.gamma_poisson):
         super(ClinicalIncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('annual_clinical_incidence_by_age')
 
@@ -73,8 +81,8 @@ class ClinicalIncidenceByAgeCohortAnalyzer(BaseComparisonAnalyzer):
         sample['n_counts'] = (sample.n_obs * sample.rates).astype('int')
         sample = sample[sample['Person Years'] > 0]
 
-        # TODO: use self.compare_fn here?
-        return LL_calculators.gamma_poisson(
+        # TODO: vectorize like dirichlet_multinomial_pandas
+        return self.compare_fn(
             sample.n_obs.tolist(),
             sample['Person Years'].tolist(),
             sample.n_counts.tolist(),

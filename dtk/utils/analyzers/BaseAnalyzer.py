@@ -13,7 +13,7 @@ class BaseAnalyzer(object):
 
     __metaclass__ = ABCMeta
 
-    filenames = []
+    filenames = []  # Files for which raw data should be parsed for apply() function
 
     @abstractmethod
     def __init__(self):
