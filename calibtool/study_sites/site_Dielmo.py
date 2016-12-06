@@ -21,6 +21,11 @@ class DielmoCalibSite(CalibSite):
                             self.__class__.__name__, reference_type, site_ref_type)
 
         reference_data = {
+            # Digitized by K.McCarthy from data in:
+            #   - Rogier et al. Parassitologia 1999
+            #   - Trape et al. Am J Trop Med Hyg 1994
+            #   - Rogier and Trape, Med Trop (Marseille) 1995
+            # for K.McCarthy et al. Malaria Journal 2015, 14:6
             "n_obs": [
                 55, 60, 55, 50, 50,
                 38, 38, 38, 38, 38,
