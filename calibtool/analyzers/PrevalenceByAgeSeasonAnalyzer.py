@@ -54,7 +54,7 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         channel = 'PfPR by Parasitemia and Age Bin'  # TODO: only used in reorder_sim_data?? but both channels??
 
         # Simulation dataframe
-        months = self.reference['Metadata']['months']
+        months = self.reference['Metadata']['months']  # TODO: handle this already in site_Laye reference
         bins = OrderedDict([('Time', [i * 1 for i, _ in enumerate(data['Time']['Annual EIR'])]),
                             ('Age Bins', data['Metadata']['Age Bins']),
                             ('PfPR bins', data['Metadata']['Parasitemia Bins'])])

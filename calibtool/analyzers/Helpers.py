@@ -1,6 +1,7 @@
 import itertools
 import calendar
 import logging
+from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -21,6 +22,61 @@ def json_to_pandas(simdata, bins, channel=None):
     channel_series = pd.Series(np.array(simdata).flatten(), index=multi_index, name=channel)
 
     return channel_series
+
+
+def get_grouping_for_summary_channel(data, channel):
+    """
+    A function to find the grouping to which a channel belongs in MalariaSummaryReport.json
+    :param data: parsed data from summary report
+    :param channel: channel to find
+    :return: grouping or exception if not found
+
+    Example:
+
+    >>> get_grouping_for_summary_channel(data, channel='Average Population by Age Bin')
+    'DataByTimeAndAgeBins'
+    """
+
+    for group, group_data in data.items():
+        if channel in group_data.keys():
+            return group
+
+    raise Exception('Unable to find channel %s in groupings %s' % (channel, data.keys()))
+
+
+def get_bins_for_summary_grouping(data, grouping):
+    """
+    A function to get the dimensions and binning of data for a specified MalariaSummaryReport.json grouping
+    :param data: parsed data from summary report
+    :param grouping: group name
+    :return: an OrderedDict of dimensions and bins
+
+    Example:
+
+    >>> get_bins_for_summary_grouping(data, grouping='DataByTimeAndAgeBins')
+    OrderedDict([('Time', [31, 61, 92, ..., 1095]), ('Age Bins', [0, 10, 20, ..., 1000])])
+    """
+
+    metadata = data['Metadata']
+    time = data['DataByTime']['Time Of Report']
+
+    if grouping == 'DataByTime':
+        return OrderedDict([
+            ('Time', time)
+        ])
+    elif grouping == 'DataByTimeAndAgeBins':
+        return OrderedDict([
+            ('Time', time),
+            ('Age Bins', metadata['Age Bins'])
+        ])
+    elif grouping == 'DataByTimeAndPfPRBinsAndAgeBins':
+        return OrderedDict([
+            ('Time', time),
+            ('Age Bins', metadata['Age Bins']),
+            ('PfPR bins', metadata['Parasitemia Bins'])
+        ])
+
+    raise Exception('Unable to find grouping %s in %s' % (grouping, data.keys()))
 
 
 def season_channel_age_density_json_to_pandas(reference, bins):
