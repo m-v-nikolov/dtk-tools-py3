@@ -22,6 +22,8 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
 
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
+    # TODO: hard-code these later? or infer from reference?
+    # TODO: what is the use-case for flexibility here? one or the other channel?
     x = 'age_bins'
     y1 = 'PfPR by Parasitemia and Age Bin'
     y2 = 'PfPR by Gametocytemia and Age Bin'
