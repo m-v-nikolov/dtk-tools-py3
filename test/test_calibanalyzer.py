@@ -13,13 +13,15 @@ class DummyParser:
     A class to hold what would usually be in OutputParser.rawdata
     allowing testing of analyzer apply() functions that bypasses ExperimentManager.
     """
-    def __init__(self, filename, filepath):
+    def __init__(self, filename, filepath, sim_id='dummy_id', index='dummy_index'):
         """
         :param filename: Dummy filename needs to match value expected by analyzer, e.g. filenames[0]
         :param filepath: Actual path to the test file
         """
         with open(filepath, 'r') as json_file:
             self.raw_data = {filename: json.load(json_file)}
+            self.sim_id = sim_id
+            self.sim_data = {'__sample_index__': index}
 
 
 class TestLayeCalibSite(unittest.TestCase):
@@ -43,7 +45,8 @@ class TestLayeCalibSite(unittest.TestCase):
         reference = analyzer.reference
         self.assertIsInstance(reference, pd.Series)
 
-        # sim_data = analyzer.apply(self.parser)
+        sim_data = analyzer.apply(self.parser)
+        assert False
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
