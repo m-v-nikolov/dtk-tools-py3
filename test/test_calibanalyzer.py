@@ -80,7 +80,7 @@ class TestLayeCalibSite(unittest.TestCase):
 
     def test_get_reference(self):
         reference = self.site.get_reference_data('density_by_age_and_season')
-        self.assertListEqual(reference.index.names, ['PfPR Type', 'Season', 'Age Bin', 'PfPR Bin'])
+        self.assertListEqual(reference.index.names, ['Channel', 'Season', 'Age Bin', 'PfPR Bin'])
         self.assertEqual(reference.loc['PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50], 9)
 
 

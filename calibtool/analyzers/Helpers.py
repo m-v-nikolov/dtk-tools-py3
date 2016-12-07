@@ -110,7 +110,7 @@ def season_channel_age_density_json_to_pandas(reference, bins):
 
     To a pd.Series with MultiIndex:
 
-    PfPR Type                          Season     Age Bin   PfPR Bin
+    Channel                            Season     Age Bin   PfPR Bin
     PfPR by Gametocytemia and Age Bin  start_wet  5         0             0
                                                             50            0
                                                             500           0
@@ -127,11 +127,11 @@ def season_channel_age_density_json_to_pandas(reference, bins):
         season_dict[season] = pd.DataFrame(channel_dict)
 
     # Concatenate the multi-channel (i.e. parasitemia, gametocytemia) dataframes by season
-    df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Season', 'PfPR Type'])
+    df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Season', 'Channel'])
 
     # Stack the hierarchical columns into the MultiIndex
-    channel_series = df.stack(['Season', 'PfPR Type'])\
-                       .reorder_levels(['PfPR Type', 'Season', 'Age Bin', 'PfPR Bin'])\
+    channel_series = df.stack(['Season', 'Channel'])\
+                       .reorder_levels(['Channel', 'Season', 'Age Bin', 'PfPR Bin'])\
                        .sort_index()
 
     logger.debug('\n%s', channel_series)
