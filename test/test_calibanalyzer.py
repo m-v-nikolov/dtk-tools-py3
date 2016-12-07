@@ -4,7 +4,8 @@ import unittest
 
 import pandas as pd
 
-from calibtool.analyzers.Helpers import summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
+from calibtool.analyzers.Helpers import \
+    summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
 from calibtool.study_sites.site_Laye import LayeCalibSite
 
 
@@ -33,6 +34,8 @@ class TestLayeCalibSite(unittest.TestCase):
         self.data = self.parser.raw_data[self.filename]
         self.site = LayeCalibSite()
 
+    # TODO: specific unittests for new functions in Helpers
+
     def test_site_analyzer(self):
         self.assertEqual(self.site.name, 'Laye')
 
@@ -56,14 +59,14 @@ class TestLayeCalibSite(unittest.TestCase):
     def test_binning(self):
         group = 'DataByTimeAndAgeBins'
         bins = get_bins_for_summary_grouping(self.data, group)
-        self.assertListEqual(bins.keys(), ['Time', 'Age Bins'])
-        self.assertListEqual(bins['Age Bins'], range(0, 101, 10) + [1000])
+        self.assertListEqual(bins.keys(), ['Time', 'Age Bin'])
+        self.assertListEqual(bins['Age Bin'], range(0, 101, 10) + [1000])
         self.assertEqual(bins['Time'][-1], 1095)
         self.assertRaises(lambda: get_bins_for_summary_grouping(self.data, 'unknown_group'))
 
     def test_parser(self):
         population = summary_channel_to_pandas(self.data, 'Average Population by Age Bin')
-        self.assertListEqual(population.index.names, ['Time', 'Age Bins'])
+        self.assertListEqual(population.index.names, ['Time', 'Age Bin'])
         self.assertAlmostEqual(population.loc[31, 80], 16.602738, places=5)
 
         parasite_channel = 'PfPR by Parasitemia and Age Bin'
@@ -77,7 +80,7 @@ class TestLayeCalibSite(unittest.TestCase):
 
     def test_get_reference(self):
         reference = self.site.get_reference_data('density_by_age_and_season')
-        self.assertListEqual(reference.index.names, ['PfPR Type', 'Seasons', 'Age Bins', 'PfPR bins'])
+        self.assertListEqual(reference.index.names, ['PfPR Type', 'Season', 'Age Bin', 'PfPR Bin'])
         self.assertEqual(reference.loc['PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50], 9)
 
 

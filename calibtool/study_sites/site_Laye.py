@@ -1,6 +1,8 @@
 import logging
 from collections import OrderedDict
 
+import numpy as np
+
 from calibtool.study_sites import site_BFdensity
 from calibtool.CalibSite import CalibSite
 from calibtool.analyzers.PrevalenceByAgeSeasonAnalyzer import PrevalenceByAgeSeasonAnalyzer
@@ -12,27 +14,21 @@ logger = logging.getLogger(__name__)
 class LayeCalibSite(CalibSite):
 
     metadata = {
+        'parasitemia_bins': [0, 50, 500, 5000, 50000, np.inf],  # (, 0] (0, 50] (50, 500] ... (50000, ]
+
+        'age_bins': [5, 15, np.inf],  # (, 5] (5, 15] (15, ]
+
+        # Collection dates from raw data in Ouedraogo et al. JID 2015
+        'seasons_by_month': {
+            'July': 'start_wet',  # START_WET = 29 June - 30 July '07 = DOY 180 - 211
+            'September': 'peak_wet',  # PEAK_WET = 3 Sept - 9 Oct '07 = DOY 246 - 282
+            'January': 'end_wet'  # END_WET (DRY) = 10 Jan - 2 Feb '08 = DOY 10 - 33
+        }
+
         # TODO: be explicit with categorical bins?
         # http://pandas.pydata.org/pandas-docs/stable/categorical.html
-        # (, 0] (0, 50] (50, 500] ...
-        # (, 5] (5, 15] (15, 1000]
         # [180, 211] [246, 282] [10, 33]
-
-        "parasitemia_bins": [0, 50, 500, 5000, 50000, 500000],
-        "age_bins": [5, 15, 1000],
-
-        # TODO: resolve discrepancy?
-        # From Prashanth's branch
-        # "months": ['April', 'August', 'December']
-
-        # From Malaria Journal paper (Methods)
-        # 1 July, 1 Sept, 1 March
-
-        # From Andre's raw data
-        # START_WET = 29 June - 30 July '07 = 180 - 211 (doy)
-        # PEAK_WET = 3 Sept - 9 Oct '07 = 246 - 282 (doy)
-        # END_WET (DRY) = 10 Jan - 2 Feb '08 = 10 - 33 (doy)
-        "months": ['July', 'September', 'January']
+        # https://github.com/kvesteri/intervals
     }
 
     def __init__(self):
@@ -71,8 +67,8 @@ class LayeCalibSite(CalibSite):
         }
 
         reference_bins = OrderedDict([
-            ('Age Bins', self.metadata['age_bins']),
-            ('PfPR bins', self.metadata['parasitemia_bins'])
+            ('Age Bin', self.metadata['age_bins']),
+            ('PfPR Bin', self.metadata['parasitemia_bins'])
         ])
 
         reference_data = season_channel_age_density_json_to_pandas(reference_dict, reference_bins)
@@ -84,7 +80,4 @@ class LayeCalibSite(CalibSite):
         return site_BFdensity.get_setup_functions('Laye')
 
     def get_analyzers(self):
-
-        # TODO: fix this for any customization arguments, e.g. the Metadata currently in the reference_data dictionary
-
-        return [PrevalenceByAgeSeasonAnalyzer(site=self)]
+        return [PrevalenceByAgeSeasonAnalyzer(site=self, seasons=self.metadata['seasons_by_month'])]

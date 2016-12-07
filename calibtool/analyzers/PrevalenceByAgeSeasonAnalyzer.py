@@ -3,20 +3,12 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import summary_channel_to_pandas, convert_to_counts,\
-                                        rebin_age_from_birth_cohort, rebin_by_month, reorder_sim_data
+from calibtool.analyzers.Helpers import \
+    summary_channel_to_pandas, convert_to_counts,\
+    age_from_birth_cohort, season_from_time, aggregate_on_multiindex
 from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
-
-# TODO: from site_BFdensity (verify has all been subsumed into class info below?)
-# {'name': 'analyze_seasonal_monthly_density_cohort',
-#  'reporter': 'Monthly Summary Report',
-#  'seasons': {'start_wet': 6, 'peak_wet': 8, 'end_wet': 0},
-#  'fields_to_get': ['PfPR by Parasitemia and Age Bin',
-#                    'PfPR by Gametocytemia and Age Bin',
-#                    'Average Population by Age Bin'],
-#  'LL_fn': 'dirichlet_multinomial'}
 
 
 class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
@@ -28,12 +20,10 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas):
+    def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas, **kwargs):
         super(PrevalenceByAgeSeasonAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('density_by_age_and_season')
-
-        ix = self.reference.index
-        self.ref_age_bins = [0] + ix.levels[ix.names.index('Age Bins')].tolist()  # prepend minimum age = 0
+        self.seasons = kwargs.get('seasons')
 
     def apply(self, parser):
         """
@@ -46,37 +36,31 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         # Population by age and time series (to convert parasite prevalence to counts)
         population = summary_channel_to_pandas(data, 'Average Population by Age Bin')
 
-        # Prevalence by density, age, and time series
-        channel_data_dict = {channel: summary_channel_to_pandas(data, channel) for channel in self.channels}
+        # Coerce channel data into format for comparison with reference
+        channel_data_dict = {}
+        for channel in self.channels:
 
-        # # NEW
-        # for channel, channel_data in channel_data_dict.items():
-        #
-        #     # Normalize prevalence to counts
-        #     channel_counts = convert_to_counts(channel_data, population)
-        #
-        #     # Generate age from birth cohort
-        #     birth_cohort_rebinned = rebin_age_from_birth_cohort(channel_counts, self.ref_age_bins)
-        #
-        #     # Monthly binning
-        #     # TODO: generalize to any day-of-year intervals? Discard data not in months of interest from CalibSite?
-        #     monthly_binned = rebin_by_month(birth_cohort_rebinned, months=[])
-        #
-        #     channel_data_dict[channel] = monthly_binned
+            # Prevalence by density, age, and time series
+            channel_data = summary_channel_to_pandas(data, channel)
 
-        # OLD
-        # TODO: handle this already in site_Laye reference
-        # months = self.reference['Metadata']['months']
-        months = ['July', 'September', 'January']
-        for channel, channel_data in channel_data_dict.items():
-            channel_data_dict[channel] = reorder_sim_data(channel_data, self.reference, months, channel, population)
+            # Calculate counts from prevalence and population
+            channel_counts = convert_to_counts(channel_data, population)
 
-        sim_data = pd.concat(channel_data_dict.values())
-        print(sim_data.head(15))
-        sim_data.sample = parser.sim_data.get('__sample_index__')
-        sim_data.sim_id = parser.sim_id
+            # Reset multi-index and perform transformations on index columns
+            df = channel_counts.reset_index()
+            df = age_from_birth_cohort(df)  # calculate age from time for birth cohort
+            df = season_from_time(df, seasons=self.seasons)  # calculate month from time
+            df['PfPR Type'] = channel  # label measurement type
 
-        return sim_data
+            # Re-bin according to reference
+            channel_data_dict[channel] = aggregate_on_multiindex(df, self.reference.index, keep=[channel])
+
+        # sim_data = pd.concat(channel_data_dict.values())
+        # print(sim_data.head(15))
+        # sim_data.sample = parser.sim_data.get('__sample_index__')
+        # sim_data.sim_id = parser.sim_id
+        #
+        # return sim_data
 
     def combine(self, parsers):
         """

@@ -69,7 +69,7 @@ def get_bins_for_summary_grouping(data, grouping):
     Example:
 
     >>> get_bins_for_summary_grouping(data, grouping='DataByTimeAndAgeBins')
-    OrderedDict([('Time', [31, 61, 92, ..., 1095]), ('Age Bins', [0, 10, 20, ..., 1000])])
+    OrderedDict([('Time', [31, 61, 92, ..., 1095]), ('Age Bin', [0, 10, 20, ..., 1000])])
     """
 
     metadata = data['Metadata']
@@ -82,13 +82,13 @@ def get_bins_for_summary_grouping(data, grouping):
     elif grouping == 'DataByTimeAndAgeBins':
         return OrderedDict([
             ('Time', time),
-            ('Age Bins', metadata['Age Bins'])
+            ('Age Bin', metadata['Age Bins'])
         ])
     elif grouping == 'DataByTimeAndPfPRBinsAndAgeBins':
         return OrderedDict([
             ('Time', time),
-            ('PfPR bins', metadata['Parasitemia Bins']),
-            ('Age Bins', metadata['Age Bins'])
+            ('PfPR Bin', metadata['Parasitemia Bins']),
+            ('Age Bin', metadata['Age Bins'])
         ])
 
     raise Exception('Unable to find grouping %s in %s' % (grouping, data.keys()))
@@ -110,7 +110,7 @@ def season_channel_age_density_json_to_pandas(reference, bins):
 
     To a pd.Series with MultiIndex:
 
-    PfPR Type                          Seasons    Age Bins  PfPR bins
+    PfPR Type                          Season     Age Bin   PfPR Bin
     PfPR by Gametocytemia and Age Bin  start_wet  5         0             0
                                                             50            0
                                                             500           0
@@ -127,11 +127,11 @@ def season_channel_age_density_json_to_pandas(reference, bins):
         season_dict[season] = pd.DataFrame(channel_dict)
 
     # Concatenate the multi-channel (i.e. parasitemia, gametocytemia) dataframes by season
-    df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Seasons', 'PfPR Type'])
+    df = pd.concat(season_dict.values(), axis=1, keys=season_dict.keys(), names=['Season', 'PfPR Type'])
 
     # Stack the hierarchical columns into the MultiIndex
-    channel_series = df.stack(['Seasons', 'PfPR Type'])\
-                       .reorder_levels(['PfPR Type', 'Seasons', 'Age Bins', 'PfPR bins'])\
+    channel_series = df.stack(['Season', 'PfPR Type'])\
+                       .reorder_levels(['PfPR Type', 'Season', 'Age Bin', 'PfPR Bin'])\
                        .sort_index()
 
     logger.debug('\n%s', channel_series)
@@ -160,100 +160,92 @@ def convert_to_counts(rates, pops):
     return counts
 
 
-def rebin_age_from_birth_cohort(counts, age_bins):
+def age_from_birth_cohort(df):
     """
-    Reinterpret 'Time' as 'Age' for a birth cohort and re-bin counts in specified bins
-    :param counts: a pandas.Series of counts with MultiIndex containing level 'Time' in days
-    :param age_bins: a list of ages in years to cut into categorical bins
-    :return: a pandas.Series of counts summed into the reinterpreted age bins
-    """
-
-    df = counts.reset_index()
-
-    # Time in days but Age in years
-    df['Age'] = df['Time'] / 365.0
-
-    # Assign each Age to a range in specified age_bins (left inclusive)
-    df['Age Bins'] = pd.cut(df.Age, age_bins, include_lowest=True)
-
-    # Sum counts for time points sharing an age bin and return Series
-    rebinned_series = df.groupby(counts.index.names).sum()[counts.name]
-    return rebinned_series
-
-
-def rebin_by_month(counts, months):
-    """
-    Re-bin counts replacing 'Time' with specified month bins
-    :param counts: a pandas.Series of counts with MultiIndex containing level 'Time' in days
-    :param months: a list of month names
-    :return: a pandas.Series of counts summed into month bins
+    Reinterpret 'Time' as 'Age Bin' for a birth cohort
+    :param df: a pandas.DataFrame of counts and 'Time' in days
+    :return: a pandas.DataFrame including an additional (or overwritten) 'Age Bin' column
     """
 
-    df = counts.reset_index()
+    df['Age Bin'] = df['Time'] / 365.0   # Time in days but Age in years
+    return df
+
+
+def season_from_time(df, seasons=None):
+    """
+    Reinterpret 'Time' as 'Month' or 'Season' for seasonal data
+    :param df: a pandas.DataFrame of counts and 'Time' in days
+    :param seasons: optional dictionary of month names to season names
+    :return: a pandas.DataFrame including an additional 'Season' or 'Month' column
+    """
 
     # Day of Year from Time (in days)
-    df['Day of Year'] = 1 + df['Time'] % 365
+    day_of_year = 1 + df['Time'] % 365
 
     # Assign each Day of Year to a named Month
-    df['Month'] = df['Day of Year'].apply(lambda x: calendar.month_name[date.fromordinal(x).month])
+    month = day_of_year.apply(lambda x: calendar.month_name[date.fromordinal(x).month])
 
-    # Sum counts for time points sharing a month and return Series
-    idx_names = list(counts.index.names)  # copy FrozenList to mutable
-    idx_names[idx_names.index('Time')] = 'Month'  # replace Time with Month in new MultiIndex
-    rebinned_series = df.groupby(idx_names).sum()[counts.name]
-    return rebinned_series
+    # Return season if optional lookup is available, otherwise return month
+    if seasons:
+        df['Season'] = month.apply(lambda x: seasons.get(x))
+        df.dropna(subset=['Season'], inplace=True)
+    else:
+        df['Month'] = month
+
+    return df
 
 
-def reorder_sim_data(channel_series, ref_channel_series, months, channel, population):
+def pairwise(iterable):
+    """ s -> (s0,s1), (s1,s2), (s2, s3), ... """
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return itertools.izip(a, b)
+
+
+def aggregate_on_multiindex(df, index, keep=slice(None)):
     """
-    A function to reorder sim data to match reference data
+    Aggregate and re-index data on specified multi-index levels and intervals
+    :param df: a pandas.DataFrame with columns matching the specified multi-index level names
+    :param index: a multi-index of categorical values or right-bin-edges, e.g. ['early', 'late'] or [5, 15, 100]
+    :param keep: optional list of columns to keep, default=all
+    :return: pandas.Series or DataFrame of specified channels aggregated and indexed on the specified binning
     """
 
-    print(channel_series.head())
-    print(ref_channel_series.head())
-    print(population.head())
+    for ix in index.levels:
+        logger.debug(ix.name, ix.dtype, ix.values)
 
-    # Prepare age bins from multi-index for cuts
-    # TODO: push bins [0, 5), [5, 15) into reference itself?
-    age_bins = ref_channel_series.index.levels[ref_channel_series.index.names.index('Age Bins')]
-    age_bins = sorted(age_bins.tolist() + [0])
+        if ix.name not in df.columns:
+            raise Exception('Cannot perform aggregation as MultiIndex level (%s) not found in DataFrame:\n%s' % (ix.name, df.head()))
 
-    # Data frames
-    df_pop = population.reset_index()
-    df_sim = channel_series.reset_index()
-    df_ref = ref_channel_series.reset_index()
+        # If dtype is object, these are categorical (e.g. season='start_wet', channel='gametocytemia')
+        if ix.dtype == 'object':
+            # TODO: DatetimeIndex, TimedeltaIndex are implemented as int64.  Do we want to catch them separately?
+            # Keep values present in reference index-level values; drop any that are not
+            df = df[df[ix.name].isin(ix.values)]
 
-    # Seasons
-    # TODO: handle this already in site_Laye reference, e.g. april = [92, 121]
-    months_of_year = dict((v,k) for k,v in enumerate(calendar.month_name))
-    seasonIndex = []
-    for i in range(len(months)):
-        seasonIndex.extend([t for t in range(months_of_year[months[i]] - 1, df_sim.Time[-1:] + 1, 12)])
-    seasons = list(set(df_ref['Seasons']))
-    season_month = dict(zip(months,seasons))
-    print(season_month)
+        # Otherwise, the index-level values are upper-edges of aggregation bins for the corresponding channel
+        elif ix.dtype in ['int64', 'float64']:
+            bin_edges = np.concatenate(([-np.inf], ix.values))
+            labels = ix.values  # just using upper-edges as in reference
+            # TODO: more informative labels? would need to be modified also in reference to maintain useful link...
+            # labels = []
+            # for low, high in pairwise(bin_edges):
+            #     if low == -np.inf:
+            #         labels.append("<= {0}".format(high))
+            #     elif high == np.inf:
+            #         labels.append("> {0}".format(low))
+            #     else:
+            #         labels.append("{0} - {1}".format(low, high))
 
-    # Reorder simulation data to match reference data
+            df[ix.name] = pd.cut(df[ix.name], bin_edges, labels=labels)
 
-    # The population normalization part
-    pop = pd.merge(df_sim, df_pop, left_on=['Time', 'Age Bins'], right_on=['Time', 'Age Bins'])  # Find population by age bin and pull out relevant rows
-    df_sim[channel] = pop[channel].multiply(pop['Average Population by Age Bin']).values
+        else:
+            logger.warning('Unexpected dtype=%s for MultiIndex level (%s). No aggregation performed.', ix.dtype, ix.name)
 
-    # Birth cohort age bins from time
-    df_sim['Age Bins'] = pd.cut((df_sim['Time'] + 1) / 12, age_bins)  # Reorder Age Bins
-
-    # Season from time
-    df_sim = df_sim[df_sim.Time.isin(seasonIndex)]  # Only retain months corresponding to seasons in ref data
-    df_sim['Time'] = [season_month[calendar.month_name[i]] for i in (df_sim['Time']%12+1)]  # Label Season
-
-    # Name with channel to prepare for merging
-    df_sim['PfPR Type'] = [s for s in channel.split() if "temia" in s]*len(df_sim)
-    df_sim = df_sim.rename(index=str, columns={"Time": "Seasons"})
-
-    # Reorder simulation data frame to match reference data frame
-    # df_sim = df_sim[list(df_ref.columns.values)]
-
-    return df_sim
+    # Aggregate on reference MultiIndex, keeping specified channels and dropping missing data
+    df = df.groupby([ix.name for ix in index.levels]).sum()[keep].dropna()
+    logger.debug('Data aggregated on MultiIndex levels:\n%s', df.head(15))
+    return df
 
 
 def accumulate_agebins_cohort(simdata, average_pop, sim_agebins, raw_agebins):
