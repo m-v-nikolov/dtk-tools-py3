@@ -3,7 +3,8 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import summary_channel_to_pandas, reorder_sim_data
+from calibtool.analyzers.Helpers import summary_channel_to_pandas, convert_to_counts,\
+                                        rebin_age_from_birth_cohort, rebin_by_month, reorder_sim_data
 from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -22,17 +23,17 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
 
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
-    # TODO: hard-code these later? or infer from reference?
-    # TODO: what is the use-case for flexibility here? one or the other channel?
-    x = 'age_bins'
-    y1 = 'PfPR by Parasitemia and Age Bin'
-    y2 = 'PfPR by Gametocytemia and Age Bin'
+    channels = ['PfPR by Parasitemia and Age Bin',
+                'PfPR by Gametocytemia and Age Bin']
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
     def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas):
         super(PrevalenceByAgeSeasonAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('density_by_age_and_season')
+
+        ix = self.reference.index
+        self.ref_age_bins = [0] + ix.levels[ix.names.index('Age Bins')].tolist()  # prepend minimum age = 0
 
     def apply(self, parser):
         """
@@ -42,22 +43,36 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         # Load data from simulation
         data = parser.raw_data[self.filenames[0]]
 
-        # Population by age and time series
+        # Population by age and time series (to convert parasite prevalence to counts)
         population = summary_channel_to_pandas(data, 'Average Population by Age Bin')
 
-        # Simulation dataframe
-        temp_data1 = summary_channel_to_pandas(data, self.y1)
-        temp_data2 = summary_channel_to_pandas(data, self.y2)
+        # Prevalence by density, age, and time series
+        channel_data_dict = {channel: summary_channel_to_pandas(data, channel) for channel in self.channels}
 
+        # # NEW
+        # for channel, channel_data in channel_data_dict.items():
+        #
+        #     # Normalize prevalence to counts
+        #     channel_counts = convert_to_counts(channel_data, population)
+        #
+        #     # Generate age from birth cohort
+        #     birth_cohort_rebinned = rebin_age_from_birth_cohort(channel_counts, self.ref_age_bins)
+        #
+        #     # Monthly binning
+        #     # TODO: generalize to any day-of-year intervals? Discard data not in months of interest from CalibSite?
+        #     monthly_binned = rebin_by_month(birth_cohort_rebinned, months=[])
+        #
+        #     channel_data_dict[channel] = monthly_binned
+
+        # OLD
         # TODO: handle this already in site_Laye reference
         # months = self.reference['Metadata']['months']
-        months = ['April', 'August', 'December']
+        months = ['July', 'September', 'January']
+        for channel, channel_data in channel_data_dict.items():
+            channel_data_dict[channel] = reorder_sim_data(channel_data, self.reference, months, channel, population)
 
-        temp_data1 = reorder_sim_data(temp_data1, self.reference, months, self.y1, population)
-        temp_data2 = reorder_sim_data(temp_data2, self.reference, months, self.y2, population)
-
-        sim_data = pd.concat([temp_data1, temp_data2])
-
+        sim_data = pd.concat(channel_data_dict.values())
+        print(sim_data.head(15))
         sim_data.sample = parser.sim_data.get('__sample_index__')
         sim_data.sim_id = parser.sim_id
 

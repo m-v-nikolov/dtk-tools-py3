@@ -12,9 +12,27 @@ logger = logging.getLogger(__name__)
 class LayeCalibSite(CalibSite):
 
     metadata = {
+        # TODO: be explicit with categorical bins?
+        # http://pandas.pydata.org/pandas-docs/stable/categorical.html
+        # (, 0] (0, 50] (50, 500] ...
+        # (, 5] (5, 15] (15, 1000]
+        # [180, 211] [246, 282] [10, 33]
+
         "parasitemia_bins": [0, 50, 500, 5000, 50000, 500000],
-        "age_bins": [5, 15, 100],
-        "months": ['April', 'August', 'December']
+        "age_bins": [5, 15, 1000],
+
+        # TODO: resolve discrepancy?
+        # From Prashanth's branch
+        # "months": ['April', 'August', 'December']
+
+        # From Malaria Journal paper (Methods)
+        # 1 July, 1 Sept, 1 March
+
+        # From Andre's raw data
+        # START_WET = 29 June - 30 July '07 = 180 - 211 (doy)
+        # PEAK_WET = 3 Sept - 9 Oct '07 = 246 - 282 (doy)
+        # END_WET (DRY) = 10 Jan - 2 Feb '08 = 10 - 33 (doy)
+        "months": ['July', 'September', 'January']
     }
 
     def __init__(self):

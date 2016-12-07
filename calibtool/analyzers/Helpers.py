@@ -1,4 +1,5 @@
 import itertools
+from datetime import date
 import calendar
 import logging
 from collections import OrderedDict
@@ -138,20 +139,84 @@ def season_channel_age_density_json_to_pandas(reference, bins):
     return channel_series
 
 
+def convert_to_counts(rates, pops):
+    """
+    Convert population-normalized rates to counts
+    :param rates: a pandas.Series of normalized rates
+    :param pops: a pandas.Series of average population counts
+    :return: a pandas.Series (same binning as rates)
+    """
+
+    rate_idx = rates.index.names
+    pop_idx = pops.index.names
+
+    # Join rates to population counts on the binning of the latter
+    df = rates.reset_index().set_index(pop_idx)\
+              .join(pops, how='left')\
+              .reset_index().set_index(rate_idx)
+
+    # Multiply rates by population and return counts
+    counts = (df[rates.name] * df[pops.name]).rename(rates.name)
+    return counts
+
+
+def rebin_age_from_birth_cohort(counts, age_bins):
+    """
+    Reinterpret 'Time' as 'Age' for a birth cohort and re-bin counts in specified bins
+    :param counts: a pandas.Series of counts with MultiIndex containing level 'Time' in days
+    :param age_bins: a list of ages in years to cut into categorical bins
+    :return: a pandas.Series of counts summed into the reinterpreted age bins
+    """
+
+    df = counts.reset_index()
+
+    # Time in days but Age in years
+    df['Age'] = df['Time'] / 365.0
+
+    # Assign each Age to a range in specified age_bins (left inclusive)
+    df['Age Bins'] = pd.cut(df.Age, age_bins, include_lowest=True)
+
+    # Sum counts for time points sharing an age bin and return Series
+    rebinned_series = df.groupby(counts.index.names).sum()[counts.name]
+    return rebinned_series
+
+
+def rebin_by_month(counts, months):
+    """
+    Re-bin counts replacing 'Time' with specified month bins
+    :param counts: a pandas.Series of counts with MultiIndex containing level 'Time' in days
+    :param months: a list of month names
+    :return: a pandas.Series of counts summed into month bins
+    """
+
+    df = counts.reset_index()
+
+    # Day of Year from Time (in days)
+    df['Day of Year'] = 1 + df['Time'] % 365
+
+    # Assign each Day of Year to a named Month
+    df['Month'] = df['Day of Year'].apply(lambda x: calendar.month_name[date.fromordinal(x).month])
+
+    # Sum counts for time points sharing a month and return Series
+    idx_names = list(counts.index.names)  # copy FrozenList to mutable
+    idx_names[idx_names.index('Time')] = 'Month'  # replace Time with Month in new MultiIndex
+    rebinned_series = df.groupby(idx_names).sum()[counts.name]
+    return rebinned_series
+
+
 def reorder_sim_data(channel_series, ref_channel_series, months, channel, population):
     """
     A function to reorder sim data to match reference data
     """
 
-    print(channel_series.loc[31])
+    print(channel_series.head())
     print(ref_channel_series.head())
-    print(population)
+    print(population.head())
 
     # Prepare age bins from multi-index for cuts
     # TODO: push bins [0, 5), [5, 15) into reference itself?
     age_bins = ref_channel_series.index.levels[ref_channel_series.index.names.index('Age Bins')]
     age_bins = sorted(age_bins.tolist() + [0])
-    print(age_bins)
 
     # Data frames
     df_pop = population.reset_index()
@@ -166,18 +231,27 @@ def reorder_sim_data(channel_series, ref_channel_series, months, channel, popula
         seasonIndex.extend([t for t in range(months_of_year[months[i]] - 1, df_sim.Time[-1:] + 1, 12)])
     seasons = list(set(df_ref['Seasons']))
     season_month = dict(zip(months,seasons))
-    print(seasons)
     print(season_month)
 
     # Reorder simulation data to match reference data
-    df_sim = df_sim[df_sim.Time.isin(seasonIndex)]  # Only retain months corresponding to seasons in ref data
+
+    # The population normalization part
     pop = pd.merge(df_sim, df_pop, left_on=['Time', 'Age Bins'], right_on=['Time', 'Age Bins'])  # Find population by age bin and pull out relevant rows
-    df_sim['PfPR by Parasitemia and Age Bin'] = pop['PfPR by Parasitemia and Age Bin'].multiply(pop['Population by Age Bin']).values
+    df_sim[channel] = pop[channel].multiply(pop['Average Population by Age Bin']).values
+
+    # Birth cohort age bins from time
     df_sim['Age Bins'] = pd.cut((df_sim['Time'] + 1) / 12, age_bins)  # Reorder Age Bins
+
+    # Season from time
+    df_sim = df_sim[df_sim.Time.isin(seasonIndex)]  # Only retain months corresponding to seasons in ref data
     df_sim['Time'] = [season_month[calendar.month_name[i]] for i in (df_sim['Time']%12+1)]  # Label Season
+
+    # Name with channel to prepare for merging
     df_sim['PfPR Type'] = [s for s in channel.split() if "temia" in s]*len(df_sim)
     df_sim = df_sim.rename(index=str, columns={"Time": "Seasons"})
-    df_sim = df_sim[list(df_ref.columns.values)] # Reorder simulation data frame to match reference data frame
+
+    # Reorder simulation data frame to match reference data frame
+    # df_sim = df_sim[list(df_ref.columns.values)]
 
     return df_sim
 
