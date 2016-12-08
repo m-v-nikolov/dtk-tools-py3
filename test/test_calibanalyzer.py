@@ -3,6 +3,7 @@ import json
 import unittest
 import copy
 
+import numpy as np
 import pandas as pd
 
 from calibtool.analyzers.Helpers import \
@@ -70,12 +71,13 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertEqual(self.parser.sim_id, 'dummy_id')
         self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
 
-        # Make four dummy copies of the same parser with unique sim_id and two different sample points
-        parsers = {i: copy.deepcopy(self.parser) for i in range(4)}
-        tmp_sim_data = [None] * 4
+        # Make multiple dummy copies of the same parser with unique sim_id and subset of different sample points
+        n_sims, n_samples = (8, 4)
+        parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
+        tmp_sim_data = [None] * n_sims
         for i, p in parsers.items():
             p.sim_id = 'sim_%d' % i
-            p.sim_data['__sample_index__'] = i % 2
+            p.sim_data['__sample_index__'] = i % n_samples
             tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
             tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
             tmp_sim_data[i].sim_id = p.sim_id
@@ -86,10 +88,11 @@ class TestLayeCalibSite(unittest.TestCase):
         analyzer.combine(parsers)
 
         # Verify averaging of sim_id by sample_index is done correctly
-        # sample0 = (id0, id2) = (1x, 3x) => avg = 2
-        # sample1 = (id1, id3) = (2x, 4x) => avg = 3
+        # e.g. sample0 = (id0, id2) = (1x, 3x) => avg0 = 2
+        avg = [np.arange(i + 1, n_sims + 1, n_samples).mean() for i in range(n_samples)]
         for ix, row in analyzer.data.iterrows():
-            self.assertAlmostEqual(1.5 * row[0], row[1])
+            for isample in range(1, n_samples):
+                self.assertAlmostEqual(row[0] / avg[0], row[i] / avg[i])
 
         #############
         # TEST COMPARE
@@ -101,7 +104,13 @@ class TestLayeCalibSite(unittest.TestCase):
             x = x.unstack('PfPR Bin')
             return dirichlet_multinomial(x.ref.values, x.sim.values)
 
-        self.assertAlmostEqual(analyzer.result[0], compare_with_nested_loops(analyzer.data[0]))
+        for i in range(n_samples):
+            self.assertAlmostEqual(analyzer.result[i], compare_with_nested_loops(analyzer.data[i]))
+
+        #############
+        # TEST CACHE
+        cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
+        self.assertListEqual(range(n_samples) + ['ref'], cache.columns.tolist())
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')

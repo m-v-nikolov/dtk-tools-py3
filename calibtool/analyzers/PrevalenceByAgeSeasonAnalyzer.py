@@ -100,14 +100,6 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
     def cache(self):
         """
         Return a cache of the minimal data required for plotting sample comparisons
-        to reference comparisons.
+        to reference comparisons. Append the reference column to the simulation sample-point data.
         """
-
-        # TODO: this is only caching y1 but not y2?
-
-        cache = self.data.copy()
-        sample_dicts = [{self.y1:[cache[i][j] for j in range(len(cache[i])) ]} for i in range(len(cache.keys()))] # i cycles through simulation id, y cycles through sim values
-        ref_dicts = {self.y1:[self.ref_data[i] for i in range(len(self.ref_data))]}
-        logger.debug(sample_dicts)
-
-        return {'sims': sample_dicts, 'reference': ref_dicts, 'axis_names': [self.x, self.y1]}
+        return pd.concat([self.data, self.reference.rename('ref')], axis=1).dropna()
