@@ -60,7 +60,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         # We use poll to be able to update the status
         if self.simulation.pid:
             pid = int(self.simulation.pid)
-            while psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
+            while psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
                 self.simulation.message = self.last_status_line()
                 self.update_status()
                 time.sleep(5)
