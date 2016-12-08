@@ -1,6 +1,7 @@
 import os
 import json
 import unittest
+import copy
 
 import pandas as pd
 
@@ -22,8 +23,11 @@ class DummyParser:
         """
         with open(filepath, 'r') as json_file:
             self.raw_data = {filename: json.load(json_file)}
-            self.sim_id = sim_id
-            self.sim_data = {'__sample_index__': index}
+
+        self.sim_id = sim_id
+        self.sim_data = {'__sample_index__': index}
+
+        self.selected_data = {}
 
 
 class TestLayeCalibSite(unittest.TestCase):
@@ -58,6 +62,22 @@ class TestLayeCalibSite(unittest.TestCase):
         df = df.sum(level=['Season', 'Age Bin'])
         for ix, row in df.iterrows():
             self.assertAlmostEqual(row[0], row[1])
+
+        self.assertEqual(self.parser.sim_id, 'dummy_id')
+        self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
+
+        # Make four dummy copies of the same parser with unique sim_id and two different sample points
+        parsers = {i: copy.deepcopy(self.parser) for i in range(4)}
+        for i, p in parsers.items():
+            p.sim_id = 'sim_%d' % i
+            p.sim_data['__sample_index__'] = i % 2
+            sim_data = copy.deepcopy(sim_data)
+            sim_data.sample = p.sim_data.get('__sample_index__')
+            sim_data.sim_id = p.sim_id
+            p.selected_data[id(analyzer)] = sim_data
+
+        analyzer.combine(parsers)
+        # TODO: verify we've averaged over sim_id with shared sample_index correctly
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
