@@ -5,7 +5,8 @@ import unittest
 import pandas as pd
 
 from calibtool.analyzers.Helpers import \
-    summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
+    summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping, \
+    convert_to_counts, age_from_birth_cohort, season_from_time
 from calibtool.study_sites.site_Laye import LayeCalibSite
 
 
@@ -34,8 +35,6 @@ class TestLayeCalibSite(unittest.TestCase):
         self.data = self.parser.raw_data[self.filename]
         self.site = LayeCalibSite()
 
-    # TODO: specific unittests for new functions in Helpers
-
     def test_site_analyzer(self):
         self.assertEqual(self.site.name, 'Laye')
 
@@ -49,7 +48,16 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertIsInstance(reference, pd.Series)
 
         sim_data = analyzer.apply(self.parser)
-        assert False
+        self.assertListEqual(reference.index.names, sim_data.index.names)
+        for i, level in enumerate(reference.index.levels):
+            # N.B. sim_data.index keeps empty values from dropna, e.g. unpopulated age bins
+            self.assertSetEqual(set(level.values), set(sim_data.index.levels[i].values))
+
+        # Population by age and season is the same and captured in one of parasite/gametocyte density bins
+        df = sim_data.unstack('Channel')
+        df = df.sum(level=['Season', 'Age Bin'])
+        for ix, row in df.iterrows():
+            self.assertAlmostEqual(row[0], row[1])
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
@@ -74,6 +82,32 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertEqual(parasites.name, parasite_channel)
         self.assertAlmostEqual(parasites.loc[1095, 500, 100], 0.026666, places=5)
         self.assertAlmostEqual(parasites.loc[31, :, 20].sum(), 1)  # on given day + age, density-bin fractions sum to 1
+
+        counts = convert_to_counts(parasites, population)
+        self.assertEqual(counts.name, parasites.name)
+        self.assertListEqual(counts.index.names, parasites.index.names)
+        self.assertListEqual(counts.iloc[7:13].astype(int).tolist(), [281, 13, 19, 7, 9, 6])
+
+        df = parasites.reset_index()
+
+        df = age_from_birth_cohort(df)
+        self.assertListEqual((df.Time / 365.0).tolist(), df['Age Bin'].tolist())
+
+        months_df = season_from_time(df)
+        months = months_df.Month.unique()
+        self.assertEqual(len(months), 12)
+        self.assertEqual(months_df.Month.iloc[0], 'February')
+
+        seasons = {'fall': ['September', 'October'], 'winter': ['January']}
+        seasons_by_month = {}
+        for s, mm in seasons.items():
+            for m in mm:
+                seasons_by_month[m] = s
+        seasons_df = season_from_time(df, seasons=seasons_by_month)
+        months = seasons_df.Month.unique()
+        self.assertEqual(len(months), 3)
+        self.assertEqual(seasons_df.Month.iloc[0], 'September')
+        self.assertEqual(seasons_df.Season.iloc[0], 'fall')
 
     def test_bad_reference_type(self):
         self.assertRaises(lambda: self.site.get_reference_data('unknown_type'))
