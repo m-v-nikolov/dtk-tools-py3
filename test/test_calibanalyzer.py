@@ -11,7 +11,7 @@ from calibtool.analyzers.Helpers import \
     convert_to_counts, age_from_birth_cohort, season_from_time
 from calibtool.study_sites.site_Laye import LayeCalibSite
 
-from calibtool.LL_calculators import dirichlet_multinomial, dirichlet_multinomial_pandas
+from calibtool.LL_calculators import dirichlet_multinomial
 
 
 class DummyParser:

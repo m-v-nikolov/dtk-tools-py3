@@ -113,6 +113,10 @@ def gamma_poisson(raw_nobs, sim_nobs, raw_data, sim_data):
         LL /= num_bins
     return LL
 
+"""
+Other weighting functions
+"""
+
 
 def euclidean_distance(raw_data, sim_data):
 
