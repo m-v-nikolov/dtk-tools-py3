@@ -87,13 +87,8 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         comparison between simulation and reference data.
         """
 
-        sample = sample.reset_index()
-        sample.rename(columns={sample.keys()[-1]: 'sim'}, inplace=True)
-        sample['ref'] = self.ref_data.reset_index()['PfPR by Parasitemia and Age Bin']
-        sample = sample[sample['sim'] > 0]
-        sample = sample[sample['ref'] > 0]
-
-        return self.compare_fn(sample)
+        df = pd.concat([sample.rename('sim'), self.reference.rename('ref')], axis=1).dropna()
+        return self.compare_fn(df)
 
     def finalize(self):
         """

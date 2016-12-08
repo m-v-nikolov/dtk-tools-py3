@@ -10,6 +10,8 @@ from calibtool.analyzers.Helpers import \
     convert_to_counts, age_from_birth_cohort, season_from_time
 from calibtool.study_sites.site_Laye import LayeCalibSite
 
+from calibtool.LL_calculators import dirichlet_multinomial, dirichlet_multinomial_pandas
+
 
 class DummyParser:
     """
@@ -51,6 +53,8 @@ class TestLayeCalibSite(unittest.TestCase):
         reference = analyzer.reference
         self.assertIsInstance(reference, pd.Series)
 
+        #############
+        # TEST APPLY
         sim_data = analyzer.apply(self.parser)
         self.assertListEqual(reference.index.names, sim_data.index.names)
         for i, level in enumerate(reference.index.levels):
@@ -68,16 +72,36 @@ class TestLayeCalibSite(unittest.TestCase):
 
         # Make four dummy copies of the same parser with unique sim_id and two different sample points
         parsers = {i: copy.deepcopy(self.parser) for i in range(4)}
+        tmp_sim_data = [None] * 4
         for i, p in parsers.items():
             p.sim_id = 'sim_%d' % i
             p.sim_data['__sample_index__'] = i % 2
-            sim_data = copy.deepcopy(sim_data)
-            sim_data.sample = p.sim_data.get('__sample_index__')
-            sim_data.sim_id = p.sim_id
-            p.selected_data[id(analyzer)] = sim_data
+            tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
+            tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
+            tmp_sim_data[i].sim_id = p.sim_id
+            p.selected_data[id(analyzer)] = tmp_sim_data[i]
 
+        #############
+        # TEST COMBINE
         analyzer.combine(parsers)
-        # TODO: verify we've averaged over sim_id with shared sample_index correctly
+
+        # Verify averaging of sim_id by sample_index is done correctly
+        # sample0 = (id0, id2) = (1x, 3x) => avg = 2
+        # sample1 = (id1, id3) = (2x, 4x) => avg = 3
+        for ix, row in analyzer.data.iterrows():
+            self.assertAlmostEqual(1.5 * row[0], row[1])
+
+        #############
+        # TEST COMPARE
+        analyzer.finalize()  # applies compare_fn to each sample setting self.result
+
+        # Reshape vectorized version to test nested-for-loop version
+        def compare_with_nested_loops(x):
+            x = pd.concat([x.rename('sim'), reference.rename('ref')], axis=1).dropna()
+            x = x.unstack('PfPR Bin')
+            return dirichlet_multinomial(x.ref.values, x.sim.values)
+
+        self.assertAlmostEqual(analyzer.result[0], compare_with_nested_loops(analyzer.data[0]))
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')

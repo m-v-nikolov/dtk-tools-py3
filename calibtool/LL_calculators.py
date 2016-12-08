@@ -1,27 +1,36 @@
 import math
 
-import numpy as np
 from scipy.special import gammaln
 
-""" All functions based on K McCarthy's Matlab CalibTool versions """
+
+"""
+Functions below compare "ref" and "sim" columns of a pandas.DataFrame
+"""
 
 
 def dirichlet_multinomial_pandas(df):
 
-    num_cat_bins = len(set(df[df.keys()[-3]]))  # -3 used to indicate column just before the 'sim' and 'ref' columns
-    raw_nobs = df.groupby(list(df.keys()[0:-3])).sum()['ref']
-    sim_nobs = df.groupby(list(df.keys()[0:-3])).sum()['sim']
+    # Get the number of total observations aggregated over the last level in MultiIndex
+    # e.g. if levels are ['Channel', 'Season', 'Age Bin', 'PfPR Bin']
+    #      keep first three in index, while summing over the last level.
+    sum_levels = df.index.names[:-1]
+    n_obs = df.sum(level=sum_levels)
+    n_categories = len(df.index.levels[-1])
 
-    LL = 0.
-    LL += gammaln(np.asarray(raw_nobs) + 1).sum()
-    LL += gammaln(np.asarray(sim_nobs)).sum()
-    LL -= gammaln(np.asarray(raw_nobs) + np.asarray(sim_nobs) + num_cat_bins).sum()
-    LL += gammaln(np.asarray(df['ref']) + np.asarray(df['sim']) + 1).sum()
-    LL -= gammaln(np.array(df['ref']) + 1).sum()
-    LL -= gammaln(np.array(df['sim']) + 1).sum()
+    n_obs['LL'] = gammaln(n_obs.ref + 1) \
+                + gammaln(n_obs.sim) \
+                - gammaln(n_obs.ref + n_obs.sim + n_categories) \
+                + gammaln(df.ref + df.sim + 1).sum(level=sum_levels) \
+                - gammaln(df.sim + 1).sum(level=sum_levels) \
+                - gammaln(df.ref + 1).sum(level=sum_levels)
 
-    LL /= len(df)
-    return LL
+    return n_obs.LL.mean() / n_categories
+
+
+"""
+Functions below were ported by J.Gerardin
+from K.McCarthy Matlab CalibTool versions
+"""
 
 
 def dirichlet_multinomial(raw_data, sim_data):
