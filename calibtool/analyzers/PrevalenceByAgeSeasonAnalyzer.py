@@ -14,8 +14,6 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
 
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
-    data_group_names = ['sample', 'sim_id', 'channel']
-
     def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas, **kwargs):
         super(PrevalenceByAgeSeasonAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('density_by_age_and_season')
@@ -69,14 +67,18 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         """
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
+
+        # TODO: convert output of apply() such that "selected" is a one-column DataFrame instead of Series?
+
+        # Stack selected_data from each parser, adding unique (sim_id) and shared (sample) levels to MultiIndex
+        combine_levels = ['sim_id', 'sample']
         combined = pd.concat(selected, axis=0,
-                         keys=[(d.sim_id, d.sample) for d in selected],
-                             names=self.data_group_names)
-        combined = combined.reset_index()
-        groupByColumns = list(combined.keys()[1:-1])  # Only taking sim_id, Age_Bins, Seasons (if available), PfPR Bins (if available), PfPR Type (if available)
-        combined = pd.DataFrame.dropna(combined.groupby(groupByColumns).mean().reset_index())
-        del combined['channel']
-        self.data = pd.pivot_table(combined, values=combined.keys()[-1], index=list(combined.keys()[1:-1]), columns=combined.keys()[0])
+                             keys=[(d.sim_id, d.sample) for d in selected],
+                             names=combine_levels)
+
+        # Unstack sim_id/sample to columns MultiIndex and store average sim_ids with same sample index
+        combined = combined.unstack(combine_levels)
+        self.data = combined.groupby(level='sample', axis=1).mean()
         logger.debug(self.data)
 
     def compare(self, sample):
