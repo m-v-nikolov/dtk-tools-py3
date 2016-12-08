@@ -3,10 +3,9 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import \
-    summary_channel_to_pandas, convert_to_counts,\
-    age_from_birth_cohort, season_from_time, aggregate_on_multiindex
 from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
+from calibtool.analyzers.Helpers import summary_channel_to_pandas, convert_to_counts, \
+                                        age_from_birth_cohort, season_from_time, aggregate_on_multiindex
 
 logger = logging.getLogger(__name__)
 
