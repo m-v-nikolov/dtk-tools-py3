@@ -12,14 +12,14 @@ from calibtool.analyzers.Helpers import \
 logger = logging.getLogger(__name__)
 
 
-class PrevalenceByAgeSeasonAnalyzer(BaseSummaryCalibrationAnalyzer):
+class DensityByAgeSeasonCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
 
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
     population_channel = 'Average Population by Age Bin'
 
     def __init__(self, site, weight=1, compare_fn=LL_calculators.dirichlet_multinomial_pandas, **kwargs):
-        super(PrevalenceByAgeSeasonAnalyzer, self).__init__(site, weight, compare_fn)
+        super(DensityByAgeSeasonCohortAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('density_by_age_and_season')
 
         # Get channels to extract from 'Channel' level of reference MultiIndex

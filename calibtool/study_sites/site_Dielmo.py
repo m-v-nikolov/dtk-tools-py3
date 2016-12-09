@@ -2,7 +2,7 @@ import logging
 
 from calibtool.study_sites import site_clinical_incidence_cohort
 from calibtool.CalibSite import CalibSite
-from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
+from calibtool.analyzers.IncidenceByAgeCohortAnalyzer import IncidenceByAgeCohortAnalyzer
 from calibtool.analyzers.Helpers import channel_age_json_to_pandas
 
 logger = logging.getLogger(__name__)
@@ -53,4 +53,4 @@ class DielmoCalibSite(CalibSite):
         return site_clinical_incidence_cohort.get_setup_functions('Dielmo')
 
     def get_analyzers(self):
-        return [ClinicalIncidenceByAgeCohortAnalyzer(site=self)]
+        return [IncidenceByAgeCohortAnalyzer(site=self)]

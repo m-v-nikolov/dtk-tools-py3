@@ -5,7 +5,7 @@ import numpy as np
 
 from calibtool.study_sites import site_BFdensity
 from calibtool.CalibSite import CalibSite
-from calibtool.analyzers.PrevalenceByAgeSeasonAnalyzer import PrevalenceByAgeSeasonAnalyzer
+from calibtool.analyzers.DensityByAgeSeasonCohortAnalyzer import DensityByAgeSeasonCohortAnalyzer
 from calibtool.analyzers.Helpers import season_channel_age_density_json_to_pandas
 
 logger = logging.getLogger(__name__)
@@ -81,4 +81,4 @@ class LayeCalibSite(CalibSite):
         return site_BFdensity.get_setup_functions('Laye')
 
     def get_analyzers(self):
-        return [PrevalenceByAgeSeasonAnalyzer(site=self, seasons=self.metadata['seasons_by_month'])]
+        return [DensityByAgeSeasonCohortAnalyzer(site=self, seasons=self.metadata['seasons_by_month'])]

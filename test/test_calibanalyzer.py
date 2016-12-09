@@ -2,6 +2,7 @@ import os
 import json
 import unittest
 import copy
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import pandas as pd
@@ -37,23 +38,55 @@ class DummyParser:
         self.selected_data = {}
 
 
-class TestLayeCalibSite(unittest.TestCase):
+class BaseCalibSiteTest(object):
+    """
+    A class to hold functions common to all CalibSite test functions,
+    but which will not run in the base class as it doesn't inherit from TestCase.
+    Using multiple inheritance in derived classes to pick up TestCase functions,
+    this class first so its definitions aren't overridden by unittest.TestCase.
+    """
 
+    __metaclass__ = ABCMeta
+
+    filename = None
+
+    @abstractmethod
     def setUp(self):
         filepath = os.path.join('input', 'test_malaria_summary_report.json')
-        self.filename = 'output/MalariaSummaryReport_Monthly_Report.json'
         self.parser = DummyParser(self.filename, filepath)
         self.data = self.parser.raw_data[self.filename]
+
+    def get_dummy_parsers(self, sim_data, analyzer_id, n_sims=8, n_samples=4):
+        parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
+        tmp_sim_data = [None] * n_sims
+        for i, p in parsers.items():
+            p.sim_id = 'sim_%d' % i
+            p.sim_data['__sample_index__'] = i % n_samples
+            tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
+            tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
+            tmp_sim_data[i].sim_id = p.sim_id
+            p.selected_data[analyzer_id] = tmp_sim_data[i]
+        return parsers
+
+
+class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
+
+    site_name = 'Laye'
+    analyzer_name = 'DensityByAgeSeasonCohortAnalyzer'
+    filename = 'output/MalariaSummaryReport_Monthly_Report.json'
+
+    def setUp(self):
+        super(TestLayeCalibSite, self).setUp()
         self.site = LayeCalibSite()
+        self.assertEqual(self.site.name, self.site_name)
 
     def test_site_analyzer(self):
-        self.assertEqual(self.site.name, 'Laye')
 
         analyzers = self.site.analyzers
         self.assertTrue(len(analyzers), 1)
 
         analyzer = analyzers[0]
-        self.assertTrue(analyzer.name, 'PrevalenceByAgeSeasonAnalyzer')
+        self.assertTrue(analyzer.name, self.analyzer_name)
 
         reference = analyzer.reference
         self.assertIsInstance(reference, pd.DataFrame)
@@ -75,17 +108,10 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertEqual(self.parser.sim_id, 'dummy_id')
         self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
 
-        # Make multiple dummy copies of the same parser with unique sim_id and subset of different sample points
-        n_sims, n_samples = (8, 4)
-        parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
-        tmp_sim_data = [None] * n_sims
-        for i, p in parsers.items():
-            p.sim_id = 'sim_%d' % i
-            p.sim_data['__sample_index__'] = i % n_samples
-            tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
-            tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
-            tmp_sim_data[i].sim_id = p.sim_id
-            p.selected_data[id(analyzer)] = tmp_sim_data[i]
+        # Make multiple dummy copies of the same parser
+        # with unique sim_id and subset of different sample points
+        n_sims, n_samples = 8, 4
+        parsers = self.get_dummy_parsers(sim_data, id(analyzer), n_sims=n_sims, n_samples=n_samples)
 
         #############
         # TEST COMBINE
@@ -176,13 +202,16 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertEqual(reference.loc[('PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50), 'Counts'], 9)
 
 
-class TestDielmoCalibSite(unittest.TestCase):
+class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
+
+    site_name = 'Dielmo'
+    analyzer_name = 'IncidenceByAgeCohortAnalyzer'
+    filename = 'output/MalariaSummaryReport_Annual_Report.json'
+
     def setUp(self):
-        filepath = os.path.join('input', 'test_malaria_summary_report.json')
-        self.filename = 'output/MalariaSummaryReport_Annual_Report.json'
-        self.parser = DummyParser(self.filename, filepath)
-        self.data = self.parser.raw_data[self.filename]
+        super(TestDielmoCalibSite, self).setUp()
         self.site = DielmoCalibSite()
+        self.assertEqual(self.site.name, self.site_name)
 
     def test_get_reference(self):
         reference = self.site.get_reference_data('annual_clinical_incidence_by_age')
@@ -192,13 +221,12 @@ class TestDielmoCalibSite(unittest.TestCase):
         self.assertEqual(reference.loc[3, 'Annual Clinical Incidence by Age Bin'], 6.1)
 
     def test_site_analyzer(self):
-        self.assertEqual(self.site.name, 'Dielmo')
 
         analyzers = self.site.analyzers
         self.assertTrue(len(analyzers), 1)
 
         analyzer = analyzers[0]
-        self.assertTrue(analyzer.name, 'ClinicalIncidenceByAgeCohortAnalyzer')
+        self.assertTrue(analyzer.name, self.analyzer_name)
 
         reference = analyzer.reference
         self.assertIsInstance(reference, pd.DataFrame)
@@ -223,17 +251,10 @@ class TestDielmoCalibSite(unittest.TestCase):
         self.assertEqual(self.parser.sim_id, 'dummy_id')
         self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
 
-        # Make multiple dummy copies of the same parser with unique sim_id and subset of different sample points
-        n_sims, n_samples = (8, 4)
-        parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
-        tmp_sim_data = [None] * n_sims
-        for i, p in parsers.items():
-            p.sim_id = 'sim_%d' % i
-            p.sim_data['__sample_index__'] = i % n_samples
-            tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
-            tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
-            tmp_sim_data[i].sim_id = p.sim_id
-            p.selected_data[id(analyzer)] = tmp_sim_data[i]
+        # Make multiple dummy copies of the same parser
+        # with unique sim_id and subset of different sample points
+        n_sims, n_samples = 8, 4
+        parsers = self.get_dummy_parsers(sim_data, id(analyzer), n_sims=n_sims, n_samples=n_samples)
 
         #############
         # TEST COMBINE
