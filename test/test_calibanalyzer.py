@@ -8,10 +8,11 @@ import pandas as pd
 
 from calibtool.analyzers.Helpers import \
     summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping, \
-    convert_to_counts, age_from_birth_cohort, season_from_time
+    convert_annualized, convert_to_counts, age_from_birth_cohort, season_from_time
 from calibtool.study_sites.site_Laye import LayeCalibSite
+from calibtool.study_sites.site_Dielmo import DielmoCalibSite
 
-from calibtool.LL_calculators import dirichlet_multinomial
+from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson
 
 
 class DummyParser:
@@ -169,6 +170,97 @@ class TestLayeCalibSite(unittest.TestCase):
         reference = self.site.get_reference_data('density_by_age_and_season')
         self.assertListEqual(reference.index.names, ['Channel', 'Season', 'Age Bin', 'PfPR Bin'])
         self.assertEqual(reference.loc['PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50], 9)
+
+
+class TestDielmoCalibSite(unittest.TestCase):
+    def setUp(self):
+        filepath = os.path.join('input', 'test_malaria_summary_report.json')
+        self.filename = 'output/MalariaSummaryReport_Annual_Report.json'
+        self.parser = DummyParser(self.filename, filepath)
+        self.data = self.parser.raw_data[self.filename]
+        self.site = DielmoCalibSite()
+
+    def test_get_reference(self):
+        reference = self.site.get_reference_data('annual_clinical_incidence_by_age')
+        self.assertListEqual(reference.index.names, ['Age Bin'])
+        self.assertSetEqual(set(reference.columns.tolist()),
+                            {'Average Population by Age Bin', 'Annual Clinical Incidence by Age Bin'})
+        self.assertEqual(reference.loc[3, 'Annual Clinical Incidence by Age Bin'], 6.1)
+
+    def test_site_analyzer(self):
+        self.assertEqual(self.site.name, 'Dielmo')
+
+        analyzers = self.site.analyzers
+        self.assertTrue(len(analyzers), 1)
+
+        analyzer = analyzers[0]
+        self.assertTrue(analyzer.name, 'ClinicalIncidenceByAgeCohortAnalyzer')
+
+        reference = analyzer.reference
+        self.assertIsInstance(reference, pd.DataFrame)
+
+        #############
+        # Test annualized functions
+        channel_data = pd.concat([summary_channel_to_pandas(self.data, c)
+                                  for c in (analyzer.channel, analyzer.population_channel)], axis=1)
+        person_years = convert_annualized(channel_data[analyzer.population_channel])
+        channel_data['Person Years'] = person_years
+        channel_data['Incidents'] = convert_to_counts(channel_data[analyzer.channel], channel_data['Person Years'])
+        for ix, row in channel_data.loc[31].iterrows():
+            self.assertAlmostEqual(row['Person Years'], row[analyzer.population_channel] * 31 / 365.0)
+            self.assertAlmostEqual(row['Incidents'], row[analyzer.channel] * row['Person Years'])
+
+        #############
+        # TEST APPLY
+        sim_data = analyzer.apply(self.parser)
+        self.assertListEqual(reference.index.names, sim_data.index.names)
+        self.assertSetEqual(set(sim_data.columns.tolist()), {'Incidents', 'Person Years'})
+
+        self.assertEqual(self.parser.sim_id, 'dummy_id')
+        self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
+
+        # Make multiple dummy copies of the same parser with unique sim_id and subset of different sample points
+        n_sims, n_samples = (8, 4)
+        parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
+        tmp_sim_data = [None] * n_sims
+        for i, p in parsers.items():
+            p.sim_id = 'sim_%d' % i
+            p.sim_data['__sample_index__'] = i % n_samples
+            tmp_sim_data[i] = copy.deepcopy(sim_data) * (i + 1)  # so we have different values to verify averaging
+            tmp_sim_data[i].sample = p.sim_data.get('__sample_index__')
+            tmp_sim_data[i].sim_id = p.sim_id
+            p.selected_data[id(analyzer)] = tmp_sim_data[i]
+
+        #############
+        # TEST COMBINE
+        analyzer.combine(parsers)
+
+        # Verify averaging of sim_id by sample_index is done correctly
+        # e.g. sample0 = (id0, id2) = (1x, 3x) => avg0 = 2
+        avg = [np.arange(i + 1, n_sims + 1, n_samples).mean() for i in range(n_samples)]
+        for ix, row in analyzer.data.iterrows():
+            for isample in range(1, n_samples):
+                self.assertAlmostEqual(row[0, 'Incidents'] / avg[0], row[i, 'Incidents'] / avg[i])
+                self.assertAlmostEqual(row[0, 'Person Years'] / avg[0], row[i, 'Person Years'] / avg[i])
+
+        #############
+        # TEST COMPARE
+        analyzer.finalize()  # applies compare_fn to each sample setting self.result
+
+        # Reshape vectorized version to test nested-for-loop version
+        def compare_with_nested_loops(x):
+            x = pd.concat({'sim': x, 'ref': reference}, axis=1).dropna()
+            return gamma_poisson(x.ref['Person Years'].values, x.sim['Person Years'].values,
+                                 x.ref.Incidents.values, x.sim.Incidents.values)
+
+        for i in range(n_samples):
+            sample_data = analyzer.data.xs(i, level='sample', axis=1)
+            self.assertAlmostEqual(analyzer.result[i], compare_with_nested_loops(sample_data))
+
+        #############
+        # TEST CACHE
+        cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
+        self.assertListEqual(range(n_samples) + ['ref'], cache.columns.levels[0].tolist())
 
 
 if __name__ == '__main__':
