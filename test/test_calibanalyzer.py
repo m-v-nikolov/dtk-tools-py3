@@ -6,9 +6,12 @@ import copy
 import numpy as np
 import pandas as pd
 
+from dtk.utils.parsers.malaria_summary import \
+    summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
+
 from calibtool.analyzers.Helpers import \
-    summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping, \
     convert_annualized, convert_to_counts, age_from_birth_cohort, season_from_time
+
 from calibtool.study_sites.site_Laye import LayeCalibSite
 from calibtool.study_sites.site_Dielmo import DielmoCalibSite
 
