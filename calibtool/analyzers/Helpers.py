@@ -2,96 +2,13 @@ import itertools
 from datetime import date
 import calendar
 import logging
-from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
 
+import dtk.utils.parsers.malaria_summary as malaria_summary
+
 logger = logging.getLogger(__name__)
-
-
-def summary_channel_to_pandas(data, channel):
-    """
-    A function to return a hierarchical binned pandas.Series for a specified MalariaSummaryReport.json channel
-    :param simdata: parsed data from summary report
-    :param channel: channel in summary report
-    :return: pd.Series with MultiIndex binning taken from summary metadata
-    """
-
-    grouping = get_grouping_for_summary_channel(data, channel)
-    bins = get_bins_for_summary_grouping(data, grouping)
-
-    return json_to_pandas(data[grouping][channel], bins, channel)
-
-
-def json_to_pandas(data, bins, channel=None):
-    """
-    A function to convert nested array channel data from a json file to
-    a pandas.Series with the specified MultiIndex binning.
-    """
-
-    logger.debug("Converting JSON data from '%s' channel to pandas.Series with %s MultiIndex.", channel, bins.keys())
-    bin_tuples = list(itertools.product(*bins.values()))
-    multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
-
-    channel_series = pd.Series(np.array(data).flatten(), index=multi_index, name=channel)
-
-    return channel_series
-
-
-def get_grouping_for_summary_channel(data, channel):
-    """
-    A function to find the grouping to which a channel belongs in MalariaSummaryReport.json
-    :param data: parsed data from summary report
-    :param channel: channel to find
-    :return: grouping or exception if not found
-
-    Example:
-
-    >>> get_grouping_for_summary_channel(data, channel='Average Population by Age Bin')
-    'DataByTimeAndAgeBins'
-    """
-
-    for group, group_data in data.items():
-        if channel in group_data.keys():
-            return group
-
-    raise Exception('Unable to find channel %s in groupings %s' % (channel, data.keys()))
-
-
-def get_bins_for_summary_grouping(data, grouping):
-    """
-    A function to get the dimensions and binning of data for a specified MalariaSummaryReport.json grouping
-    :param data: parsed data from summary report
-    :param grouping: group name
-    :return: an OrderedDict of dimensions and bins
-
-    Example:
-
-    >>> get_bins_for_summary_grouping(data, grouping='DataByTimeAndAgeBins')
-    OrderedDict([('Time', [31, 61, 92, ..., 1095]), ('Age Bin', [0, 10, 20, ..., 1000])])
-    """
-
-    metadata = data['Metadata']
-    time = data['DataByTime']['Time Of Report']
-
-    if grouping == 'DataByTime':
-        return OrderedDict([
-            ('Time', time)
-        ])
-    elif grouping == 'DataByTimeAndAgeBins':
-        return OrderedDict([
-            ('Time', time),
-            ('Age Bin', metadata['Age Bins'])
-        ])
-    elif grouping == 'DataByTimeAndPfPRBinsAndAgeBins':
-        return OrderedDict([
-            ('Time', time),
-            ('PfPR Bin', metadata['Parasitemia Bins']),
-            ('Age Bin', metadata['Age Bins'])
-        ])
-
-    raise Exception('Unable to find grouping %s in %s' % (grouping, data.keys()))
 
 
 def season_channel_age_density_json_to_pandas(reference, bins):
@@ -123,7 +40,7 @@ def season_channel_age_density_json_to_pandas(reference, bins):
     for season, season_data in reference.items():
         channel_dict = {}
         for channel, channel_data in season_data.items():
-            channel_dict[channel] = json_to_pandas(channel_data, bins)
+            channel_dict[channel] = malaria_summary.json_to_pandas(channel_data, bins)
         season_dict[season] = pd.DataFrame(channel_dict)
 
     # Concatenate the multi-channel (i.e. parasitemia, gametocytemia) dataframes by season
@@ -305,42 +222,6 @@ def aggregate_on_index(df, index, keep=slice(None)):
     df = df.groupby([ix.name for ix in levels]).sum()[keep].dropna()
     logger.debug('Data aggregated on MultiIndex levels:\n%s', df.head(15))
     return df
-
-
-def accumulate_agebins_cohort(simdata, average_pop, sim_agebins, raw_agebins):
-    """
-    A function to sum over each year's values in a summary report,
-    combining incidence rate and average population
-    to give total counts and population in the reference age binning.
-    """
-
-    glommed_data = [0] * len(raw_agebins)
-    simageindex = [-1] * len(sim_agebins)
-    yearageindex = [-1] * len(simdata)
-    num_in_bin = [0] * len(raw_agebins)
-
-    for i in range(len(simageindex)):
-        for j, age in enumerate(raw_agebins):
-            if sim_agebins[i] > age:
-                simageindex[i] = j
-                break
-
-    for i in range(len(yearageindex)):
-        for j, age in enumerate(raw_agebins):
-            if i < age:
-                yearageindex[i] = j
-                break
-
-    for i in range(len(yearageindex)):
-        if yearageindex[i] < 0:
-            continue
-        for j in range(len(simageindex)):
-            if simageindex[j] < 0:
-                continue
-            glommed_data[simageindex[j]] += simdata[i][j] * average_pop[i][j]
-            num_in_bin[simageindex[j]] += average_pop[i][j]
-
-    return num_in_bin, glommed_data
 
 
 def get_spatial_report_data_at_date(sp_data, date):
