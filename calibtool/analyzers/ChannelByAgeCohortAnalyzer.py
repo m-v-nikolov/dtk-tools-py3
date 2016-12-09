@@ -1,26 +1,31 @@
 import logging
+from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
 
 from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer
-from calibtool import LL_calculators
+from calibtool.LL_calculators import gamma_poisson_pandas, beta_binomial_pandas
 from calibtool.analyzers.Helpers import \
     convert_annualized, convert_to_counts, age_from_birth_cohort, aggregate_on_index
 
 logger = logging.getLogger(__name__)
 
 
-class IncidenceByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+
+    __metaclass__ = ABCMeta
 
     filenames = ['output/MalariaSummaryReport_Annual_Report.json']
-
     population_channel = 'Average Population by Age Bin'
 
-    def __init__(self, site, weight=1, compare_fn=LL_calculators.gamma_poisson_pandas, **kwargs):
-        super(IncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
-        self.reference = site.get_reference_data('annual_clinical_incidence_by_age')
+    site_ref_type = None
+
+    @abstractmethod
+    def __init__(self, site, weight=1, compare_fn=None, **kwargs):
+        super(ChannelByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
+        self.reference = site.get_reference_data(self.site_ref_type)
 
         ref_channels = self.reference.columns.tolist()
         if len(ref_channels) != 2:
@@ -36,6 +41,8 @@ class IncidenceByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         self.reference = pd.DataFrame({'Person Years': self.reference[self.population_channel],
                                        'Incidents': (self.reference[self.population_channel]
                                                      * self.reference[self.channel])})
+
+    # TODO: "Counts" is more generic than "Incidents"
 
     def apply(self, parser):
         """
@@ -67,3 +74,19 @@ class IncidenceByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         sim_data.sim_id = parser.sim_id
 
         return sim_data
+
+
+class PrevalenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
+
+    site_ref_type = 'analyze_prevalence_by_age_cohort'
+
+    def __init__(self, site, weight=1, compare_fn=beta_binomial_pandas, **kwargs):
+        super(PrevalenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn, **kwargs)
+
+
+class IncidenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
+
+    site_ref_type = 'annual_clinical_incidence_by_age'
+
+    def __init__(self, site, weight=1, compare_fn=gamma_poisson_pandas, **kwargs):
+        super(IncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn, **kwargs)

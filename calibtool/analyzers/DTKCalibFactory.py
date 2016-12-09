@@ -2,24 +2,18 @@ import importlib
 
 from calibtool.CalibSite import CalibSite
 
-from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
 from calibtool.analyzers.PrevalenceByRoundAnalyzer import PrevalenceByRoundAnalyzer
 from calibtool.analyzers.PositiveFractionByDistanceAnalyzer import PositiveFractionByDistanceAnalyzer
-from calibtool.analyzers.PrevalenceByAgeSeasonAnalyzer import PrevalenceByAgeSeasonAnalyzer
 
 
 class DTKCalibFactory(object):
 
     @staticmethod
     def get_analyzer(name, weight=1):
-        if name == 'ClinicalIncidenceByAgeCohortAnalyzer':
-            return ClinicalIncidenceByAgeCohortAnalyzer(name, weight)
-        elif name == 'PrevalenceByRoundAnalyzer':
+        if name == 'PrevalenceByRoundAnalyzer':
             return PrevalenceByRoundAnalyzer(name, weight)
         elif name == 'PositiveFractionByDistanceAnalyzer':
             return PositiveFractionByDistanceAnalyzer(name, weight)
-        elif name == 'PrevalenceByAgeSeasonAnalyzer':
-            return PrevalenceByAgeSeasonAnalyzer(name, weight)
         else:
             # Last chance: Try to import the analyzer in the working directory
             try:

@@ -13,8 +13,8 @@ from dtk.utils.parsers.malaria_summary import \
 from calibtool.analyzers.Helpers import \
     convert_annualized, convert_to_counts, age_from_birth_cohort, season_from_time
 
-from calibtool.study_sites.site_Laye import LayeCalibSite
-from calibtool.study_sites.site_Dielmo import DielmoCalibSite
+from calibtool.study_sites.LayeCalibSite import LayeCalibSite
+from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
 
 from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson
 

@@ -78,9 +78,8 @@ def channel_age_json_to_pandas(reference, index_key='Age Bin'):
     5                                        3.10                             50
 
     """
-    index = reference.pop(index_key)
-    reference_df = pd.DataFrame(reference, index=index)
-    reference_df.index.name = index_key
+    reference_df = pd.DataFrame(reference)
+    reference_df.set_index(index_key, inplace=True)
 
     logger.debug('\n%s', reference_df)
     return reference_df
