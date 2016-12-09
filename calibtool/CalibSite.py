@@ -25,7 +25,7 @@ class SiteFunctions(object):
         for fn in self.setup_functions:
             md = fn(cb)
             if self.verbose and md:
-               metadata.update(md)
+                metadata.update(md)
         return metadata
 
 
@@ -38,7 +38,7 @@ class CalibSite(object):
 
     def __init__(self, name):
         self.name = name
-        self.setup_fn = SiteFunctions(self.name, self.get_setup_function()).set_calibration_site
+        self.setup_fn = SiteFunctions(self.name, self.get_setup_functions()).set_calibration_site
         self.analyzers = self.get_analyzers()
 
         if not self.analyzers:
@@ -67,7 +67,7 @@ class CalibSite(object):
     # TODO: or alternatively to pass optional arguments through from CalibSite constructor to get_analyzers.
 
     @abstractmethod
-    def get_setup_function(self):
+    def get_setup_functions(self):
         """
         Derived classes return a list of functions to apply site-specific modifications to the base configuration.
         These are combined into a single function using the SiteFunctions helper class in the CalibSite constructor.

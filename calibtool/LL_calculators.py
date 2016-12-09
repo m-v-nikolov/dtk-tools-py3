@@ -46,6 +46,11 @@ def gamma_poisson_pandas(df):
 
     return LL.mean()
 
+
+def beta_binomial_pandas(df):
+    # TODO
+    return 0
+
 """
 Functions below were ported by J.Gerardin
 from K.McCarthy Matlab CalibTool versions
