@@ -53,7 +53,7 @@ class TestLayeCalibSite(unittest.TestCase):
         self.assertTrue(analyzer.name, 'PrevalenceByAgeSeasonAnalyzer')
 
         reference = analyzer.reference
-        self.assertIsInstance(reference, pd.Series)
+        self.assertIsInstance(reference, pd.DataFrame)
 
         #############
         # TEST APPLY
@@ -93,7 +93,7 @@ class TestLayeCalibSite(unittest.TestCase):
         avg = [np.arange(i + 1, n_sims + 1, n_samples).mean() for i in range(n_samples)]
         for ix, row in analyzer.data.iterrows():
             for isample in range(1, n_samples):
-                self.assertAlmostEqual(row[0] / avg[0], row[i] / avg[i])
+                self.assertAlmostEqual(row[0, 'Counts'] / avg[0], row[i, 'Counts'] / avg[i])
 
         #############
         # TEST COMPARE
@@ -101,17 +101,18 @@ class TestLayeCalibSite(unittest.TestCase):
 
         # Reshape vectorized version to test nested-for-loop version
         def compare_with_nested_loops(x):
-            x = pd.concat([x.rename('sim'), reference.rename('ref')], axis=1).dropna()
+            x = pd.concat({'sim': x, 'ref': reference}, axis=1).dropna()
             x = x.unstack('PfPR Bin')
             return dirichlet_multinomial(x.ref.values, x.sim.values)
 
         for i in range(n_samples):
-            self.assertAlmostEqual(analyzer.result[i], compare_with_nested_loops(analyzer.data[i]))
+            sample_data = analyzer.data.xs(i, level='sample', axis=1)
+            self.assertAlmostEqual(analyzer.result[i], compare_with_nested_loops(sample_data))
 
         #############
         # TEST CACHE
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
-        self.assertListEqual(range(n_samples) + ['ref'], cache.columns.tolist())
+        self.assertListEqual(range(n_samples) + ['ref'], cache.columns.levels[0].tolist())
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
@@ -169,7 +170,7 @@ class TestLayeCalibSite(unittest.TestCase):
     def test_get_reference(self):
         reference = self.site.get_reference_data('density_by_age_and_season')
         self.assertListEqual(reference.index.names, ['Channel', 'Season', 'Age Bin', 'PfPR Bin'])
-        self.assertEqual(reference.loc['PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50], 9)
+        self.assertEqual(reference.loc[('PfPR by Gametocytemia and Age Bin', 'start_wet', 15, 50), 'Counts'], 9)
 
 
 class TestDielmoCalibSite(unittest.TestCase):
