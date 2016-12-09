@@ -12,16 +12,14 @@ from calibtool.analyzers.Helpers import \
 logger = logging.getLogger(__name__)
 
 
-# TODO: rename as IncidenceByAgeCohortCalibAnalyzer?
-# TODO: common functions into BaseCohortCalibAnalyzer, from which also PrevalenceByAge(Season)Cohort derive?
-class ClinicalIncidenceByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+class IncidenceByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
 
     filenames = ['output/MalariaSummaryReport_Annual_Report.json']
 
     population_channel = 'Average Population by Age Bin'
 
     def __init__(self, site, weight=1, compare_fn=LL_calculators.gamma_poisson_pandas, **kwargs):
-        super(ClinicalIncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
+        super(IncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data('annual_clinical_incidence_by_age')
 
         ref_channels = self.reference.columns.tolist()
