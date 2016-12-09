@@ -46,6 +46,7 @@ class LayeCalibSite(CalibSite):
             # Digitized by J.Gerardin from data in:
             #   - A.L.Ouedraogo et al. JID 2015
             # for J.Gerardin et al. Malaria Journal 2015, 14:231
+            # N.B. the values represent counts of individual observations
             "start_wet": {
                 "PfPR by Parasitemia and Age Bin": [
                     [2, 0, 0, 0, 1, 1], [4, 1, 2, 3, 2, 6], [7, 9, 4, 2, 4, 1]],

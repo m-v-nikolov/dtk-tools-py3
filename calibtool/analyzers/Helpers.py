@@ -139,6 +139,59 @@ def season_channel_age_density_json_to_pandas(reference, bins):
     return channel_series
 
 
+def channel_age_json_to_pandas(reference, index_key='Age Bin'):
+    """
+    A helper function to convert reference data from its form in e.g. site_Dielmo.py:
+
+        reference_data = {
+            "Average Population by Age Bin": [ 55, 60, 55, 50, 50, ... ],
+            "Age Bin": [ 1, 2, 3, 4, 5, ... ],
+            "Annual Clinical Incidence by Age Bin": [ 3.2, 5, 6.1, 4.75, 3.1, ... ]
+        }
+
+    To a pd.DataFrame:
+
+             Annual Clinical Incidence by Age Bin  Average Population by Age Bin
+    Age Bin
+    1                                        3.20                             55
+    2                                        5.00                             60
+    3                                        6.10                             55
+    4                                        4.75                             50
+    5                                        3.10                             50
+
+    """
+    index = reference.pop(index_key)
+    reference_df = pd.DataFrame(reference, index=index)
+    reference_df.index.name = index_key
+
+    logger.debug('\n%s', reference_df)
+    return reference_df
+
+
+def convert_annualized(s):
+    """
+    Use Time index level to revert annualized rate channels,
+    e.g. Annual Incidence --> Incidence per Reporting Interval
+         Average Population --> Person Years
+    :param s: pandas.Series with 'Time' level in multi-index
+    :return: pandas.Series normalized to Reporting Interval as a fraction of the year
+    """
+
+    s_ix = s.index
+    time_ix = s_ix.names.index('Time')
+    time_levels = s_ix.levels[time_ix].values
+
+    # TODO: instead of assuming Start_Time=0, fetch from report MetaData
+    time_intervals = np.diff(np.insert(time_levels, 0, values=0))  # prepending Start_Time=0
+    if len(time_intervals) > 1 and np.abs(time_intervals[0] - time_intervals[1]) > 1:
+        raise Exception('Time differences between reports differ by more than integer rounding.')
+
+    intervals_by_time = dict(zip(time_levels, time_intervals))
+    df = s.reset_index()
+    df[s.name] *= df.Time.apply(lambda x: intervals_by_time[x] / 365.0)
+    return df.set_index(s_ix.names)
+
+
 def convert_to_counts(rates, pops):
     """
     Convert population-normalized rates to counts
@@ -202,16 +255,21 @@ def pairwise(iterable):
     return itertools.izip(a, b)
 
 
-def aggregate_on_multiindex(df, index, keep=slice(None)):
+def aggregate_on_index(df, index, keep=slice(None)):
     """
-    Aggregate and re-index data on specified multi-index levels and intervals
-    :param df: a pandas.DataFrame with columns matching the specified multi-index level names
-    :param index: a multi-index of categorical values or right-bin-edges, e.g. ['early', 'late'] or [5, 15, 100]
+    Aggregate and re-index data on specified (multi-)index (levels and) intervals
+    :param df: a pandas.DataFrame with columns matching the specified (Multi)Index (level) names
+    :param index: pandas.(Multi)Index of categorical values or right-bin-edges, e.g. ['early', 'late'] or [5, 15, 100]
     :param keep: optional list of columns to keep, default=all
     :return: pandas.Series or DataFrame of specified channels aggregated and indexed on the specified binning
     """
 
-    for ix in index.levels:
+    if isinstance(index, pd.MultiIndex):
+       levels = index.levels
+    else:
+       levels = [index]  # Only one "level" for Index. Put into list for generic pattern as for MultiIndex
+
+    for ix in levels:
         logger.debug(ix.name, ix.dtype, ix.values)
 
         if ix.name not in df.columns:
@@ -243,7 +301,7 @@ def aggregate_on_multiindex(df, index, keep=slice(None)):
             logger.warning('Unexpected dtype=%s for MultiIndex level (%s). No aggregation performed.', ix.dtype, ix.name)
 
     # Aggregate on reference MultiIndex, keeping specified channels and dropping missing data
-    df = df.groupby([ix.name for ix in index.levels]).sum()[keep].dropna()
+    df = df.groupby([ix.name for ix in levels]).sum()[keep].dropna()
     logger.debug('Data aggregated on MultiIndex levels:\n%s', df.head(15))
     return df
 

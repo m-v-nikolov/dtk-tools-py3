@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 from scipy.special import gammaln
 
 
@@ -26,6 +27,24 @@ def dirichlet_multinomial_pandas(df):
 
     return n_obs.LL.mean() / n_categories
 
+
+def gamma_poisson_pandas(df):
+
+    LL = gammaln(df.ref.Incidents + df.sim.Incidents + 1) \
+       - gammaln(df.ref.Incidents + 1) \
+       - gammaln(df.sim.Incidents + 1)
+
+    ix = df.ref['Person Years'] > 0
+    LL.loc[ix] += (df.loc[ix].ref.Incidents + 1) * np.log(df.loc[ix].ref['Person Years'])
+
+    ix = df.sim['Person Years'] > 0
+    LL.loc[ix] += (df.loc[ix].sim.Incidents + 1) * np.log(df.loc[ix].sim['Person Years'])
+
+    ix = (df.ref['Person Years'] > 0) & (df.sim['Person Years'] > 0)
+    LL.loc[ix] -= (df.loc[ix].ref.Incidents + df.loc[ix].sim.Incidents + 1) \
+                  * np.log(df.loc[ix].ref['Person Years'] + df.loc[ix].sim['Person Years'])
+
+    return LL.mean()
 
 """
 Functions below were ported by J.Gerardin
