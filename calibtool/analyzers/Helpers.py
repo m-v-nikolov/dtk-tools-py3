@@ -108,8 +108,8 @@ def season_channel_age_density_json_to_pandas(reference, bins):
         ...
     }
 
-    To a pd.Series with MultiIndex:
-
+    To a pd.DataFrame with MultiIndex:
+                                                                     Counts
     Channel                            Season     Age Bin   PfPR Bin
     PfPR by Gametocytemia and Age Bin  start_wet  5         0             0
                                                             50            0
@@ -134,9 +134,10 @@ def season_channel_age_density_json_to_pandas(reference, bins):
                        .reorder_levels(['Channel', 'Season', 'Age Bin', 'PfPR Bin'])\
                        .sort_index()
 
-    logger.debug('\n%s', channel_series)
+    reference_df = pd.DataFrame(channel_series.rename('Counts'))  # 1-column DataFrame for standardized combine/compare
+    logger.debug('\n%s', reference_df)
 
-    return channel_series
+    return reference_df
 
 
 def channel_age_json_to_pandas(reference, index_key='Age Bin'):

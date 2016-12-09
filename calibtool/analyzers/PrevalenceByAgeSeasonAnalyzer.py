@@ -54,10 +54,11 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
             df = season_from_time(df, seasons=self.seasons)  # calculate month from time
 
             # Re-bin according to reference and return single-channel Series
-            rebinned = aggregate_on_index(df, self.reference[channel].index, keep=[channel])
-            channel_data_dict[channel] = rebinned[channel].rename('counts')
+            rebinned = aggregate_on_index(df, self.reference.loc(axis=1)[channel].index, keep=[channel])
+            channel_data_dict[channel] = rebinned[channel].rename('Counts')
 
         sim_data = pd.concat(channel_data_dict.values(), keys=channel_data_dict.keys(), names=['Channel'])
+        sim_data = pd.DataFrame(sim_data)  # single-column DataFrame for standardized combine/compare pattern
         sim_data.sample = parser.sim_data.get('__sample_index__')
         sim_data.sim_id = parser.sim_id
 
@@ -71,31 +72,32 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
         # Stack selected_data from each parser, adding unique (sim_id) and shared (sample) levels to MultiIndex
-        # TODO: convert output of apply() to one-column DataFrame to re-use code with other analyzers?
-        combine_levels = ['sim_id', 'sample']
-        combined = pd.concat(selected, axis=0,
-                             keys=[(d.sim_id, d.sample) for d in selected],
+        combine_levels = ['sample', 'sim_id', 'channel']
+        combined = pd.concat(selected, axis=1,
+                             keys=[(d.sample, d.sim_id) for d in selected],
                              names=combine_levels)
 
-        # Unstack sim_id/sample to columns MultiIndex and store average sim_ids with same sample index
-        combined = combined.unstack(combine_levels)
-        self.data = combined.groupby(level='sample', axis=1).mean()
+        self.data = combined.groupby(level=['sample', 'channel'], axis=1).mean()
         logger.debug(self.data)
+
+    @staticmethod
+    def join_reference(sim, ref):
+        # TODO: use pattern from cache() and rename sample to 'sim' in compare()?
+        sim.columns = sim.columns.droplevel(0)  # drop sim_id to match ref levels
+        return pd.concat({'sim': sim, 'ref': ref}, axis=1).dropna()
 
     def compare(self, sample):
         """
         Assess the result per sample, in this case the likelihood
         comparison between simulation and reference data.
         """
-
-        df = pd.concat([sample.rename('sim'), self.reference.rename('ref')], axis=1).dropna()
-        return self.compare_fn(df)
+        return self.compare_fn(self.join_reference(sample, self.reference))
 
     def finalize(self):
         """
         Calculate the output result for each sample.
         """
-        self.result = self.data.apply(self.compare)
+        self.result = self.data.groupby(level='sample', axis=1).apply(self.compare)
         logger.debug(self.result)
 
     def cache(self):
@@ -103,5 +105,7 @@ class PrevalenceByAgeSeasonAnalyzer(BaseComparisonAnalyzer):
         Return a cache of the minimal data required for plotting sample comparisons
         to reference comparisons. Append the reference column to the simulation sample-point data.
         """
-        # TODO: JSON serializable form for CalibManager.IterationState cache?
-        return pd.concat([self.data, self.reference.rename('ref')], axis=1).dropna()
+        tmp_ref = self.reference.copy()
+        tmp_ref.columns = pd.MultiIndex.from_tuples([('ref', x) for x in tmp_ref.columns])
+        cache = pd.concat([self.data, tmp_ref], axis=1).dropna()
+        return cache
