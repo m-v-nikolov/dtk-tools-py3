@@ -15,8 +15,9 @@ from calibtool.analyzers.Helpers import \
 
 from calibtool.study_sites.LayeCalibSite import LayeCalibSite
 from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
+from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
 
-from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson
+from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson, beta_binomial
 
 
 class DummyParser:
@@ -72,7 +73,7 @@ class BaseCalibSiteTest(object):
 class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
 
     site_name = 'Laye'
-    analyzer_name = 'DensityByAgeSeasonCohortAnalyzer'
+    analyzer_name = 'ChannelBySeasonAgeDensityCohortAnalyzer'
     filename = 'output/MalariaSummaryReport_Monthly_Report.json'
 
     def setUp(self):
@@ -220,6 +221,15 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
                             {'Average Population by Age Bin', 'Annual Clinical Incidence by Age Bin'})
         self.assertEqual(reference.loc[3, 'Annual Clinical Incidence by Age Bin'], 6.1)
 
+    @classmethod
+    def compare_with_nested_loops(cls, sim, ref):
+        """
+        Reshape vectorized version to test nested-for-loop version
+        """
+        x = pd.concat({'sim': sim, 'ref': ref}, axis=1).dropna()
+        return gamma_poisson(x.ref['Person Years'].values, x.sim['Person Years'].values,
+                             x.ref.Incidents.values, x.sim.Incidents.values)
+
     def test_site_analyzer(self):
 
         analyzers = self.site.analyzers
@@ -272,20 +282,45 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         # TEST COMPARE
         analyzer.finalize()  # applies compare_fn to each sample setting self.result
 
-        # Reshape vectorized version to test nested-for-loop version
-        def compare_with_nested_loops(x):
-            x = pd.concat({'sim': x, 'ref': reference}, axis=1).dropna()
-            return gamma_poisson(x.ref['Person Years'].values, x.sim['Person Years'].values,
-                                 x.ref.Incidents.values, x.sim.Incidents.values)
-
         for i in range(n_samples):
             sample_data = analyzer.data.xs(i, level='sample', axis=1)
-            self.assertAlmostEqual(analyzer.result[i], compare_with_nested_loops(sample_data))
+            self.assertAlmostEqual(analyzer.result[i], self.compare_with_nested_loops(sample_data, reference))
 
         #############
         # TEST CACHE
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
         self.assertListEqual(range(n_samples) + ['ref'], cache.columns.levels[0].tolist())
+
+
+class TestMatsariCalibSite(TestDielmoCalibSite, unittest.TestCase):
+    """
+    This is similar enough to the Dielmo incidence calibration test that we can just derive from that
+    """
+
+    site_name = 'Matsari'
+    analyzer_name = 'PrevalenceByAgeCohortAnalyzer'
+    filename = 'output/MalariaSummaryReport_Annual_Report.json'
+
+    def setUp(self):
+        BaseCalibSiteTest.setUp(self)
+        self.site = MatsariCalibSite()
+        self.assertEqual(self.site.name, self.site_name)
+
+    def test_get_reference(self):
+        reference = self.site.get_reference_data('analyze_prevalence_by_age_cohort')
+        self.assertListEqual(reference.index.names, ['Age Bin'])
+        self.assertSetEqual(set(reference.columns.tolist()),
+                            {'Average Population by Age Bin', 'PfPR by Age Bin'})
+        self.assertEqual(reference.loc[2, 'PfPR by Age Bin'], 0.7)
+
+    @classmethod
+    def compare_with_nested_loops(cls, sim, ref):
+        """
+        Reshape vectorized version to test nested-for-loop version
+        """
+        x = pd.concat({'sim': sim, 'ref': ref}, axis=1).dropna()
+        return beta_binomial(x.ref['Person Years'].values, x.sim['Person Years'].values,
+                             x.ref.Incidents.values, x.sim.Incidents.values)
 
 
 if __name__ == '__main__':

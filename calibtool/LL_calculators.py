@@ -48,8 +48,18 @@ def gamma_poisson_pandas(df):
 
 
 def beta_binomial_pandas(df):
-    # TODO
-    return 0
+
+    LL = gammaln(df.ref['Person Years'] + 1) \
+       + gammaln(df.sim['Person Years'] + 2) \
+       - gammaln(df.ref['Person Years'] + df.sim['Person Years'] + 2) \
+       + gammaln(df.ref.Incidents + df.sim.Incidents + 1) \
+       + gammaln(df.ref['Person Years'] - df.ref.Incidents + df.sim['Person Years'] - df.sim.Incidents + 1) \
+       - gammaln(df.ref.Incidents + 1) \
+       - gammaln(df.ref['Person Years'] - df.ref.Incidents + 1) \
+       - gammaln(df.sim.Incidents + 1) \
+       - gammaln(df.sim['Person Years'] - df.sim.Incidents + 1)
+
+    return LL.mean()
 
 """
 Functions below were ported by J.Gerardin

@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+    """
+    Compare reference season-, age-, and density-binned reference observations to simulation output.
+    """
 
     filenames = ['output/MalariaSummaryReport_Monthly_Report.json']
 
