@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+    """
+    Base class implementation for similar comparisons of age-binned reference data to simulation output.
+    """
 
     __metaclass__ = ABCMeta
 
@@ -38,11 +41,10 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
                             (self.population_channel, ref_channels))
 
         # Convert reference columns to those needed for likelihood comparison
+        # TODO: "Counts" or "Observations"  more generic than "Incidents"?
         self.reference = pd.DataFrame({'Person Years': self.reference[self.population_channel],
                                        'Incidents': (self.reference[self.population_channel]
                                                      * self.reference[self.channel])})
-
-    # TODO: "Counts" is more generic than "Incidents"
 
     def apply(self, parser):
         """
@@ -77,6 +79,12 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
 
 
 class PrevalenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
+    """
+    Compare reference prevalence-by-age measurements to simulation output.
+
+    N.B. Using the logic that converts annualized incidence and average populations to incidents and person years,
+         implicitly introduces a 1-year time constant for correlations in repeat prevalence measurements.
+    """
 
     site_ref_type = 'analyze_prevalence_by_age_cohort'
 
@@ -85,8 +93,12 @@ class PrevalenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
 
 
 class IncidenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
+    """
+    Compare reference incidence-by-age measurements to simulation output.
+    """
 
     site_ref_type = 'annual_clinical_incidence_by_age'
 
     def __init__(self, site, weight=1, compare_fn=gamma_poisson_pandas, **kwargs):
         super(IncidenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn, **kwargs)
+
