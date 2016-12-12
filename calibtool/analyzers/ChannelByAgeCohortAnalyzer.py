@@ -55,11 +55,14 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         data = parser.raw_data[self.filenames[0]]
 
         # Get channels by age and time series
-        channel_data = pd.concat([summary_channel_to_pandas(data, c)
-                                  for c in (self.channel, self.population_channel)], axis=1)
+        channel_series = summary_channel_to_pandas(data, self.channel)
+        population_series = summary_channel_to_pandas(data, self.population_channel)
+        channel_data = pd.concat([channel_series, population_series], axis=1)
 
         # Convert Average Population to Person Years
-        person_years = convert_annualized(channel_data[self.population_channel])
+        person_years = convert_annualized(channel_data[self.population_channel],
+                                          start_day=channel_series.Start_Day,
+                                          reporting_interval=channel_series.Reporting_Interval)
         channel_data['Person Years'] = person_years
 
         # Calculate Incidents from Annual Incidence and Person Years

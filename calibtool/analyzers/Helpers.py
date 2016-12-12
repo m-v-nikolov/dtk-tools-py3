@@ -85,12 +85,14 @@ def channel_age_json_to_pandas(reference, index_key='Age Bin'):
     return reference_df
 
 
-def convert_annualized(s):
+def convert_annualized(s, reporting_interval=None, start_day=None):
     """
     Use Time index level to revert annualized rate channels,
     e.g. Annual Incidence --> Incidence per Reporting Interval
          Average Population --> Person Years
     :param s: pandas.Series with 'Time' level in multi-index
+    :param reporting_interval: (optional) metadata from original output file on interval related to 'Time' index
+    :param start_day: (optional) metadata from original output file on beginning of first aggregation interval
     :return: pandas.Series normalized to Reporting Interval as a fraction of the year
     """
 
@@ -98,9 +100,13 @@ def convert_annualized(s):
     time_ix = s_ix.names.index('Time')
     time_levels = s_ix.levels[time_ix].values
 
-    # TODO: instead of assuming Start_Time=0, fetch from report MetaData
-    time_intervals = np.diff(np.insert(time_levels, 0, values=0))  # prepending Start_Time=0
-    if len(time_intervals) > 1 and np.abs(time_intervals[0] - time_intervals[1]) > 1:
+    start_time = (start_day - 1) if start_day else 0  # metadata reported at end of first time step
+
+    time_intervals = np.diff(np.insert(time_levels, 0, values=start_time))  # prepending simulation Start_Time
+
+    if reporting_interval and len(time_intervals) > 1 and np.abs(time_intervals[0] - reporting_interval) > 1:
+        raise Exception('Time differences between reports differ by more than integer rounding.')
+    if len(time_intervals) > 2 and np.abs(time_intervals[0] - time_intervals[1]) > 1:
         raise Exception('Time differences between reports differ by more than integer rounding.')
 
     intervals_by_time = dict(zip(time_levels, time_intervals))
