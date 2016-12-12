@@ -1,5 +1,7 @@
 {
     "Metadata": {
+        "Start_Day": 1,
+        "Reporting_Interval": 30.416666666666668,
         "Age Bins": [
             0,
             10,

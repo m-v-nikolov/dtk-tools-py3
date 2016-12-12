@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def summary_channel_to_pandas(data, channel):
     """
     A function to return a hierarchical binned pandas.Series for a specified MalariaSummaryReport.json channel
-    :param simdata: parsed data from summary report
+    :param data: parsed data from summary report
     :param channel: channel in summary report
     :return: pd.Series with MultiIndex binning taken from summary metadata
     """
@@ -19,10 +19,16 @@ def summary_channel_to_pandas(data, channel):
     grouping = get_grouping_for_summary_channel(data, channel)
     bins = get_bins_for_summary_grouping(data, grouping)
 
-    return json_to_pandas(data[grouping][channel], bins, channel)
+    channel_series = json_to_pandas(data[grouping][channel], bins, channel)
+
+    # Append some other useful metadata to the output Series
+    metadata = data['Metadata']
+    channel_series.Start_Day = metadata.get('Start_Day')
+    channel_series.Reporting_Interval = metadata.get('Reporting_Interval')
+    return channel_series
 
 
-def json_to_pandas(data, bins, channel=None):
+def json_to_pandas(channel_data, bins, channel=None):
     """
     A function to convert nested array channel data from a json file to
     a pandas.Series with the specified MultiIndex binning.
@@ -32,8 +38,8 @@ def json_to_pandas(data, bins, channel=None):
     bin_tuples = list(itertools.product(*bins.values()))
     multi_index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
 
-    channel_series = pd.Series(np.array(data).flatten(), index=multi_index, name=channel)
-
+    channel_series = pd.Series(np.array(channel_data).flatten(), index=multi_index, name=channel)
+    logger.debug('\n%s', channel_series)
     return channel_series
 
 
