@@ -5,8 +5,8 @@ from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
-# from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-from calibtool.study_sites.site_Dielmo import DielmoCalibSite
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
@@ -22,7 +22,7 @@ prior = MultiVariatePrior.by_range(
 
 plotters = [
     LikelihoodPlotter(combine_sites=True, prior_fn=prior),
-    # SiteDataPlotter(combine_sites=True)
+    SiteDataPlotter(combine_sites=True)
 ]
 
 

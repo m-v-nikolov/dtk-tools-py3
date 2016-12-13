@@ -7,8 +7,6 @@ import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
-from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
-from calibtool.utils import ResumePoint
 
 sns.set_style('white')
 
@@ -16,21 +14,25 @@ logger = logging.getLogger(__name__)
 
 
 class SiteDataPlotter(BasePlotter):
-    def __init__(self, num_to_plot=10, combine_sites=True, prior_fn={}):
+    def __init__(self, combine_sites=True, prior_fn={}):
         super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
-        self.num_to_plot = num_to_plot
 
     def visualize(self, calib_manager):
-        iteration_status = calib_manager.status
-        if iteration_status != ResumePoint.next_point:
-            return  # Only plot once results are available
-
         self.all_results = calib_manager.all_results.reset_index()
         logger.debug(self.all_results)
 
+        # TODO: rethink when these are being set, e.g. why not pass calib_manager to __init__?
+        self.num_to_plot = calib_manager.num_to_plot
         self.site_analyzer_names = calib_manager.site_analyzer_names()
         self.state_for_iteration = calib_manager.state_for_iteration
         self.plots_directory = os.path.join(calib_manager.name, '_plots')
+
+        # TODO: this is so we can call Analyzer.plot_sim and Analyzer.plot_ref
+        # TODO: if these are staticmethods, we only need the name, not the instances
+        self.analyzers = {}
+        for site in calib_manager.sites:
+            for analyzer in site.analyzers:
+                self.analyzers[site.name+"_"+analyzer.name] = analyzer
 
         if self.combine_sites:
             for site, analyzers in self.site_analyzer_names.items():
@@ -67,7 +69,7 @@ class SiteDataPlotter(BasePlotter):
 
     def plot_best(self, site_analyzer, iter_samples):
 
-        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
+        analyzer = self.analyzers[site_analyzer]
 
         for iteration, samples in iter_samples.items():
             analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
@@ -92,7 +94,7 @@ class SiteDataPlotter(BasePlotter):
 
     def plot_all(self, site_analyzer, iter_samples, clim):
 
-        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
+        analyzer = self.analyzers[site_analyzer]
 
         fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
         fig = plt.figure(fname, figsize=(4, 3))
