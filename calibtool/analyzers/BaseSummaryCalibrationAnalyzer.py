@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 
@@ -94,28 +94,9 @@ class BaseSummaryCalibrationAnalyzer(BaseComparisonAnalyzer):
 
         return {sample: df[sample].reset_index().to_dict(orient='list') for sample in df.columns.levels[0].tolist()}
 
-        # TODO: modify SiteDataPlotter and other CalibAnalyzer classes to following format?
-        #     cache = {
-        #         'sims': {
-        #             'sample1': {
-        #                 'axis1': [],
-        #                 'axis2': []
-        #             }
-        #         },
-        #         'reference': {
-        #             'axis1': [],
-        #             'axis2': []
-        #         },
-        #         'axis_names': ['axis1', 'axis2']}
-
-    # TODO: rethink how SiteDataPlotter interacts with analyzers. give analyzer more/less control over style?
-    # TODO: the following should probably have @abstractmethod decorator and be implemented in derived analyzers
-    # TODO: ChannelByAgeCohortAnalyzer should encode x=Age, y=Incidents/PersonYears
-    # TODO: ChannelBySeasonAgeDensityCohortAnalyzer might as well "own" the multi-facet sim/ref bubble comparison?
-    @staticmethod
-    def plot_sim(fig, reference, simdata, x, y, style='-', color='#CB5FA4', alpha=1, linewidth=1):
-        pass
-
-    @staticmethod
-    def plot_reference(fig, reference, simdata, x, y, style='-o', color='#8DC63F', alpha=1, linewidth=1):
+    # TODO: rethink whether this ought to be a classmethod or an instance method (that uses self.cache instead of data)
+    # TODO: and how it interacts with arguments in BaseAnalyzer.plot
+    @classmethod
+    @abstractmethod
+    def plot(cls, fig, data, *args, **kwargs):
         pass

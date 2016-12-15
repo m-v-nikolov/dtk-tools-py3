@@ -68,3 +68,8 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         sim_data.sim_id = parser.sim_id
 
         return sim_data
+
+    @classmethod
+    def plot(cls, fig, data, *args, **kwargs):
+        # TODO: ChannelBySeasonAgeDensityCohortAnalyzer can "own" the multi-facet sim/ref bubble comparison?
+        pass

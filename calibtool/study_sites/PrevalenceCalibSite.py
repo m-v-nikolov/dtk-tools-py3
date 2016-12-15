@@ -27,12 +27,12 @@ class PrevalenceCalibSite(CalibSite):
     def get_setup_functions(self):
         return [
             config_setup_fn(duration=21915),  # 60 years (with leap years)
-            summary_report_fn(interval=360),  # TODO: reconcile with 365/12 monthly EIR
+            summary_report_fn(interval=365),
             site_input_eir_fn(self.name, birth_cohort=True)
         ]
 
     def get_reference_data(self, reference_type):
-        site_ref_type = 'analyze_prevalence_by_age_cohort'
+        site_ref_type = 'prevalence_by_age'
 
         if reference_type is not site_ref_type:
             raise Exception("%s does not support %s reference_type, only %s.",
