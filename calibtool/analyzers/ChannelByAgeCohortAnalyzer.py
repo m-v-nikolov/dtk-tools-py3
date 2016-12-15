@@ -81,7 +81,7 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         return sim_data
 
     @classmethod
-    def plot(cls, fig, data, *args, **kwargs):
+    def plot_comparison(cls, fig, data, *args, **kwargs):
         ax = fig.gca()
         data = pd.DataFrame.from_dict(data, orient='columns')
         incidence = data['Incidents'] / data['Person Years']

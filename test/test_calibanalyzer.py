@@ -306,9 +306,9 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(4, 3))
         with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
             cache = json.load(fp)
-        analyzer.plot(fig, cache.pop('ref'), '-o', color='#8DC63F', alpha=1, linewidth=1)
-        for sample in cache.values():
-            analyzer.plot(fig, sample, '-o', color='#CB5FA4', alpha=1, linewidth=1)
+        analyzer.plot_comparison(fig, cache['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1)
+        for sample in cache['samples']:
+            analyzer.plot_comparison(fig, sample, '-o', color='#CB5FA4', alpha=1, linewidth=1)
         fig.set_tight_layout(True)
         fig.savefig(os.path.join('calib_analyzer', 'figs', 'plot_%s.png' % analyzer.__class__.__name__ ))
         plt.close(fig)
