@@ -34,7 +34,7 @@ def sample_point_fn(cb, param_values):
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
     """
     params_dict = prior.to_dict(param_values)  # aligns names and values; also rounds integer-range_type params
-    params_dict['Simulation_Duration'] = 365 * 2  # shorter for quick test
+    params_dict['Simulation_Duration'] = 365  # shorter for quick test
     return cb.update_params(params_dict)
 
 
