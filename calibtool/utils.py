@@ -2,6 +2,7 @@ import base64
 import json
 import numpy as np
 
+
 class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -19,6 +20,10 @@ class NumpyEncoder(json.JSONEncoder):
             return dict(__ndarray__=data_b64,
                         dtype=str(obj.dtype),
                         shape=obj.shape)
+
+        elif isinstance(obj, np.int64):
+            return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder(self, obj)
 
