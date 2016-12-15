@@ -3,6 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import pandas as pd
 import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
@@ -28,7 +29,7 @@ class SiteDataPlotter(BasePlotter):
         self.plots_directory = os.path.join(calib_manager.name, '_plots')
 
         # TODO: this is so we can call Analyzer.plot_sim and Analyzer.plot_ref
-        # TODO: if these are staticmethods, we only need the name, not the instances
+        # TODO: if these are classmethods, we only need the name, not the instances
         self.analyzers = {}
         for site in calib_manager.sites:
             for analyzer in site.analyzers:
@@ -73,22 +74,14 @@ class SiteDataPlotter(BasePlotter):
 
         for iteration, samples in iter_samples.items():
             analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
-            reference = analyzer_data['reference']
-            sims = analyzer_data['sims']
-            x, y = analyzer_data['axis_names']
+
             for sample, rank in zip(samples['sample'], samples['rank']):
                 fname = os.path.join(self.plots_directory, site_analyzer, 'rank%d' % rank)
                 fig = plt.figure(fname, figsize=(4, 3))
-                plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
-                data = sims[sample]
-                try:
-                    analyzer.plot_sim(fig, reference, data, x, y, '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                    analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
-                except AttributeError:
-                    ax = fig.add_subplot(111)
-                    ax.plot(data[x], data[y], '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                    ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
-                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
+
+                analyzer.plot(fig, analyzer_data[str(sample)], '-o', color='#CB5FA4', alpha=1, linewidth=1)
+                analyzer.plot(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
@@ -98,28 +91,16 @@ class SiteDataPlotter(BasePlotter):
 
         fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
         fig = plt.figure(fname, figsize=(4, 3))
-        plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
-        ax = fig.add_subplot(111)
         cmin, cmax = clim
 
         for iteration, samples in iter_samples.items():
             analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
-            reference = analyzer_data['reference']
-            sims = analyzer_data['sims']
-            x, y = analyzer_data['axis_names']
             for sample, result in zip(samples['sample'], samples['result']):
-                data = sims[sample]
-                try:
-                    analyzer.plot_sim(fig, reference, data, x, y, '-', color=cm.Blues((result - cmin) / (cmax - cmin)),
-                                      alpha=0.5, linewidth=0.5)
-                except AttributeError:
-                    ax.plot(data[x], data[y], '-', color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5,
-                            linewidth=0.5)
-                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
-        try:
-            analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
-        except AttributeError:
-            ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
+                analyzer.plot(fig, analyzer_data[str(sample)], '-',
+                              color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5, linewidth=0.5)
+
+        analyzer.plot(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
 
@@ -129,14 +110,12 @@ class SiteDataPlotter(BasePlotter):
         :param calib_manager:
         :return:
         """
-        # [TODO]: need this? Looks not!
-        self.all_results = calib_manager.all_results.reset_index()
 
-        self.num_to_plot = calib_manager.num_to_plot
-        self.site_analyzer_names = calib_manager.site_analyzer_names()
-        self.state_for_iteration = calib_manager.state_for_iteration
-        self.plots_directory = os.path.join(calib_manager.name, '_plots')
+        # TODO: if this is done in __init__ we don't need to redo it here?
+        self.plots_directory = os.path.join(calib_manager.name, '_plots')  # for directory to remove plots from
+        self.num_to_plot = calib_manager.num_to_plot  # for num_to_plot to remove best_samples
 
+        # TODO: use "glob" to find all plots that match site_analyzer_*.pdf pattern?
         if self.combine_sites:
             for site, analyzers in self.site_analyzer_names.items():
                 self.cleanup_plot_by_analyzers(site, analyzers, self.all_results)

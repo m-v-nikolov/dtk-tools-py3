@@ -33,7 +33,7 @@ class IncidenceCalibSite(CalibSite):
     def get_setup_functions(self):
         return [
             config_setup_fn(duration=21915),  # 60 years (with leap years)
-            summary_report_fn(age_bins=fine_age_bins, interval=360),  # TODO: reconcile with 365/12 monthly EIR
+            summary_report_fn(age_bins=fine_age_bins, interval=365),
             site_input_eir_fn(self.name, birth_cohort=True)
         ]
 

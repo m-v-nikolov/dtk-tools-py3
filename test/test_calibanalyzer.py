@@ -6,9 +6,12 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from dtk.utils.parsers.malaria_summary import \
     summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
+
+from calibtool.utils import NumpyEncoder
 
 from calibtool.analyzers.Helpers import \
     convert_annualized, convert_to_counts, age_from_birth_cohort, season_from_time
@@ -291,6 +294,23 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
         self.assertListEqual(range(n_samples) + ['ref'], cache.keys())
 
+        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
+            json.dump(cache, fp, indent=4, cls=NumpyEncoder)
+
+    def test_analyzer_plot(self):
+        #############
+        #  TEST PLOT
+        analyzer = self.site.analyzers[0]
+        fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(4, 3))
+        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
+            cache = json.load(fp)
+        analyzer.plot(fig, cache.pop('ref'), '-o', color='#8DC63F', alpha=1, linewidth=1)
+        for sample in cache.values():
+            analyzer.plot(fig, sample, '-o', color='#CB5FA4', alpha=1, linewidth=1)
+        fig.set_tight_layout(True)
+        fig.savefig(os.path.join('calib_analyzer', 'figs', 'plot_%s.png' % analyzer.__class__.__name__ ))
+        plt.close(fig)
+
 
 class TestMatsariCalibSite(TestDielmoCalibSite, unittest.TestCase):
     """
@@ -307,7 +327,7 @@ class TestMatsariCalibSite(TestDielmoCalibSite, unittest.TestCase):
         self.assertEqual(self.site.name, self.site_name)
 
     def test_get_reference(self):
-        reference = self.site.get_reference_data('analyze_prevalence_by_age_cohort')
+        reference = self.site.get_reference_data('prevalence_by_age')
         self.assertListEqual(reference.index.names, ['Age Bin'])
         self.assertSetEqual(set(reference.columns.tolist()),
                             {'Average Population by Age Bin', 'PfPR by Age Bin'})

@@ -80,6 +80,16 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
 
         return sim_data
 
+    @classmethod
+    def plot(cls, fig, data, *args, **kwargs):
+        ax = fig.gca()
+        data = pd.DataFrame.from_dict(data, orient='columns')
+        incidence = data['Incidents'] / data['Person Years']
+        if kwargs.pop('reference', False):
+            pass  # TODO: add error bars based on Person Years
+        ax.plot(data['Age Bin'], incidence, *args, **kwargs)
+        ax.set(xlabel='Age (years)', ylabel=cls.site_ref_type.replace('_by_age', '').replace('_', ' ').title())
+
 
 class PrevalenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
     """
@@ -89,7 +99,7 @@ class PrevalenceByAgeCohortAnalyzer(ChannelByAgeCohortAnalyzer):
          implicitly introduces a 1-year time constant for correlations in repeat prevalence measurements.
     """
 
-    site_ref_type = 'analyze_prevalence_by_age_cohort'
+    site_ref_type = 'prevalence_by_age'
 
     def __init__(self, site, weight=1, compare_fn=beta_binomial_pandas, **kwargs):
         super(PrevalenceByAgeCohortAnalyzer, self).__init__(site, weight, compare_fn, **kwargs)
