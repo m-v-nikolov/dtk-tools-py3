@@ -53,7 +53,7 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
 
     @classmethod
     @abstractmethod
-    def plot_comparison(cls, fig, data, *args, **kwargs):
+    def plot_comparison(cls, fig, data, **kwargs):
         """
         Plot data onto figure according to logic in derived classes
         """

@@ -2,6 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 import pandas as pd
+import numpy as np
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
 
@@ -81,13 +82,20 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         return sim_data
 
     @classmethod
-    def plot_comparison(cls, fig, data, *args, **kwargs):
+    def plot_comparison(cls, fig, data, **kwargs):
         ax = fig.gca()
         data = pd.DataFrame.from_dict(data, orient='columns')
         incidence = data['Incidents'] / data['Person Years']
+        age_bin_left_edges = [0] + data['Age Bin'][:-1].tolist()
+        age_bin_centers = 0.5 * (data['Age Bin'] + age_bin_left_edges)
         if kwargs.pop('reference', False):
-            pass  # TODO: add error bars based on Person Years
-        ax.plot(data['Age Bin'], incidence, *args, **kwargs)
+            # TODO: override with binomial error in derived prevalence analyzer class
+            incidence_err = (np.sqrt(data['Incidents']) / data['Person Years']).tolist()
+            ax.errorbar(age_bin_centers, incidence, yerr=incidence_err, **kwargs)
+        else:
+            fmt_str = kwargs.pop('fmt', None)
+            args = (fmt_str,) if fmt_str else ()
+            ax.plot(age_bin_centers, incidence, *args, **kwargs)
         ax.set(xlabel='Age (years)', ylabel=cls.site_ref_type.replace('_by_age', '').replace('_', ' ').title())
 
 
