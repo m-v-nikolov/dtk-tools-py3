@@ -21,7 +21,7 @@ prior = MultiVariatePrior.by_range(
     Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
 
 plotters = [
-    LikelihoodPlotter(combine_sites=True, prior_fn=prior),
+    LikelihoodPlotter(combine_sites=True),
     SiteDataPlotter(combine_sites=True)
 ]
 

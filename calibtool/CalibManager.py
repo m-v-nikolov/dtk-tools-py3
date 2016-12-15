@@ -61,12 +61,14 @@ class CalibManager(object):
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
+
         self.location = self.setup.get('type')
+        self.plotters = [plotter.set_manager(self) for plotter in plotters]
+
         self.local_suite_id = None
         self.comps_suite_id = None
         self.all_results = None
         self.exp_manager = None
-        self.plotters = plotters
         self.calibration_start = None
         self.iteration_start = None
         self.iter_step = ''
@@ -101,10 +103,10 @@ class CalibManager(object):
             self.cache_calibration()
         except OSError:
             from time import sleep
-            print "Calibration with name %s already exists in current directory" % self.name
+            print("Calibration with name %s already exists in current directory" % self.name)
             var = ""
-            while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
+            while var not in ('R', 'B', 'C', 'P', 'A'):
+                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ').upper()
 
             # Abort
             if var == 'A':
@@ -118,10 +120,10 @@ class CalibManager(object):
                 self.create_calibration(location)
             elif var == "R":
                 self.resume_from_iteration(location=location, **kwargs)
-                exit()     # avoid calling self.run_iterations(**kwargs)
+                exit()  # avoid calling self.run_iterations(**kwargs)
             elif var == "P":
                 self.replot_calibration(**kwargs)
-                exit()     # avoid calling self.run_iterations(**kwargs)
+                exit()  # avoid calling self.run_iterations(**kwargs)
 
 
     @staticmethod
@@ -369,7 +371,7 @@ class CalibManager(object):
         self.cache_calibration()
 
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self), self.plotters)
+        map(lambda plotter: plotter.visualize(), self.plotters)
 
         # Write the CSV
         # Note: no user uses it and also there is a bug in it.
@@ -885,7 +887,7 @@ class CalibManager(object):
             self.restore_results_for_replot(results, i)
 
             # cleanup the existing plots of the current iteration before generate new plots
-            map(lambda plotter: plotter.cleanup_plot(self), self.plotters)
+            map(lambda plotter: plotter.cleanup(), self.plotters)
 
             # consider the delete-only option
             if not delete_only:
@@ -900,7 +902,7 @@ class CalibManager(object):
             case1 = not isinstance(plotter, SiteDataPlotter.SiteDataPlotter)
             case2 = isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration == latest_iteration
             if case1 or case2:
-                plotter.visualize(self)
+                plotter.visualize()
 
     def restore_results_for_replot(self, results, iteration):
         """
