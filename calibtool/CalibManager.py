@@ -125,7 +125,6 @@ class CalibManager(object):
                 self.replot_calibration(**kwargs)
                 exit()  # avoid calling self.run_iterations(**kwargs)
 
-
     @staticmethod
     def retrieve_iteration_state(iter_directory):
         """

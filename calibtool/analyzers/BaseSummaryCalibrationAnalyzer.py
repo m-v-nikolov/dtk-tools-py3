@@ -78,11 +78,14 @@ class BaseSummaryCalibrationAnalyzer(BaseComparisonAnalyzer):
         Is converted into:
 
         {
-            "3": {
-                "Age Bin": [ 0.5, 1.0, 2.0, 4.0 ],
-                "Incidents": [ 610.199463, 1032.260204, 319.376240, 1738.556756 ],
-                "Person Years": [ 2546.861179, 3036.082280, 6229.157240, 6939.795139 ]
-            },
+            "samples": [
+                {
+                    "Age Bin": [ 0.5, 1.0, 2.0, 4.0 ],
+                    "Incidents": [ 610.199463, 1032.260204, 319.376240, 1738.556756 ],
+                    "Person Years": [ 2546.861179, 3036.082280, 6229.157240, 6939.795139 ]
+                },
+                ...
+            ]
             "ref": {
                 "Age Bin": [ 0.5, 1.0, 2.0, 4.0 ],
                 "Incidents": [ 10.40, 35.36, 53.20, 128.35 ],
@@ -92,7 +95,11 @@ class BaseSummaryCalibrationAnalyzer(BaseComparisonAnalyzer):
 
         """
 
-        return {sample: df[sample].reset_index().to_dict(orient='list') for sample in df.columns.levels[0].tolist()}
+        samples = sorted(df.columns.levels[0].tolist())
+        output = {'samples': [df[sample].reset_index().to_dict(orient='list') for sample in samples if sample != 'ref']}
+        if 'ref' in samples:
+            output['ref'] = df['ref'].reset_index().to_dict(orient='list')
+        return output
 
     # TODO: rethink whether this ought to be a classmethod or an instance method (that uses self.cache instead of data)
     # TODO: and how it interacts with arguments in BaseAnalyzer.plot
