@@ -145,7 +145,8 @@ class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
         #############
         # TEST CACHE
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
-        self.assertListEqual(range(n_samples) + ['ref'], cache.keys())
+        self.assertListEqual(['ref', 'samples'], cache.keys())
+        self.assertEqual(n_samples, len(cache['samples']))
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
@@ -292,7 +293,8 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         #############
         # TEST CACHE
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
-        self.assertListEqual(range(n_samples) + ['ref'], cache.keys())
+        self.assertListEqual(['ref', 'samples'], cache.keys())
+        self.assertEqual(n_samples, len(cache['samples']))
 
         with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
             json.dump(cache, fp, indent=4, cls=NumpyEncoder)

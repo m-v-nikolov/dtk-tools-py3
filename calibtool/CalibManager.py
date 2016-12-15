@@ -126,7 +126,6 @@ class CalibManager(object):
                 self.replot(iteration=None)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
-
     @staticmethod
     def retrieve_iteration_state(iter_directory):
         """
