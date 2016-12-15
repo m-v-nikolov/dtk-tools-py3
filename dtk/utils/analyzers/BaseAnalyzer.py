@@ -64,5 +64,5 @@ class BaseAnalyzer(object):
 
             If a Process is not spawned, it may end up in an infinite loop breaking the tools.
         """
-        # TODO: normalize the analyzer pattern with the calibtool BasePlotter and/or CalibAnalyzer plot_* staticmethods
+        # TODO: normalize the analyzer pattern with the BaseComparisonAnalyzer.plot_comparison
         pass

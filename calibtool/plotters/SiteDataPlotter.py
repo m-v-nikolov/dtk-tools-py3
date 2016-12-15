@@ -73,8 +73,8 @@ class SiteDataPlotter(BasePlotter):
                 fname = os.path.join(self.directory, '%s_%s' % (site_name, analyzer_name), 'rank%d' % rank)
                 fig = plt.figure(fname, figsize=(4, 3))
 
-                analyzer.plot(fig, analyzer_data['samples'][sample], '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                analyzer.plot(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+                analyzer.plot_comparison(fig, analyzer_data['samples'][sample], '-o', color='#CB5FA4', alpha=1, linewidth=1)
+                analyzer.plot_comparison(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
 
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
@@ -91,10 +91,10 @@ class SiteDataPlotter(BasePlotter):
             analyzer_data = self.get_analyzer_data(iteration, site_name, analyzer_name)
             results_by_sample = iter_samples.reset_index().set_index('sample')['total']
             for sample, result in results_by_sample.iteritems():
-                analyzer.plot(fig, analyzer_data['samples'][sample], '-',
+                analyzer.plot_comparison(fig, analyzer_data['samples'][sample], '-',
                               color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5, linewidth=0.5)
 
-        analyzer.plot(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+        analyzer.plot_comparison(fig, analyzer_data['ref'], '-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
 
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)

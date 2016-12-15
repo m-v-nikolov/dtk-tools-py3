@@ -101,9 +101,3 @@ class BaseSummaryCalibrationAnalyzer(BaseComparisonAnalyzer):
             output['ref'] = df['ref'].reset_index().to_dict(orient='list')
         return output
 
-    # TODO: rethink whether this ought to be a classmethod or an instance method (that uses self.cache instead of data)
-    # TODO: and how it interacts with arguments in BaseAnalyzer.plot
-    @classmethod
-    @abstractmethod
-    def plot(cls, fig, data, *args, **kwargs):
-        pass

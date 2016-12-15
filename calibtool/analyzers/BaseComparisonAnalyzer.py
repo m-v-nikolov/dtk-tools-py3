@@ -50,3 +50,11 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
         """
         self.result = self.data.apply(self.compare)
         logger.debug(self.result)
+
+    @classmethod
+    @abstractmethod
+    def plot_comparison(cls, fig, data, *args, **kwargs):
+        """
+        Plot data onto figure according to logic in derived classes
+        """
+        pass
