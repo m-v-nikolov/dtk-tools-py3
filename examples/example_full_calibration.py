@@ -11,32 +11,35 @@ from calibtool.algo.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
-from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
-from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
-from calibtool.study_sites.NamawalaCalibSite import NamawalaCalibSite
-from calibtool.study_sites.RafinMarkeCalibSite import RafinMarkeCalibSite
-from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
-from calibtool.study_sites.SugungumCalibSite import SugungumCalibSite
-from calibtool.study_sites.LayeCalibSite import LayeCalibSite
-from calibtool.study_sites.DapelogoCalibSite import DapelogoCalibSite
+from calibtool.study_sites import \
+    NdiopCalibSite, DielmoCalibSite, \
+    NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
+    LayeCalibSite, DapelogoCalibSite
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
     RafinMarkeCalibSite(),
-    MatsariCalibSite(),
-    SugungumCalibSite(),
-    NamawalaCalibSite(),
+    # MatsariCalibSite(),
+    # SugungumCalibSite(),
+    # NamawalaCalibSite(),
     NdiopCalibSite(),
-    DielmoCalibSite(),
+    # DielmoCalibSite(),
     LayeCalibSite(),
-    DapelogoCalibSite()
+    # DapelogoCalibSite()
 ]
 
 prior = MultiVariatePrior.by_range(
+    Antigen_Switch_Rate=('log', 1e-10, 1e-8),
+    # Base_Gametocyte_Production_Rate=('log', 0.001, 0.5),
+    Falciparum_MSP_Variants=('linear_int', 5, 50),
+    Falciparum_Nonspecific_Types=('linear_int', 5, 100),
+    Falciparum_PfEMP1_Variants=('linear_int', 900, 1700),
+    # Gametocyte_Stage_Survival_Rate=('linear', 0.5, 0.95),
     MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
-    Max_Individual_Infections=('linear_int', 3, 8),
-    Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
+    # Max_Individual_Infections=('linear_int', 3, 8),
+    Nonspecific_Antigenicity_Factor=('linear', 0.1, 0.9)
+)
 
 plotters = [
     LikelihoodPlotter(combine_sites=True),
@@ -56,8 +59,8 @@ def sample_point_fn(cb, param_values):
     return cb.update_params(params_dict)
 
 
-next_point_kwargs = dict(initial_samples=4,
-                         samples_per_iteration=4,
+next_point_kwargs = dict(initial_samples=20,
+                         samples_per_iteration=10,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
