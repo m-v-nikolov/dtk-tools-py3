@@ -84,13 +84,13 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
     @classmethod
     def plot_comparison(cls, fig, data, **kwargs):
         ax = fig.gca()
-        data = pd.DataFrame.from_dict(data, orient='columns')
-        incidence = data['Incidents'] / data['Person Years']
-        age_bin_left_edges = [0] + data['Age Bin'][:-1].tolist()
-        age_bin_centers = 0.5 * (data['Age Bin'] + age_bin_left_edges)
+        df = pd.DataFrame.from_dict(data, orient='columns')
+        incidence = df['Incidents'] / df['Person Years']
+        age_bin_left_edges = [0] + df['Age Bin'][:-1].tolist()
+        age_bin_centers = 0.5 * (df['Age Bin'] + age_bin_left_edges)
         if kwargs.pop('reference', False):
             # TODO: override with binomial error in derived prevalence analyzer class
-            incidence_err = (np.sqrt(data['Incidents']) / data['Person Years']).tolist()
+            incidence_err = (np.sqrt(df['Incidents']) / df['Person Years']).tolist()
             ax.errorbar(age_bin_centers, incidence, yerr=incidence_err, **kwargs)
         else:
             fmt_str = kwargs.pop('fmt', None)

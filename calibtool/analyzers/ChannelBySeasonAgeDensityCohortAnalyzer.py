@@ -71,5 +71,30 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
 
     @classmethod
     def plot_comparison(cls, fig, data, **kwargs):
-        # TODO: ChannelBySeasonAgeDensityCohortAnalyzer can "own" the multi-facet sim/ref bubble comparison?
-        pass
+        axs = fig.axes
+        df = pd.DataFrame.from_dict(data, orient='columns')
+        nrows, ncols = len(df.Channel.unique()), len(df.Season.unique())
+        if not axs:
+            axs = [fig.add_subplot(nrows, ncols, iax+1) for iax in range(nrows*ncols)]
+        for iax, ((channel, season), group_df) in enumerate(df.groupby(['Channel', 'Season'])):
+            ax = axs[iax]
+            ages = group_df['Age Bin'].unique()
+            irow, icol = (iax / ncols), (iax % ncols)
+            if irow == 0:
+                ax.set_title(season)
+            if irow == (nrows - 1):
+                ax.set_xlabel('Age')
+            if icol == 0:
+                ax.set_ylabel(' '.join(filter(lambda x: 'emia' in x, channel.split()) + ['per uL']))
+            for iage, (agebin, agebin_df) in enumerate(group_df.groupby('Age Bin')):
+                densities = agebin_df['PfPR Bin'].values
+                age_idxs = [iage] * len(densities)
+                count_fractions = agebin_df.Counts / agebin_df.Counts.sum()
+                if 'reference' in kwargs:
+                    scatter_kwargs = dict(facecolor='', lw=2, edgecolor=kwargs.get('color', 'k'))
+                else:
+                    scatter_kwargs = dict(facecolor=kwargs.get('color', 'k'), lw=0)
+                    scatter_kwargs.update({'alpha': 0.1 * kwargs.get('alpha', 1)})
+                ax.scatter(age_idxs, range(len(densities)), s=count_fractions * 500, **scatter_kwargs)
+                ax.set(xticks=range(len(ages)), xticklabels=ages,
+                       yticks=range(len(densities)), yticklabels=densities)
