@@ -1,22 +1,37 @@
 # Execute directly: 'python example_calibration.py'
-# or via the calibtool.py script: 'calibtool run example_calibration.py'
+# or via the calibtool.py script: 'calibtool run example_full_calibration.py --hpc'
+
+from simtools.SetupParser import SetupParser
+
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
-from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
-from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from simtools.SetupParser import SetupParser
+from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
+from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
+from calibtool.study_sites.NamawalaCalibSite import NamawalaCalibSite
+from calibtool.study_sites.RafinMarkeCalibSite import RafinMarkeCalibSite
+from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
+from calibtool.study_sites.SugungumCalibSite import SugungumCalibSite
+from calibtool.study_sites.LayeCalibSite import LayeCalibSite
+from calibtool.study_sites.DapelogoCalibSite import DapelogoCalibSite
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
-analyzer = DTKCalibFactory.get_analyzer(
-    'PrevalenceByAgeSeasonAnalyzer', weight=1)
-
-sites = [DTKCalibFactory.get_site('Laye', analyzers=[analyzer])]
+sites = [
+    RafinMarkeCalibSite(),
+    MatsariCalibSite(),
+    SugungumCalibSite(),
+    NamawalaCalibSite(),
+    NdiopCalibSite(),
+    DielmoCalibSite(),
+    LayeCalibSite(),
+    DapelogoCalibSite()
+]
 
 prior = MultiVariatePrior.by_range(
     MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
@@ -24,7 +39,7 @@ prior = MultiVariatePrior.by_range(
     Base_Gametocyte_Production_Rate=('log', 0.001, 0.5))
 
 plotters = [
-    LikelihoodPlotter(combine_sites=True, prior_fn=prior),
+    LikelihoodPlotter(combine_sites=True),
     SiteDataPlotter(combine_sites=True)
 ]
 
@@ -37,7 +52,7 @@ def sample_point_fn(cb, param_values):
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
     """
     params_dict = prior.to_dict(param_values)  # aligns names and values; also rounds integer-range_type params
-    params_dict['Simulation_Duration'] = 365  # shorter for quick test
+    params_dict['Simulation_Duration'] = 365 * 3  # shorter for quick test
     return cb.update_params(params_dict)
 
 
@@ -45,7 +60,7 @@ next_point_kwargs = dict(initial_samples=4,
                          samples_per_iteration=4,
                          n_resamples=100)
 
-calib_manager = CalibManager(name='ExampleCalibration',
+calib_manager = CalibManager(name='FullCalibrationExample',
                              setup=SetupParser(),
                              config_builder=cb,
                              sample_point_fn=sample_point_fn,
@@ -59,6 +74,6 @@ calib_manager = CalibManager(name='ExampleCalibration',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='LOCAL'))
+    run_calib_args.update(dict(location='HPC'))
     calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)
