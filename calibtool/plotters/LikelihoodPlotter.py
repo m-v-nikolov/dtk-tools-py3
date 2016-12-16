@@ -43,7 +43,6 @@ class LikelihoodPlotter(BasePlotter):
         for param in self.param_names:
             fig = plt.figure('LL by parameter ' + param, figsize=(5, 4))
             ax = fig.add_subplot(111)
-            plt.subplots_adjust(left=0.15, bottom=0.15)
 
             total = site + '_total' if site else 'total'
             results = self.all_results[[total, 'iteration', param]]
@@ -64,6 +63,7 @@ class LikelihoodPlotter(BasePlotter):
             except:
                 pass
 
+            fig.set_tight_layout(True)
             plt.savefig(os.path.join(self.directory, site, 'LL_%s.pdf' % param), format='PDF')
             plt.close(fig)
 

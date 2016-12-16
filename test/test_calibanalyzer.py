@@ -7,6 +7,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from dtk.utils.parsers.malaria_summary import \
     summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
@@ -21,6 +22,8 @@ from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
 from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
 
 from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson, beta_binomial
+
+sns.set_style('white')
 
 
 class DummyParser:
@@ -147,6 +150,23 @@ class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
         cache = analyzer.cache()  # concats reference to columns of simulation outcomes by sample-point index
         self.assertListEqual(['ref', 'samples'], cache.keys())
         self.assertEqual(n_samples, len(cache['samples']))
+
+        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
+            json.dump(cache, fp, indent=4, cls=NumpyEncoder)
+
+    def test_analyzer_plot(self):
+        #############
+        #  TEST PLOT
+        analyzer = self.site.analyzers[0]
+        fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(12, 6))
+        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
+            cache = json.load(fp)
+        analyzer.plot_comparison(fig, cache['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+        for sample in cache['samples']:
+            analyzer.plot_comparison(fig, sample, fmt='-o', color='#CB5FA4', alpha=1, linewidth=1)
+        fig.set_tight_layout(True)
+        fig.savefig(os.path.join('calib_analyzer', 'figs', 'plot_%s.png' % analyzer.__class__.__name__ ))
+        plt.close(fig)
 
     def test_grouping(self):
         group = get_grouping_for_summary_channel(self.data, 'Average Population by Age Bin')
