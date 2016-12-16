@@ -158,7 +158,7 @@ class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
         #############
         #  TEST PLOT
         analyzer = self.site.analyzers[0]
-        fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(12, 6))
+        fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(4, 3))
         with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
             cache = json.load(fp)
         analyzer.plot_comparison(fig, cache['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)

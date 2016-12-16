@@ -75,6 +75,7 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
         df = pd.DataFrame.from_dict(data, orient='columns')
         nrows, ncols = len(df.Channel.unique()), len(df.Season.unique())
         if not axs:
+            fig.set_size_inches((12, 6))  # override smaller single-panel default from SiteDataPlotter
             axs = [fig.add_subplot(nrows, ncols, iax+1) for iax in range(nrows*ncols)]
         for iax, ((channel, season), group_df) in enumerate(df.groupby(['Channel', 'Season'])):
             ax = axs[iax]
@@ -91,7 +92,7 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
                 age_idxs = [iage] * len(densities)
                 count_fractions = agebin_df.Counts / agebin_df.Counts.sum()
                 if 'reference' in kwargs:
-                    scatter_kwargs = dict(facecolor='', lw=2, edgecolor=kwargs.get('color', 'k'))
+                    scatter_kwargs = dict(facecolor='', lw=2, edgecolor=kwargs.get('color', 'k'), zorder=100)
                 else:
                     scatter_kwargs = dict(facecolor=kwargs.get('color', 'k'), lw=0)
                     scatter_kwargs.update({'alpha': 0.1 * kwargs.get('alpha', 1)})
