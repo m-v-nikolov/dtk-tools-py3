@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+import copy
 import pandas as pd
-
-from utils import NumpyEncoder, json_numpy_obj_hook
+from calibtool.utils import ResumePoint
+from simtools.utils import NumpyEncoder, json_numpy_obj_hook
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +20,13 @@ class IterationState(object):
 
     def __init__(self, **kwargs):
         self.iteration = 0
-        self.resume_point = 0
+        self.resume_point = ResumePoint.normal
         self.reset_state()
         for k, v in kwargs.items():
             setattr(self, k, v)
 
     def reset_state(self):
-        self.parameters = {}
+        self.samples_for_this_iteration = {}
         self.next_point = {}
         self.simulations = {}
         self.experiment_id = None
@@ -33,7 +34,7 @@ class IterationState(object):
         self.results = {}
 
     def reset_to_step(self, iter_step=None):
-        last_state_by_step = [('commission', ('parameters',)),
+        last_state_by_step = [('commission', ('samples_for_this_iteration')),
                               ('analyze', ('simulations',)),
                               ('next_point', ('results', 'analyzers'))]
 
@@ -58,8 +59,12 @@ class IterationState(object):
             return cls(**json.load(f, object_hook=json_numpy_obj_hook))
 
     def to_file(self, filepath):
+        # remove resume_point from output
+        it_dict = copy.deepcopy(self.__dict__)
+        it_dict.pop('resume_point')
+
         with open(filepath, 'w') as f:
-            json.dump(self.__dict__, f, indent=4, cls=NumpyEncoder)  # for np.array from NextPointAlgorithm
+            json.dump(it_dict, f, indent=4, cls=NumpyEncoder)
 
     def summary_table(self):
         '''
@@ -71,7 +76,10 @@ class IterationState(object):
         results_df = pd.DataFrame.from_dict(self.results, orient='columns')
         results_df.index.name = 'sample'
 
-        params_df = pd.DataFrame(self.parameters['values'], columns=self.parameters['names'])
+        params_df = pd.DataFrame.from_dict(self.samples_for_this_iteration, orient='columns')
+
+        for c in params_df.columns: # Argh
+            params_df[c] = params_df[c].astype( self.samples_for_this_iteration_dtypes[c])
 
         sims_df = pd.DataFrame.from_dict(self.simulations, orient='index')
         grouped = sims_df.groupby('__sample_index__', sort=True)
@@ -79,8 +87,6 @@ class IterationState(object):
 
         df = pd.concat((results_df , params_df), axis=1)
         df['iteration'] = self.iteration
-
-        #df['simIds'] = simIds
 
         return df
 

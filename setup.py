@@ -10,7 +10,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from simtools.utils import get_os
+from simtools.Utilities.General import get_os
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -104,6 +104,9 @@ requirements = OrderedDict([
         'platform': ['win', 'lin', 'mac'],
     }),
     ('networkx', {
+        'platform': ['win', 'lin', 'mac'],
+    }),
+    ('patsy', {
         'platform': ['win', 'lin', 'mac'],
     }),
     ('dill', {

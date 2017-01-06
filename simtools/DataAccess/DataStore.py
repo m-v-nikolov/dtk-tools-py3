@@ -1,5 +1,7 @@
+import base64
 import datetime
 
+import numpy as np
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.Schema import Analyzer, Settings
@@ -26,6 +28,9 @@ def dumper(obj):
             return list(obj)
         if isinstance(obj, datetime.datetime):
             return str(obj)
+        if isinstance(obj, np.int64):
+            return long(obj)
+
         return obj.__dict__
 
 

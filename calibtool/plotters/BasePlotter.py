@@ -13,5 +13,5 @@ class BasePlotter:
         self.site_analyzer_names = None
 
     @abstractmethod
-    def visualize(self, calib_manager):
+    def visualize(self, calib_manager, stage):
         pass

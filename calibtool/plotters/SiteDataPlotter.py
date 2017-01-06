@@ -15,14 +15,17 @@ logger = logging.getLogger(__name__)
 
 
 class SiteDataPlotter(BasePlotter):
-    def __init__(self, combine_sites=True, prior_fn={}):
+    def __init__(self, num_to_plot=10, combine_sites=True, prior_fn={}):
         super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
+        self.num_to_plot = num_to_plot
 
-    def visualize(self, calib_manager):
+    def visualize(self, calib_manager, stage):
+        if stage is not 'Post_Analyze':
+            return  # Only plot once results are available
+
         self.all_results = calib_manager.all_results.reset_index()
         logger.debug(self.all_results)
 
-        self.num_to_plot = calib_manager.num_to_plot
         self.site_analyzer_names = calib_manager.site_analyzer_names()
         self.state_for_iteration = calib_manager.state_for_iteration
         self.plots_directory = os.path.join(calib_manager.name, '_plots')

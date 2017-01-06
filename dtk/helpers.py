@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 def find_getch():
     # Cross platform get user-input non-blocking

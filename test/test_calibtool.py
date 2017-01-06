@@ -656,7 +656,7 @@ class TestIterationState(unittest.TestCase):
     def example_settings(self):
         self.state.parameters = dict(values=[[0, 1], [2, 3], [4, 5]], names=['p1', 'p2'])
         prior = MultiVariatePrior.by_param(a=uniform(loc=0, scale=2))
-        self.state.next_point = IMIS(prior).get_current_state()
+        self.state.next_point = IMIS(prior).get_state()
         self.state.simulations = {
             'sims': {'id1': {'p1': 1, 'p2': 2},
                      'id2': {'p1': 3, 'p2': 4}}}

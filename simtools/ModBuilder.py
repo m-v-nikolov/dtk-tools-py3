@@ -20,6 +20,13 @@ class ModFn(object):
         md = self.func(cb, *self.args, **self.kwargs)
         if not md:
             md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
+
+        # Make sure we cast numpy types into normal system types
+        for k,v in md.iteritems():
+            import numpy as np
+            if isinstance(v, (np.int64, np.float64, np.float32, np.uint32, np.int16, np.int32)):
+                md[k] = v.item()
+                
         # Store the metadata in a class variable
         ModBuilder.metadata.update(md)
         # But also return the metadata because of muddleheaded use

@@ -42,7 +42,7 @@ class Simulation(Base):
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
-    tags = Column(PickleType(pickler=json))
+    tags = Column(PickleType())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
 

@@ -250,9 +250,15 @@ class MultiVariatePrior(object):
         Transforms an individual point in parameter space to a dictionary of parameter names to values.
         Also will round parameters where the range_type requires integer-only values.
         """
-        int_param = [sfc.sample_range.is_int() if sfc.sample_range else False for sfc in self.sample_functions.values()]
-        param_point = [int(np.round(p)) if i else p for p, i in zip(param_point, int_param)]
-        return dict(zip(self.params, param_point))
+        ret = param_point
+        for param,value in ret.iteritems():
+            if param not in self.sample_functions:
+                continue
+
+            sfc = self.sample_functions[param]
+            if sfc.sample_range and sfc.sample_range.is_int():
+                ret[param] = int(np.round(value))
+        return ret
 
 
 if __name__ == '__main__':

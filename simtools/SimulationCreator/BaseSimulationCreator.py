@@ -36,6 +36,7 @@ class BaseSimulationCreator(Process):
             print("Exception during commission")
             import traceback
             traceback.print_exc()
+            exit()
 
     def process(self):
         self.pre_creation()

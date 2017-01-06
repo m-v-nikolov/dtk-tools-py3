@@ -24,8 +24,9 @@ class BaseShelveAnalyzer(BaseAnalyzer):
         self.force_combine = force_combine
         self.verbose = verbose
 
-        if self.force_apply and not self.force_combine and self.verbose:
-            print "force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache."
+        if self.force_apply and not self.force_combine:
+            if self.verbose:
+                print "force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache."
             self.force_combine = True
 
         self.shelve = None
@@ -128,6 +129,8 @@ class BaseShelveAnalyzer(BaseAnalyzer):
 
         self.shelve_write('status', 'finalize')
         self.shelve.close()
+        self.shelve = None
+        self.shelve_file = None
 
 
     def shelve_write(self, key, value):
