@@ -1,17 +1,15 @@
 import logging
-import threading
 
 import pandas as pd
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
 
-from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer
+from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer, thread_lock
 from calibtool import LL_calculators
 from calibtool.analyzers.Helpers import \
     convert_to_counts, age_from_birth_cohort, season_from_time, aggregate_on_index
 
 logger = logging.getLogger(__name__)
-lock = threading.Lock()
 
 
 class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
@@ -52,7 +50,7 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
             # Prevalence by density, age, and time series
             channel_data = summary_channel_to_pandas(data, channel)
 
-            with lock:  # TODO: re-code following block to ensure thread safety (Issue #758)?
+            with thread_lock:  # TODO: re-code following block to ensure thread safety (Issue #758)?
 
                 # Calculate counts from prevalence and population
                 channel_counts = convert_to_counts(channel_data, population)
