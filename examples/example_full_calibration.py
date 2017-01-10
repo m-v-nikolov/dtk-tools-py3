@@ -30,15 +30,15 @@ sites = [
 ]
 
 prior = MultiVariatePrior.by_range(
-    Antigen_Switch_Rate=('log', 1e-10, 1e-8),
+    Antigen_Switch_Rate_LOG=('linear', -10, -8),
     # Base_Gametocyte_Production_Rate=('log', 0.001, 0.5),
-    Falciparum_MSP_Variants=('linear_int', 5, 50),
-    Falciparum_Nonspecific_Types=('linear_int', 5, 100),
+    # Falciparum_MSP_Variants=('linear_int', 5, 50),
+    # Falciparum_Nonspecific_Types=('linear_int', 5, 100),
     Falciparum_PfEMP1_Variants=('linear_int', 900, 1700),
     # Gametocyte_Stage_Survival_Rate=('linear', 0.5, 0.95),
-    MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
+    # MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
     # Max_Individual_Infections=('linear_int', 3, 8),
-    Nonspecific_Antigenicity_Factor=('linear', 0.1, 0.9)
+    # Nonspecific_Antigenicity_Factor=('linear', 0.1, 0.9)
 )
 
 plotters = [
@@ -47,16 +47,29 @@ plotters = [
 ]
 
 
-def sample_point_fn(cb, param_values):
+def sample_point_fn(cb, sample_dimension_values):
     """
     A simple example function that takes a list of sample-point values
-    and sets parameters accordingly using the parameter names from the prior.
+    and sets parameters accordingly using the sample-dimension names from the prior.
     Note that more complicated logic, e.g. setting campaign event coverage or habitat abundance by species,
-    can be encoded in a similar fashion using custom functions rather than the generic "set_param".
+    can be encoded in a similar fashion using custom functions rather than the generic "set_param" or "update_params".
     """
-    params_dict = prior.to_dict(param_values)  # aligns names and values; also rounds integer-range_type params
-    params_dict['Simulation_Duration'] = 365 * 3  # shorter for quick test
-    return cb.update_params(params_dict)
+
+    # TODO: reconcile variable names with Pull Request #687/#733, i.e. function accepts one row of sample_point_table?
+    sample_point = prior.to_dict(sample_dimension_values)  # aligns names and values; rounds integer-range_type params
+
+    params_to_update = dict()
+    params_to_update['Simulation_Duration'] = 365 * 5  # shorter for quick test
+
+    for sample_dimension_name, sample_dimension_value in sample_point.items():
+        # Apply specific logic to convert sample-point dimensions into simulation configuration parameters
+        if '_LOG' in sample_dimension_name:
+            param_name = sample_dimension_name.replace('_LOG', '')
+            params_to_update[param_name] = pow(10, sample_dimension_value)
+        else:
+            params_to_update[sample_dimension_name] = sample_dimension_value
+
+    return cb.update_params(params_to_update)
 
 
 next_point_kwargs = dict(initial_samples=20,
@@ -77,6 +90,6 @@ calib_manager = CalibManager(name='FullCalibrationExample',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='HPC'))
+    calib_manager.setup = SetupParser('HPC')
     calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)
