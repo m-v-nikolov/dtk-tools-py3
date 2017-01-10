@@ -23,7 +23,7 @@ sites = [
     # MatsariCalibSite(),
     # SugungumCalibSite(),
     # NamawalaCalibSite(),
-    NdiopCalibSite(),
+    # NdiopCalibSite(),
     # DielmoCalibSite(),
     LayeCalibSite(),
     # DapelogoCalibSite()
@@ -34,7 +34,7 @@ prior = MultiVariatePrior.by_range(
     # Base_Gametocyte_Production_Rate=('log', 0.001, 0.5),
     # Falciparum_MSP_Variants=('linear_int', 5, 50),
     # Falciparum_Nonspecific_Types=('linear_int', 5, 100),
-    Falciparum_PfEMP1_Variants=('linear_int', 900, 1700),
+    # Falciparum_PfEMP1_Variants=('linear_int', 900, 1700),
     # Gametocyte_Stage_Survival_Rate=('linear', 0.5, 0.95),
     # MSP1_Merozoite_Kill_Fraction=('linear', 0.4, 0.7),
     # Max_Individual_Infections=('linear_int', 3, 8),
@@ -72,8 +72,8 @@ def sample_point_fn(cb, sample_dimension_values):
     return cb.update_params(params_to_update)
 
 
-next_point_kwargs = dict(initial_samples=20,
-                         samples_per_iteration=10,
+next_point_kwargs = dict(initial_samples=4,
+                         samples_per_iteration=2,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
@@ -82,7 +82,7 @@ calib_manager = CalibManager(name='FullCalibrationExample',
                              sample_point_fn=sample_point_fn,
                              sites=sites,
                              next_point=IMIS(prior, **next_point_kwargs),
-                             sim_runs_per_param_set=2,
+                             sim_runs_per_param_set=1,
                              max_iterations=2,
                              num_to_plot=5,
                              plotters=plotters)

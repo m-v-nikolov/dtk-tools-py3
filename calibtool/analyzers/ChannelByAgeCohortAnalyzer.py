@@ -6,7 +6,7 @@ import numpy as np
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
 
-from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer
+from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer, thread_lock
 from calibtool.LL_calculators import gamma_poisson_pandas, beta_binomial_pandas
 from calibtool.analyzers.Helpers import \
     convert_annualized, convert_to_counts, age_from_birth_cohort, aggregate_on_index
@@ -66,15 +66,17 @@ class ChannelByAgeCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
                                           reporting_interval=channel_series.Reporting_Interval)
         channel_data['Person Years'] = person_years
 
-        # Calculate Incidents from Annual Incidence and Person Years
-        channel_data['Incidents'] = convert_to_counts(channel_data[self.channel], channel_data['Person Years'])
+        with thread_lock:  # TODO: re-code following block to ensure thread safety (Issue #758)?
 
-        # Reset multi-index and perform transformations on index columns
-        df = channel_data.reset_index()
-        df = age_from_birth_cohort(df)  # calculate age from time for birth cohort
+            # Calculate Incidents from Annual Incidence and Person Years
+            channel_data['Incidents'] = convert_to_counts(channel_data[self.channel], channel_data['Person Years'])
 
-        # Re-bin according to reference and return single-channel Series
-        sim_data = aggregate_on_index(df, self.reference.index, keep=['Incidents', 'Person Years'])
+            # Reset multi-index and perform transformations on index columns
+            df = channel_data.reset_index()
+            df = age_from_birth_cohort(df)  # calculate age from time for birth cohort
+
+            # Re-bin according to reference and return single-channel Series
+            sim_data = aggregate_on_index(df, self.reference.index, keep=['Incidents', 'Person Years'])
 
         sim_data.sample = parser.sim_data.get('__sample_index__')
         sim_data.sim_id = parser.sim_id
