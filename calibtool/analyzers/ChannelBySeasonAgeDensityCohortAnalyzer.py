@@ -1,4 +1,5 @@
 import logging
+import threading
 
 import pandas as pd
 
@@ -10,6 +11,7 @@ from calibtool.analyzers.Helpers import \
     convert_to_counts, age_from_birth_cohort, season_from_time, aggregate_on_index
 
 logger = logging.getLogger(__name__)
+lock = threading.Lock()
 
 
 class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
@@ -50,17 +52,19 @@ class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
             # Prevalence by density, age, and time series
             channel_data = summary_channel_to_pandas(data, channel)
 
-            # Calculate counts from prevalence and population
-            channel_counts = convert_to_counts(channel_data, population)
+            with lock:  # TODO: re-code following block to ensure thread safety (Issue #758)?
 
-            # Reset multi-index and perform transformations on index columns
-            df = channel_counts.reset_index()
-            df = age_from_birth_cohort(df)  # calculate age from time for birth cohort
-            df = season_from_time(df, seasons=self.seasons)  # calculate month from time
+                # Calculate counts from prevalence and population
+                channel_counts = convert_to_counts(channel_data, population)
 
-            # Re-bin according to reference and return single-channel Series
-            rebinned = aggregate_on_index(df, self.reference.loc(axis=1)[channel].index, keep=[channel])
-            channel_data_dict[channel] = rebinned[channel].rename('Counts')
+                # Reset multi-index and perform transformations on index columns
+                df = channel_counts.reset_index()
+                df = age_from_birth_cohort(df)  # calculate age from time for birth cohort
+                df = season_from_time(df, seasons=self.seasons)  # calculate month from time
+
+                # Re-bin according to reference and return single-channel Series
+                rebinned = aggregate_on_index(df, self.reference.loc(axis=1)[channel].index, keep=[channel])
+                channel_data_dict[channel] = rebinned[channel].rename('Counts')
 
         sim_data = pd.concat(channel_data_dict.values(), keys=channel_data_dict.keys(), names=['Channel'])
         sim_data = pd.DataFrame(sim_data)  # single-column DataFrame for standardized combine/compare pattern
