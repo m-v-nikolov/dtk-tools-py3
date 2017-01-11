@@ -199,7 +199,7 @@ class SetupParser:
 
     def get(self, parameter, default=None):
         if not self.has_option(parameter):
-            if default is not None: return default
+            if default: return default
             else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.get(self.selected_block,parameter)
 
@@ -212,8 +212,11 @@ class SetupParser:
     def items(self):
         return self.setup.items(self.selected_block)
 
-    def getboolean(self, param):
-        return self.setup.getboolean(self.selected_block, param)
+    def getboolean(self, parameter, default=None):
+        if not self.has_option(parameter):
+            if default: return default
+            else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
+        return self.setup.getboolean(self.selected_block, parameter)
 
     def load_schema(self):
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
