@@ -106,7 +106,7 @@ class CalibManager(object):
             self.cache_calibration()
         except OSError:
             from time import sleep
-            print "Calibration with name %s already exists in current directory" % self.name
+            logger.info("Calibration with name %s already exists in current directory" % self.name)
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
                 var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
@@ -370,12 +370,6 @@ class CalibManager(object):
                     raise Exception('Unable to sync experiment with id %s'%self.iteration_state.experiment_id)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
 
-        # try:
-        #     for a in exp_manager.analyzers:
-        #         a.load()
-        # except:
-        #     # print "LOADING FAILED"
-        #     exp_manager.analyze_experiment()
         for site in self.sites:
             for analyzer in site.analyzers:
                 exp_manager.add_analyzer(analyzer)
@@ -529,13 +523,6 @@ class CalibManager(object):
                 for e in el:
                     paths.append(sims_paths[e])
             except Exception as ex:
-                # print 'Exception: %s' % ex
-                # print 'e: %s' % e
-                # # print 'e in sims_paths: %s' (e in sims_paths)
-                # print 'paths: %s' % paths
-                # # print 'sims_paths[e]: %s' % sims_paths[e]
-                # print 'sims_paths: \n%s' % sims_paths
-                # # exit()      # zdu: for now testing
                 pass # [TODO]: fix issue later.
             return ",".join(paths)
 
@@ -596,7 +583,6 @@ class CalibManager(object):
         self.all_results.set_index('sample', inplace=True)
 
         self.all_results = self.all_results[self.all_results.iteration <= iteration]
-        # logger.info('Restored results from iteration %d', iteration)
         logger.debug(self.all_results)
 
     def check_leftover(self):
@@ -604,8 +590,6 @@ class CalibManager(object):
             - Handle the case: process got interrupted but it still runs on remote
             - Handle location change case: may resume from commission instead
         """
-        # DJK - this seems too hard for now, is this necessary?
-
         # Step 1: Checking possible location changes
         try:
             exp_id = self.iteration_state.experiment_id
@@ -639,8 +623,7 @@ class CalibManager(object):
             self.exp_manager = ExperimentManagerFactory.from_experiment(exp)
             # Restore the selected block
             self.setup.selected_block = user_selected_block
-        except Exception as ex:
-            # logger.info(ex)
+        except Exception:
             logger.info('Proceed without checking the possible leftovers.')
             # Restore the selected block
             self.setup.selected_block = user_selected_block
@@ -649,9 +632,6 @@ class CalibManager(object):
         # Don't do the leftover checking for a special case
         if self.iter_step == 'commission':
             return
-
-        # [TODO] Do we need this?
-        # self.plot_iteration(stage='Post_Commission')
 
         # Make sure it is finished
         self.exp_manager.wait_for_finished(verbose=True)
@@ -668,11 +648,6 @@ class CalibManager(object):
             logger.info('Proceed without checking the possible leftovers.')
             return
 
-        if not self.exp_manager.status_succeeded(states):
-            self.iter_step == 'commission'
-        else:
-            # Resuming point (2 or 3 or 4) will be determined from following logic
-            pass
 
     def prepare_resume_point_for_iteration(self, iteration):
         """
@@ -795,8 +770,8 @@ class CalibManager(object):
             if input_resume_point.value <= self.status.value:
                 self.status = input_resume_point
             else:
-                print "The previous latest resume point is '%s', we will resume from it instead of '%s'" \
-                      % (self.status.name, input_resume_point.name)
+                logger.info("The farthest resume point available is '%s', we will resume from it instead of '%s'" \
+                      % (self.status.name, input_resume_point.name))
         else:
             # just take user input iter_step
             self.status = input_resume_point
@@ -942,7 +917,7 @@ class CalibManager(object):
         exp_manager.cancel_experiment()
 
         # Print confirmation
-        print "Calibration %s successfully cancelled!" % self.name
+        logger.info("Calibration %s successfully cancelled!" % self.name)
 
     def cleanup(self):
         """
@@ -952,12 +927,16 @@ class CalibManager(object):
         """
         try:
             calib_data = self.read_calib_data()
-            iter_count = calib_data.get('iteration')
         except Exception:
-            calib_data = None
             logger.info('Calib data cannot be read -> skip')
+            return
 
         if calib_data:
+            # Retrieve suite ids and iter_count
+            comps_suite = calib_data.get('comps_suite_id')
+            local_suite = calib_data.get('local_suite_id')
+            iter_count = calib_data.get('iteration')
+
             # Delete the simulations too
             logger.info('Cleaning up calibration %s' % self.name)
             for i in range(0, iter_count + 1):
@@ -977,7 +956,7 @@ class CalibManager(object):
                     continue
 
             # Delete all associated experiments in db
-            DataStore.delete_experiments_by_suite([calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')])
+            DataStore.delete_experiments_by_suite([local_suite, comps_suite])
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -986,6 +965,14 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
+
+        # To finish delete the COMPS suite
+        if comps_suite:
+            logger.info('Delete COMPS suite %s' % comps_suite)
+            utils.COMPS_login(self.setup.get('server_endpoint'))
+            from simtools.Utilities.COMPSUtilities import delete_suite
+            delete_suite(comps_suite)
+
 
     def reanalyze(self):
         """
@@ -1021,8 +1008,7 @@ class CalibManager(object):
         self.finalize_calibration()
 
     def reanalyze_iteration(self, iteration):
-        logger.info("\n")
-        logger.info("Reanalyze Iteration %s" % iteration)
+        logger.info("\nReanalyze Iteration %s" % iteration)
         # Create the path for the iteration dir
         iter_directory = os.path.join(self.name, 'iter%d' % iteration)
 
@@ -1041,10 +1027,6 @@ class CalibManager(object):
 
         # Analyze again!
         res = self.analyze_iteration()
-
-        # update next point     DJK: really need to do this?
-        # Looks like doesn't need to do this
-        # self.give_results_to_next_point_and_cache(res)
 
         # Call all plotters
         self.status = ResumePoint.next_point
@@ -1118,9 +1100,9 @@ class CalibManager(object):
             return
 
         orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
-        print '\nOrphan Experiment List:\n'
-        print '\n'.join(orphan_str_list)
-        print '\n'
+        logger.info('\nOrphan Experiment List:')
+        logger.info('\n'.join(orphan_str_list))
+        logger.info('\n')
 
         DataStore.delete_experiments(exp_orphan_list)
         if len(exp_orphan_list) > 1:

@@ -38,3 +38,7 @@ def workdirs_from_suite_id(suite_id):
     for e in exps:
         sims.extend(sims_from_experiment(e))
     return workdirs_from_simulations(sims)
+
+def delete_suite(suite_id):
+    s = Suite.get(suite_id)
+    s.delete()
