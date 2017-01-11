@@ -5,7 +5,7 @@ import unittest
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.ModBuilder import ModBuilder, ModFn, SingleSimulationBuilder, RunNumberSweepBuilder
+from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder
 from simtools.SetupParser import SetupParser
 from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
 
@@ -187,7 +187,7 @@ class TestBuilders(unittest.TestCase):
 
     def test_param_fn(self):
         k, v = ('foo', 'bar')
-        fn = ModFn(SimConfigBuilder.set_param, k, v)
+        fn = ModBuilder.ModFn(SimConfigBuilder.set_param, k, v)
         fn(self.cb)
         self.assertEqual(self.cb.get_param('foo'), 'bar')
         self.assertDictEqual(ModBuilder.metadata, dict(foo='bar'))
@@ -209,7 +209,7 @@ class TestBuilders(unittest.TestCase):
             cb.config['nested'][foo][bar] = value
             return {'.'.join([foo, bar]): value}
 
-        fn = ModFn(custom_fn, 'foo', 'bar', value=v)
+        fn = ModBuilder.ModFn(custom_fn, 'foo', 'bar', value=v)
         fn(self.cb)
         self.assertListEqual(self.cb.get_param('nested')['foo']['bar'], v)
         self.assertEqual(ModBuilder.metadata, {'foo.bar': v})

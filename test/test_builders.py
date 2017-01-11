@@ -2,14 +2,13 @@ import logging
 import unittest
 
 from calibtool.study_sites.set_calibration_site import set_calibration_site
-from simtools.ModBuilder import ModBuilder, ModFn, SingleSimulationBuilder
+from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import RunNumberSweepBuilder, GenericSweepBuilder
 from dtk.vector.study_sites import configure_site
 from dtk.vector.species import get_species_param, set_species_param
 from dtk.interventions.malaria_drugs import get_drug_param, set_drug_param
-
 
 class TestBuilders(unittest.TestCase):
 
@@ -22,7 +21,7 @@ class TestBuilders(unittest.TestCase):
 
     def test_param_fn(self):
         k, v = ('Simulation_Duration', 100)
-        fn = ModFn(DTKConfigBuilder.set_param, k, v)
+        fn = ModBuilder.ModFn(DTKConfigBuilder.set_param, k, v)
         fn(self.cb)
         logging.debug('Parameter %s has value %s set from %s', k, self.cb.get_param(k), v)
         logging.debug('ModBuilder metadata: %s', ModBuilder.metadata)
@@ -31,7 +30,7 @@ class TestBuilders(unittest.TestCase):
 
     def test_site_fn(self):
         s = 'Namawala'
-        fn = ModFn(configure_site, s)
+        fn = ModBuilder.ModFn(configure_site, s)
         fn(self.cb)
         logging.debug('Demographics_Filenames: %s', self.cb.get_param('Demographics_Filenames'))
         logging.debug('ModBuilder metadata: %s', ModBuilder.metadata)
@@ -40,7 +39,7 @@ class TestBuilders(unittest.TestCase):
 
     def test_calibsite_fn(self):
         s = 'Namawala'
-        fn = ModFn(set_calibration_site, s)
+        fn = ModBuilder.ModFn(set_calibration_site, s)
         fn(self.cb)
         self.assertEqual(self.cb.campaign['Events'][0]['Event_Coordinator_Config']['Intervention_Config']['class'], 'InputEIR')
         self.assertEqual(self.cb.custom_reports[0].type, 'MalariaSummaryReport')
@@ -48,7 +47,7 @@ class TestBuilders(unittest.TestCase):
 
     def test_custom_fn(self):
         v = [100, 50]
-        fn = ModFn(set_species_param, 'gambiae', 'Required_Habitat_Factor', value=v)
+        fn = ModBuilder.ModFn(set_species_param, 'gambiae', 'Required_Habitat_Factor', value=v)
         fn(self.cb)
         self.assertListEqual(get_species_param(self.cb, 'gambiae', 'Required_Habitat_Factor'), v)
         self.assertEqual(ModBuilder.metadata, {'gambiae.Required_Habitat_Factor': v})
@@ -92,9 +91,9 @@ class TestBuilders(unittest.TestCase):
                 ngenerated += 1
             self.assertEqual(ngenerated, 4)
 
-        b = ModBuilder.from_combos([ModFn(DTKConfigBuilder.set_param, 'x_Temporary_Larval_Habitat', v) for v in [0.05,0.1]],
-                                   [ModFn(DTKConfigBuilder.set_param, 'Simulation_Duration', 100)],
-                                   [ModFn(configure_site, s) for s in ['Namawala','Matsari']])
+        b = ModBuilder.from_combos([ModBuilder.ModFn(DTKConfigBuilder.set_param, 'x_Temporary_Larval_Habitat', v) for v in [0.05,0.1]],
+                                   [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Simulation_Duration', 100)],
+                                   [ModBuilder.ModFn(configure_site, s) for s in ['Namawala','Matsari']])
 
         verify(b)
 
@@ -111,21 +110,21 @@ class TestBuilders(unittest.TestCase):
                 for ml in b.mod_generator:
                     pass
 
-        b = ModBuilder.from_combos([ModFn(set_calibration_site, 'Matsari')],
-                                   [ModFn(configure_site, 'Namawala')])
+        b = ModBuilder.from_combos([ModBuilder.ModFn(set_calibration_site, 'Matsari')],
+                                   [ModBuilder.ModFn(configure_site, 'Namawala')])
         verify(b)
 
-        b = ModBuilder.from_combos([ModFn(configure_site, 'Matsari')],
-                                   [ModFn(configure_site, 'Namawala')])
+        b = ModBuilder.from_combos([ModBuilder.ModFn(configure_site, 'Matsari')],
+                                   [ModBuilder.ModFn(configure_site, 'Namawala')])
         verify(b)
 
-        b = ModBuilder.from_combos([ModFn(set_calibration_site, 'Matsari')],
-                                   [ModFn(set_calibration_site, 'Namawala')])
+        b = ModBuilder.from_combos([ModBuilder.ModFn(set_calibration_site, 'Matsari')],
+                                   [ModBuilder.ModFn(set_calibration_site, 'Namawala')])
         verify(b)
 
     def test_vector_drug_param_sweep(self):
-        b = ModBuilder.from_combos([ModFn(set_species_param, 'gambiae', 'Required_Habitat_Factor', value=v) for v in [(100, 50), (200, 100)]],
-                                   [ModFn(set_drug_param, 'Artemether', 'Max_Drug_IRBC_Kill', value=v) for v in [4, 2]])
+        b = ModBuilder.from_combos([ModBuilder.ModFn(set_species_param, 'gambiae', 'Required_Habitat_Factor', value=v) for v in [(100, 50), (200, 100)]],
+                                   [ModBuilder.ModFn(set_drug_param, 'Artemether', 'Max_Drug_IRBC_Kill', value=v) for v in [4, 2]])
         md = [(4, (100, 50)),
               (2, (100, 50)),
               (4, (200, 100)),

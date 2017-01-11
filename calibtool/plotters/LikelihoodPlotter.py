@@ -6,6 +6,7 @@ import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
+from calibtool.utils import ResumePoint
 
 sns.set_style('white')
 
@@ -16,7 +17,10 @@ class LikelihoodPlotter(BasePlotter):
     def __init__(self, combine_sites=True, prior_fn={}):
         super(LikelihoodPlotter, self).__init__(combine_sites, prior_fn)
 
-    def visualize(self, calib_manager):
+    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
+        if iteration_status != ResumePoint.next_point:
+            return  # Only plot once results are available
+
         self.all_results = calib_manager.all_results
         logger.debug(self.all_results)
 
@@ -38,7 +42,6 @@ class LikelihoodPlotter(BasePlotter):
     def plot_by_parameter(self, site='', **kwargs):
 
         for param in self.param_names:
-
             fig = plt.figure('LL by parameter ' + param, figsize=(5, 4))
             ax = fig.add_subplot(111)
             plt.subplots_adjust(left=0.15, bottom=0.15)
@@ -66,8 +69,7 @@ class LikelihoodPlotter(BasePlotter):
             plt.close(fig)
 
     def plot1d_by_iteration(self, results, param, total, **kwargs):
-
-        iterations = results.groupby('iteration', sort=True)
+        iterations = results.reset_index().groupby('iteration', sort=True)
         n_iterations = len(iterations)
 
         colors = ['#4BB5C1'] * (n_iterations - 1) + ['#FF2D00']
@@ -75,7 +77,7 @@ class LikelihoodPlotter(BasePlotter):
         for iter, values in iterations:
             sorted_values = values.sort_values(by=param)
             plt.plot(sorted_values[param], sorted_values[total],
-                     color=colors[iter],
+                     color=colors[int(iter)],
                      linewidth=(iter + 1) / (n_iterations + 1.) * 2,
                      alpha=(iter + 1) / (n_iterations + 1.),
                      **kwargs)

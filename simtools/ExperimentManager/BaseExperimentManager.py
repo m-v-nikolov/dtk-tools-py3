@@ -20,7 +20,8 @@ from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging, get_os
+from simtools.utils import init_logging
+from simtools.Utilities.General import get_os
 
 logger = init_logging('ExperimentManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
