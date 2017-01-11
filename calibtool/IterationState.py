@@ -20,7 +20,7 @@ class IterationState(object):
 
     def __init__(self, **kwargs):
         self.iteration = 0
-        self.resume_point = ResumePoint.normal
+        self.resume_point = ResumePoint.iteration_start
         self.reset_state()
         for k, v in kwargs.items():
             setattr(self, k, v)

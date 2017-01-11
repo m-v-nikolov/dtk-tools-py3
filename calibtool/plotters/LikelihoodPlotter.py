@@ -6,6 +6,7 @@ import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
+from calibtool.utils import ResumePoint
 
 sns.set_style('white')
 
@@ -16,8 +17,8 @@ class LikelihoodPlotter(BasePlotter):
     def __init__(self, combine_sites=True, prior_fn={}):
         super(LikelihoodPlotter, self).__init__(combine_sites, prior_fn)
 
-    def visualize(self, calib_manager, stage):
-        if stage is not 'Post_Analyze':
+    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
+        if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 
         self.all_results = calib_manager.all_results

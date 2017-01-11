@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from calibtool.utils import ResumePoint
 
 
 class BasePlotter:
@@ -13,5 +14,5 @@ class BasePlotter:
         self.site_analyzer_names = None
 
     @abstractmethod
-    def visualize(self, calib_manager, stage):
+    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
         pass

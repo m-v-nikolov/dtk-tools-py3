@@ -74,7 +74,7 @@ class CalibManager(object):
         self.calibration_start = None
         self.iteration_start = None
         self.iter_step = ''
-        self.resume_point = ResumePoint.normal
+        self.status = ResumePoint.iteration_start
         self.latest_iteration = 0
 
     def run_calibration(self, **kwargs):
@@ -161,7 +161,7 @@ class CalibManager(object):
 
         while self.iteration < self.max_iterations:
 
-            self.resume_point = ResumePoint.normal
+            self.status = ResumePoint.iteration_start
 
             # Restart the time for each iteration
             self.iteration_start = datetime.now().replace(microsecond=0)
@@ -172,10 +172,10 @@ class CalibManager(object):
             self.cache_iteration_state(backup_existing=(self.iteration_state.resume_point.value > 0))
 
             # Output verbose resume point
-            if self.iteration_state.resume_point.value > ResumePoint.normal.value:
+            if self.iteration_state.resume_point.value > ResumePoint.iteration_start.value:
                 logger.info('-- Resuming Point %d (%s) --' % (self.iteration_state.resume_point.value, self.iteration_state.resume_point.name.title()))
 
-            self.resume_point = ResumePoint.commission
+            self.status = ResumePoint.commission
             self.cache_calibration()
 
             # Start from simulation
@@ -183,28 +183,27 @@ class CalibManager(object):
                 # for OptimTool, n_dimension is not defined yet.
                 next_params = self.get_and_cache_samples_for_this_iteration()
                 self.commission_iteration(next_params, **kwargs)
-                self.resume_point = ResumePoint.analyze
+                self.status = ResumePoint.analyze
                 self.cache_calibration()
 
-                self.plot_iteration(stage='Post_Commission')
+                self.plot_iteration()
 
             # Start from analyze
             if self.iteration_state.resume_point.value <= ResumePoint.analyze.value:
                 self.wait_for_finished()    # Moved wait for finished here
                 results = self.analyze_iteration()
                 self.give_results_to_next_point_and_cache(results)
-                self.resume_point = ResumePoint.plot
+                self.status = ResumePoint.plot
                 self.cache_calibration()
 
             # DJK: Need another resume point after next point is done?
 
             if self.iteration_state.resume_point.value <= ResumePoint.plot.value:
-                self.plot_iteration(stage='Post_Analyze')
-
                 if self.iteration_state.resume_point == ResumePoint.plot:
                     self.next_point.update_iteration(self.iteration)
 
-                self.resume_point = ResumePoint.next_point
+                self.status = ResumePoint.next_point
+                self.plot_iteration()
                 self.cache_calibration()
 
             if self.finished():
@@ -212,7 +211,7 @@ class CalibManager(object):
 
             # Start from next iteration
             if self.iteration_state.resume_point.value <= ResumePoint.next_point.value:
-                self.resume_point = ResumePoint.next_point
+                self.status = ResumePoint.next_point
 
                 if self.iteration_state.resume_point == ResumePoint.next_point:
                     self.next_point.update_iteration(self.iteration)
@@ -221,7 +220,7 @@ class CalibManager(object):
                 if self.iteration + 1 < self.max_iterations:
                     self.increment_iteration()
                     # Make sure the following iteration always starts from very beginning as normal iteration!
-                    self.iteration_state.resume_point = ResumePoint.normal
+                    self.iteration_state.resume_point = ResumePoint.iteration_start
                 else:
                     # fix bug: next_point is not updated with the latest results for the last iteration!
                     self.iteration_state.next_point = self.next_point.get_state()
@@ -408,9 +407,9 @@ class CalibManager(object):
 
         return results.total.tolist()
 
-    def plot_iteration(self, stage):
+    def plot_iteration(self):
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self, stage), self.plotters)
+        map(lambda plotter: plotter.visualize(self, self.status), self.plotters)
         gc.collect()
 
     def give_results_to_next_point_and_cache(self, results):
@@ -472,7 +471,7 @@ class CalibManager(object):
                  'local_suite_id': self.local_suite_id,
                  'comps_suite_id': self.comps_suite_id,
                  'iteration': self.iteration,
-                 'resume_point': self.resume_point.value,
+                 'status': self.status.name,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
@@ -651,7 +650,8 @@ class CalibManager(object):
         if self.iter_step == 'commission':
             return
 
-        self.plot_iteration(stage='Post_Commission')
+        # [TODO] Do we need this?
+        # self.plot_iteration(stage='Post_Commission')
 
         # Make sure it is finished
         self.exp_manager.wait_for_finished(verbose=True)
@@ -692,7 +692,7 @@ class CalibManager(object):
             self.adjust_resume_point(iteration)
 
         # transfer the final resume point
-        self.iteration_state.resume_point = self.resume_point
+        self.iteration_state.resume_point = self.status
 
         # Prepare iteration state
         if self.iteration_state.resume_point == ResumePoint.commission:
@@ -792,14 +792,14 @@ class CalibManager(object):
 
         if self.latest_iteration == iteration:
             # user input iter_step may not be valid
-            if input_resume_point.value <= self.resume_point.value:
-                self.resume_point = input_resume_point
+            if input_resume_point.value <= self.status.value:
+                self.status = input_resume_point
             else:
                 print "The previous latest resume point is '%s', we will resume from it instead of '%s'" \
-                      % (self.resume_point.name, input_resume_point.name)
+                      % (self.status.name, input_resume_point.name)
         else:
             # just take user input iter_step
-            self.resume_point = input_resume_point
+            self.status = input_resume_point
 
     def find_best_iteration_for_resume(self, iteration=None, calib_data=None):
         """
@@ -844,7 +844,7 @@ class CalibManager(object):
         self.location = self.setup.get('type')
 
         calib_data = self.read_calib_data()
-        self.resume_point = ResumePoint(int(calib_data.get('resume_point', 1)))
+        self.status = ResumePoint[calib_data.get('status', ResumePoint.iteration_start.name)]
         self.latest_iteration = int(calib_data.get('iteration', 0))
         iteration = self.find_best_iteration_for_resume(iteration, calib_data)
 
@@ -1036,7 +1036,8 @@ class CalibManager(object):
         self.iteration_state.results = {}
         self.iteration_state.analyzers = {}
 
-        self.plot_iteration(stage='Post_Commission')
+        self.status = ResumePoint.analyze
+        self.plot_iteration()
 
         # Analyze again!
         res = self.analyze_iteration()
@@ -1046,7 +1047,8 @@ class CalibManager(object):
         # self.give_results_to_next_point_and_cache(res)
 
         # Call all plotters
-        self.plot_iteration(stage='Post_Analyze')
+        self.status = ResumePoint.next_point
+        self.plot_iteration()
 
         logger.info("Iteration %s reanalyzed." % iteration)
 
