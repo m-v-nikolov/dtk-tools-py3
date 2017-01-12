@@ -74,3 +74,9 @@ class SimulationDataStore:
             session.expunge_all()
 
         return simulation
+
+    @classmethod
+    def delete_simulation(cls, simulation):
+        logger.debug("Delete simulation %s" % simulation.id)
+        with session_scope() as session:
+            session.delete(session.query(Simulation).filter(Simulation.id == simulation.id).one())

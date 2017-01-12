@@ -2,7 +2,6 @@ import json
 import os
 import sys
 from ConfigParser import ConfigParser
-from simtools.IniValidator import IniValidator
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage
 
@@ -15,7 +14,7 @@ class SetupParser:
     setup_file = None
     default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, validate=False, working_directory=None):
+    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, working_directory=None):
         """
         Build a SetupParser.
         The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
@@ -63,7 +62,7 @@ class SetupParser:
 
         # Only care for HPC/LOCAL -> all the other sections will be added when overlaying the default file
         for sec in self.setup.sections():
-            if sec not in ('HPC','LOCAL'):
+            if sec not in ('HPC', 'LOCAL'):
                 self.setup.remove_section(sec)
 
         # Add the user to the default
@@ -111,19 +110,8 @@ class SetupParser:
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.get('type') == "HPC":
-            try:
-                os.environ['COMPS_REST_HOST'] = self.get('server_endpoint')
-                from simtools import utils
-                utils.COMPS_login(self.get('server_endpoint'))
-
-            except ImportError as e:
-                print 'Failed loading pyCOMPS package; you will only be able to run local simulations.\n%s' % e
-
-            except KeyError:
-                print('Unable to determine JAVA_HOME; please set JAVA_HOME environment variable as described in pyCOMPS README.txt')
-
-        if validate:
-            self.validate(self.selected_block, self)
+            from simtools import utils
+            utils.COMPS_login(self.get('server_endpoint'))
 
     def override_block(self,block):
         """
@@ -184,7 +172,7 @@ class SetupParser:
             if section in ("LOCAL", "HPC"):
                 continue
 
-            # The overlayed section doesnt exist in the setup -> create it
+            # The overlaid section doesnt exist in the setup -> create it
             if not self.setup.has_section(section):
                 # Create the section
                 self.setup.add_section(section)
@@ -222,7 +210,3 @@ class SetupParser:
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         self.schema = json_schema
         return json_schema
-
-    def validate(self, section_name, ini):
-        validator = IniValidator(section_name)
-        return validator.validate(self, ini)
