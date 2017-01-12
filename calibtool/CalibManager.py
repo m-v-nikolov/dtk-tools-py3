@@ -403,7 +403,7 @@ class CalibManager(object):
 
     def plot_iteration(self):
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self, self.status), self.plotters)
+        map(lambda plotter: plotter.visualize(self), self.plotters)
         gc.collect()
 
     def give_results_to_next_point_and_cache(self, results):
@@ -412,7 +412,7 @@ class CalibManager(object):
         which will update its state to either truncate the calibration
         or generate the next set of sample points.
         """
-        points_for_next_iteration = self.next_point.set_results_for_iteration(self.iteration, results)
+        self.next_point.set_results_for_iteration(self.iteration, results)
         self.iteration_state.next_point = self.next_point.get_state()
         self.cache_iteration_state()
 
@@ -883,8 +883,8 @@ class CalibManager(object):
         for plotter in self.plotters:
             if isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration != self.latest_iteration:
                 continue
-            plotter.visualize(self, stage='Post_Commission')
-            plotter.visualize(self, stage='Post_Analyze')
+            plotter.visualize(self)
+            plotter.visualize(self)
             gc.collect() # Have to clean up after matplotlib is done
 
     def load_experiment_from_iteration(self, iteration=None):

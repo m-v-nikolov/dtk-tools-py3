@@ -14,5 +14,5 @@ class BasePlotter:
         self.site_analyzer_names = None
 
     @abstractmethod
-    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
+    def visualize(self, calib_manager):
         pass

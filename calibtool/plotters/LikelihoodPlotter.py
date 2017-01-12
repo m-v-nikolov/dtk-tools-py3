@@ -17,7 +17,8 @@ class LikelihoodPlotter(BasePlotter):
     def __init__(self, combine_sites=True, prior_fn={}):
         super(LikelihoodPlotter, self).__init__(combine_sites, prior_fn)
 
-    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
+    def visualize(self, calib_manager):
+        iteration_status = calib_manager.status
         if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 
