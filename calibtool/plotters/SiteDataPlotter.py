@@ -20,7 +20,8 @@ class SiteDataPlotter(BasePlotter):
         super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
         self.num_to_plot = num_to_plot
 
-    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
+    def visualize(self, calib_manager):
+        iteration_status = calib_manager.status
         if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 

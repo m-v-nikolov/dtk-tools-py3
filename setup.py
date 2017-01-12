@@ -19,70 +19,71 @@ installed_packages = dict()
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
+dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
 requirements = OrderedDict([
     ('curses', {
         'platform': ['win'],
         'version': '2.2',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
+        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('pyCOMPS', {
         'platform': ['win','lin','mac'],
         'version': '1.0',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0-py2.py3-none-any.whl'
+        'wheel': '%s/pyCOMPS-1.0-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
+        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('numpy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.2+mkl',
+        'version': '1.11.3+mkl',
         'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2+mkl-cp27-cp27m-win_amd64.whl'
+        'wheel': '%s/numpy-1.11.3+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
-        'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+        'test': '>=',
+        'wheel': '%s/scipy-0.18.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('pandas', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
-        'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
+        'version': '0.19.2',
+        'test': '>=',
+        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
+        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('python-snappy', {
         'platform': ['win', 'lin'],
         'version': '0.5',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/python_snappy-0.5-cp27-none-win_amd64.whl'
+        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('seaborn', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.7.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/seaborn-0.7.1-py2.py3-none-any.whl'
+        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('statsmodels', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.6.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/statsmodels-0.6.1-cp27-none-win_amd64.whl'
+        'wheel': '%s/statsmodels-0.6.1-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.1.0b3',
+        'version': '1.1.4',
         'test': '=='
     }),
     ('npyscreen', {
@@ -110,6 +111,9 @@ requirements = OrderedDict([
         'platform': ['win', 'lin', 'mac'],
     }),
     ('dill', {
+        'platform': ['win', 'lin', 'mac'],
+    }),
+    ('enum34', {
         'platform': ['win', 'lin', 'mac'],
     })
 ])

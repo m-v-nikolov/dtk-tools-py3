@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 class NextPointAlgorithm(object):
-    '''
+    """
     The algorithm that chooses a next set of sample points
     based on the results of analyses on previous iterations.
-    '''
+    """
 
     def __init__(self, prior_fn,
                  initial_samples=1e4,
@@ -51,13 +51,12 @@ class NextPointAlgorithm(object):
         return self.get_next_samples_for_iteration(0)
 
     def set_initial_samples(self):
-        '''
+        """
         Set the initial samples points for the NextPointAlgorithm.
         If initial_samples parameter is an array, use those values as initial samples.
         Otherwise, if initial_samples parameter is a number,
         draw the specified number randomly from the prior distribution.
-        '''
-
+        """
         iteration = 0
 
         self.data = pd.DataFrame(columns=[['Iteration', '__sample_index__', 'Prior', 'Result'] + self.get_param_names()])
@@ -114,9 +113,9 @@ class NextPointAlgorithm(object):
         pass
 
     def update_iteration(self, iteration):
-        '''
+        """
         Update the current iteration state of the algorithm.
-        '''
+        """
 
         self.iteration = iteration
         logger.info('Updating %s at iteration %d:', self.__class__.__name__, iteration)
@@ -125,14 +124,14 @@ class NextPointAlgorithm(object):
         pass
 
     def end_condition(self):
-        '''
+        """
         Return a Boolean whether the next-point algorithm has reached its truncation condition.
-        '''
+        """
 
         logger.info('Continuing NextPointAlgorithm iterations...')
         return False
 
-    def get_next_samples(self): # --> get_points_for_this_iteration
+    def get_next_samples(self):
         return self.latest_samples
 
     def get_final_samples_orig(self):
@@ -149,12 +148,6 @@ class NextPointAlgorithm(object):
 
 
     def prep_for_dict(self, df):
-        # Needed for Windows compatibility
-        #nulls = df.isnull()
-        #if nulls.values.any():
-        #    df[nulls] = None
-        #return df.to_dict(orient='list')
-
         return df.where(~df.isnull(), other=None).to_dict(orient='list')
 
     def set_state(self, state, iteration):
@@ -185,13 +178,15 @@ class NextPointAlgorithm(object):
         self.results = list(self.data['Result'])
 
     def next_point_fn(self):
-        ''' The base implementation will resample from the prior function. '''
+        """
+        The base implementation will resample from the prior function.
+        """
         return self.prior_fn
 
     def verify_valid_samples(self, next_samples):
-        '''
+        """
         Resample from next-point function until all samples have non-zero prior.
-        '''
+        """
 
         attempt = 0
         while attempt < self.max_resampling_attempts:

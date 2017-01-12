@@ -110,7 +110,7 @@ class ExperimentDataStore:
 
     @classmethod
     def delete_experiment(cls, experiment):
-        logger.debug("Delete experiment")
+        logger.debug("Delete experiment %s" % experiment.id)
         with session_scope() as session:
             session.delete(session.query(Experiment).filter(Experiment.exp_id == experiment.exp_id).one())
 
@@ -121,9 +121,6 @@ class ExperimentDataStore:
         suite_ids: list of suite ids
         """
         with session_scope() as session:
-            # Issue: related tables are not deleted
-            # num = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).delete(synchronize_session='fetch')
-
             # New approach: it will delete related simulations
             exps = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids))
             num = 0
@@ -131,7 +128,7 @@ class ExperimentDataStore:
                 session.delete(exp)
                 num += 1
             if verbose:
-                print '%s experiment(s) deleted.' % num
+                logger.info('%s experiment(s) deleted.' % num)
 
     @classmethod
     def get_experiments_by_suite(cls, suite_ids):
@@ -164,7 +161,7 @@ class ExperimentDataStore:
                 session.delete(exp)
                 num += 1
             if verbose:
-                print '%s experiment(s) deleted.' % num
+                logger.info('%s experiment(s) deleted.' % num)
 
     @classmethod
     def get_recent_experiment_by_filter(cls, num=20, is_all=False, name=None, location=None):

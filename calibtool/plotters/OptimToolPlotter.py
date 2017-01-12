@@ -40,8 +40,8 @@ class OptimToolPlotter(BasePlotter):
         plt.margins(0.05)
         plt.autoscale(tight=False)
 
-    def visualize(self, calib_manager, iteration_status=ResumePoint.commission):
-
+    def visualize(self, calib_manager):
+        iteration_status = calib_manager.status
         self.directory = calib_manager.iteration_directory()
         self.param_names = calib_manager.param_names()
         self.site_analyzer_names = calib_manager.site_analyzer_names()

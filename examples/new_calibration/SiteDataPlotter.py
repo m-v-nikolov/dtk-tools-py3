@@ -26,16 +26,8 @@ class SiteDataPlotter(BasePlotter):
         self.state_for_iteration = calib_manager.state_for_iteration
         self.plots_directory = os.path.join(calib_manager.name, '_plots')
         self.site_analyzer_names = calib_manager.site_analyzer_names()
-
-        # for site in calib_manager.sites:
-        #     for analyzer in site.analyzers:
-        #         if self.combine_sites:
-        #             self.plot_analyzers(site, site.analyzers, self.all_results)
-        #         else:
-        #             combine_by_site(site,site.analyzers,self.all_results)
-        #             sorted_results = self.all_results.sort_values(by='%s_total' % site, ascending=False)
-        #             self.plot_analyzers(site,site.analyzers,sorted_results)
         self.analyzers = {}
+
         for site in calib_manager.sites:
             for analyzer in site.analyzers:
                 self.analyzers[site.name+"_"+analyzer.name] = analyzer
