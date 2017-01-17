@@ -93,6 +93,17 @@ class NextPointAlgorithm(object):
 
         return self.get_next_samples_for_iteration(iteration)
 
+    def get_samples_for_iteration(self, iteration):
+        # Note: this method is called only from commission stage.
+        # Important to know this for resume feature (need to restore correct next_point including samples)
+        if iteration == 0:
+            samples = self.choose_initial_samples()
+        else:
+            samples = self.choose_next_point_samples(iteration)
+            self.update_gaussian_probabilities(iteration - 1)
+
+        return samples
+
     def add_samples(self, samples, iteration):
         samples_df = pd.DataFrame(samples, columns=self.get_param_names())
         samples_df.index.name = '__sample_index__'

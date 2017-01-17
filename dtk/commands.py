@@ -468,7 +468,7 @@ def create_experiment(exp_id, sp, verbose=False):
 
     # Go through the sims and create them
     for sim in sims:
-# Create the simulation
+        # Create the simulation
         simulation = DataStore.create_simulation(id=str(sim.id),
                                                  status=sim.state.name,
                                                  tags=sim.tags,
