@@ -1,16 +1,15 @@
 import datetime
 import inspect
-import json
 import os
 
+from sqlalchemy import Binary
 from sqlalchemy import Column
 from sqlalchemy import DateTime
-from sqlalchemy import Integer
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
 from sqlalchemy import PickleType
 from sqlalchemy import String
-from sqlalchemy import Binary
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 

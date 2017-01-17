@@ -151,10 +151,6 @@ class ExperimentDataStore:
         """
         exp_ids = [exp.exp_id for exp in exp_list]
         with session_scope() as session:
-            # Issue: related tables are not deleted
-            # num = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids)).delete(synchronize_session='fetch')
-
-            # New approach: it will delete related simulations
             exps = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids))
             num = 0
             for exp in exps:
