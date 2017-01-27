@@ -3,7 +3,7 @@ import os
 from dtk.interventions.larvicides import add_larvicides
 from dtk.utils.analyzers import TimeseriesAnalyzer, group_by_name
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from simtools.ModBuilder import ModBuilder
+from simtools.ModBuilder import ModBuilder, ModFn
 
 # Create a config builder from set of input files
 input_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"input")
@@ -46,8 +46,8 @@ def set_larvicides(cb, start):
 # | 730               | 4              |
 # +-------------------+----------------+
 builder = ModBuilder.from_combos(
-    [ModBuilder.ModFn(set_larvicides, start_time ) for start_time in (0,5,10, 365, 730)],
-    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Run_Number', seed) for seed in range(5)],
+    [ModFn(set_larvicides, start_time ) for start_time in (0,5,10, 365, 730)],
+    [ModFn(DTKConfigBuilder.set_param, 'Run_Number', seed) for seed in range(5)],
 )
 
 # The run_sim_args is a dictionary informing the command line of:

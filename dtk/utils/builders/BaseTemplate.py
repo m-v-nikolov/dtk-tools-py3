@@ -113,11 +113,14 @@ class BaseTemplate(ITemplate):
             return self.known_params[param]
 
         # First time looking for this parameter.  Try to find it and add to list of known parameters
+        is_param = False
         try:
-            self.get_param(param)
-            is_param = True
+            #self.get_param(param)
+            params, contents = self.get_param(param)
+            if params:
+                is_param = True
         except (KeyError, TypeError, IndexError) as e:
-            is_param = False
+            pass
 
         self.known_params[param] = is_param
         return is_param

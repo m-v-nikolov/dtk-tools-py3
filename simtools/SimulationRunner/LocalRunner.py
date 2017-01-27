@@ -60,11 +60,10 @@ class LocalSimulationRunner(BaseSimulationRunner):
         # We use poll to be able to update the status
         if self.simulation.pid:
             pid = int(self.simulation.pid)
-            while psutil.pid_exists(pid) and psutil.Process(pid).name() == 'Eradication.exe':
+            while psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
                 self.simulation.message = self.last_status_line()
                 self.update_status()
-
-                time.sleep(4)
+                time.sleep(5)
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
@@ -84,7 +83,10 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        self.states[self.simulation.id] = self.simulation
+        self.states.put({'sid':self.simulation.id,
+                         'status':self.simulation.status,
+                         'message':self.simulation.message,
+                         'pid':self.simulation.pid})
 
     def last_status_line(self):
         """

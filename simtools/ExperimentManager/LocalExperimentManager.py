@@ -1,23 +1,17 @@
-import logging
 import os
 import re
 import shutil
 import signal
-import subprocess
-import sys
 import threading
-import time
 from datetime import datetime
-import platform
 
-from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
-from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
+from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
+from simtools.utils import init_logging
 
-logging.basicConfig(format='%(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = init_logging("ExperimentManager")
 
 
 class LocalExperimentManager(BaseExperimentManager):
@@ -33,13 +27,18 @@ class LocalExperimentManager(BaseExperimentManager):
         self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
-    def commission_simulations(self, states={}):
+    def commission_simulations(self, states):
         if not self.local_queue:
             from Queue import Queue
             self.local_queue = Queue()
         while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
-            self.local_queue.put('run 1')
             simulation = self.experiment.simulations[self.simulations_commissioned]
+            # If the simulation is not waiting, we can go to the next one
+            # Useful if the simulation is cancelled before being commission
+            if simulation.status != "Waiting":
+                self.simulations_commissioned += 1
+                continue
+            self.local_queue.put('run 1')
             t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
             t1.daemon = True
             t1.start()
@@ -53,49 +52,18 @@ class LocalExperimentManager(BaseExperimentManager):
         Check file exist and return the missing files as dict
         """
         input_root = self.setup.get('input_root')
+        return input_root, self.find_missing_files(input_files, input_root)
 
-        missing_files = {}
-        for (filename, filepath) in input_files.iteritems():
-            if isinstance(filepath, basestring):
-                if not os.path.exists(os.path.join(input_root, filepath)):
-                    missing_files[filename] = filepath
-            elif isinstance(filepath, list):
-                missing_files[filename] = [f for f in filepath if not os.path.exists(os.path.join(input_root, f))]
-                # Remove empty list
-                if len(missing_files[filename]) == 0:
-                    missing_files.pop(filename)
-
-        return missing_files
-
-    def cancel_all_simulations(self, states=None):
-        if not states:
-            states = self.get_simulation_status()[0]
-
-        logger.info('Killing all simulations in experiment: %s' % self.experiment.id)
-        if len(states.keys()) == 0 : return
-        self.cancel_simulations(states.keys())
-
-    def create_experiment(self, experiment_name, suite_id=None):
-        # Create a unique id
-        exp_id = re.sub('[ :.-]', '_', str(datetime.now()))
-        logger.info("Creating exp_id = " + exp_id)
+    def create_experiment(self, experiment_name, experiment_id=re.sub('[ :.-]', '_', str(datetime.now())),suite_id=None):
+        logger.info("Creating exp_id = " + experiment_id)
 
         # Create the experiment in the base class
-        super(LocalExperimentManager,self).create_experiment(experiment_name, exp_id, suite_id)
+        super(LocalExperimentManager,self).create_experiment(experiment_name, experiment_id, suite_id)
 
         # Get the path and create it if needed
         experiment_path = self.experiment.get_path()
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
-
-    def create_simulation(self):
-        time.sleep(0.01)  # to avoid identical datetime
-        sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
-        logger.debug('Creating sim_id = ' + sim_id)
-        sim_dir = os.path.join(self.experiment.get_path(), sim_id)
-        os.makedirs(sim_dir)
-        self.config_builder.dump_files(sim_dir)
-        self.experiment.simulations.append(DataStore.create_simulation(id=sim_id, tags=self.exp_builder.metadata, status='Waiting'))
 
     def create_suite(self, suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
@@ -112,28 +80,29 @@ class LocalExperimentManager(BaseExperimentManager):
         # Delete local simulation data.
         shutil.rmtree(self.experiment.get_path())
 
-    def kill_job(self, simId):
+    def cancel_experiment(self):
+        super(LocalExperimentManager, self).cancel_experiment()
+        sim_list = [sim for sim in self.experiment.simulations if sim.status in ["Waiting","Running"]]
+        self.cancel_simulations(sim_list)
 
-        simulation = DataStore.get_simulation(simId)
-
+    def kill_simulation(self, simulation):
         # No need of trying to kill simulation already done
         if simulation.status in ('Succeeded', 'Failed', 'Canceled'):
-            return
-
-        # if the status has not been set -> set it to Canceled
-        if not simulation.status or simulation.status == 'Waiting':
-            simulation.status = 'Canceled'
-            DataStore.save_simulation(simulation)
             return
 
         # It was running -> Kill it if pid is there
         if simulation.pid:
             try:
-                simulation.status = 'Canceled'
-                DataStore.save_simulation(simulation)
                 os.kill(int(simulation.pid), signal.SIGTERM)
             except Exception as e:
                 print e
 
-    def complete_sim_creation(self,commissioners):
-        pass
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+        return LocalSimulationCreator(config_builder=self.config_builder,
+                                      initial_tags=self.exp_builder.tags,
+                                      function_set=function_set,
+                                      max_sims_per_batch=max_sims_per_batch,
+                                      experiment=self.experiment,
+                                      setup=self.setup,
+                                      callback=callback,
+                                      return_list=return_list)

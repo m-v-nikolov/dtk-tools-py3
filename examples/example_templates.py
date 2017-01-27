@@ -115,6 +115,6 @@ run_sim_args =  {'config_builder': config_builder,
 if __name__ == "__main__":
     from simtools.ExperimentManager import ExperimentManagerFactory
 
-    sm = ExperimentManagerFactory.from_setup(SetupParser())
-    sm.run_simulations(**run_sim_args)
+    exp_manager = ExperimentManagerFactory.from_setup(SetupParser())
+    exp_manager.run_simulations(**run_sim_args)
 

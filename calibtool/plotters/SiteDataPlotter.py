@@ -3,26 +3,31 @@ import os
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import seaborn as sns
+
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
 from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
+from calibtool.utils import ResumePoint
+
+sns.set_style('white')
+
 logger = logging.getLogger(__name__)
 
-try:
-    import seaborn as sns
-    sns.set_style('white')
-except:
-    pass
 
 class SiteDataPlotter(BasePlotter):
-    def __init__(self, combine_sites=True):
-        super(SiteDataPlotter, self).__init__( combine_sites)
+    def __init__(self, num_to_plot=10, combine_sites=True, prior_fn={}):
+        super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
+        self.num_to_plot = num_to_plot
 
     def visualize(self, calib_manager):
+        iteration_status = calib_manager.status
+        if iteration_status != ResumePoint.next_point:
+            return  # Only plot once results are available
+
         self.all_results = calib_manager.all_results.reset_index()
         logger.debug(self.all_results)
 
-        self.num_to_plot = calib_manager.num_to_plot
         self.site_analyzer_names = calib_manager.site_analyzer_names()
         self.state_for_iteration = calib_manager.state_for_iteration
         self.plots_directory = os.path.join(calib_manager.name, '_plots')
@@ -115,7 +120,6 @@ class SiteDataPlotter(BasePlotter):
             ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
-
 
     def cleanup_plot(self, calib_manager):
         """

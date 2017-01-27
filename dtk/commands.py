@@ -1,12 +1,12 @@
 import argparse
+import csv
+import datetime
 import json
-import logging
 import os
 import subprocess
 import sys
 from importlib import import_module
 
-import datetime
 import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
@@ -15,15 +15,12 @@ from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
-logger = logging.getLogger(__name__)
-# Do we have to specify the log path?
-fh = logging.FileHandler('DtkTools_log.log')
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
+logger = utils.init_logging('Commands')
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -117,71 +114,50 @@ def run(args, unknownArgs):
             additional_args['node_group'] = args.node_group
 
     # Create the experiment manager based on the setup and run simulation.
-    sm = ExperimentManagerFactory.from_setup(setup, **additional_args)
-    sm.run_simulations(**mod.run_sim_args)
+    exp_manager = ExperimentManagerFactory.from_setup(setup, **additional_args)
+    exp_manager.run_simulations(**mod.run_sim_args)
 
 
 def status(args, unknownArgs):
     # No matter what check the overseer
     from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
     BaseExperimentManager.check_overseer()
-    
+
     if args.active:
         logger.info('Getting status of all active experiments.')
         active_experiments = DataStore.get_active_experiments()
 
         for exp in active_experiments:
-            sm = ExperimentManagerFactory.from_experiment(exp)
-            states, msgs = sm.get_simulation_status()
-            sm.print_status(states, msgs)
+            exp_manager = ExperimentManagerFactory.from_experiment(exp)
+            states, msgs = exp_manager.get_simulation_status()
+            exp_manager.print_status(states, msgs)
         return
 
-    sm = reload_experiment(args)
+    exp_manager = reload_experiment(args)
     if args.repeat:
-        sm.wait_for_finished(verbose=True, sleep_time=20)
+        exp_manager.wait_for_finished(verbose=True, sleep_time=20)
     else:
-        states, msgs = sm.get_simulation_status()
-        sm.print_status(states, msgs)
-
-
-def resubmit(args, unknownArgs):
-    sm = reload_experiment(args)
-
-    if args.simIds:
-        logger.info('Resubmitting job(s) with ids: ' + str(args.simIds))
-        params = {'ids': args.simIds}
-    else:
-        logger.info('No job IDs were specified.  Resubmitting all failed and canceled jobs in experiment.')
-        params = {'resubmit_all_failed': True}
-
-    if args.all:
-        sms = reload_experiments(args)
-        for sm in sms:
-            sm.resubmit_simulations(**params)
-    else:
-        sm = reload_experiment(args)
-        sm.resubmit_simulations(**params)
+        states, msgs = exp_manager.get_simulation_status()
+        exp_manager.print_status(states, msgs)
 
 
 def kill(args, unknownArgs):
     with utils.nostdout():
-        sm = reload_experiment(args)
+        exp_manager = reload_experiment(args)
 
-    logger.info("Killing Experiment %s" % sm.experiment.id)
-    states, msgs = sm.get_simulation_status()
-    sm.print_status(states, msgs, verbose=False)
+    logger.info("Killing Experiment %s" % exp_manager.experiment.id)
+    states, msgs = exp_manager.get_simulation_status()
+    exp_manager.print_status(states, msgs, verbose=False)
 
-    if sm.status_finished(states):
+    if exp_manager.status_finished(states):
         logger.warn(
-            "The Experiment %s is already finished and therefore cannot be killed. Exiting..." % sm.experiment.id)
+            "The Experiment %s is already finished and therefore cannot be killed. Exiting..." % exp_manager.experiment.id)
         return
 
     if args.simIds:
-        logger.info('KIlling job(s) with ids: ' + str(args.simIds))
-        params = {'ids': args.simIds}
+        logger.info('Killing job(s) with ids: ' + str(args.simIds))
     else:
         logger.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
-        params = {'killall': True}
 
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -189,22 +165,23 @@ def kill(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    sm.cancel_simulations(**params)
+    exp_manager.kill(args, unknownArgs)
+    print "'Kill' has been executed successfully."
 
 
 def exterminate(args, unknownArgs):
     with utils.nostdout():
-        sms = reload_experiments(args)
+        exp_managers = reload_experiments(args)
 
     if args.expId:
-        for sm in sms:
-            states, msgs = sm.get_simulation_status()
-            sm.print_status(states, msgs)
+        for exp_manager in exp_managers:
+            states, msgs = exp_manager.get_simulation_status()
+            exp_manager.print_status(states, msgs)
         logger.info('Killing ALL experiments matched by ""' + args.expId + '".')
     else:
         logger.info('Killing ALL experiments.')
 
-    logger.info('%s experiments found.' % len(sms))
+    logger.info('%s experiments found.' % len(exp_managers))
 
     choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -212,14 +189,20 @@ def exterminate(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    for sm in sms:
-        sm.cancel_simulations(killall=True)
+    for exp_manager in exp_managers:
+        exp_manager.cancel_experiment()
+
+    print "'Exterminate' has been executed successfully."
 
 
 def delete(args, unknownArgs):
-    sm = reload_experiment(args)
-    states, msgs = sm.get_simulation_status()
-    sm.print_status(states, msgs)
+    exp_manager = reload_experiment(args)
+    if exp_manager is None:
+        logger.info("The experiment doesn't exist. No action executed.")
+        return
+
+    states, msgs = exp_manager.get_simulation_status()
+    exp_manager.print_status(states, msgs)
 
     if args.hard:
         logger.info('Hard deleting selected experiment.')
@@ -232,10 +215,8 @@ def delete(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    if args.hard:
-        sm.hard_delete()
-    else:
-        sm.soft_delete()
+    exp_manager.delete_experiment(args.hard)
+    logger.info("Experiment '%s' has been successfully deleted.", exp_manager.experiment.exp_id)
 
 
 def clean(args, unknownArgs):
@@ -243,21 +224,21 @@ def clean(args, unknownArgs):
         # Store the current directory to let the reload knows that we want to
         # only retrieve simulations in this directory
         args.current_dir = os.getcwd()
-        sms = reload_experiments(args)
+        exp_managers = reload_experiments(args)
 
-    if len(sms) == 0:
+    if len(exp_managers) == 0:
         logger.warn("No experiments matched by '%s'. Exiting..." % args.expId)
         return
 
     if args.expId:
-        logger.info("Hard deleting ALL experiments matched by '%s' ran from the current directory.\n%s experiments total." % (args.expId, len(sms)))
-        for sm in sms:
-            logger.info(sm.experiment)
-            states, msgs = sm.get_simulation_status()
-            sm.print_status(states, msgs, verbose=False)
+        logger.info("Hard deleting ALL experiments matched by '%s' ran from the current directory.\n%s experiments total." % (args.expId, len(exp_managers)))
+        for exp_manager in exp_managers:
+            logger.info(exp_manager.experiment)
+            states, msgs = exp_manager.get_simulation_status()
+            exp_manager.print_status(states, msgs, verbose=False)
             logger.info("")
     else:
-        logger.info("Hard deleting ALL experiments ran from the current directory.\n%s experiments total." % len(sms))
+        logger.info("Hard deleting ALL experiments ran from the current directory.\n%s experiments total." % len(exp_managers))
 
     choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
 
@@ -265,73 +246,75 @@ def clean(args, unknownArgs):
         logger.info("No action taken.")
         return
 
-    for sm in sms:
-        logger.info("Deleting %s" % sm.experiment)
-        sm.hard_delete()
+    for exp_manager in exp_managers:
+        logger.info("Deleting %s" % exp_manager.experiment)
+        exp_manager.hard_delete()
 
 
 def stdout(args, unknownArgs):
     logger.info('Getting stdout...')
 
-    sm = reload_experiment(args)
-    states, msgs = sm.get_simulation_status()
+    exp_manager = reload_experiment(args)
+    states, msgs = exp_manager.get_simulation_status()
 
     if args.succeeded:
         args.simIds = [k for k in states if states.get(k) in ['Succeeded']][:1]
     elif args.failed:
         args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
+    else:
+        args.simIds = [states.keys()[0]]
 
-    if not sm.status_succeeded(states):
+    if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
 
-    sm.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
+    exp_manager.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
 
     if args.comps:
-        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
-    sm.analyze_experiment()
+    exp_manager.analyze_experiment()
 
 
 def progress(args, unknownArgs):
     logger.info('Getting progress...')
 
-    sm = reload_experiment(args)
-    states, msgs = sm.get_simulation_status()
+    exp_manager = reload_experiment(args)
+    states, msgs = exp_manager.get_simulation_status()
 
-    sm.add_analyzer(ProgressAnalyzer(args.simIds))
+    exp_manager.add_analyzer(ProgressAnalyzer(args.simIds))
 
     if args.comps:
-        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
-    sm.analyze_experiment()
+    exp_manager.analyze_experiment()
 
 
 def analyze(args, unknownArgs):
     logger.info('Analyzing results...')
 
-    sm = reload_experiment(args)
-    sm.analyzers = []
-    states, msgs = sm.get_simulation_status()
+    exp_manager = reload_experiment(args)
+    exp_manager.analyzers = []
+    states, msgs = exp_manager.get_simulation_status()
 
     if not args.force:
-        if not sm.status_succeeded(states):
+        if not exp_manager.status_succeeded(states):
             logger.warning('Not all jobs have finished successfully yet...')
             logger.info('Job states:')
             logger.info(json.dumps(states, sort_keys=True, indent=4))
             return
 
     if os.path.exists(args.config_name):
-        analyze_from_script(args, sm)
+        analyze_from_script(args, exp_manager)
     elif args.config_name in builtinAnalyzers.keys():
-        sm.add_analyzer(builtinAnalyzers[args.config_name])
+        exp_manager.add_analyzer(builtinAnalyzers[args.config_name])
     else:
         logger.error('Unknown analyzer...available builtin analyzers: ' + ', '.join(builtinAnalyzers.keys()))
         return
 
     if args.comps:
-        utils.override_HPC_settings(sm.setup, use_comps_asset_svc='1')
+        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
-    sm.analyze_experiment()
+    exp_manager.analyze_experiment()
 
     import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
     plt.show()
@@ -340,6 +323,42 @@ def analyze(args, unknownArgs):
 def analyze_list(args, unknownArgs):
     logger.error('\n' + '\n'.join(builtinAnalyzers.keys()))
 
+
+def log(args, unknownArgs):
+    # Check if complete
+    if args.complete:
+        records = [r.__dict__ for r in LoggingDataStore.get_all_records()]
+        with open('dtk_tools_log.csv', 'wb') as output_file:
+            dict_writer = csv.DictWriter(output_file,
+                                         fieldnames=[r for r in records[0].keys()if not r[0] == '_'],
+                                         extrasaction='ignore')
+            dict_writer.writeheader()
+            dict_writer.writerows(records)
+        print "Complete log written to dtk_tools_log.csv."
+        return
+
+    # Create the level
+    level = 0
+    if args.level == "INFO":
+        level = 20
+    elif args.level == "ERROR":
+        level = 30
+
+    modules = args.module if args.module else LoggingDataStore.get_all_modules()
+
+    print "Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level)
+    records = LoggingDataStore.get_records(level,modules,args.number)
+
+    records_str = "\n".join(map(str, records))
+    print records_str
+
+    if args.export:
+        with open(args.export, 'w') as fp:
+            fp.write(records_str)
+
+        print "Log written to %s" % args.export
+
+
 def sync(args, unknownArgs):
     """
     Sync COMPS db with local db
@@ -347,9 +366,7 @@ def sync(args, unknownArgs):
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
     utils.COMPS_login(sp.get('server_endpoint'))
-    from COMPS.Data import Experiment, Suite, QueryCriteria
-
-    day_limit_default = 30
+    from COMPS.Data import Experiment, QueryCriteria
 
     exp_to_save = list()
     exp_deleted = 0
@@ -357,8 +374,9 @@ def sync(args, unknownArgs):
     # Test the experiments present in the local DB to make sure they still exist in COMPS
     for exp in DataStore.get_experiments(None):
         if exp.location == "HPC":
-            exps_comps = Experiment.Get(QueryCriteria().Where("Id=%s" % exp.exp_id))
-            if not exps_comps or len(exps_comps.toArray()) == 0:
+            try:
+                _ = Experiment.get(exp.exp_id)
+            except:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
                 exp_deleted += 1
@@ -374,17 +392,18 @@ def sync(args, unknownArgs):
             exp_to_save.append(experiment)
     else:
         # By default only get simulations created in the last month
-        day_limit = args.days if args.days else day_limit_default
+        # day_limit = args.days if args.days else day_limit_default
+        day_limit = 30
         today = datetime.date.today()
         limit_date = today - datetime.timedelta(days=int(day_limit))
         limit_date_str = limit_date.strftime("%Y-%m-%d")
 
-        exps = Experiment.Get(QueryCriteria().Where('Owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str))).toArray()
+        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str)))
 
         # For each of them, check if they are in the db
         for exp in exps:
             # Create a new experiment
-            experiment = create_experiment(exp.getId().toString(), sp)
+            experiment = create_experiment(str(exp.id), sp)
 
             # The experiment needs to be saved
             if experiment:
@@ -396,7 +415,7 @@ def sync(args, unknownArgs):
         logger.info("%s experiments have been updated in the DB." % len(exp_to_save))
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
     else:
-        logger.info("The database was already up to date.")
+        print("The database was already up to date.")
 
     # Start overseer
     BaseExperimentManager.check_overseer()
@@ -407,40 +426,36 @@ def create_experiment(exp_id, sp, verbose=False):
     Create a new experiment in local db given COMPS experiment id
     If experiment exists in local db, just update it
     """
-    from COMPS.Data import Experiment, Suite, QueryCriteria
+    from COMPS.Data import Experiment, QueryCriteria
 
-    with utils.nostdout():
-        experiment = DataStore.get_experiment(exp_id)
-        if experiment and experiment.is_done():
-            if verbose:
-                print "Experiment ('%s') already exists in local db." % exp_id
-            # Do not bother with finished experiments
-            return None
+    experiment = DataStore.get_experiment(exp_id)
+    if experiment and experiment.is_done():
+        if verbose:
+            print "Experiment ('%s') already exists in local db." % exp_id
+        # Do not bother with finished experiments
+        return None
 
-    exp_comps = Experiment.Get(QueryCriteria().Where("Id=%s" % exp_id))
-    if not exp_comps or len(exp_comps.toArray()) == 0:
+    try:
+        exp_comps = Experiment.get(exp_id)
+    except:
         if verbose:
             print "The experiment ('%s') doesn't exist in COMPS." % exp_id
         return None
 
-    # Get experiment from COMPS
-    exp = exp_comps.toArray()[0]
-
     # Case: experiment doesn't exist in local db
     if not experiment:
         # Cast the creation_date
-        creation_date = datetime.datetime.strptime(exp.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
-        experiment = DataStore.create_experiment(exp_id=exp.getId().toString(),
-                                                 suite_id=exp.getSuiteId().toString() if exp.getSuiteId() else None,
-                                                 exp_name=exp.getName(),
-                                                 date_created=creation_date,
+        experiment = DataStore.create_experiment(exp_id=str(exp_comps.id),
+                                                 suite_id=str(exp_comps.suite_id) if exp_comps.suite_id else None,
+                                                 exp_name=exp_comps.name,
+                                                 date_created=exp_comps.date_created,
                                                  location='HPC',
                                                  selected_block='HPC',
                                                  endpoint=sp.get('server_endpoint'))
 
     # Note: experiment may be new or comes from local db
     # Get associated simulations of the experiment
-    sims = exp.GetSimulations(QueryCriteria().Select('Id,SimulationState,DateCreated').SelectChildren('Tags')).toArray()
+    sims = exp_comps.get_simulations(QueryCriteria().select(['id', 'state', 'date_created']).select_children('tags'))
 
     # Skip empty experiments or experiments that have the same number of sims
     if len(sims) == 0 or len(sims) == len(experiment.simulations):
@@ -453,19 +468,11 @@ def create_experiment(exp_id, sp, verbose=False):
 
     # Go through the sims and create them
     for sim in sims:
-        # Create the tag dict
-        tags = dict()
-        for key in sim.getTags().keySet().toArray():
-            tags[key] = sim.getTags().get(key)
-
-        # Prepare the date
-        creation_date = datetime.datetime.strptime(sim.getDateCreated().toString(), "%a %b %d %H:%M:%S PDT %Y")
-
         # Create the simulation
-        simulation = DataStore.create_simulation(id=sim.getId().toString(),
-                                                 status=sim.getState().toString(),
-                                                 tags=tags,
-                                                 date_created=creation_date)
+        simulation = DataStore.create_simulation(id=str(sim.id),
+                                                 status=sim.state.name,
+                                                 tags=sim.tags,
+                                                 date_created=sim.date_created)
         # Add to the experiment
         experiment.simulations.append(simulation)
 
@@ -520,24 +527,27 @@ def analyze_from_script(args, sim_manager):
         sim_manager.add_analyzer(analyzer)
 
 
-def reload_experiment(args=None):
-    if args:
-        id = args.expId
+def reload_experiment(args=None, try_sync=True):
+    """
+    Return the experiment (for given expId) or most recent experiment
+    """
+    exp_id = args.expId if args else None
+    exp = DataStore.get_most_recent_experiment(exp_id)
+    if exp is None:
+        if try_sync:
+            subprocess.call(['dtk','sync','-id',args.expId])
+            return reload_experiment(args,False)
+        else:
+            raise Exception("No experiment found with this ID Locally or on COMPS.")
     else:
-        id = None
-
-    return ExperimentManagerFactory.from_experiment(DataStore.get_most_recent_experiment(id))
+        return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
-    if args:
-        id = args.expId
-    else:
-        id = None
-
+    id = args.expId if args else None
     current_dir = args.current_dir if 'current_dir' in args else None
 
-    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments(id, current_dir))
+    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
 
 
 def main():
@@ -574,16 +584,6 @@ def main():
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
     parser_list.add_argument('-n', '--number',  help='Get given number recent experiment list', dest='limit')
     parser_list.set_defaults(func=db_list)
-
-    # 'dtk resubmit' options
-    parser_resubmit = subparsers.add_parser('resubmit',
-                                            help='Resubmit failed or canceled simulations specified by experiment ID or name.')
-    parser_resubmit.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_resubmit.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
-                                 help='Process or job IDs of simulations to resubmit.')
-    parser_resubmit.add_argument('-a', '--all', action='store_true',
-                                 help='Resubmit all failed or canceled simulations in selected experiments.')
-    parser_resubmit.set_defaults(func=resubmit)
 
     # 'dtk kill' options
     parser_kill = subparsers.add_parser('kill', help='Kill most recent running experiment specified by ID or name.')
@@ -661,6 +661,15 @@ def main():
     # 'dtk test' options
     parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
     parser_test.set_defaults(func=test)
+
+    # 'dtk log' options
+    parser_log = subparsers.add_parser('log', help="Allow to query and export the logs.")
+    parser_log.add_argument('-l', '--level', help="Only display logs for a certain level and above (DEBUG,INFO,ERROR)", dest="level", default="DEBUG")
+    parser_log.add_argument('-m', '--module', help="Only display logs for a given module.", dest="module", nargs='+')
+    parser_log.add_argument('-n', '--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
+    parser_log.add_argument('-e', '--export', help="Export the log to the given file.", dest="export")
+    parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
+    parser_log.set_defaults(func=log)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()

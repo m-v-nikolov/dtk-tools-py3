@@ -4,7 +4,8 @@ import migration
 import disease
 
 params = {
-    "Config_Name": "", ###
+    "Config_Name": "", ###,
+    "Valid_Intervention_States": [],
     "Campaign_Filename": "campaign.json",
     "Enable_Interventions": 1,
     "Enable_Spatial_Output": 0,

@@ -38,6 +38,10 @@ class IMIS(NextPointAlgorithm):
 
         super(IMIS, self).__init__(prior_fn, initial_samples, samples_per_iteration, current_state)
 
+        self.gaussian_probs = {}
+        self.gaussian_centers = []
+        self.gaussian_covariances = []
+
         self.n_resamples = n_resamples
 
         self.D = 1  # mixture of D multivariate normal distributions (optimization stage not implemented)
@@ -45,22 +49,6 @@ class IMIS(NextPointAlgorithm):
 
         self.validate_parameters()
 
-    def set_current_state(self, state):
-        '''
-        Initialize the current state of the IMIS algorithm,
-        either to initially empty defaults or the de-serialized state
-        passed according to the 'state' argument.
-        '''
-
-        super(IMIS, self).set_current_state(state)
-
-        self.n_initial_samples = state.get('n_initial_samples', 0)
-        self.gaussian_probs = state.get('gaussian_probs', [])
-        self.gaussian_centers = state.get('gaussian_centers', [])
-        self.gaussian_covariances = state.get('gaussian_covariances', [])
-
-        if state:
-            self.validate_parameters()  # if the current state is being reset from file
 
     def validate_parameters(self):
         '''
@@ -77,17 +65,28 @@ class IMIS(NextPointAlgorithm):
             raise Exception('n_dimensions (%d) cannot exceed samples_per_iteration (%d)'
                             % (self.n_dimensions, self.samples_per_iteration))
 
-    def set_initial_samples(self, initial_samples):
+    def set_initial_samples(self):
         '''
         Extend the base initial-sampling behavior to store additional
         information on the number and covariance of the initial sample points.
         '''
 
-        super(IMIS, self).set_initial_samples(initial_samples)
+        super(IMIS, self).set_initial_samples()
 
         self.n_initial_samples = self.samples.shape[0]
         self.prior_covariance = np.cov(self.samples.T)
-        logger.debug('Covariance of prior samples:\n%s', self.prior_covariance)
+        logger.debug('Covariance of prior samples:\n%s' % self.prior_covariance)
+
+    def get_samples_for_iteration(self, iteration):
+        # Note: this method is called only from commission stage.
+        # Important to know this for resume feature (need to restore correct next_point including samples)
+        if iteration == 0:
+            samples = self.choose_initial_samples()
+        else:
+            samples = self.choose_next_point_samples(iteration)
+            self.update_gaussian_probabilities(iteration - 1)
+
+        return samples
 
     def update_iteration(self, iteration):
         '''
@@ -124,7 +123,15 @@ class IMIS(NextPointAlgorithm):
         self.weights /= np.sum(self.weights)
         logger.debug('Weights:\n%s', self.weights)
 
-    def update_samples(self):
+    def update_state(self, iteration):
+        '''
+        Update the next-point algorithm state and select next samples.
+        '''
+
+        self.update_iteration(iteration)
+        self.update_gaussian()
+
+    def update_gaussian(self):
         '''
         Importance Sampling Stage (iteration: k > 0; samples_per_iteration: B)
 
@@ -141,10 +148,6 @@ class IMIS(NextPointAlgorithm):
         self.update_gaussian_center()
         distances = self.weighted_distances_from_center()
         self.update_gaussian_covariance(distances)
-
-        super(IMIS, self).update_samples()
-
-        self.update_gaussian_probabilities()
 
     def update_gaussian_center(self):
         '''
@@ -195,21 +198,21 @@ class IMIS(NextPointAlgorithm):
         ''' IMIS next-point sampling from multivariate normal centered on the maximum weight. '''
         return multivariate_normal(mean=self.gaussian_centers[-1], cov=self.gaussian_covariances[-1])
 
-    def update_gaussian_probabilities(self):
+    def update_gaussian_probabilities(self, iteration):
         '''
         Calculate the probabilities of all sample points as estimated from the
         multivariate-normal probability distribution function centered on the maximum weight
         and with covariance fitted from the most recent iteration.
         '''
 
-        if not self.iteration :
+        if not iteration:
             self.gaussian_probs = multivariate_normal.pdf(
                 self.samples, self.gaussian_centers[-1],
                 self.gaussian_covariances[-1]).reshape((1, len(self.samples)))
         else:
             updated_gaussian_probs = np.zeros(((self.D + self.iteration), len(self.samples)))
             updated_gaussian_probs[:self.gaussian_probs.shape[0], :self.gaussian_probs.shape[1]] = self.gaussian_probs
-            for j in range(self.iteration):
+            for j in range(iteration):
                 updated_gaussian_probs[j, self.gaussian_probs.shape[1]:] = multivariate_normal.pdf(
                     self.latest_samples, self.gaussian_centers[j], self.gaussian_covariances[j])
             updated_gaussian_probs[-1:] = multivariate_normal.pdf(
@@ -283,11 +286,51 @@ class IMIS(NextPointAlgorithm):
 
         return dict(samples=self.samples[resample_idxs], weights=self.weights[resample_idxs])
 
-    def get_current_state(self) :
-        state = super(IMIS, self).get_current_state()
+    def get_state(self):
+        state = super(IMIS, self).get_state()
         imis_state = dict(n_initial_samples=self.n_initial_samples,
                           gaussian_probs=self.gaussian_probs,
                           gaussian_centers=self.gaussian_centers,
                           gaussian_covariances=self.gaussian_covariances)
         state.update(imis_state)
         return state
+
+    def set_state(self, state, iteration):
+        super(IMIS, self).set_state(state, iteration)
+
+        self.n_initial_samples = state.get('n_initial_samples', 0)
+        self.gaussian_probs = state.get('gaussian_probs', {})
+        self.gaussian_centers = state.get('gaussian_centers', [])
+        self.gaussian_covariances = state.get('gaussian_covariances', [])
+
+        if state:
+            self.validate_parameters()  # if the current state is being reset from file
+
+    def set_results_for_iteration(self, iteration, results):
+        logger.info('%s: Choosing samples at iteration %d:', self.__class__.__name__, iteration)
+        logger.debug('Results:\n%s', results)
+
+        # update self.data first
+        data_by_iter = self.data.set_index('Iteration')
+        if iteration + 1 in data_by_iter.index.unique():
+            # Been here before, reset
+            data_by_iter = data_by_iter.loc[:iteration]
+
+        # Store results ... even if changed
+        data_by_iter.loc[iteration, 'Result'] = results
+        data_by_iter.loc[iteration, 'Prior'] = self.prior_fn.pdf(self.latest_samples)
+        self.data = data_by_iter.reset_index()
+
+        # make two properties available which will be used in the following steps: self.update_state
+        self.priors = list(data_by_iter['Prior'])
+        self.results = list(data_by_iter['Result'])
+        self.update_state(self.iteration)
+
+    def cleanup(self):
+        self.gaussian_probs = {}
+        self.gaussian_covariances = []
+        self.gaussian_centers = []
+
+    def restore(self, iteration_state):
+        self.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
+        self.gaussian_centers = iteration_state.next_point['gaussian_centers']

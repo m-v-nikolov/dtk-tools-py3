@@ -75,7 +75,7 @@ def set_geography(cb, geography, static=False, pop_scale=1):
     :return: Nothing
     """
     params = get_converted_paths_for_geography(geography)
-    logging.debug('Geography parameters: %s' % params)
+    #logging.debug('Geography parameters: %s' % params)
     cb.update_params(params)
     if static:
         set_static_demographics(cb, use_existing=True)

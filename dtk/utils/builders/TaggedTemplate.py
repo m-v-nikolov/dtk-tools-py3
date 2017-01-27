@@ -218,5 +218,6 @@ class DemographicsTemplate(TaggedTemplate):
                     "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s",
                     self.get_filename(), demog_filenames)
 
-        self.set_params(params)
+        tags = self.set_params(params)
         cb.add_input_file(self.filename, self.get_contents())
+        return tags

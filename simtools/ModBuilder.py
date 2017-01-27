@@ -3,6 +3,36 @@ import itertools
 from SimConfigBuilder import SimConfigBuilder
 
 
+class ModList(list):
+    def __init__(self, *args):
+        ModBuilder.metadata = {}
+        list.__init__(self, args)
+
+
+class ModFn(object):
+    def __init__(self, func, *args, **kwargs):
+        self.func = func
+        self.fname = self.func.__name__
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, cb):
+        md = self.func(cb, *self.args, **self.kwargs)
+        if not md:
+            md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
+
+        # Make sure we cast numpy types into normal system types
+        for k,v in md.iteritems():
+            import numpy as np
+            if isinstance(v, (np.int64, np.float64, np.float32, np.uint32, np.int16, np.int32)):
+                md[k] = v.item()
+                
+        # Store the metadata in a class variable
+        ModBuilder.metadata.update(md)
+        # But also return the metadata because of muddleheaded use
+        # TODO: Unify the way we handle metadata by removing the storage in the ModBuilder.metadata
+        return md
+
 class ModBuilder(object):
     """
     Classes derived from ModBuilder have generators that
@@ -11,24 +41,6 @@ class ModBuilder(object):
     and builds a ModBuilder.metadata dict that is reset on ModList init
     """
     metadata={}
-
-    class ModList(list):
-        def __init__(self, *args):
-            ModBuilder.metadata = {}
-            list.__init__(self, args)
-
-    class ModFn(object):
-        def __init__(self, func, *args, **kwargs):
-            self.func = func
-            self.fname = self.func.__name__
-            self.args = args
-            self.kwargs = kwargs
-
-        def __call__(self, cb):
-            md = self.func(cb, *self.args, **self.kwargs)
-            if not md:
-                md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
-            ModBuilder.metadata.update(md)
 
     def __init__(self, mod_generator):
         self.tags = {}
@@ -50,7 +62,7 @@ class ModBuilder(object):
         if site_mods:
             funcs.insert(0, funcs.pop(funcs.index(site_mods[0]))) # site configuration first
 
-        m = cls.ModList()
+        m = ModList()
         for func in funcs:
             m.append(func)
 
@@ -69,10 +81,10 @@ class ModBuilder(object):
 class SingleSimulationBuilder(ModBuilder):
     def __init__(self):
         self.tags = {}
-        self.mod_generator = (self.ModList() for _ in range(1))
+        self.mod_generator = (ModList() for _ in range(1))
 
 
 class RunNumberSweepBuilder(ModBuilder):
     def __init__(self, nsims):
         self.tags = {}
-        self.mod_generator = (self.ModList(self.ModFn(SimConfigBuilder.set_param, 'Run_Number', i)) for i in range(nsims))
+        self.mod_generator = (ModList(ModFn(SimConfigBuilder.set_param, 'Run_Number', i)) for i in range(nsims))

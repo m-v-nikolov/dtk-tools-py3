@@ -46,3 +46,7 @@ test/tmp/
 # User configuration
 simtools.ini
 db.sqlite
+logs.sqlite
+install/*.whl
+simtools/simtools.ini.bak
+.overseer_check_lock

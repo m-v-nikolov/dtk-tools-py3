@@ -1,14 +1,16 @@
+from __future__ import print_function
 import ctypes
-import re
 import os
-import platform
+import re
 import shutil
 import sys
-from collections import OrderedDict
-from urlparse import urlparse
 from ConfigParser import ConfigParser
+from collections import OrderedDict
+from datetime import datetime
 from distutils.version import LooseVersion
-from simtools.utils import nostdout
+from urlparse import urlparse
+
+from simtools.Utilities.General import get_os
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -17,90 +19,104 @@ installed_packages = dict()
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
-requirements = {
-    'curses': {
+dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
+requirements = OrderedDict([
+    ('curses', {
         'platform': ['win'],
         'version': '2.2',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
-    },
-    'numpy': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.2rc1+mkl',
-        'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2rc1%2Bmkl-cp27-cp27m-win_amd64.whl'
-    },
-    'scipy': {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
+        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
+    }),
+    ('pyCOMPS', {
+        'platform': ['win','lin','mac'],
+        'version': '1.0',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
-    },
-    'matplotlib': {
+        'wheel': '%s/pyCOMPS-1.0-py2.py3-none-any.whl' % dependencies_repo
+    }),
+    ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
-    },
-    'pandas': {
+        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('numpy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.11.3+mkl',
+        'test': '>=',
+        'wheel': '%s/numpy-1.11.3+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('scipy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.18.1',
+        'test': '>=',
+        'wheel': '%s/scipy-0.18.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('pandas', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.19.2',
-        'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.19.2-cp27-cp27m-win_amd64.whl'
-    },
-    'psutil': {
+        'test': '>=',
+        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('psutil', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
-    },
-    'python-snappy': {
+        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('python-snappy', {
         'platform': ['win', 'lin'],
         'version': '0.5',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/python_snappy-0.5-cp27-none-win_amd64.whl'
-    },
-    'seaborn': {
+        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
+    }),
+    ('seaborn', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.7.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/seaborn-0.7.1-py2.py3-none-any.whl'
-    },
-    'statsmodels': {
+        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
+    }),
+    ('statsmodels', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.6.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/statsmodels-0.6.1-cp27-none-win_amd64.whl'
-    },
-    'SQLAlchemy': {
+        'wheel': '%s/statsmodels-0.6.1-cp27-none-win_amd64.whl' % dependencies_repo
+    }),
+    ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.1.0b3',
+        'version': '1.1.4',
         'test': '=='
-    },
-    'npyscreen': {
+    }),
+    ('npyscreen', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.10.5',
         'test': '=='
-    },
-    'decorator': {
+    }),
+    ('fasteners', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.14.1',
+        'test': '=='
+    }),
+    ('decorator', {
         'platform': ['mac'],
         'version': '4.0.10',
         'test': '=='
-    },
-    'validators': {
+    }),
+    ('validators', {
         'platform': ['win', 'lin', 'mac'],
-    },
-    'networkx': {
+    }),
+    ('networkx', {
         'platform': ['win', 'lin', 'mac'],
-    },
-    'dill': {
+    }),
+    ('patsy', {
         'platform': ['win', 'lin', 'mac'],
-    }
-}
-
-
-# Installation orders are required for some packages
-order_requirements = ['curses', 'numpy',  'scipy', 'matplotlib']
+    }),
+    ('dill', {
+        'platform': ['win', 'lin', 'mac'],
+    }),
+    ('enum34', {
+        'platform': ['win', 'lin', 'mac'],
+    })
+])
 
 
 def get_installed_packages():
@@ -189,12 +205,11 @@ def test_package_g(my_os, name, val):
     test = val.get('test', None)
 
     if test in ['==', '>=']:
-        print "Package %s (%s) already installed with lower version. Upgrading to (%s)..." % \
-              (name, installed_packages[name], version)
+        print("Package %s (%s) already installed with lower version. Upgrading to (%s)..." %  (name, installed_packages[name], version))
         install_package(my_os, name, val, True)
     else:
         # Usually we don't have this case.
-        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
 
 
 def test_package_e(my_os, name, val):
@@ -204,12 +219,11 @@ def test_package_e(my_os, name, val):
     test = val.get('test', None)
 
     if test in ['>=', '<=']:
-        print "Package %s (%s) already installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
     elif test in ['==']:
-        print "Package %s (%s) with exact version already installed. Skipping..." % \
-              (name, installed_packages[name])
+        print ("Package %s (%s) with exact version already installed. Skipping..." % (name, installed_packages[name]))
     else:
-        print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+        print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
 
 
 def test_package_l(my_os, name, val):
@@ -219,8 +233,7 @@ def test_package_l(my_os, name, val):
     version = val.get('version', None)
 
     # Usually we don't have this case.
-    print "Package %s (%s) with higher version installed but require lower version (%s). Installing..." % \
-          (name, installed_packages[name], version)
+    print ("Package %s (%s) with higher version installed but require lower version (%s). Installing..." %  (name, installed_packages[name], version))
     install_package(my_os, name, val)
 
 
@@ -232,7 +245,7 @@ def test_package(my_os, name, val):
 
     if name in installed_packages:
         if not version:
-            print "Package %s (%s) installed. Skipping..." % (name, installed_packages[name])
+            print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
             return
 
         if LooseVersion(version) > LooseVersion(installed_packages[name]):
@@ -242,7 +255,7 @@ def test_package(my_os, name, val):
         else:
             test_package_l(my_os, name, val)
     else:
-        print "Package %s not installed. Installing..." % name
+        print ("Package %s not installed. Installing..." % name)
         install_package(my_os, name, val)
 
 
@@ -271,31 +284,11 @@ def build_package_str(my_os, name, val):
     return package_str
 
 
-def get_os():
-    """
-    Retrieve OS
-    """
-    sy = platform.system()
-
-    my_os = None
-    # OS: windows
-    if sy == 'Windows':
-        my_os = 'win'
-    # OS: Linux
-    elif sy == 'Linux':
-        my_os = 'lin'
-    # OS: Mac
-    else:
-        my_os = 'mac'
-
-    return my_os
-
-
 def get_requirements_by_os(my_os):
     """
     Update requirements based on OS
     """
-    reqs = {name: val for (name, val) in requirements.iteritems() if my_os in val['platform']}
+    reqs = OrderedDict([(name, val) for (name, val) in requirements.iteritems() if my_os in val['platform']])
 
     # OS: Mac or Linux. No wheel needed
     if my_os in ['mac', 'lin']:
@@ -311,18 +304,7 @@ def get_requirements_by_os(my_os):
             if 'test' in reqs[name]:
                 reqs[name].pop('test')
 
-    # Keep packages in order
-    reqs_ordered_dict = OrderedDict()
-
-    for i in range(len(order_requirements)):
-        name = order_requirements[i]
-        if name in reqs:
-            reqs_ordered_dict[name] = reqs.pop(name)
-
-    for (name, val) in reqs.iteritems():
-        reqs_ordered_dict[name] = val
-
-    return reqs_ordered_dict
+    return reqs
 
 
 def install_linux_pre_requisites():
@@ -350,15 +332,15 @@ def install_linux_pre_requisites():
         check_call('apt-get -h', stdout=open(os.devnull, 'wb'), stderr=STDOUT)
         supports_apt_get = True
     except OSError:
-        print "Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:"
-        print pre_requisites
+        print ("Not able to automatically install packages via apt-get.  Please meke sure the following dependencies are installed on your system:")
+        print (pre_requisites)
     except:
-        print "Unexpected error checking for apt-get:", sys.exc_info()[0]
+        print ("Unexpected error checking for apt-get:", sys.exc_info()[0])
         raise
 
     if supports_apt_get:
         for req in pre_requisites:
-            print "Checking/Installing %s" % req
+            print ("Checking/Installing %s" % req)
             check_call(['apt-get', 'install', '-y', req], stdout=open(os.devnull, 'wb'), stderr=STDOUT)
 
 
@@ -383,13 +365,26 @@ def install_packages(my_os, reqs):
 
     from setuptools import setup, find_packages
     # Suppress the outputs except the errors
+    from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
-              version='0.4',
+              version='0.5',
               description='Facilitating submission and analysis of simulations',
               url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
-              author='Edward Wenger, Benoit Raybaud, Jaline Gerardin, Milen Nikolov, Aaron Roney, Nick Karnik, Zhaowei Du',
-              author_email='ewenger@intven.com, braybaud@intven.com, jgerardin@intven.com, mnikolov@intven.com, aroney@intven.com, nkarnik@intven.com, zdu@intven.com',
+              author='Edward Wenger,'
+                     'Benoit Raybaud,'
+                     'Daniel Klein,'
+                     'Jaline Gerardin,'
+                     'Milen Nikolov,'
+                     'Aaron Roney,'
+                     'Zhaowei Du',
+              author_email='ewenger@intven.com,'
+                           'braybaud@intven.com,'
+                           'dklein@idmod.org,'
+                           'jgerardin@intven.com,'
+                           'mnikolov@intven.com,'
+                           'aroney@intven.com,'
+                           'zdu@intven.com',
               packages=find_packages(),
               install_requires=[],
               entry_points={
@@ -410,17 +405,17 @@ def handle_init():
         shutil.copyfile(default_ini, current_simtools)
     else:
         # A simtools was already present, merge the best we can
-        print "\nA previous simtools.ini configuration file is present. Attempt to auto-merge"
+        print ("\nA previous simtools.ini configuration file is present. Attempt to auto-merge")
         merge_cp = ConfigParser()
         merge_cp.read([default_ini, current_simtools])
 
         # Backup copy the current
-        print "Backup copy your current simtools.ini to simtools.ini.bak"
+        print ("Backup copy your current simtools.ini to simtools.ini.bak")
         shutil.copy(current_simtools, current_simtools + ".bak")
 
         # Write the merged one
         merge_cp.write(open(current_simtools, 'w'))
-        print "Merged simtools.ini written!\n"
+        print ("Merged simtools.ini written!\n")
 
     # Create the EXAMPLE block for the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
@@ -453,10 +448,48 @@ def upgrade_pip(my_os):
         subprocess.call("python -m pip install --upgrade pip", shell=True)
 
 
+def verify_matplotlibrc(my_os):
+    """
+    on MAC: make sure file matplotlibrc has content
+    backend: Agg
+    """
+    if my_os not in ['mac']:
+        return
+
+    import matplotlib as mpl
+    config_dir = mpl.get_configdir()
+    rc_file = os.path.join(config_dir, 'matplotlibrc')
+
+    def has_Agg(rc_file):
+        with open(rc_file, "r") as f:
+            for line in f:
+                ok = re.match(r'^.*backend.*:.*$', line)
+                if ok:
+                    return True
+
+        return False
+
+    if os.path.exists(rc_file):
+        ok = has_Agg(rc_file)
+        if not ok:
+            # make a backup of existing rc file
+            directory = os.path.dirname(rc_file)
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
+            shutil.copy(rc_file, os.path.join(directory, '%s_%s' % ('matplotlibrc', backup_id)))
+
+            # append 'backend : Agg' to existing file
+            with open(rc_file, "a") as f:
+                f.write('\nbackend : TkAgg')
+    else:
+        # create a rc file
+        with open(rc_file, "wb") as f:
+            f.write('backend : TkAgg')
+
+
 def main():
     # Check OS
     my_os = get_os()
-    print 'os: %s' % my_os
+    print ('os: %s' % my_os)
 
     # Upgrade pip before install other packages
     upgrade_pip(my_os)
@@ -470,20 +503,24 @@ def main():
     # Consider config file
     handle_init()
 
+    # Make sure matplotlibrc file is valid
+    verify_matplotlibrc(my_os)
+
     # Success !
-    print "\n======================================================="
-    print "| Dtk-Tools and dependencies installed successfully.  |"
-    print "======================================================="
+    print ("\n=======================================================")
+    print ("| Dtk-Tools and dependencies installed successfully.  |")
+    print ("=======================================================")
 
 
 if __name__ == "__main__":
     # check os first
     if ctypes.sizeof(ctypes.c_voidp) != 8:
-        print """\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+        print ("""\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
         - Windows: https://www.python.org/downloads/windows/
         - Mac OSX: https://www.python.org/downloads/mac-osx/
         - Linux: https://www.python.org/downloads/source/\n
-        Installation is now exiting..."""
+        Installation is now exiting...""")
         exit()
 
     main()
+

@@ -9,7 +9,7 @@ def dirichlet_multinomial(raw_data, sim_data) :
     num_cat_bins = len(raw_data[0, :])
     raw_nobs = [sum(raw_data[i, :]) for i in range(num_age_bins)]
     sim_nobs = [sum(sim_data[i, :]) for i in range(num_age_bins)]
-    
+
     LL = 0.
     for agebin in range(num_age_bins) :
         LL += gammaln(raw_nobs[agebin] + 1) 
@@ -41,10 +41,11 @@ def dirichlet_single(raw_data, sim_data) :
     LL /= num_cat_bins
     return LL
 
+
 def beta_binomial(raw_nobs, sim_nobs, raw_data, sim_data) :
-    
+
     num_bins = len(raw_data)
-    
+
     LL = 0.
     for this_bin in range(num_bins) :
         LL += gammaln(raw_nobs[this_bin] + 1)
