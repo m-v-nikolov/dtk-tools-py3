@@ -1,17 +1,19 @@
 import copy
+import gc
 import glob
-import gc   # To clean up after plotting
 import json
 import logging
 import os
 import pprint
 import re
 import shutil
-import pandas as pd
-import subprocess
 import time
 from datetime import datetime
+import pandas as pd
 from IterationState import IterationState
+from calibtool.algo import IMIS, OptimTool
+from calibtool.plotters import SiteDataPlotter
+from calibtool.utils import ResumePoint
 from core.utils.time import verbose_timedelta
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
@@ -19,9 +21,6 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.utils import NumpyEncoder
-from calibtool.plotters import SiteDataPlotter
-from calibtool.algo import IMIS, OptimTool
-from calibtool.utils import ResumePoint
 
 logger = logging.getLogger("Calibration")
 
@@ -362,13 +361,8 @@ class CalibManager(object):
             exp_manager = self.exp_manager
         else:
             exp = DataStore.get_experiment(self.iteration_state.experiment_id)
-            if exp == None:
-                logger.info('Experiment with id %s not found in local database, trying sync.' % self.iteration_state.experiment_id)
-                subprocess.call(['dtk', 'sync', '--id', '"' + str(self.iteration_state.experiment_id) + '"'])
-                exp = DataStore.get_experiment(self.iteration_state.experiment_id)
-                if exp == None:
-                    raise Exception('Unable to sync experiment with id %s'%self.iteration_state.experiment_id)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
+            #TODO: SYNC IF NOT EXISTING HERE
 
         for site in self.sites:
             for analyzer in site.analyzers:
@@ -772,6 +766,8 @@ class CalibManager(object):
             else:
                 logger.info("The farthest resume point available is '%s', we will resume from it instead of '%s'" \
                       % (self.status.name, input_resume_point.name))
+                answer = raw_input("Continue ? [Y/N]")
+                if answer != "Y": exit()
         else:
             # just take user input iter_step
             self.status = input_resume_point
