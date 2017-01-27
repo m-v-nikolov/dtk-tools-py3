@@ -44,9 +44,9 @@ requirements = {
     },
     'pandas': {
         'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
+        'version': '0.19.2',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
+        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.19.2-cp27-cp27m-win_amd64.whl'
     },
     'psutil': {
         'platform': ['win', 'lin', 'mac'],
