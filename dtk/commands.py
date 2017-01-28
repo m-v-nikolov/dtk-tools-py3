@@ -20,7 +20,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id
-from simtools.Utilities.Experiments import COMPS_experiment_to_local_db
+from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
 logger = utils.init_logging('Commands')
 
@@ -479,14 +479,17 @@ def reload_experiment(args=None, try_sync=True):
     """
     exp_id = args.expId if args else None
     exp = DataStore.get_most_recent_experiment(exp_id)
-    if exp is None:
-        if try_sync:
-            subprocess.call(['dtk','sync','-id',args.expId])
-            return reload_experiment(args,False)
-        else:
-            raise Exception("No experiment found with this ID Locally or on COMPS.")
-    else:
-        return ExperimentManagerFactory.from_experiment(exp)
+    if not exp and try_sync and exp_id:
+        try:
+            exp = retrieve_experiment(exp_id,verbose=False)
+        except:
+            exp = None
+
+    if not exp:
+        logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
+        exit()
+
+    return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
