@@ -19,6 +19,8 @@ from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id
+from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
 logger = utils.init_logging('Commands')
 
@@ -365,8 +367,8 @@ def sync(args, unknownArgs):
     """
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
-    utils.COMPS_login(sp.get('server_endpoint'))
-    from COMPS.Data import Experiment, QueryCriteria
+    endpoint = sp.get('server_endpoint')
+    utils.COMPS_login(endpoint)
 
     exp_to_save = list()
     exp_deleted = 0
@@ -375,7 +377,7 @@ def sync(args, unknownArgs):
     for exp in DataStore.get_experiments(None):
         if exp.location == "HPC":
             try:
-                _ = Experiment.get(exp.exp_id)
+                _ = get_experiment_by_id(exp.exp_id)
             except:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
@@ -386,24 +388,26 @@ def sync(args, unknownArgs):
 
     if exp_id:
         # Create a new experiment
-        experiment = create_experiment(exp_id, sp, True)
+        experiment = COMPS_experiment_to_local_db(exp_id=exp_id,
+                                                  endpoint=endpoint,
+                                                  verbose=True,
+                                                  save_new_experiment=False)
         # The experiment needs to be saved
         if experiment:
             exp_to_save.append(experiment)
     else:
-        # By default only get simulations created in the last month
+        # By default only get experiments created in the last month
         # day_limit = args.days if args.days else day_limit_default
         day_limit = 30
         today = datetime.date.today()
         limit_date = today - datetime.timedelta(days=int(day_limit))
-        limit_date_str = limit_date.strftime("%Y-%m-%d")
-
-        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str)))
 
         # For each of them, check if they are in the db
-        for exp in exps:
+        for exp in get_experiments_per_user_and_date(sp.get('user'), limit_date):
             # Create a new experiment
-            experiment = create_experiment(str(exp.id), sp)
+            experiment = COMPS_experiment_to_local_db(exp_id=str(exp.id),
+                                                      endpoint=endpoint,
+                                                      save_new_experiment=False)
 
             # The experiment needs to be saved
             if experiment:
@@ -419,64 +423,6 @@ def sync(args, unknownArgs):
 
     # Start overseer
     BaseExperimentManager.check_overseer()
-
-
-def create_experiment(exp_id, sp, verbose=False):
-    """
-    Create a new experiment in local db given COMPS experiment id
-    If experiment exists in local db, just update it
-    """
-    from COMPS.Data import Experiment, QueryCriteria
-
-    experiment = DataStore.get_experiment(exp_id)
-    if experiment and experiment.is_done():
-        if verbose:
-            print "Experiment ('%s') already exists in local db." % exp_id
-        # Do not bother with finished experiments
-        return None
-
-    try:
-        exp_comps = Experiment.get(exp_id)
-    except:
-        if verbose:
-            print "The experiment ('%s') doesn't exist in COMPS." % exp_id
-        return None
-
-    # Case: experiment doesn't exist in local db
-    if not experiment:
-        # Cast the creation_date
-        experiment = DataStore.create_experiment(exp_id=str(exp_comps.id),
-                                                 suite_id=str(exp_comps.suite_id) if exp_comps.suite_id else None,
-                                                 exp_name=exp_comps.name,
-                                                 date_created=exp_comps.date_created,
-                                                 location='HPC',
-                                                 selected_block='HPC',
-                                                 endpoint=sp.get('server_endpoint'))
-
-    # Note: experiment may be new or comes from local db
-    # Get associated simulations of the experiment
-    sims = exp_comps.get_simulations(QueryCriteria().select(['id', 'state', 'date_created']).select_children('tags'))
-
-    # Skip empty experiments or experiments that have the same number of sims
-    if len(sims) == 0 or len(sims) == len(experiment.simulations):
-        if verbose:
-            if len(sims) == 0:
-                print "Skip empty experiment ('%s')." % exp_id
-            elif len(sims) == len(experiment.simulations):
-                print "Skip experiment ('%s') since local one has the same number of simulations." % exp_id
-        return None
-
-    # Go through the sims and create them
-    for sim in sims:
-        # Create the simulation
-        simulation = DataStore.create_simulation(id=str(sim.id),
-                                                 status=sim.state.name,
-                                                 tags=sim.tags,
-                                                 date_created=sim.date_created)
-        # Add to the experiment
-        experiment.simulations.append(simulation)
-
-    return experiment
 
 
 # List experiments from local database
@@ -533,14 +479,17 @@ def reload_experiment(args=None, try_sync=True):
     """
     exp_id = args.expId if args else None
     exp = DataStore.get_most_recent_experiment(exp_id)
-    if exp is None:
-        if try_sync:
-            subprocess.call(['dtk','sync','-id',args.expId])
-            return reload_experiment(args,False)
-        else:
-            raise Exception("No experiment found with this ID Locally or on COMPS.")
-    else:
-        return ExperimentManagerFactory.from_experiment(exp)
+    if not exp and try_sync and exp_id:
+        try:
+            exp = retrieve_experiment(exp_id,verbose=False)
+        except:
+            exp = None
+
+    if not exp:
+        logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
+        exit()
+
+    return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
