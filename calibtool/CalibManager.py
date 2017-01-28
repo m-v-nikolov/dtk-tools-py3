@@ -1,4 +1,3 @@
-import copy
 import gc
 import glob
 import json
@@ -9,7 +8,9 @@ import re
 import shutil
 import time
 from datetime import datetime
+
 import pandas as pd
+
 from IterationState import IterationState
 from calibtool.algo import IMIS, OptimTool
 from calibtool.plotters import SiteDataPlotter
@@ -19,7 +20,6 @@ from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
-from simtools.OutputParser import CompsDTKOutputParser
 from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.utils import NumpyEncoder
 
