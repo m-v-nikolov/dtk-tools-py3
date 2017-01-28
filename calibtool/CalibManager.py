@@ -20,6 +20,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.OutputParser import CompsDTKOutputParser
+from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.utils import NumpyEncoder
 
 logger = logging.getLogger("Calibration")
@@ -360,9 +361,8 @@ class CalibManager(object):
         if self.exp_manager:
             exp_manager = self.exp_manager
         else:
-            exp = DataStore.get_experiment(self.iteration_state.experiment_id)
+            exp = retrieve_experiment(self.iteration_state.experiment_id, verbose=True)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
-            #TODO: SYNC IF NOT EXISTING HERE
 
         for site in self.sites:
             for analyzer in site.analyzers:
@@ -587,18 +587,20 @@ class CalibManager(object):
         # Step 1: Checking possible location changes
         try:
             exp_id = self.iteration_state.experiment_id
-            exp = DataStore.get_experiment(exp_id)
+            exp = retrieve_experiment(exp_id)
         except Exception as ex:
-            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
-            # force to resume from commission
-            self.iter_step = 'commission'
-            return
+            exp = None
+            import traceback
+            traceback.print_exc()
 
-        if exp is None:
-            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
+        if not exp:
+            var = raw_input("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
             # force to resume from commission
-            self.iter_step = 'commission'
-            return
+            if var.upper() == 'Y':
+                self.iter_step = 'commission'
+            else:
+                logger.info("Answer is '%s'. Exiting...", var.upper())
+                exit()
 
         # If location has been changed, will double check user for a special case before proceed...
         if self.location != exp.location and self.iter_step in ['analyze', 'plot', 'next_point']:

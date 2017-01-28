@@ -4,6 +4,14 @@ from COMPS.Data import Simulation
 from COMPS.Data import Suite
 
 
+def get_experiment_by_id(exp_id):
+    return Experiment.get(exp_id)
+
+def get_experiments_per_user_and_date(user, limit_date):
+    limit_date_str = limit_date.strftime("%Y-%m-%d")
+
+    return Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (user, limit_date_str)))
+
 def sims_from_experiment(e):
     return e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs'))
 
