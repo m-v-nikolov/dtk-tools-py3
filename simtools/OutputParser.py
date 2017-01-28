@@ -179,8 +179,9 @@ class CompsDTKOutputParser(SimulationOutputParser):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_csv_file(filename)
         else:
-            self.raw_data[filename] = pd.read_csv(str(args[0]), skipinitialspace=True)
-            #self.raw_data[filename] = args[0].tostring()
+            from StringIO import StringIO
+            csvstr = StringIO(args[0])
+            self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
 
     def load_xlsx_file(self, filename, *args):
         if self.sim_dir_map is not None:
