@@ -18,7 +18,7 @@ from dtk.utils.builders.TemplateHelper import TemplateHelper
 from dtk.utils.builders.ConfigTemplate import ConfigTemplate
 from dtk.utils.builders.TaggedTemplate import CampaignTemplate, DemographicsTemplate
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from simtools.ModBuilder import ModBuilder
+from simtools.ModBuilder import ModBuilder, ModList, ModFn
 from simtools.SetupParser import SetupParser
 
 # For example only -- Force the selected block to be EXAMPLE
@@ -105,7 +105,7 @@ config_builder = DTKConfigBuilder.from_files(
 # each of the configurations for two separate run numbers.
 experiment_builder = ModBuilder.from_combos(
     templates.get_modifier_functions(), # <-- Do this first!
-    [ModBuilder.ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)]
+    [ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)]
 )
 
 run_sim_args =  {'config_builder': config_builder,

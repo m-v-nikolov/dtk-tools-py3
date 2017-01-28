@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from simtools.ModBuilder import ModBuilder
+from simtools.ModBuilder import ModBuilder, ModFn
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +82,6 @@ class TemplateHelper():
         Returns a ModBuilder ModFn that sets file contents and values in config builder according to the dynamic parameters.
         """
         return [
-            ModBuilder.ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
+            ModFn(self.mod_dynamic_parameters, dict(zip(self.header, row)))
             for row in self.table
             ]

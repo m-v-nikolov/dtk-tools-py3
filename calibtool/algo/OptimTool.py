@@ -307,7 +307,7 @@ class OptimTool(NextPointAlgorithm):
         N = self.samples_per_iteration
         state_by_iter = self.state.set_index('Iteration')
         # Will vary parameters that are 'Dyanmic' on this iteration
-        samples = self.sample_hypersphere(N, state_by_iter.loc[iteration])
+        samples = self.sample_hypersphere(N, state_by_iter.loc[[iteration]])
 
         # Clamp and constrain
         samples = self.clamp(samples)
