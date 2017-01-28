@@ -16,3 +16,4 @@ class BasePlotter:
     @abstractmethod
     def visualize(self, calib_manager):
         pass
+
