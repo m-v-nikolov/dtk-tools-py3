@@ -1,8 +1,6 @@
 import unittest
 
 from simtools.SetupParser import SetupParser
-from pyCOMPS import pyCOMPS
-from COMPS import Client
 
 
 class TestIniFile(unittest.TestCase):

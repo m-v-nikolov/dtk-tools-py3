@@ -202,7 +202,7 @@ class SetupParser:
 
     def getboolean(self, parameter, default=None):
         if not self.has_option(parameter):
-            if default: return default
+            if default != None: return default
             else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.getboolean(self.selected_block, parameter)
 
