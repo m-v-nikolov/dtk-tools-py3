@@ -206,6 +206,14 @@ class SetupParser:
             else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
         return self.setup.getboolean(self.selected_block, parameter)
 
+    def lookup_param(self, section, parameter):
+        # Save the current block
+        previous_selected_block = self.selected_block
+        sp = SetupParser(selected_block=section, force=True)
+        result = sp.get(parameter, None)
+        SetupParser.selected_block = previous_selected_block
+        return result
+
     def load_schema(self):
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         self.schema = json_schema
