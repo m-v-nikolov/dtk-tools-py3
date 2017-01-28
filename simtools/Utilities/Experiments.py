@@ -27,7 +27,7 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False):
     exp = COMPS_experiment_to_local_db(exp_id, endpoint, verbose)
 
     if exp: return exp
-    raise Exception("Experiment %s could not be retrieved." % exp_id)
+    raise Exception("Experiment '%s' could not be retrieved." % exp_id)
 
 
 def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_experiment=True):
@@ -92,6 +92,6 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
         experiment.simulations.append(simulation)
 
     # Save it to the DB
-    if save_new_experiment: DataStore.save_experiment(experiment)
+    if save_new_experiment: DataStore.save_experiment(experiment, verbose=verbose)
 
     return experiment
