@@ -1,37 +1,33 @@
 import time
 
 from COMPS.Data import Experiment
-from COMPS.Data.Simulation import SimulationState
+
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission
 from simtools.utils import init_logging
 
 logger = init_logging('Runner')
 
 
 class COMPSSimulationRunner(BaseSimulationRunner):
-
-    def __init__(self, experiment, states, success, commission=True):
-        logger.debug('Create COMPSSimulationRunner with experiment: %s, commission: %s'% (experiment.id,commission))
+    def __init__(self, experiment, states, success):
+        logger.debug('Create COMPSSimulationRunner with experiment: %s' % experiment.id)
         super(COMPSSimulationRunner, self).__init__(experiment, states, success)
 
-        if commission:
-            self.run()
-        else:
-            self.monitor()
+        # Check if we need to commission
+        e = Experiment.get(id=self.experiment.exp_id)
+        if experiment_needs_commission(e):
+            logger.debug('COMPS - Start Commissioning for experiment %s' % self.experiment.id)
+            # Commission the experiment
+            e.commission()
+
+        self.monitor()
 
     def run(self):
-        logger.debug('COMPS - Start Commissioning for experiment %s' % self.experiment.id)
-        # Commission the experiment
-        e = Experiment.get(id=self.experiment.exp_id)
-        e.commission()
-        # sims = e.get_simulations()
-        # for sim in sims:
-        #     if sim.state == SimulationState.Created:
-        #         sim.commission()
-        self.monitor()
+        pass
 
     def update_simulations_statuses(self,simids,states):
         for sim_id in simids:
