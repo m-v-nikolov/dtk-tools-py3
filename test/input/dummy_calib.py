@@ -45,12 +45,11 @@ next_point_kwargs = dict(initial_samples=3,
 calib_manager = CalibManager(name='test_dummy_calibration',
                              setup=SetupParser(),
                              config_builder=cb,
-                             sample_point_fn=sample_point_fn,
+                             map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
                              next_point=IMIS(prior, **next_point_kwargs),
                              sim_runs_per_param_set=1,
                              max_iterations=2,
-                             num_to_plot=5,
                              plotters=plotters)
 
 run_calib_args = {}

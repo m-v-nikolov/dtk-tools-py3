@@ -1,27 +1,27 @@
-import copy
+import gc
 import glob
-import gc   # To clean up after plotting
 import json
 import logging
 import os
 import pprint
 import re
 import shutil
-import pandas as pd
-import subprocess
 import time
 from datetime import datetime
+
+import pandas as pd
+
 from IterationState import IterationState
+from calibtool.algo import IMIS, OptimTool
+from calibtool.plotters import SiteDataPlotter
+from calibtool.utils import ResumePoint
 from core.utils.time import verbose_timedelta
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
-from simtools.OutputParser import CompsDTKOutputParser
+from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.utils import NumpyEncoder
-from calibtool.plotters import SiteDataPlotter
-from calibtool.algo import IMIS, OptimTool
-from calibtool.utils import ResumePoint
 
 logger = logging.getLogger("Calibration")
 
@@ -53,7 +53,7 @@ class CalibManager(object):
 
     def __init__(self, setup, config_builder, map_sample_to_model_input_fn,
                  sites, next_point, name='calib_test', iteration_state=IterationState(),
-                 sim_runs_per_param_set=1, num_to_plot=10, max_iterations=5, plotters=list()):
+                 sim_runs_per_param_set=1, max_iterations=5, plotters=list()):
 
         self.name = name
         self.setup = setup
@@ -63,7 +63,6 @@ class CalibManager(object):
         self.next_point = next_point
         self.iteration_state = iteration_state
         self.sim_runs_per_param_set = sim_runs_per_param_set
-        self.num_to_plot = num_to_plot
         self.max_iterations = max_iterations
         self.location = self.setup.get('type')
         self.local_suite_id = None
@@ -361,13 +360,7 @@ class CalibManager(object):
         if self.exp_manager:
             exp_manager = self.exp_manager
         else:
-            exp = DataStore.get_experiment(self.iteration_state.experiment_id)
-            if exp == None:
-                logger.info('Experiment with id %s not found in local database, trying sync.' % self.iteration_state.experiment_id)
-                subprocess.call(['dtk', 'sync', '--id', '"' + str(self.iteration_state.experiment_id) + '"'])
-                exp = DataStore.get_experiment(self.iteration_state.experiment_id)
-                if exp == None:
-                    raise Exception('Unable to sync experiment with id %s'%self.iteration_state.experiment_id)
+            exp = retrieve_experiment(self.iteration_state.experiment_id, verbose=True)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
 
         for site in self.sites:
@@ -394,10 +387,6 @@ class CalibManager(object):
 
         self.cache_calibration()
         self.cache_iteration_state()
-
-        # Write the CSV
-        # Note: no user uses it and also there is a bug in it.
-        # self.write_LL_csv(exp_manager.experiment)
 
         return results.total.tolist()
 
@@ -483,59 +472,6 @@ class CalibManager(object):
             backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
             shutil.copy(calibration_path, os.path.join(self.name, 'CalibManager_%s.json' % backup_id))
 
-    def write_LL_csv(self, experiment):
-        """
-        Write the LL_summary.csv with what is in the CalibManager
-        """
-        # DJK: RENAME LL everywhere.  It's whatever the analyzer(s) return, e.g. cost per life saved
-        # DJK: That brings up an interesting issue about how to combine analyzers results.  For now, we sum.
-        #      But that might not be sufficiently general - think about this.
-
-        # Deep copy all_results and pnames to not disturb the calibration
-        pnames = copy.deepcopy(self.param_names())
-        all_results = self.all_results.copy(True)
-
-        # Index the likelihood-results DataFrame on (iteration, sample) to join with simulation info
-        results_df = all_results.reset_index().set_index(['iteration', 'sample'])
-
-        # Get the simulation info from the iteration state
-        siminfo_df = pd.DataFrame.from_dict(self.iteration_state.simulations, orient='index')
-        siminfo_df.index.name = 'simid'
-        siminfo_df['iteration'] = self.iteration
-        siminfo_df = siminfo_df.rename(columns={'__sample_index__': 'sample'}).reset_index()
-
-        # Group simIDs by sample point and merge back into results
-        grouped_simids_df = siminfo_df.groupby(['iteration', 'sample']).simid.agg(lambda x: tuple(x))
-        results_df = results_df.join(grouped_simids_df, how='right')  # right: only this iteration with new sim info
-
-        # TODO: merge in parameter values also from siminfo_df (sample points and simulation tags need not be the same)
-
-        # Retrieve the mapping between simID and output file path
-        if self.location == "HPC":
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.comps_suite_id, save=False)
-        else:
-            sims_paths = {sim.id: os.path.join(experiment.get_path(), sim.id) for sim in experiment.simulations}
-
-        # Transform the ids in actual paths
-        def find_path(el):
-            paths = list()
-            try:
-                for e in el:
-                    paths.append(sims_paths[e])
-            except Exception as ex:
-                pass # [TODO]: fix issue later.
-            return ",".join(paths)
-
-        results_df['outputs'] = results_df['simid'].apply(find_path)
-        del results_df['simid']
-
-        # Concatenate with any existing data from previous iterations and dump to file
-        csv_path = os.path.join(self.name, 'LL_all.csv')
-        if os.path.exists(csv_path):
-            current = pd.read_csv(csv_path, index_col=['iteration', 'sample'])
-            results_df = pd.concat([current, results_df])
-        results_df.sort_values(by='total', ascending=True).to_csv(csv_path)
-
     def cache_iteration_state(self, backup_existing=False):
         """
         Cache information about the IterationState that is needed to resume after an interruption.
@@ -593,18 +529,20 @@ class CalibManager(object):
         # Step 1: Checking possible location changes
         try:
             exp_id = self.iteration_state.experiment_id
-            exp = DataStore.get_experiment(exp_id)
+            exp = retrieve_experiment(exp_id)
         except Exception as ex:
-            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
-            # force to resume from commission
-            self.iter_step = 'commission'
-            return
+            exp = None
+            import traceback
+            traceback.print_exc()
 
-        if exp is None:
-            logger.info("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission...", exp_id if exp_id else 'None')
+        if not exp:
+            var = raw_input("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
             # force to resume from commission
-            self.iter_step = 'commission'
-            return
+            if var.upper() == 'Y':
+                self.iter_step = 'commission'
+            else:
+                logger.info("Answer is '%s'. Exiting...", var.upper())
+                exit()
 
         # If location has been changed, will double check user for a special case before proceed...
         if self.location != exp.location and self.iter_step in ['analyze', 'plot', 'next_point']:
@@ -772,6 +710,8 @@ class CalibManager(object):
             else:
                 logger.info("The farthest resume point available is '%s', we will resume from it instead of '%s'" \
                       % (self.status.name, input_resume_point.name))
+                answer = raw_input("Continue ? [Y/N]")
+                if answer != "Y": exit()
         else:
             # just take user input iter_step
             self.status = input_resume_point

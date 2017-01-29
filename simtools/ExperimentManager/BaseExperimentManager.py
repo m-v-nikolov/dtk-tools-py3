@@ -49,9 +49,9 @@ class BaseExperimentManager:
 
         self.analyzers = []
         self.parsers = {}
-        if self.experiment and self.experiment.analyzers:
-            for analyzer in experiment.analyzers:
-                self.add_analyzer(dill.loads(analyzer.analyzer))
+        # if self.experiment and self.experiment.analyzers:
+        #     for analyzer in experiment.analyzers:
+        #         self.add_analyzer(dill.loads(analyzer.analyzer))
 
         self.assets_service = None
         self.exp_builder = None

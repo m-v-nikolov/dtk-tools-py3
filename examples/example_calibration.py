@@ -54,7 +54,6 @@ calib_manager = CalibManager(name='ExampleCalibration',
                              next_point=IMIS(prior, **next_point_kwargs),
                              sim_runs_per_param_set=2,
                              max_iterations=2,
-                             num_to_plot=5,
                              plotters=plotters)
 
 run_calib_args = {}
