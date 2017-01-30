@@ -58,7 +58,7 @@ Install virtualenv:
 pip install virtualenv
 ```
 
-Then navigate inside the `NotreDameRelease` directory and create an IDM virtual environment:
+Then navigate inside the`dtk-tools` directory and create an IDM virtual environment:
 ```
 virtualenv idm
 ```
@@ -70,7 +70,7 @@ source ./idm/bin/activate
 
 Make sure you are in the virtual environment by checking if the prompt displays `(idm)` at the begining as shown:
 ```
-(idm) my-computer:NotreDameRelease
+(idm) my-computer:dtk-tools
 ```
 
 Install pyCOMPS (wheel available here [https://github.com/InstituteforDiseaseModeling/PythonDependencies/raw/master/pyCOMPS-1.0-py2.py3-none-any.whl])
