@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id
 from simtools.Utilities.General import utc_to_local
 from simtools.utils import init_logging
 
@@ -16,6 +17,7 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False):
     :param sync_if_missing: Should we try to sync if not present?
     :return: The experiment found
     """
+    if not exp_id: raise Exception("Trying to retrieve an experiment without providing an experiment ID")
     exp = DataStore.get_experiment(exp_id)
     if exp: return exp
 
@@ -51,7 +53,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
 
     from COMPS.Data import Experiment, QueryCriteria
     try:
-        exp_comps = Experiment.get(exp_id)
+        exp_comps = get_experiment_by_id(exp_id)
     except:
         if verbose:
             print("The experiment ('%s') doesn't exist in COMPS." % exp_id)
