@@ -73,7 +73,7 @@ Make sure you are in the virtual environment by checking if the prompt displays 
 (idm) my-computer:dtk-tools
 ```
 
-Install pyCOMPS (wheel available here [https://github.com/InstituteforDiseaseModeling/PythonDependencies/raw/master/pyCOMPS-1.0-py2.py3-none-any.whl])
+Install pyCOMPS (wheel available [here](https://github.com/InstituteforDiseaseModeling/PythonDependencies/raw/master/pyCOMPS-1.0-py2.py3-none-any.whl])
 ```
 pip install pyCOMPS-1.0-py2.py3-none-any.whl
 ```
@@ -82,10 +82,6 @@ Navigate inside the `dtk-tools` folder and install dtk-tools:
 ```
 python setup.py
 ```
-
-**Note:** EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
-
-If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Linux users
 Linux users, you need to install:
