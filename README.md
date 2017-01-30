@@ -15,7 +15,7 @@ To install the dtk-tools, first clone the repository:
 git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 ```
 
-Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
+Make sure you have **Python 2.7 x64** installed (available [here](https://www.python.org/downloads/)).
 
 From a command-prompt, run the following from the **dtk-tools** directory:
 ```
