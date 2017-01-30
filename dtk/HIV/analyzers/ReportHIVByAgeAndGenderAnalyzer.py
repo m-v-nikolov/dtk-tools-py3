@@ -12,6 +12,11 @@ from dtk.utils.analyzers.BaseShelveAnalyzer import BaseShelveAnalyzer
 logger = logging.getLogger(__name__)
 
 class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
+
+    # For computing person-years, ASSUMING 6-monthly REPORTING INTERVAL! (Could read from config.json or elsewhere)
+    report_timestep_in_years = 0.5
+    prevalent_cols = ['Population', 'Infected', 'On_ART','HasIntervention(PrEP)']
+
     def __init__(self,
                 max_sims_per_scenario = -1,
                 reference_year = 2012.5,
@@ -39,11 +44,6 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         self.reference_population = reference_population
         self.age_min = age_min
         self.age_max = age_max
-        self.pop_scaling = None
-
-        # For computing person-years
-        self.report_timestep_in_years = 0.5
-        self.prevalent_cols = ['Population', 'Infected', 'On_ART','HasIntervention(PrEP)']
 
         # Set to -1 to process all:
         self.max_sims_per_scenario = max_sims_per_scenario
@@ -145,25 +145,24 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
         sim_pop = pdata.copy().groupby(['Year', 'Age'])['Population'].sum().loc[self.reference_year].loc[self.age_min:self.age_max].sum()
 
-        self.pop_scaling = self.reference_population / float(sim_pop)
+        pop_scaling = self.reference_population / float(sim_pop)
         if self.verbose:
-            print 'Population scaling is', self.pop_scaling
+            print 'Population scaling is', pop_scaling
         scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(PrEP)', 'Received_PrEP'] if sc in pdata.columns]
 
-        pdata[scale_cols] *= self.pop_scaling
+        pdata[scale_cols] *= pop_scaling
         #######################################################################
 
         ### ANNUALIZATION #####################################################
         # Compute person-years
-        self.prevalent_cols = [pc for pc in self.prevalent_cols if pc in pdata.columns]
-        self.py_cols = [ col + ' (PY)' for col in self.prevalent_cols ]
-        for col, py_col in zip(self.prevalent_cols, self.py_cols):
-            # ASSUMING 6-monthly REPORTING INTERVAL!
+        prevalent_cols = [pc for pc in self.prevalent_cols if pc in pdata.columns]
+        py_cols = [ col + ' (PY)' for col in prevalent_cols ]
+        for col, py_col in zip(prevalent_cols, py_cols):
             pdata[py_col] = self.report_timestep_in_years * pdata[col]
         #######################################################################
 
         keep_cols = [kc for kc in ['Year', 'Gender', 'NodeId', 'IP_Key:Risk', 'Age', 'Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Received_PrEP', 'Transmitters', 'HasIntervention(PrEP)', 'Diagnosed'] if kc in pdata.columns]
-        keep_cols += self.py_cols
+        keep_cols += py_cols
         drop_cols = list( set(pdata.columns.values) - set(keep_cols) )
         pdata.drop(drop_cols, axis=1, inplace=True)
 
@@ -184,7 +183,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
             pdata = pd.concat([pdata, both])
             pdata.reset_index(inplace=True)
 
-        return pdata
+        return {'Data':pdata, 'Pop_Scaling':pop_scaling}
 
     def combine(self, parsers):
         if self.verbose:

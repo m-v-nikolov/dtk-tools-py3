@@ -193,7 +193,7 @@ class OptimTool(NextPointAlgorithm):
         # assert(iteration >= 1)
 
         # DYNAMIC ON PREVIOUS ITERATION WHEN COMMISSIONED ...
-        state_prev_iter = self.state.set_index('Iteration').loc[iteration-1]
+        state_prev_iter = self.state.set_index('Iteration').loc[[iteration-1]]
         dynamic_params = [r['Parameter'] for idx,r in state_prev_iter.iterrows() if r['Dynamic']]
 
         self.data.set_index('Iteration', inplace=True)
