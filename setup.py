@@ -41,9 +41,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.3+mkl',
+        'version': '1.12.0+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.11.3+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
@@ -83,7 +83,7 @@ requirements = OrderedDict([
     }),
     ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.1.4',
+        'version': '1.1.5',
         'test': '=='
     }),
     ('npyscreen', {
