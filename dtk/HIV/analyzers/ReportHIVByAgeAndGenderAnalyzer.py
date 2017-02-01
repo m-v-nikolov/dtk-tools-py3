@@ -12,10 +12,12 @@ from dtk.utils.analyzers.BaseShelveAnalyzer import BaseShelveAnalyzer
 logger = logging.getLogger(__name__)
 
 class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
+    count = {}
+    skipped_interventions = []
 
     # For computing person-years, ASSUMING 6-monthly REPORTING INTERVAL! (Could read from config.json or elsewhere)
     report_timestep_in_years = 0.5
-    prevalent_cols = ['Population', 'Infected', 'On_ART','HasIntervention(PrEP)']
+    prevalent_cols = ['Population', 'Infected', 'On_ART','HasIntervention(EffectivePrEP)']
 
     def __init__(self,
                 max_sims_per_scenario = -1,
@@ -26,13 +28,12 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 start_year = 2017,
                 node_map = {},
                 node_order = None,
-                intervention_map = {},
+                intervention_subset = None,
                 force_apply = False,
                 force_combine = False,
                 basedir = 'Work',
                 fig_format = 'png',
                 fig_dpi = 600,
-                include_all_interventions = False,
                 verbose = False,
                 **kwargs):
 
@@ -48,16 +49,15 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         # Set to -1 to process all:
         self.max_sims_per_scenario = max_sims_per_scenario
 
+        # Set to None to process all interventions, or pass a list of intervention names
+        self.intervention_subset = intervention_subset
+
         self.start_year = start_year
 
         # Map from NodeId to Name - would rather get from a NodeListAnalyzer that reads Demographics.json for one simulation
         self.node_map = node_map
 
         self.node_order = node_order    # Can be None
-
-        # N.B. Only interventions listed in the map will be included in the analysis
-        self.intervention_map = intervention_map
-        self.include_all_interventions = include_all_interventions
 
         self.filenames = [ os.path.join('output', 'ReportHIVByAgeAndGender.csv') ]
         self.basedir = basedir
@@ -68,9 +68,6 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         logger.info(self.__class__.__name__ + " writing to " + self.basedir) # TODO
 
         self.sim_ids = []
-
-        self.count = {}
-        self.skipped_interventions = []
 
         if not os.path.isdir(self.basedir):
             os.makedirs(self.basedir)
@@ -87,16 +84,17 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         scenario = sim_metadata['Scenario']
 
         # SELECT BY SCENARIO ##################################################
-        scenario = sim_metadata['Scenario']
-        if '_' in scenario:
-            tok = scenario.split('_')
-            intervention = '_'.join(tok[1:])
-            if intervention not in self.intervention_map and not self.include_all_interventions:
-                if intervention not in self.skipped_interventions:
-                    self.skipped_interventions.append( intervention )
-                if self.verbose:
-                    print 'Skipping', scenario
-                return False
+        if self.intervention_subset is not None:
+            if '_' in scenario:
+                tok = scenario.split('_')
+                intervention = '_'.join(tok[1:])
+
+                if intervention != 'Baseline' and intervention not in self.intervention_subset:
+                    if intervention not in self.skipped_interventions:
+                        self.skipped_interventions.append( intervention )
+                    if self.verbose:
+                        print 'Skipping', scenario
+                    return False
         #######################################################################
 
         # SELECT A LIMITED NUMBER #############################################
@@ -122,18 +120,18 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
         return ret
 
-    def apply(self, parser):
+    def apply(self, parser, add_both_level_to_gender=True):
         super(ReportHIVByAgeAndGenderAnalyzer, self).apply(parser)
 
         # Sum over age and other factors to make the data smaller
         raw = parser.raw_data[self.filenames[0]]
 
-        if 'HasIntervention:PrEP' in raw.columns.values:
+        if 'HasIntervention:EffectivePrEP' in raw.columns.values:
             if self.verbose:
-                print 'Computing HasIntervention(PrEP) from HasIntervention:PrEP'
-            pdata_intv = raw.copy().groupby([ 'HasIntervention:PrEP', 'Year', 'NodeId', 'Age', 'Gender', 'IP_Key:Risk']).sum()
+                print 'Computing HasIntervention(EffectivePrEP) from HasIntervention:EffectivePrEP'
+            pdata_intv = raw.copy().groupby([ 'HasIntervention:EffectivePrEP', 'Year', 'NodeId', 'Age', 'Gender', 'IP_Key:Risk']).sum()
             pdata = raw.copy().groupby([ 'Year', 'NodeId', 'Age', 'Gender', 'IP_Key:Risk']).sum()
-            pdata['HasIntervention(PrEP)'] = pdata_intv.loc[1]['Population']
+            pdata['HasIntervention(EffectivePrEP)'] = pdata_intv.loc[1]['Population']
 
             pdata.reset_index(inplace=True)
         else:
@@ -148,7 +146,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pop_scaling = self.reference_population / float(sim_pop)
         if self.verbose:
             print 'Population scaling is', pop_scaling
-        scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(PrEP)', 'Received_PrEP'] if sc in pdata.columns]
+        scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Received_PrEP'] if sc in pdata.columns]
 
         pdata[scale_cols] *= pop_scaling
         #######################################################################
@@ -161,7 +159,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
             pdata[py_col] = self.report_timestep_in_years * pdata[col]
         #######################################################################
 
-        keep_cols = [kc for kc in ['Year', 'Gender', 'NodeId', 'IP_Key:Risk', 'Age', 'Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Received_PrEP', 'Transmitters', 'HasIntervention(PrEP)', 'Diagnosed'] if kc in pdata.columns]
+        keep_cols = [kc for kc in ['Year', 'Gender', 'NodeId', 'IP_Key:Risk', 'Age', 'Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Received_PrEP', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Diagnosed'] if kc in pdata.columns]
         keep_cols += py_cols
         drop_cols = list( set(pdata.columns.values) - set(keep_cols) )
         pdata.drop(drop_cols, axis=1, inplace=True)
@@ -175,7 +173,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pdata.reset_index(inplace=True)
 
         # Make "Both" gender col in case data are not gender disaggregated
-        if True:
+        if add_both_level_to_gender:
             pdata.set_index(['Gender', 'Province', 'Year', 'Risk', 'Age'], inplace=True)
             both = pdata.loc['Male'] + pdata.loc['Female']
             both['Gender'] = 'Both'
