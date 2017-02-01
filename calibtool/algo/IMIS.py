@@ -267,12 +267,6 @@ class IMIS(NextPointAlgorithm):
             return False
 
     def get_final_samples(self):
-        '''
-        Resample Stage:
-            Once the stopping criterion is satisfied, resample J inputs with replacement
-            from \theta_1, ... , \theta_{N_k} with weights w1, ... , w_{N_K}, where K is the number 
-            of iterations at the importance sampling stage.
-        '''
         nonzero_idxs = self.weights > 0
         idxs = [i for i, w in enumerate(self.weights[nonzero_idxs])]
         try:
@@ -284,7 +278,16 @@ class IMIS(NextPointAlgorithm):
             print(idxs)
             raise
 
-        return dict(samples=self.samples[resample_idxs], weights=self.weights[resample_idxs])
+        # Add the parameters
+        params = self.get_param_names()
+        ret = dict()
+        for i in range(len(params)):
+            ret[params[i]] = [param_values[i] for param_values in self.samples[resample_idxs]]
+
+        # And the weights
+        ret['weights'] = [val for val in self.weights[resample_idxs]]
+
+        return {'final_samples': ret}
 
     def get_state(self):
         state = super(IMIS, self).get_state()

@@ -12,7 +12,6 @@ from datetime import datetime
 import pandas as pd
 
 from IterationState import IterationState
-from calibtool.algo import IMIS, OptimTool
 from calibtool.plotters import SiteDataPlotter
 from calibtool.utils import ResumePoint
 from core.utils.time import verbose_timedelta
@@ -419,15 +418,8 @@ class CalibManager(object):
         """ Get the final samples (and any associated information like weights) from algo. """
         final_samples = self.next_point.get_final_samples()
         logger.debug('Final samples:\n%s', pprint.pformat(final_samples))
+        self.cache_calibration(**final_samples)
 
-        if isinstance(self.next_point, IMIS.IMIS):
-            # [TODO]: handle IMIS like OptimTool
-            self.cache_calibration(final_samples=final_samples)
-        elif isinstance(self.next_point, OptimTool.OptimTool):
-            dtypes = {name: str(data.dtype) for name, data in final_samples.iteritems()}
-            final_samples_NaN_to_Null = final_samples.where(~final_samples.isnull(), other=None)
-            self.cache_calibration(final_samples=final_samples_NaN_to_Null.to_dict(orient='list'),
-                                   final_samples_dtypes=dtypes)
 
     def generate_suite_id(self, exp_manager):
         """
@@ -696,10 +688,6 @@ class CalibManager(object):
         """
         Consider user's input and determine the resuming point
         """
-        if self.iter_step not in ['commission', 'analyze', 'plot', 'next_point']:
-            if self.iter_step:
-                logger.info("Invalid iter_step '%s', ignored.", self.iter_step)
-                exit()
 
         input_resume_point = ResumePoint[self.iter_step]
 

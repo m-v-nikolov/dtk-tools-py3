@@ -63,6 +63,11 @@ def run(args, unknownArgs):
 
 
 def resume(args, unknownArgs):
+    if args.iter_step:
+        if args.iter_step not in ['commission', 'analyze', 'plot', 'next_point']:
+            print "Invalid iter_step '%s', ignored.", args.iter_step
+            exit()
+
     manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)
     manager.resume_from_iteration(args.iteration,
                                   iter_step=args.iter_step,
