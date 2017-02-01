@@ -366,7 +366,9 @@ class OptimTool(NextPointAlgorithm):
         xc = X_Center.to_frame().transpose().reset_index(drop=True)
         xc.columns.name = ""
 
-        return xc
+        dtypes = {name: str(data.dtype) for name, data in xc.iteritems()}
+        final_samples_NaN_to_Null = xc.where(~xc.isnull(), other=None)
+        return {'final_samples':final_samples_NaN_to_Null.to_dict(orient='list'), 'final_samples_dtypes':dtypes}
 
     def prep_for_dict(self, df):
         # Needed for Windows compatibility

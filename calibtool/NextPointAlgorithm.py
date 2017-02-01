@@ -37,7 +37,7 @@ class NextPointAlgorithm(object):
 
         if self.samples.size == 0:
             self.set_initial_samples()
-            self.generate_variables_from_data(self.initial_samples)
+            self.generate_variables_from_data()
 
         self.max_resampling_attempts = 100
         self.n_dimensions = self.samples[0].size
@@ -71,7 +71,7 @@ class NextPointAlgorithm(object):
             raise Exception("The 'initial_samples' parameter must be a number or an array.")
 
         self.add_samples(samples, iteration)
-        self.generate_variables_from_data(self.initial_samples)
+        self.generate_variables_from_data()
 
         logger.debug('Initial samples:\n%s' % samples)
 
@@ -87,7 +87,7 @@ class NextPointAlgorithm(object):
 
         latest_samples = self.verify_valid_samples(next_samples)
         self.add_samples(latest_samples, iteration)
-        self.generate_variables_from_data(self.samples_per_iteration)
+        self.generate_variables_from_data()
 
         logger.debug('Next samples:\n%s', self.latest_samples)
 
@@ -131,9 +131,6 @@ class NextPointAlgorithm(object):
         self.iteration = iteration
         logger.info('Updating %s at iteration %d:', self.__class__.__name__, iteration)
 
-    def update_samples(self):
-        pass
-
     def end_condition(self):
         """
         Return a Boolean whether the next-point algorithm has reached its truncation condition.
@@ -144,9 +141,6 @@ class NextPointAlgorithm(object):
 
     def get_next_samples(self):
         return self.latest_samples
-
-    def get_final_samples_orig(self):
-        return dict(samples=self.samples)
 
     def get_final_samples(self):
         return dict(samples=self.samples)
@@ -169,20 +163,23 @@ class NextPointAlgorithm(object):
             for c in self.data.columns: # Argh
                 self.data[c] = self.data[c].astype(data_dtypes[c])
 
-        # restore some properties from self.data
-        samples_for_iteration = self.initial_samples if iteration == 0 else self.samples_per_iteration
-        self.generate_variables_from_data(samples_for_iteration)
+        self.generate_variables_from_data()
 
-    def generate_variables_from_data(self, samples_number):
+    def generate_variables_from_data(self):
         """
         restore some properties from self.data
         """
         # keep as numpy.ndarray type
         self.samples = self.data[self.get_param_names()].values
-        self.latest_samples = self.data.tail(samples_number)[self.get_param_names()].values
 
         if self.samples.size > 0:
+            data_by_iteration = self.data.set_index('Iteration')
+            last_iter = sorted(data_by_iteration.index.unique())[-1]
+            self.latest_samples = self.get_next_samples_for_iteration(last_iter).values
+
             self.n_dimensions = self.samples[0].size
+        else:
+            self.latest_samples = np.array([])
 
         # keep as list type
         self.priors = list(self.data['Prior'])
