@@ -857,7 +857,8 @@ class CalibManager(object):
             calib_data = self.read_calib_data()
         except Exception:
             logger.info('Calib data cannot be read -> skip')
-            return
+            calib_data = None
+            comps_suite = None
 
         if calib_data:
             # Retrieve suite ids and iter_count
