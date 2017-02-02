@@ -20,6 +20,7 @@ class BaseShelveAnalyzer(BaseAnalyzer):
         :param force_combine: Set True to recompute the combine() analysis step instead of retrieving results from the shelve-based cache
         :param verbose: Verbose if True
         """
+        super(BaseShelveAnalyzer, self).__init__()
         self.force_apply = force_apply
         self.force_combine = force_combine
         self.verbose = verbose
