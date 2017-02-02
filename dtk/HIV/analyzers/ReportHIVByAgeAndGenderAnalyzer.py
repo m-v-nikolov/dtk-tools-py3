@@ -38,7 +38,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 parse = True,
                 **kwargs):
 
-        self.parse = True
+        self.parse = parse
 
         super(ReportHIVByAgeAndGenderAnalyzer, self).__init__(force_apply, force_combine, verbose)
 
