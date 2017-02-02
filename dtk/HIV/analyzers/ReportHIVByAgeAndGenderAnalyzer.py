@@ -35,8 +35,10 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 fig_format = 'png',
                 fig_dpi = 600,
                 verbose = False,
+                parse = True,
                 **kwargs):
 
+        self.parse = True
 
         super(ReportHIVByAgeAndGenderAnalyzer, self).__init__(force_apply, force_combine, verbose)
 
