@@ -812,7 +812,6 @@ class CalibManager(object):
             if isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration != self.latest_iteration:
                 continue
             plotter.visualize(self)
-            plotter.visualize(self)
             gc.collect() # Have to clean up after matplotlib is done
 
     def load_experiment_from_iteration(self, iteration=None):
