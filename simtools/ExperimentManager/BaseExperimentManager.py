@@ -452,6 +452,10 @@ class BaseExperimentManager:
         analyzer.exp_id = self.experiment.exp_id
         analyzer.exp_name = self.experiment.exp_name
         analyzer.working_dir = working_dir if working_dir else os.getcwd()
+
+        # Initialize
+        analyzer.initialize()
+
         # Add to the list
         self.analyzers.append(analyzer)
 
