@@ -32,7 +32,8 @@ class BaseAnalyzer:
         self.exp_id = None
         self.exp_name = None
         self.working_dir = None
-        self.done_showing=False
+        self.done_showing = False
+        self.parse = True
 
     def set_setup(self, setup):
         self.setup = setup
