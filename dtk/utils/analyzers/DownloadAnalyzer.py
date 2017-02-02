@@ -25,6 +25,7 @@ class DownloadAnalyzer(BaseAnalyzer):
     def __init__(self, output_path=None, filenames=None):
         super(DownloadAnalyzer, self).__init__()
 
+        # Process the output_path
         self.output_path = output_path or "output"
 
         # We only want the raw files -> disable parsing
@@ -32,6 +33,9 @@ class DownloadAnalyzer(BaseAnalyzer):
 
         if filenames:
             self.filenames = filenames
+
+    def initialize(self):
+        self.output_path = os.path.join(self.working_dir, self.output_path)
 
         # Create the output path
         if not os.path.exists(self.output_path):

@@ -38,6 +38,9 @@ class BaseAnalyzer:
     def set_setup(self, setup):
         self.setup = setup
 
+    def initialize(self):
+        pass
+
     def filter(self, sim_metadata):
         #return sim_metadata.get('__site__', False) == self.site.name
         return lambda x : True
