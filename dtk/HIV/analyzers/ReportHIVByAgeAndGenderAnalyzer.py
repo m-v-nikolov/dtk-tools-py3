@@ -35,12 +35,11 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 fig_format = 'png',
                 fig_dpi = 600,
                 verbose = False,
-                parse = True,
                 **kwargs):
 
-        self.parse = parse
-
         super(ReportHIVByAgeAndGenderAnalyzer, self).__init__(force_apply, force_combine, verbose)
+
+        self.parse = True
 
         # For pop scaling - would rather get from PopulationScalingAnalyzer!
         self.reference_year = reference_year
