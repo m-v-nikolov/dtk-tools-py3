@@ -15,6 +15,17 @@ logger = logging.getLogger(__name__)
 def grouped_df(df, pfprdict, index, column_keep, column_del):
     """
     Recut dataframe to recategorize data into desired age and parasitemia bins
+
+    df - Dataframe to be rebinned
+
+    pfprdict - Dictionary mapping postive counts per slide view (http://garkiproject.nd.edu/demographic-parasitological-surveys.html)
+                to density of parasites/gametocytes per uL
+
+    index - Multi index into which 'df' is rebinned
+
+    column_keep - Column (e.g. parasitemia) to keep
+
+    column_del - Column (e.g. gametocytemia) to delete
     """
     dftemp = df.copy()
     del dftemp[column_del]
@@ -38,7 +49,34 @@ def grouped_df(df, pfprdict, index, column_keep, column_del):
 
 def season_channel_age_density_csv_to_pandas(csvfilename, metadata):
     """
-    Return reference data as dataframe
+    A helper function to convert Garki reference data locally stored in a csv file generate by code:
+
+    https://github.com/pselvaraj87/Malaria-GarkiDB
+
+    The data in the csv file is stored as:
+
+      1          Patient_id  Village      Seasons        Age     Age Bins      Parasitemia  Gametocytemia
+      2 0           4464     Batakashi      DC2  0.00547945205479  1.0          0.0               0.0
+      3 1           2230     Ajura          DC2  0.0493150684932   1.0          0.005             0.0
+      4 2           6995     Rafin Marke    DC2  0.0821917808219   1.0          0.0               0.0
+      5 3           5407     Ungwar Balco   DC2  0.120547945205    1.0          0.0               0.0
+      6 4           4988     Ungwar Balco   DC2  0.104109589041    1.0          0.005             0.0
+      7 5           9282     Kargo Kudu     DC2  0.145205479452    1.0          0.0075            0.0
+      8 6           2211     Ajura          DC2  0.134246575342    1.0          0.0               0.0
+      ...
+      ...
+
+    to a Pandas dataframe with Multi Index:
+
+    Channel                            Season     Age Bin   PfPR Bin
+    PfPR by Gametocytemia and Age Bin  start_wet  5         0             0
+                                                            50            0
+                                                            500           0
+                                                            5000          5
+                                                            50000         0
+                                                            500000        0
+      ...
+
     """
     df = pd.read_csv(csvfilename)
     df = df.loc[df['Village'] == metadata['village']]
