@@ -37,6 +37,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 verbose = False,
                 **kwargs):
 
+
         super(ReportHIVByAgeAndGenderAnalyzer, self).__init__(force_apply, force_combine, verbose)
 
         self.parse = True
@@ -78,7 +79,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         if not os.path.isdir(self.workdir):
             os.makedirs(self.workdir)
 
-        self.figdir = os.path.join(self.workdir, self.__class__.__name__)
+        self.figdir = os.path.join(self.workdir, self.name)
         if not os.path.isdir(self.figdir):
             os.makedirs(self.figdir)
 
