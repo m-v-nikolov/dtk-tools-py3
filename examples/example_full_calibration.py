@@ -12,6 +12,7 @@ from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
 from calibtool.study_sites import \
+    RafinMarkeAgeSeasonCalibSite, \
     NdiopCalibSite, DielmoCalibSite, \
     NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
     LayeCalibSite, DapelogoCalibSite
@@ -19,13 +20,14 @@ from calibtool.study_sites import \
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
-    RafinMarkeCalibSite(),
+    RafinMarkeAgeSeasonCalibSite(),
+    # RafinMarkeCalibSite(),
     # MatsariCalibSite(),
     # SugungumCalibSite(),
     # NamawalaCalibSite(),
     # NdiopCalibSite(),
     # DielmoCalibSite(),
-    LayeCalibSite(),
+    # LayeCalibSite(),
     # DapelogoCalibSite()
 ]
 
@@ -59,7 +61,7 @@ def sample_point_fn(cb, sample_dimension_values):
     sample_point = prior.to_dict(sample_dimension_values)  # aligns names and values; rounds integer-range_type params
 
     params_to_update = dict()
-    params_to_update['Simulation_Duration'] = 365 * 5  # shorter for quick test
+    params_to_update['Simulation_Duration'] = 365 * 2  # shorter for quick test
 
     for sample_dimension_name, sample_dimension_value in sample_point.items():
         # Apply specific logic to convert sample-point dimensions into simulation configuration parameters
@@ -90,6 +92,6 @@ calib_manager = CalibManager(name='FullCalibrationExample',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    calib_manager.setup = SetupParser('HPC')
+    calib_manager.setup = SetupParser('LOCAL')
     calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)

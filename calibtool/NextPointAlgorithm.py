@@ -158,7 +158,7 @@ class NextPointAlgorithm(object):
 
     def set_state(self, state):
         self.samples = state.get('samples', np.array([]))
-        self.latest_samples = state.get('latest_samples', np.array([]))
+        self. latest_samples = state.get('latest_samples', np.array([]))
         self.priors = state.get('priors', [])
         self.results = state.get('results', [])
 

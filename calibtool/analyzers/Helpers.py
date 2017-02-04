@@ -2,6 +2,7 @@ import itertools
 from datetime import date
 import calendar
 import logging
+from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -9,6 +10,70 @@ import numpy as np
 import dtk.utils.parsers.malaria_summary as malaria_summary
 
 logger = logging.getLogger(__name__)
+
+
+def grouped_df(df, pfprdict, index, column_keep, column_del):
+    """
+    Recut dataframe to recategorize data into desired age and parasitemia bins
+    """
+    dftemp = df.copy()
+    del dftemp[column_del]
+
+    dftemp['PfPR Bin'] = df[column_keep]
+    dftemp = aggregate_on_index(dftemp, index)
+
+    dfGrouped = dftemp.groupby(['Season', 'Age Bin', 'PfPR Bin'])
+
+    dftemp = dfGrouped[column_keep].count()
+    dftemp = dftemp.unstack().fillna(0).stack()
+    dftemp = dftemp.rename(column_keep).reset_index()
+    dftemp['PfPR Bin'] = [pfprdict[p] for p in dftemp['PfPR Bin']]
+
+    dftemp = dftemp.set_index(['Season', 'Age Bin', 'PfPR Bin'])
+
+    logger.debug('\n%s', dftemp)
+
+    return dftemp
+
+
+def season_channel_age_density_csv_to_pandas(csvfilename, metadata):
+    """
+    Return reference data as dataframe
+    """
+    df = pd.read_csv(csvfilename)
+    df = df.loc[df['Village'] == metadata['village']]
+
+    pfprBinsDensity = metadata['parasitemia_bins']
+    uL_per_field = 0.5 / 200.0  # from Garki PDF - page 111 - 0.5 uL per 200 views
+    pfprBins = 1 - np.exp(-np.asarray(pfprBinsDensity) * uL_per_field)
+    seasons = metadata['seasons']
+    pfprdict = dict(zip(pfprBins, pfprBinsDensity))
+
+    bins = OrderedDict([
+        ('Season', metadata['seasons']),
+        ('Age Bin', metadata['age_bins']),
+        ('PfPR Bin', pfprBins)
+    ])
+    bin_tuples = list(itertools.product(*bins.values()))
+    index = pd.MultiIndex.from_tuples(bin_tuples, names=bins.keys())
+
+    df = df.loc[df['Seasons'].isin(seasons)]
+    df = df.rename(columns={'Seasons': 'Season', 'Age': 'Age Bin'})
+
+    df2 = grouped_df(df, pfprdict, index, 'Parasitemia', 'Gametocytemia')
+    df3 = grouped_df(df, pfprdict, index, 'Gametocytemia', 'Parasitemia')
+    dfJoined = df2.join(df3).fillna(0)
+    dfJoined = pd.concat([dfJoined['Gametocytemia'], dfJoined['Parasitemia']])
+    dfJoined.name = 'Counts'
+    dftemp = dfJoined.reset_index()
+    dftemp['Channel'] = 'PfPR by Gametocytemia and Age Bin'
+    dftemp.loc[len(dftemp)/2:, 'Channel'] = 'PfPR by Parasitemia and Age Bin'
+    dftemp = dftemp.rename(columns={'Seasons': 'Season', 'PfPR Bins': 'PfPR Bin', 'Age Bins': 'Age Bin'})
+    dftemp = dftemp.set_index(['Channel', 'Season', 'Age Bin', 'PfPR Bin'])
+
+    logger.debug('\n%s', dftemp)
+
+    return dftemp
 
 
 def season_channel_age_density_json_to_pandas(reference, bins):
@@ -224,7 +289,8 @@ def aggregate_on_index(df, index, keep=slice(None)):
             logger.warning('Unexpected dtype=%s for MultiIndex level (%s). No aggregation performed.', ix.dtype, ix.name)
 
     # Aggregate on reference MultiIndex, keeping specified channels and dropping missing data
-    df = df.groupby([ix.name for ix in levels]).sum()[keep].dropna()
+    if keep != slice(None):
+        df = df.groupby([ix.name for ix in levels]).sum()[keep].dropna()
     logger.debug('Data aggregated on MultiIndex levels:\n%s', df.head(15))
     return df
 
