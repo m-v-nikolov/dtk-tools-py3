@@ -73,8 +73,6 @@ def season_channel_age_density_csv_to_pandas(csvfilename, metadata):
                                                             50            0
                                                             500           0
                                                             5000          5
-                                                            50000         0
-                                                            500000        0
       ...
 
     """

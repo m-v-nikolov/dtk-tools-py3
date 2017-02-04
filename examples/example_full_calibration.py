@@ -13,6 +13,8 @@ from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
 from calibtool.study_sites import \
     RafinMarkeAgeSeasonCalibSite, \
+    SugungumAgeSeasonCalibSite, \
+    MatsariAgeSeasonCalibSite, \
     NdiopCalibSite, DielmoCalibSite, \
     NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
     LayeCalibSite, DapelogoCalibSite
@@ -20,7 +22,9 @@ from calibtool.study_sites import \
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
-    RafinMarkeAgeSeasonCalibSite(),
+    # RafinMarkeAgeSeasonCalibSite(),
+    # SugungumAgeSeasonCalibSite(),
+    MatsariAgeSeasonCalibSite(),
     # RafinMarkeCalibSite(),
     # MatsariCalibSite(),
     # SugungumCalibSite(),
