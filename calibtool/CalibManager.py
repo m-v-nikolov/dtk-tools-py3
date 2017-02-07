@@ -390,7 +390,7 @@ class CalibManager(object):
 
     def plot_iteration(self):
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self), self.plotters)
+        map(lambda plotter: plotter.visualize(), self.plotters)
         gc.collect()
 
     def give_results_to_next_point_and_cache(self, results):

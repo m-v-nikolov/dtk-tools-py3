@@ -67,7 +67,7 @@ class SetupParser:
 
         # Add the user to the default
         if sys.platform == 'win32':
-            user = 'braybaud'
+            user = os.environ['USERNAME']
         else:
             import pwd
             user = pwd.getpwuid(os.geteuid())[0]
