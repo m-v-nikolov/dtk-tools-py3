@@ -77,7 +77,7 @@ def sample_point_fn(cb, sample_dimension_values):
 
 
 next_point_kwargs = dict(initial_samples=4,
-                         samples_per_iteration=3,
+                         samples_per_iteration=2,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',

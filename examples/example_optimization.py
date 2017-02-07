@@ -124,7 +124,7 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization1',    # <-- Please customize this name
+calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
                              setup = SetupParser('HPC'),
                              config_builder = cb,
                              map_sample_to_model_input_fn = map_sample_to_model_input,
