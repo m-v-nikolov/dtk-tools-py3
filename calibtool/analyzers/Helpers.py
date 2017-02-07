@@ -294,7 +294,7 @@ def aggregate_on_index(df, index, keep=slice(None)):
        levels = [index]  # Only one "level" for Index. Put into list for generic pattern as for MultiIndex
 
     for ix in levels:
-        logger.debug(ix.name, ix.dtype, ix.values)
+        logger.debug("%s (%s) : %s" % (ix.name, ix.dtype, ix.values))
 
         if ix.name not in df.columns:
             raise Exception('Cannot perform aggregation as MultiIndex level (%s) not found in DataFrame:\n%s' % (ix.name, df.head()))
