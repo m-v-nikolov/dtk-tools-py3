@@ -48,7 +48,6 @@ def gamma_poisson_pandas(df):
 
 
 def beta_binomial_pandas(df):
-
     LL = gammaln(df.ref['Person Years'] + 1) \
        + gammaln(df.sim['Person Years'] + 2) \
        - gammaln(df.ref['Person Years'] + df.sim['Person Years'] + 2) \

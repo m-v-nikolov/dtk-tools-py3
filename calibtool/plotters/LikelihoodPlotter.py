@@ -3,6 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from calibtool.utils import ResumePoint
 
 from calibtool.plotters.BasePlotter import BasePlotter
 
@@ -28,6 +29,10 @@ class LikelihoodPlotter(BasePlotter):
         return self.get_iteration_directory()
 
     def visualize(self):
+        iteration_status = self.manager.status
+        if iteration_status != ResumePoint.next_point:
+            return  # Only plot once results are available
+
         if self.combine_sites:
             self.plot_by_parameter()
         else:

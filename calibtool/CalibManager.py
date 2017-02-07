@@ -64,11 +64,11 @@ class CalibManager(object):
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.max_iterations = max_iterations
         self.location = self.setup.get('type')
+        self.plotters = [plotter.set_manager(self) for plotter in plotters]
         self.local_suite_id = None
         self.comps_suite_id = None
         self.all_results = None
         self.exp_manager = None
-        self.plotters = plotters
         self.calibration_start = None
         self.iteration_start = None
         self.iter_step = ''
@@ -390,7 +390,7 @@ class CalibManager(object):
 
     def plot_iteration(self):
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self), self.plotters)
+        map(lambda plotter: plotter.visualize(), self.plotters)
         gc.collect()
 
     def give_results_to_next_point_and_cache(self, results):
@@ -810,8 +810,7 @@ class CalibManager(object):
         for plotter in self.plotters:
             if isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration != self.latest_iteration:
                 continue
-            plotter.visualize(self)
-            plotter.visualize(self)
+            plotter.visualize()
             gc.collect() # Have to clean up after matplotlib is done
 
     def load_experiment_from_iteration(self, iteration=None):

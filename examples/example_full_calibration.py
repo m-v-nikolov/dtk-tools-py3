@@ -14,17 +14,21 @@ from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from calibtool.study_sites import \
     NdiopCalibSite, DielmoCalibSite, \
     NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
-    LayeCalibSite, DapelogoCalibSite
+    LayeCalibSite, DapelogoCalibSite, MatsariAgeSeasonCalibSite, RafinMarkeAgeSeasonCalibSite, \
+    SugungumAgeSeasonCalibSite
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
-    RafinMarkeCalibSite(),
+    # MatsariAgeSeasonCalibSite(),
+    # RafinMarkeCalibSite(),
+    RafinMarkeAgeSeasonCalibSite(),
     # MatsariCalibSite(),
     # SugungumCalibSite(),
+    # SugungumAgeSeasonCalibSite(),
     # NamawalaCalibSite(),
     # NdiopCalibSite(),
-    # DielmoCalibSite(),
+    DielmoCalibSite(),
     LayeCalibSite(),
     # DapelogoCalibSite()
 ]
@@ -73,23 +77,22 @@ def sample_point_fn(cb, sample_dimension_values):
 
 
 next_point_kwargs = dict(initial_samples=4,
-                         samples_per_iteration=2,
+                         samples_per_iteration=3,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
                              setup=SetupParser(),
                              config_builder=cb,
-                             sample_point_fn=sample_point_fn,
+                             map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
                              next_point=IMIS(prior, **next_point_kwargs),
                              sim_runs_per_param_set=1,
                              max_iterations=2,
-                             num_to_plot=5,
                              plotters=plotters)
 
 run_calib_args = {}
 
 if __name__ == "__main__":
-    calib_manager.setup = SetupParser('HPC')
+    calib_manager.setup = SetupParser('LOCAL')
     calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)
