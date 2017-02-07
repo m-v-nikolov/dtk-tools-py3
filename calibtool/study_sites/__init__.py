@@ -6,3 +6,6 @@ from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
 from calibtool.study_sites.SugungumCalibSite import SugungumCalibSite
 from calibtool.study_sites.LayeCalibSite import LayeCalibSite
 from calibtool.study_sites.DapelogoCalibSite import DapelogoCalibSite
+from calibtool.study_sites.RafinMarkeAgeSeasonCalibSite import RafinMarkeAgeSeasonCalibSite
+from calibtool.study_sites.SugungumAgeSeasonCalibSite import SugungumAgeSeasonCalibSite
+from calibtool.study_sites.MatsariAgeSeasonCalibSite import MatsariAgeSeasonCalibSite

@@ -6,7 +6,8 @@ from calibtool.CalibSite import CalibSite
 from calibtool.study_sites.site_setup_functions import \
     config_setup_fn, summary_report_fn, add_treatment_fn, site_input_eir_fn
 from calibtool.analyzers.ChannelBySeasonAgeDensityCohortAnalyzer import ChannelBySeasonAgeDensityCohortAnalyzer
-from calibtool.analyzers.Helpers import season_channel_age_density_json_to_pandas
+from calibtool.analyzers.Helpers import season_channel_age_density_json_to_pandas,\
+    season_channel_age_density_csv_to_pandas
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,8 @@ class DensityCalibSite(CalibSite):
 
     reference_dict = {}
 
+    reference_csv = {}
+
     def get_setup_functions(self):
         return [
             config_setup_fn(duration=21915),  # 60 years (with leap years)
@@ -43,12 +46,15 @@ class DensityCalibSite(CalibSite):
             raise Exception("%s does not support %s reference_type, only %s.",
                             self.__class__.__name__, reference_type, site_ref_type)
 
-        reference_bins = OrderedDict([
-            ('Age Bin', self.metadata['age_bins']),
-            ('PfPR Bin', self.metadata['parasitemia_bins'])
-        ])
 
-        reference_data = season_channel_age_density_json_to_pandas(self.reference_dict, reference_bins)
+        if bool(self.reference_csv):
+            reference_data = season_channel_age_density_csv_to_pandas(self.reference_csv, self.metadata)
+        elif bool(self.reference_dict):
+            reference_bins = OrderedDict([
+                ('Age Bin', self.metadata['age_bins']),
+                ('PfPR Bin', self.metadata['parasitemia_bins'])
+            ])
+            reference_data = season_channel_age_density_json_to_pandas(self.reference_dict, reference_bins)
 
         logger.debug('Reference data:\n  %s', reference_data)
         return reference_data
