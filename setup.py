@@ -436,6 +436,7 @@ def handle_init():
         cp.add_section('EXAMPLEHPC')
         cp.set('EXAMPLEHPC', 'type', 'HPC')
         cp.set('EXAMPLEHPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
+        cp.set('EXAMPLEHPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
 
     cp.write(open(example_simtools, 'w'))
 
