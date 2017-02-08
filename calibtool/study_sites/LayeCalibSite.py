@@ -1,6 +1,8 @@
 import logging
+from collections import OrderedDict
 
 import numpy as np
+from calibtool.analyzers.Helpers import season_channel_age_density_json_to_pandas
 
 from calibtool.study_sites.DensityCalibSite import DensityCalibSite
 
@@ -64,6 +66,17 @@ class LayeCalibSite(DensityCalibSite):
             ]
         }
     }
+
+    def get_reference_data(self, reference_type):
+        super(LayeCalibSite, self).get_reference_data(reference_type)
+
+        reference_bins = OrderedDict([
+            ('Age Bin', self.metadata['age_bins']),
+            ('PfPR Bin', self.metadata['parasitemia_bins'])
+        ])
+        reference_data = season_channel_age_density_json_to_pandas(self.reference_dict, reference_bins)
+
+        return reference_data
 
     def __init__(self):
         super(LayeCalibSite, self).__init__('Laye')

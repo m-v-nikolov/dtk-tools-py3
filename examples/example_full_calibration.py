@@ -20,16 +20,16 @@ from calibtool.study_sites import \
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
-    # MatsariAgeSeasonCalibSite(),
     # RafinMarkeCalibSite(),
-    RafinMarkeAgeSeasonCalibSite(),
+    # RafinMarkeAgeSeasonCalibSite(),
     # MatsariCalibSite(),
+    # MatsariAgeSeasonCalibSite(),
     # SugungumCalibSite(),
     # SugungumAgeSeasonCalibSite(),
     # NamawalaCalibSite(),
     # NdiopCalibSite(),
-    DielmoCalibSite(),
-    LayeCalibSite(),
+    # DielmoCalibSite(),
+    # LayeCalibSite(),
     # DapelogoCalibSite()
 ]
 
@@ -81,7 +81,7 @@ next_point_kwargs = dict(initial_samples=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
-                             setup=SetupParser('EXAMPLEHPC'),
+                             setup=SetupParser('LOCAL'),
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
@@ -93,5 +93,5 @@ calib_manager = CalibManager(name='FullCalibrationExample',
 run_calib_args = {}
 
 if __name__ == "__main__":
-    calib_manager.cleanup()
+    #calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)
