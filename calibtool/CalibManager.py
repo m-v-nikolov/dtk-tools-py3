@@ -87,11 +87,7 @@ class CalibManager(object):
         if 'location' in kwargs:
             kwargs.pop('location')
 
-        # Save the selected block the user wants
-        user_selected_block = self.setup.selected_block
         self.create_calibration(self.location, **kwargs)
-        # Restore the selected block
-        self.setup.override_block(user_selected_block)
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location, **kwargs):
@@ -851,6 +847,9 @@ class CalibManager(object):
         - Delete the result directory
         - If LOCAL -> also delete the simulations
         """
+        # Save the selected block the user wants
+        user_selected_block = self.setup.selected_block
+
         try:
             calib_data = self.read_calib_data()
         except Exception:
@@ -899,6 +898,9 @@ class CalibManager(object):
             utils.COMPS_login(self.setup.get('server_endpoint'))
             from simtools.Utilities.COMPSUtilities import delete_suite
             delete_suite(comps_suite)
+
+        # Restore the selected block
+        self.setup.override_block(user_selected_block)
 
 
     def reanalyze(self):
