@@ -24,6 +24,7 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
 
         self.reference = None  # site-specific reference data for comparison
         self.result = None  # result of simulation-to-reference comparison
+        self.data = None
 
     def uid(self):
         """ A unique identifier of site-name and analyzer-name """

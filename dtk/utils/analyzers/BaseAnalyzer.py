@@ -17,7 +17,6 @@ class BaseAnalyzer(object):
 
     @abstractmethod
     def __init__(self):
-        self.data = None
         self.parse = True
 
     def initialize(self):
