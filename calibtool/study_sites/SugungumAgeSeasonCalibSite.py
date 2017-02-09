@@ -21,7 +21,8 @@ class SugungumAgeSeasonCalibSite(DensityCalibSite):
         'village': 'Sugungum'
     }
 
-    reference_csv = os.path.join(os.path.dirname(os.getcwd()), 'calibtool', 'study_sites', 'GarkiDB.csv')
+    reference_csv = os.path.join(os.path.dirname(os.getcwd()), 'examples', 'inputs', 'GarkiDB_data',
+                                 'GarkiDBparasitology.csv')
 
     def get_reference_data(self, reference_type):
         super(SugungumAgeSeasonCalibSite, self).get_reference_data(reference_type)
