@@ -21,13 +21,14 @@ class MatsariAgeSeasonCalibSite(DensityCalibSite):
         'village': 'Matsari'
     }
 
-    reference_csv = os.path.join(os.path.dirname(os.getcwd()), 'examples', 'inputs', 'GarkiDB_data',
-                                 'GarkiDBparasitology.csv')
 
     def get_reference_data(self, reference_type):
         super(MatsariAgeSeasonCalibSite, self).get_reference_data(reference_type)
 
-        reference_data = season_channel_age_density_csv_to_pandas(self.reference_csv, self.metadata)
+        # Load the Parasitology CSV
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        reference_csv = os.path.join(dir_path, 'inputs', 'GarkiDB_data', 'GarkiDBparasitology.csv')
+        reference_data = season_channel_age_density_csv_to_pandas(reference_csv, self.metadata)
 
         return reference_data
 
