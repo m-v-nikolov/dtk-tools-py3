@@ -125,7 +125,7 @@ optimtool = OptimTool(params,
 )
 
 calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
-                             setup = SetupParser('HPC'),
+                             setup = SetupParser('EXAMPLEHPC'),
                              config_builder = cb,
                              map_sample_to_model_input_fn = map_sample_to_model_input,
                              sites = sites,
