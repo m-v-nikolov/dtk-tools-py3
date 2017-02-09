@@ -47,14 +47,15 @@ def update_calib_args(args, unknownArgs, calib_args):
 
     # Get the proper configuration block.
     if len(unknownArgs) == 0:
-        selected_block = calib_args['selected_block'] if ('selected_block' in calib_args and calib_args['selected_block']) else "LOCAL"
+        selected_block = calib_args['selected_block'] if ('selected_block' in calib_args and calib_args['selected_block']) else None
     elif len(unknownArgs) == 1:
         selected_block = unknownArgs[0][2:].upper()
     else:
         raise Exception('Too many unknown arguments: please see help.')
 
-    # Update the setupparser
-    SetupParser(selected_block=selected_block, setup_file=args.ini if hasattr(args,'ini') and args.ini else calib_args['ini'], force=True)
+    # Update the setupparser if we have to
+    if selected_block:
+        SetupParser(selected_block=selected_block, setup_file=args.ini if hasattr(args,'ini') and args.ini else calib_args['ini'], force=True)
 
 
 def run(args, unknownArgs):

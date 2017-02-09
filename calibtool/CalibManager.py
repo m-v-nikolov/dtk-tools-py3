@@ -863,6 +863,9 @@ class CalibManager(object):
             local_suite = calib_data.get('local_suite_id')
             iter_count = calib_data.get('iteration')
 
+            # Also retrieve the selected block
+            self.setup.override_block(calib_data['selected_block'])
+
             # Delete the simulations too
             logger.info('Cleaning up calibration %s' % self.name)
             for i in range(0, iter_count + 1):
