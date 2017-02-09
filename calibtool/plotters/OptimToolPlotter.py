@@ -1,18 +1,15 @@
 import logging
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
-
 import pandas as pd
 import seaborn as sns
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from calibtool.plotters.BasePlotter import BasePlotter
-from calibtool.visualize import combine_by_site
 from calibtool.utils import ResumePoint
 
 logger = logging.getLogger(__name__)
@@ -23,6 +20,9 @@ class OptimToolPlotter(BasePlotter):
     def __init__(self):
         print 'OptimToolPlotter: INIT'
         super(OptimToolPlotter, self).__init__( False )
+
+    def cleanup(self):
+        pass
 
     def plot_state_evolution(self, **kwargs):
         data = kwargs.pop('data')
@@ -40,7 +40,8 @@ class OptimToolPlotter(BasePlotter):
         plt.margins(0.05)
         plt.autoscale(tight=False)
 
-    def visualize(self, calib_manager):
+    def visualize(self):
+        calib_manager = self.manager
         iteration_status = calib_manager.status
         self.directory = calib_manager.iteration_directory()
         self.param_names = calib_manager.param_names()

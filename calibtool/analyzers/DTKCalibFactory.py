@@ -2,7 +2,6 @@ import importlib
 
 from calibtool.CalibSite import CalibSite
 
-from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
 from calibtool.analyzers.PrevalenceByRoundAnalyzer import PrevalenceByRoundAnalyzer
 from calibtool.analyzers.PositiveFractionByDistanceAnalyzer import PositiveFractionByDistanceAnalyzer
 
@@ -11,9 +10,7 @@ class DTKCalibFactory(object):
 
     @staticmethod
     def get_analyzer(name, weight=1):
-        if name == 'ClinicalIncidenceByAgeCohortAnalyzer':
-            return ClinicalIncidenceByAgeCohortAnalyzer(name, weight)
-        elif name == 'PrevalenceByRoundAnalyzer':
+        if name == 'PrevalenceByRoundAnalyzer':
             return PrevalenceByRoundAnalyzer(name, weight)
         elif name == 'PositiveFractionByDistanceAnalyzer':
             return PositiveFractionByDistanceAnalyzer(name, weight)
