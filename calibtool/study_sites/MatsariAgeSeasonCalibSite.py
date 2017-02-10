@@ -21,7 +21,6 @@ class MatsariAgeSeasonCalibSite(DensityCalibSite):
         'village': 'Matsari'
     }
 
-
     def get_reference_data(self, reference_type):
         super(MatsariAgeSeasonCalibSite, self).get_reference_data(reference_type)
 

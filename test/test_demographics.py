@@ -12,13 +12,14 @@ class TestDemographics(unittest.TestCase):
 
     def setUp(self):
         self.cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
 
     def tearDown(self):
         pass
 
     def test_risk(self):
-        tmpfile='input/test_risk.json'
-        shutil.copyfile('input/test_nodes.json', tmpfile)
+        tmpfile = os.path.join(self.input_path,'test_risk.json')
+        shutil.copyfile(os.path.join(self.input_path,'test_nodes.json'), tmpfile)
         set_risk_mod(tmpfile,'UNIFORM_DISTRIBUTION',0.8,1.2)
         with open(tmpfile,'r') as f:
             j=json.loads(f.read())
@@ -29,8 +30,8 @@ class TestDemographics(unittest.TestCase):
         os.remove(tmpfile)
 
     def test_immune_mod(self):
-        tmpfile='input/test_immune_mod.json'
-        shutil.copyfile('input/test_defaults.json', tmpfile)
+        tmpfile=os.path.join(self.input_path,'test_immune_mod.json')
+        shutil.copyfile(os.path.join(self.input_path,'test_defaults.json'), tmpfile)
         set_immune_mod(tmpfile,'GAUSSIAN_DISTRIBUTION',1.0,0.3)
         with open(tmpfile,'r') as f:
             j=json.loads(f.read())
@@ -41,9 +42,9 @@ class TestDemographics(unittest.TestCase):
         os.remove(tmpfile)
 
     def test_static(self):
-        self.cb.set_param('Demographics_Filenames',['input/test_defaults.json'])
+        self.cb.set_param('Demographics_Filenames',[os.path.join(self.input_path,'test_defaults.json')])
         set_static_demographics(self.cb)
-        outfile='input/test_defaults.static.json'
+        outfile=os.path.join(self.input_path,'test_defaults.static.json')
         self.assertListEqual(self.cb.get_param('Demographics_Filenames'),[outfile])
         self.assertEqual(self.cb.get_param('Birth_Rate_Dependence'),'FIXED_BIRTH_RATE')
         with open(outfile,'r') as f:
@@ -65,9 +66,9 @@ class TestDemographics(unittest.TestCase):
         os.remove(outfile)
 
     def test_growing(self):
-        self.cb.set_param('Demographics_Filenames',['input/test_nodes.json'])
+        self.cb.set_param('Demographics_Filenames',[os.path.join(self.input_path,'test_nodes.json')])
         set_growing_demographics(self.cb)
-        outfile='input/test_nodes.growing.json'
+        outfile=os.path.join(self.input_path,'test_nodes.growing.json')
         self.assertListEqual(self.cb.get_param('Demographics_Filenames'),[outfile])
         self.assertEqual(self.cb.get_param('Birth_Rate_Dependence'),'POPULATION_DEP_RATE')
         with open(outfile,'r') as f:
@@ -102,7 +103,7 @@ class TestDemographics(unittest.TestCase):
         overlay=self.cb.demog_overlays['single_test_guess_2.5arcmin']
         self.assertEqual(overlay['Metadata']['IdReference'],'Gridded world grump2.5arcmin')
 
-        with open('input/test_overlay.json') as f:
+        with open(os.path.join(self.input_path,'test_overlay.json')) as f:
             j=json.loads(f.read())
         self.assertListEqual(j['Nodes'],overlay['Nodes'])
 
