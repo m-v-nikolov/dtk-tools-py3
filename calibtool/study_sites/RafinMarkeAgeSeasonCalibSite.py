@@ -27,7 +27,7 @@ class RafinMarkeAgeSeasonCalibSite(DensityCalibSite):
 
         # Load the Parasitology CSV
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        reference_csv = os.path.join(dir_path, 'inputs', 'GarkiDB_data',  'GarkiDBparasitology.csv')
+        reference_csv = os.path.join(dir_path, 'inputs', 'GarkiDB_data', 'GarkiDBparasitology.csv')
         reference_data = season_channel_age_density_csv_to_pandas(reference_csv, self.metadata)
 
         return reference_data

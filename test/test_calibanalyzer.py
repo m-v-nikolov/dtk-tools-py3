@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 import unittest
 import copy
 from abc import ABCMeta, abstractmethod
@@ -59,9 +60,16 @@ class BaseCalibSiteTest(object):
 
     @abstractmethod
     def setUp(self):
-        filepath = os.path.join('input', 'test_malaria_summary_report.json')
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        filepath = os.path.join(self.input_path, 'test_malaria_summary_report.json')
         self.parser = DummyParser(self.filename, filepath)
         self.data = self.parser.raw_data[self.filename]
+        self.plot_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'calib_analyzer_plots')
+        if not os.path.exists(self.plot_dir):
+            os.mkdir(self.plot_dir)
+
+    def tearDown(self):
+        shutil.rmtree(self.plot_dir)
 
     def get_dummy_parsers(self, sim_data, analyzer_id, n_sims=8, n_samples=4):
         parsers = {i: copy.deepcopy(self.parser) for i in range(n_sims)}
@@ -151,7 +159,7 @@ class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
         self.assertListEqual(['ref', 'samples'], cache.keys())
         self.assertEqual(n_samples, len(cache['samples']))
 
-        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
+        with open(os.path.join(self.input_path, 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
             json.dump(cache, fp, indent=4, cls=NumpyEncoder)
 
     def test_analyzer_plot(self):
@@ -159,13 +167,13 @@ class TestLayeCalibSite(BaseCalibSiteTest, unittest.TestCase):
         #  TEST PLOT
         analyzer = self.site.analyzers[0]
         fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(4, 3))
-        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
+        with open(os.path.join(self.input_path, 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
             cache = json.load(fp)
         analyzer.plot_comparison(fig, cache['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
         for sample in cache['samples']:
             analyzer.plot_comparison(fig, sample, fmt='-o', color='#CB5FA4', alpha=1, linewidth=1)
         fig.set_tight_layout(True)
-        fig.savefig(os.path.join('calib_analyzer', 'figs', 'plot_%s.png' % analyzer.__class__.__name__ ))
+        fig.savefig(os.path.join(self.plot_dir, 'plot_%s.png' % analyzer.__class__.__name__ ))
         plt.close(fig)
 
     def test_grouping(self):
@@ -316,7 +324,7 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         self.assertListEqual(['ref', 'samples'], cache.keys())
         self.assertEqual(n_samples, len(cache['samples']))
 
-        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
+        with open(os.path.join(self.input_path, 'cache_%s.json' % analyzer.__class__.__name__), 'w') as fp:
             json.dump(cache, fp, indent=4, cls=NumpyEncoder)
 
     def test_analyzer_plot(self):
@@ -324,13 +332,13 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         #  TEST PLOT
         analyzer = self.site.analyzers[0]
         fig = plt.figure('plot_%s' % analyzer.__class__.__name__, figsize=(4, 3))
-        with open(os.path.join('input', 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
+        with open(os.path.join(self.input_path, 'cache_%s.json' % analyzer.__class__.__name__), 'r') as fp:
             cache = json.load(fp)
         analyzer.plot_comparison(fig, cache['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
         for sample in cache['samples']:
             analyzer.plot_comparison(fig, sample, fmt='-o', color='#CB5FA4', alpha=1, linewidth=1)
         fig.set_tight_layout(True)
-        fig.savefig(os.path.join('calib_analyzer', 'figs', 'plot_%s.png' % analyzer.__class__.__name__ ))
+        fig.savefig(os.path.join(self.plot_dir, 'plot_%s.png' % analyzer.__class__.__name__ ))
         plt.close(fig)
 
 
