@@ -866,6 +866,9 @@ class CalibManager(object):
             # Also retrieve the selected block
             self.setup.override_block(calib_data['selected_block'])
 
+            # Kill
+            self.kill()
+
             # Delete the simulations too
             logger.info('Cleaning up calibration %s' % self.name)
             for i in range(0, iter_count + 1):
