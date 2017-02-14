@@ -39,12 +39,6 @@ requirements = OrderedDict([
         'test': '>=',
         'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
-    ('numpy', {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.12.0+mkl',
-        'test': '>=',
-        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
-    }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
@@ -56,6 +50,12 @@ requirements = OrderedDict([
         'version': '0.19.2',
         'test': '>=',
         'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('numpy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.12.0+mkl',
+        'test': '>=',
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
         'platform': ['win', 'lin', 'mac'],
