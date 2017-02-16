@@ -259,8 +259,8 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         Reshape vectorized version to test nested-for-loop version
         """
         x = pd.concat({'sim': sim, 'ref': ref}, axis=1).dropna()
-        return gamma_poisson(x.ref['Person Years'].values, x.sim['Person Years'].values,
-                             x.ref.Incidents.values, x.sim.Incidents.values)
+        return gamma_poisson(x.ref.Trials.values, x.sim.Trials.values,
+                             x.ref.Observations.values, x.sim.Observations.values)
 
     def test_site_analyzer(self):
 
@@ -278,17 +278,17 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         channel_data = pd.concat([summary_channel_to_pandas(self.data, c)
                                   for c in (analyzer.channel, analyzer.population_channel)], axis=1)
         person_years = convert_annualized(channel_data[analyzer.population_channel])
-        channel_data['Person Years'] = person_years
-        channel_data['Incidents'] = convert_to_counts(channel_data[analyzer.channel], channel_data['Person Years'])
+        channel_data['Trials'] = person_years
+        channel_data['Observations'] = convert_to_counts(channel_data[analyzer.channel], channel_data['Trials'])
         for ix, row in channel_data.loc[31].iterrows():
-            self.assertAlmostEqual(row['Person Years'], row[analyzer.population_channel] * 31 / 365.0)
-            self.assertAlmostEqual(row['Incidents'], row[analyzer.channel] * row['Person Years'])
+            self.assertAlmostEqual(row['Trials'], row[analyzer.population_channel] * 31 / 365.0)
+            self.assertAlmostEqual(row['Observations'], row[analyzer.channel] * row['Trials'])
 
         #############
         # TEST APPLY
         sim_data = analyzer.apply(self.parser)
         self.assertListEqual(reference.index.names, sim_data.index.names)
-        self.assertSetEqual(set(sim_data.columns.tolist()), {'Incidents', 'Person Years'})
+        self.assertSetEqual(set(sim_data.columns.tolist()), {'Observations', 'Trials'})
 
         self.assertEqual(self.parser.sim_id, 'dummy_id')
         self.assertEqual(self.parser.sim_data.get('__sample_index__'), 'dummy_index')
@@ -307,8 +307,8 @@ class TestDielmoCalibSite(BaseCalibSiteTest, unittest.TestCase):
         avg = [np.arange(i + 1, n_sims + 1, n_samples).mean() for i in range(n_samples)]
         for ix, row in analyzer.data.iterrows():
             for isample in range(1, n_samples):
-                self.assertAlmostEqual(row[0, 'Incidents'] / avg[0], row[i, 'Incidents'] / avg[i])
-                self.assertAlmostEqual(row[0, 'Person Years'] / avg[0], row[i, 'Person Years'] / avg[i])
+                self.assertAlmostEqual(row[0, 'Observations'] / avg[0], row[i, 'Observations'] / avg[i])
+                self.assertAlmostEqual(row[0, 'Trials'] / avg[0], row[i, 'Trials'] / avg[i])
 
         #############
         # TEST COMPARE
@@ -369,8 +369,8 @@ class TestMatsariCalibSite(TestDielmoCalibSite, unittest.TestCase):
         Reshape vectorized version to test nested-for-loop version
         """
         x = pd.concat({'sim': sim, 'ref': ref}, axis=1).dropna()
-        return beta_binomial(x.ref['Person Years'].values, x.sim['Person Years'].values,
-                             x.ref.Incidents.values, x.sim.Incidents.values)
+        return beta_binomial(x.ref.Trials.values, x.sim.Trials.values,
+                             x.ref.Observations.values, x.sim.Observations.values)
 
 
 if __name__ == '__main__':

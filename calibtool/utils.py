@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import numpy as np
 
@@ -23,6 +24,9 @@ class NumpyEncoder(json.JSONEncoder):
 
         elif isinstance(obj, np.int64):
             return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
+
+        elif isinstance(obj, datetime.date):
+            return obj.isoformat()  # because JSON can't serialize dates by default e.g. datetime.date(2000, 1, 1)
 
         # Let the base class default method raise the TypeError
         return json.JSONEncoder(self, obj)
