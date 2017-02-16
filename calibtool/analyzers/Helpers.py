@@ -289,9 +289,9 @@ def aggregate_on_index(df, index, keep=slice(None)):
     """
 
     if isinstance(index, pd.MultiIndex):
-       levels = index.levels
+        levels = index.levels
     else:
-       levels = [index]  # Only one "level" for Index. Put into list for generic pattern as for MultiIndex
+        levels = [index]  # Only one "level" for Index. Put into list for generic pattern as for MultiIndex
 
     for ix in levels:
         logger.debug("%s (%s) : %s" % (ix.name, ix.dtype, ix.values))
@@ -327,7 +327,7 @@ def aggregate_on_index(df, index, keep=slice(None)):
     # Aggregate on reference MultiIndex, keeping specified channels and dropping missing data
     if keep != slice(None):
         df = df.groupby([ix.name for ix in levels]).sum()[keep].dropna()
-    logger.debug('Data aggregated on MultiIndex levels:\n%s', df.head(15))
+    logger.debug('Data aggregated/joined on MultiIndex levels:\n%s', df.head(15))
     return df
 
 
