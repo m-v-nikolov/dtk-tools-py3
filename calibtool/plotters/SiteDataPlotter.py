@@ -9,7 +9,7 @@ from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.visualize import combine_by_site
 from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 
-sns.set_style('white')
+sns.set_style('white', {'axes.linewidth': 0.5})
 
 logger = logging.getLogger(__name__)
 
@@ -72,13 +72,13 @@ class SiteDataPlotter(BasePlotter):
             for sample, rank in zip(samples['sample'], samples['rank']):
                 fname = os.path.join(self.plots_directory, site_analyzer, 'rank%d' % rank)
                 fig = plt.figure(fname, figsize=(4, 3))
-                plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
+                plt.subplots_adjust(left=0.2, bottom=0.15, right=0.95, hspace=0.4, wspace=0.3)
                 data = sims[sample]
                 try:
                     analyzer.plot_sim(fig, reference, data, x, y, '-o', color='#CB5FA4', alpha=1, linewidth=1)
                     analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
                 except AttributeError:
-                    ax = fig.add_subplot(111)
+                    ax = fig.gca()
                     ax.plot(data[x], data[y], '-o', color='#CB5FA4', alpha=1, linewidth=1)
                     ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
                     ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
@@ -91,8 +91,7 @@ class SiteDataPlotter(BasePlotter):
 
         fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
         fig = plt.figure(fname, figsize=(4, 3))
-        plt.subplots_adjust(left=0.15, bottom=0.15, right=0.95)
-        ax = fig.add_subplot(111)
+        plt.subplots_adjust(left=0.2, bottom=0.15, right=0.95, hspace=0.4, wspace=0.3)
         cmin, cmax = clim
 
         for iteration, samples in iter_samples.items():
@@ -106,12 +105,14 @@ class SiteDataPlotter(BasePlotter):
                     analyzer.plot_sim(fig, reference, data, x, y, '-', color=cm.Blues((result - cmin) / (cmax - cmin)),
                                       alpha=0.5, linewidth=0.5)
                 except AttributeError:
+                    ax = fig.gca()
                     ax.plot(data[x], data[y], '-', color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5,
                             linewidth=0.5)
                     ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
         try:
             analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
         except AttributeError:
+            ax = fig.gca()
             ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)

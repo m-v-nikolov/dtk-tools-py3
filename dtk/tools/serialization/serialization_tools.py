@@ -13,12 +13,14 @@ STATE_INFECTIOUS = 3
 
 def zero_infections(ser_date, ser_paths, ignore_nodeids=[], keep_humanids=[]):
 
-    for serpath in ser_paths :
+    for s, serpath in enumerate(ser_paths) :
+        print('processing simulation %d of %d' % (s+1, len(ser_paths)))
         serialization_files = [os.path.join(serpath, x) for x in os.listdir(serpath) if ('.dtk' in x and 'zero' not in x and ser_date in x)]
         for filename in serialization_files:
             root, ext = os.path.splitext(filename)
             output_filename = root + '_zero' + ext
-            if output_filename in os.listdir(serpath) :
+            if os.path.basename(output_filename) in os.listdir(serpath) :
+                print(os.path.basename(output_filename), 'already zeroed')
                 continue
             print('Reading: {0}'.format(filename))
             header, _, _, data = idtk.read_idtk_file(filename)
@@ -27,13 +29,12 @@ def zero_infections(ser_date, ser_paths, ignore_nodeids=[], keep_humanids=[]):
                     continue
                 zero_vector_infections(node)
                 zero_human_infections(node, keep_humanids)
-            root, ext = os.path.splitext(filename)
-            output_filename = root + '_zero' + ext
             print('Writing: {0}'.format(output_filename))
             idtk.write_idtk_file(header, data, output_filename)
             del data
 
     return
+
 
 def zero_vector_infections(node, remove=False):
 
@@ -60,6 +61,7 @@ def zero_vector_infections(node, remove=False):
 
     return
 
+
 def zero_human_infections(node, keep_ids) :
     for person in node['node']['individualHumans'] :
         if person['suid']['id'] not in keep_ids :
@@ -76,3 +78,14 @@ def zero_human_infections(node, keep_ids) :
             person['m_parasites_detected_by_new_diagnostic'] = 0
 
     return
+
+
+def remove_unused_campaign_events(cb, ser_date, last_date=100000) :
+
+    gone_list = []
+    for event in cb.campaign['Events'] :
+        if "Start_Day" in event :
+            if event["Start_Day"] < ser_date or event["Start_Day"] > last_date :
+                gone_list.append(event)
+    for event in gone_list :
+        cb.campaign['Events'].remove(event)

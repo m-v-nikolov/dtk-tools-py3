@@ -342,7 +342,8 @@ geographies = {
                                                    'Received_Test', 'Node_Sprayed', 'Received_Survey'],
 
                   "logLevel_NodeEventContext": "WARNING",  # UnregisterIndividualEventObserver
-                  "logLevel_SimulationEventContext": "ERROR",  # Discarding old event for t=...
+                  'logLevel_NodeEventCoordinator': 'WARNING',
+                  "logLevel_SimulationEventContext": "WARNING",  # Discarding old event for t=...
                   "logLevel_NodeLevelHealthTriggeredIV": "WARNING",  # NLHTI is listenting to ... events
                   "logLevel_StandardEventCoordinator": "WARNING",  # UpdateNodes distributed ... intervention to ...
                   "logLevel_VectorHabitat": "WARNING",
@@ -351,6 +352,13 @@ geographies = {
                   "logLevel_MosquitoRelease": "WARNING",
                   "logLevel_VectorPopulationIndividual": "WARNING",
                   "logLevel_LarvalHabitatMultiplier": "WARNING",
+                  "logLevel_BroadcastEventToOtherNodes": 'WARNING',
+                  'logLevel_NodeLevelHealthTriggeredIV': 'WARNING',
+
+                  "Allow_NodeID_Zero" : 1,
+                  "Enable_Default_Reporting": 0, # turn off inset chart
+                  "Disable_IP_Whitelist": 1,
+                  "Disable_NP_Whitelist": 1,
 
                   "Enable_Climate_Stochasticity": 0,  # daily in raw data series
                   "Climate_Model": "CLIMATE_BY_DATA",
