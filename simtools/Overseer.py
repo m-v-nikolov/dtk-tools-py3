@@ -1,3 +1,4 @@
+import gc
 import multiprocessing
 import sys
 import threading
@@ -114,6 +115,7 @@ if __name__ == "__main__":
 
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
+                gc.collect()
 
         # Cleanup the analyze thread list
         for ap in analysis_threads:

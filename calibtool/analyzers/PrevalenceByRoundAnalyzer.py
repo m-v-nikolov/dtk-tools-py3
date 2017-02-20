@@ -20,6 +20,7 @@ class PrevalenceByRoundAnalyzer(BaseAnalyzer):
     data_group_names = ['sample', 'sim_id', 'channel']
 
     def __init__(self, name, weight):
+        super(PrevalenceByRoundAnalyzer, self).__init__(name, weight)
         self.name = name
         self.weight = weight
         self.site = None

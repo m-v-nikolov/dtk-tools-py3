@@ -19,6 +19,8 @@ from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id
+from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
 logger = utils.init_logging('Commands')
 
@@ -122,7 +124,7 @@ def status(args, unknownArgs):
     # No matter what check the overseer
     from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
     BaseExperimentManager.check_overseer()
-    
+
     if args.active:
         logger.info('Getting status of all active experiments.')
         active_experiments = DataStore.get_active_experiments()
@@ -135,7 +137,7 @@ def status(args, unknownArgs):
 
     exp_manager = reload_experiment(args)
     if args.repeat:
-        exp_manager.wait_for_finished(verbose=True, sleep_time=10)
+        exp_manager.wait_for_finished(verbose=True, sleep_time=20)
     else:
         states, msgs = exp_manager.get_simulation_status()
         exp_manager.print_status(states, msgs)
@@ -365,8 +367,8 @@ def sync(args, unknownArgs):
     """
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
-    utils.COMPS_login(sp.get('server_endpoint'))
-    from COMPS.Data import Experiment, QueryCriteria
+    endpoint = sp.get('server_endpoint')
+    utils.COMPS_login(endpoint)
 
     exp_to_save = list()
     exp_deleted = 0
@@ -375,7 +377,7 @@ def sync(args, unknownArgs):
     for exp in DataStore.get_experiments(None):
         if exp.location == "HPC":
             try:
-                _ = Experiment.get(exp.exp_id)
+                _ = get_experiment_by_id(exp.exp_id)
             except:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
@@ -386,24 +388,26 @@ def sync(args, unknownArgs):
 
     if exp_id:
         # Create a new experiment
-        experiment = create_experiment(exp_id, sp, True)
+        experiment = COMPS_experiment_to_local_db(exp_id=exp_id,
+                                                  endpoint=endpoint,
+                                                  verbose=True,
+                                                  save_new_experiment=False)
         # The experiment needs to be saved
         if experiment:
             exp_to_save.append(experiment)
     else:
-        # By default only get simulations created in the last month
+        # By default only get experiments created in the last month
         # day_limit = args.days if args.days else day_limit_default
         day_limit = 30
         today = datetime.date.today()
         limit_date = today - datetime.timedelta(days=int(day_limit))
-        limit_date_str = limit_date.strftime("%Y-%m-%d")
-
-        exps = Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (sp.get('user'), limit_date_str)))
 
         # For each of them, check if they are in the db
-        for exp in exps:
+        for exp in get_experiments_per_user_and_date(sp.get('user'), limit_date):
             # Create a new experiment
-            experiment = create_experiment(str(exp.id), sp)
+            experiment = COMPS_experiment_to_local_db(exp_id=str(exp.id),
+                                                      endpoint=endpoint,
+                                                      save_new_experiment=False)
 
             # The experiment needs to be saved
             if experiment:
@@ -419,64 +423,6 @@ def sync(args, unknownArgs):
 
     # Start overseer
     BaseExperimentManager.check_overseer()
-
-
-def create_experiment(exp_id, sp, verbose=False):
-    """
-    Create a new experiment in local db given COMPS experiment id
-    If experiment exists in local db, just update it
-    """
-    from COMPS.Data import Experiment, QueryCriteria
-
-    experiment = DataStore.get_experiment(exp_id)
-    if experiment and experiment.is_done():
-        if verbose:
-            print "Experiment ('%s') already exists in local db." % exp_id
-        # Do not bother with finished experiments
-        return None
-
-    try:
-        exp_comps = Experiment.get(exp_id)
-    except:
-        if verbose:
-            print "The experiment ('%s') doesn't exist in COMPS." % exp_id
-        return None
-
-    # Case: experiment doesn't exist in local db
-    if not experiment:
-        # Cast the creation_date
-        experiment = DataStore.create_experiment(exp_id=str(exp_comps.id),
-                                                 suite_id=str(exp_comps.suite_id) if exp_comps.suite_id else None,
-                                                 exp_name=exp_comps.name,
-                                                 date_created=exp_comps.date_created,
-                                                 location='HPC',
-                                                 selected_block='HPC',
-                                                 endpoint=sp.get('server_endpoint'))
-
-    # Note: experiment may be new or comes from local db
-    # Get associated simulations of the experiment
-    sims = exp_comps.get_simulations(QueryCriteria().select(['id', 'state', 'date_created']).select_children('tags'))
-
-    # Skip empty experiments or experiments that have the same number of sims
-    if len(sims) == 0 or len(sims) == len(experiment.simulations):
-        if verbose:
-            if len(sims) == 0:
-                print "Skip empty experiment ('%s')." % exp_id
-            elif len(sims) == len(experiment.simulations):
-                print "Skip experiment ('%s') since local one has the same number of simulations." % exp_id
-        return None
-
-    # Go through the sims and create them
-    for sim in sims:
-        # Create the simulation
-        simulation = DataStore.create_simulation(id=str(sim.id),
-                                                 status=sim.state.name,
-                                                 tags=sim.tags,
-                                                 date_created=sim.date_created)
-        # Add to the experiment
-        experiment.simulations.append(simulation)
-
-    return experiment
 
 
 # List experiments from local database
@@ -533,14 +479,17 @@ def reload_experiment(args=None, try_sync=True):
     """
     exp_id = args.expId if args else None
     exp = DataStore.get_most_recent_experiment(exp_id)
-    if exp is None:
-        if try_sync and exp_id:
-            subprocess.call(['dtk','sync','-id',args.expId])
-            return reload_experiment(args,False)
-        else:
-            raise Exception("No experiment found with this ID Locally or on COMPS or no experiment running.")
-    else:
-        return ExperimentManagerFactory.from_experiment(exp)
+    if not exp and try_sync and exp_id:
+        try:
+            exp = retrieve_experiment(exp_id,verbose=False)
+        except:
+            exp = None
+
+    if not exp:
+        logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
+        exit()
+
+    return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
@@ -556,24 +505,31 @@ def main():
 
     # 'dtk run' options
     parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
-    parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
+    parser_run.add_argument(dest='config_name', default=None,
+                            help='Name of configuration python script for custom running of simulation.')
     parser_run.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_run.add_argument('-b', '--blocking', action='store_true', help='Block the thread until the simulations are done.')
+    parser_run.add_argument('-b', '--blocking', action='store_true',
+                            help='Block the thread until the simulations are done.')
     parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
-    parser_run.add_argument('-a', '--analyzer', default=None, help='Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
+    parser_run.add_argument('-a', '--analyzer', default=None,
+                            help='Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
     parser_run.set_defaults(func=run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID or name.')
+    parser_status = subparsers.add_parser('status',
+                                          help='Report status of simulations in experiment specified by ID or name.')
     parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_status.add_argument('-r', '--repeat', action='store_true', help='Repeat status check until job is done processing.')
-    parser_status.add_argument('-a', '--active', action='store_true',help='Get the status of all active experiments (mutually exclusive to all other options).')
+    parser_status.add_argument('-r', '--repeat', action='store_true',
+                               help='Repeat status check until job is done processing.')
+    parser_status.add_argument('-a', '--active', action='store_true',
+                               help='Get the status of all active experiments (mutually exclusive to all other options).')
     parser_status.set_defaults(func=status)
 
     # 'dtk list' options
-    parser_list = subparsers.add_parser('list', help='Report recent 20 list of simulations in experiment.')
+    parser_list = subparsers.add_parser('list',
+                                        help='Report recent 20 list of simulations in experiment.')
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
     parser_list.add_argument('-n', '--number',  help='Get given number recent experiment list', dest='limit')
     parser_list.set_defaults(func=db_list)
@@ -581,7 +537,8 @@ def main():
     # 'dtk kill' options
     parser_kill = subparsers.add_parser('kill', help='Kill most recent running experiment specified by ID or name.')
     parser_kill.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_kill.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to kill.')
+    parser_kill.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                             help='Process or job IDs of simulations to kill.')
     parser_kill.set_defaults(func=kill)
 
     # 'dtk exterminate' options
@@ -590,9 +547,11 @@ def main():
     parser_exterminate.set_defaults(func=exterminate)
 
     # 'dtk delete' options
-    parser_delete = subparsers.add_parser('delete', help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+    parser_delete = subparsers.add_parser('delete',
+                                          help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
     parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_delete.add_argument('--hard', action='store_true', help='Additionally delete working directory or server entities for experiment.')
+    parser_delete.add_argument('--hard', action='store_true',
+                               help='Additionally delete working directory or server entities for experiment.')
     parser_delete.set_defaults(func=delete)
 
     # 'dtk clean' options
@@ -603,26 +562,36 @@ def main():
     # 'dtk stdout' options
     parser_stdout = subparsers.add_parser('stdout', help='Print stdout from first simulation in selected experiment.')
     parser_stdout.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_stdout.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to print.')
-    parser_stdout.add_argument('-c', '--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_stdout.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                               help='Process or job IDs of simulations to print.')
+    parser_stdout.add_argument('-c', '--comps', action='store_true',
+                               help='Use COMPS asset service to read output files (default is direct file access).')
     parser_stdout.add_argument('-e', '--error', action='store_true', help='Print stderr instead of stdout.')
-    parser_stdout.add_argument('--failed', action='store_true', help='Get the stdout for the first failed simulation in the selected experiment.')
-    parser_stdout.add_argument('--succeeded', action='store_true', help='Get the stdout for the first succeeded simulation in the selected experiment.')
+    parser_stdout.add_argument('--failed', action='store_true',
+                               help='Get the stdout for the first failed simulation in the selected experiment.')
+    parser_stdout.add_argument('--succeeded', action='store_true',
+                               help='Get the stdout for the first succeeded simulation in the selected experiment.')
     parser_stdout.set_defaults(func=stdout)
 
     # 'dtk progress' options
     parser_progress = subparsers.add_parser('progress', help='Print progress from simulation(s) in experiment.')
     parser_progress.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_progress.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to print.')
-    parser_progress.add_argument('-c', '--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_progress.add_argument('-s', '--simIds', dest='simIds', default=None, nargs='+',
+                                 help='Process or job IDs of simulations to print.')
+    parser_progress.add_argument('-c', '--comps', action='store_true',
+                                 help='Use COMPS asset service to read output files (default is direct file access).')
     parser_progress.set_defaults(func=progress)
 
     # 'dtk analyze' options
-    parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')
+    parser_analyze = subparsers.add_parser('analyze',
+                                           help='Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_analyze.add_argument(dest='config_name', default=None, help='Python script or builtin analyzer name for custom analysis of simulations.')
-    parser_analyze.add_argument('-c', '--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
-    parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
+    parser_analyze.add_argument(dest='config_name', default=None,
+                                help='Python script or builtin analyzer name for custom analysis of simulations.')
+    parser_analyze.add_argument('-c', '--comps', action='store_true',
+                                help='Use COMPS asset service to read output files (default is direct file access).')
+    parser_analyze.add_argument('-f', '--force', action='store_true',
+                                help='Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func=analyze)
 
     # 'dtk analyze-list' options

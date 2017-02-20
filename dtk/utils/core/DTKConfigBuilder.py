@@ -33,6 +33,7 @@ from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools import utils
 from simtools.SimConfigBuilder import SimConfigBuilder
+from simtools.utils import NumpyEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -467,7 +468,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                         f.write(content)
         """
 
-        dump = lambda content: json.dumps(content, sort_keys=True, indent=4).strip('"')
+        dump = lambda content: json.dumps(content, sort_keys=True, indent=4, cls=NumpyEncoder).strip('"')
 
         write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
 

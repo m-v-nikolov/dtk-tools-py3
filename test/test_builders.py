@@ -1,8 +1,9 @@
 import logging
+import os
 import unittest
 
 from calibtool.study_sites.set_calibration_site import set_calibration_site
-from simtools.ModBuilder import ModBuilder, ModFn, SingleSimulationBuilder
+from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, ModFn
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import RunNumberSweepBuilder, GenericSweepBuilder
@@ -10,12 +11,12 @@ from dtk.vector.study_sites import configure_site
 from dtk.vector.species import get_species_param, set_species_param
 from dtk.interventions.malaria_drugs import get_drug_param, set_drug_param
 
-
 class TestBuilders(unittest.TestCase):
 
     def setUp(self):
         ModBuilder.metadata = {}  # ModList constructor resets this in base class
         self.cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
 
     def tearDown(self):
         pass
@@ -39,7 +40,8 @@ class TestBuilders(unittest.TestCase):
         self.assertEqual(ModBuilder.metadata, {'_site_': 'Namawala', 'population_scale': 1})
 
     def test_calibsite_fn(self):
-        s = 'Namawala'
+        from calibtool.study_sites.NamawalaCalibSite import NamawalaCalibSite
+        s = NamawalaCalibSite()
         fn = ModFn(set_calibration_site, s)
         fn(self.cb)
         self.assertEqual(self.cb.campaign['Events'][0]['Event_Coordinator_Config']['Intervention_Config']['class'], 'InputEIR')
@@ -143,7 +145,8 @@ class TestBuilders(unittest.TestCase):
 
     def test_listed_events(self):
         # Create a builder based on the files
-        builder = DTKConfigBuilder.from_files('input/customevents/configbad.json','input/customevents/campaign.json')
+        builder = DTKConfigBuilder.from_files(os.path.join(self.input_path,'customevents','configbad.json'),
+                                              os.path.join(self.input_path,'customevents','campaign.json'))
 
         # Call the file writter
         def fake_write(name,content):

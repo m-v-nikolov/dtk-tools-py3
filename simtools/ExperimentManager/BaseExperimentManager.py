@@ -20,7 +20,8 @@ from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging, get_os
+from simtools.utils import init_logging
+from simtools.Utilities.General import get_os
 
 logger = init_logging('ExperimentManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -48,9 +49,9 @@ class BaseExperimentManager:
 
         self.analyzers = []
         self.parsers = {}
-        if self.experiment and self.experiment.analyzers:
-            for analyzer in experiment.analyzers:
-                self.add_analyzer(dill.loads(analyzer.analyzer))
+        # if self.experiment and self.experiment.analyzers:
+        #     for analyzer in experiment.analyzers:
+        #         self.add_analyzer(dill.loads(analyzer.analyzer))
 
         self.assets_service = None
         self.exp_builder = None
@@ -294,7 +295,7 @@ class BaseExperimentManager:
 
         # Separate the experiment builder generator into batches
         sim_per_batch = int(self.setup.get('sims_per_thread',50))
-        max_creator_processes = max(min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-2),1)
+        max_creator_processes = max(min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-1),1)
         work_list = list(self.exp_builder.mod_generator)
         total_sims = len(work_list)
 
@@ -451,6 +452,10 @@ class BaseExperimentManager:
         analyzer.exp_id = self.experiment.exp_id
         analyzer.exp_name = self.experiment.exp_name
         analyzer.working_dir = working_dir if working_dir else os.getcwd()
+
+        # Initialize
+        analyzer.initialize()
+
         # Add to the list
         self.analyzers.append(analyzer)
 

@@ -15,7 +15,7 @@ To install the dtk-tools, first clone the repository:
 git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 ```
 
-Make sure you have Python 2.7 installed (available [here](https://www.python.org/downloads/)).
+Make sure you have **Python 2.7 x64** installed (available [here](https://www.python.org/downloads/)).
 
 From a command-prompt, run the following from the **dtk-tools** directory:
 ```
@@ -58,7 +58,7 @@ Install virtualenv:
 pip install virtualenv
 ```
 
-Then navigate inside the `NotreDameRelease` directory and create an IDM virtual environment:
+Then navigate inside the`dtk-tools` directory and create an IDM virtual environment:
 ```
 virtualenv idm
 ```
@@ -70,10 +70,10 @@ source ./idm/bin/activate
 
 Make sure you are in the virtual environment by checking if the prompt displays `(idm)` at the begining as shown:
 ```
-(idm) my-computer:NotreDameRelease
+(idm) my-computer:dtk-tools
 ```
 
-Install pyCOMPS (wheel available here [https://github.com/InstituteforDiseaseModeling/PythonDependencies/raw/master/pyCOMPS-1.0-py2.py3-none-any.whl])
+Install pyCOMPS (wheel available [here](https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0-py2.py3-none-any.whl))
 ```
 pip install pyCOMPS-1.0-py2.py3-none-any.whl
 ```
@@ -82,10 +82,6 @@ Navigate inside the `dtk-tools` folder and install dtk-tools:
 ```
 python setup.py
 ```
-
-**Note:** EMOD DTK is required to work with dtk-tools. You can download the quick start at: https://github.com/InstituteforDiseaseModeling/EMOD-QuickStart
-
-If you plan to run simulations on COMPS, you will also need the pyCOMPS package. Available [here](https://github.com/InstituteforDiseaseModeling/pyCOMPS).
 
 #### Linux users
 Linux users, you need to install:

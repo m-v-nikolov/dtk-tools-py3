@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import unittest
+from ConfigParser import ConfigParser
 from subprocess import Popen, PIPE, STDOUT
 
 from argparse import Namespace
@@ -29,13 +30,20 @@ class TestCommands(unittest.TestCase):
     def setUp(self):
         self.current_cwd = os.getcwd()
         self.calibration_dir = os.path.join(self.current_cwd, 'calibration')
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
 
         if os.path.exists(self.calibration_dir):
             shutil.rmtree(self.calibration_dir)
 
         os.mkdir(self.calibration_dir)
 
-        shutil.copy('input/dummy_calib.py', 'calibration')
+        cp = ConfigParser()
+        cp.add_section('LOCAL')
+        cp.set('LOCAL', 'type', 'LOCAL')
+        cp.set('LOCAL', 'input_root', os.path.join(self.input_path, 'calibration_input'))
+        cp.write(open(os.path.join(self.calibration_dir, 'simtools.ini'), 'w'))
+
+        shutil.copy(os.path.join(self.input_path,'dummy_calib.py'), 'calibration')
 
     def tearDown(self):
         # Change the dir back to normal
@@ -186,7 +194,7 @@ class TestCommands(unittest.TestCase):
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
-        with open('test_dummy_calibration/CalibManager.json', 'r') as fp:
+        with open(os.path.join(self.current_cwd,'test_dummy_calibration','CalibManager.json'), 'r') as fp:
             calib_data = json.load(fp)
 
         # scenario: resume from farthest point by default #
@@ -656,7 +664,7 @@ class TestIterationState(unittest.TestCase):
     def example_settings(self):
         self.state.parameters = dict(values=[[0, 1], [2, 3], [4, 5]], names=['p1', 'p2'])
         prior = MultiVariatePrior.by_param(a=uniform(loc=0, scale=2))
-        self.state.next_point = IMIS(prior).get_current_state()
+        self.state.next_point = IMIS(prior).get_state()
         self.state.simulations = {
             'sims': {'id1': {'p1': 1, 'p2': 2},
                      'id2': {'p1': 3, 'p2': 4}}}

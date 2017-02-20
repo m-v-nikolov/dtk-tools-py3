@@ -24,6 +24,9 @@ class SimulationOutputParser(threading.Thread):
         self.selected_data = {}
         self.semaphore = semaphore
 
+        # If all the analyzers present call for deactivating the parsing -> do it
+        self.parse = any([a.parse for a in analyzers])
+
     def run(self):
         try:
             # list of output files needed by any analysis
@@ -64,7 +67,9 @@ class SimulationOutputParser(threading.Thread):
 
     def load_single_file(self, filename, *args):
         file_extension = os.path.splitext(filename)[1][1:].lower()
-        if file_extension == 'json':
+        if not self.parse:
+            self.load_raw_file(filename, *args)
+        elif file_extension == 'json':
             logging.debug('reading JSON')
             self.load_json_file(filename, *args)
         elif file_extension == 'csv':
@@ -85,6 +90,10 @@ class SimulationOutputParser(threading.Thread):
     def load_json_file(self, filename, *args):
         with open(self.get_path(filename)) as json_file:
             self.raw_data[filename] = json.loads(json_file.read())
+
+    def load_raw_file(self, filename, *args):
+        with open(self.get_path(filename)) as raw_file:
+            self.raw_data[filename] = raw_file.read()
 
     def load_csv_file(self, filename, *args):
         with open(self.get_path(filename)) as csv_file:
@@ -179,8 +188,9 @@ class CompsDTKOutputParser(SimulationOutputParser):
         if self.sim_dir_map is not None:
             super(CompsDTKOutputParser, self).load_csv_file(filename)
         else:
-            self.raw_data[filename] = pd.read_csv(str(args[0]), skipinitialspace=True)
-            #self.raw_data[filename] = args[0].tostring()
+            from StringIO import StringIO
+            csvstr = StringIO(args[0])
+            self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
 
     def load_xlsx_file(self, filename, *args):
         if self.sim_dir_map is not None:
@@ -195,6 +205,12 @@ class CompsDTKOutputParser(SimulationOutputParser):
             super(CompsDTKOutputParser, self).load_txt_file(filename)
         else:
             self.raw_data[filename] = str(args[0])
+
+    def load_raw_file(self, filename, *args):
+        if self.sim_dir_map is not None:
+            super(CompsDTKOutputParser, self).load_raw_file(filename)
+        else:
+            self.raw_data[filename] = args[0]
 
     def load_bin_file(self, filename, *args):
         if self.sim_dir_map is not None:

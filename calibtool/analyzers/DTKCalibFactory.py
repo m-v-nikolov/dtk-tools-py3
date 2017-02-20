@@ -2,7 +2,6 @@ import importlib
 
 from calibtool.CalibSite import CalibSite
 
-from calibtool.analyzers.ClinicalIncidenceByAgeCohortAnalyzer import ClinicalIncidenceByAgeCohortAnalyzer
 from calibtool.analyzers.PrevalenceByRoundAnalyzer import PrevalenceByRoundAnalyzer
 from calibtool.analyzers.PositiveFractionByDistanceAnalyzer import PositiveFractionByDistanceAnalyzer
 
@@ -11,9 +10,8 @@ class DTKCalibFactory(object):
 
     @staticmethod
     def get_analyzer(name, weight=1):
-        if name == 'ClinicalIncidenceByAgeCohortAnalyzer':
-            return ClinicalIncidenceByAgeCohortAnalyzer(name, weight)
-        elif name == 'PrevalenceByRoundAnalyzer':
+        print "/!\\ The DTKCalibFactory is getting deprecated and will be removed in the next dtk-tools version! Please use the new way of defining site and analyzers as shown in examples\example_full_calibration.py /!\\"
+        if name == 'PrevalenceByRoundAnalyzer':
             return PrevalenceByRoundAnalyzer(name, weight)
         elif name == 'PositiveFractionByDistanceAnalyzer':
             return PositiveFractionByDistanceAnalyzer(name, weight)
@@ -28,6 +26,7 @@ class DTKCalibFactory(object):
 
     @staticmethod
     def get_site(name, analyzers):
+        print "/!\\ The DTKCalibFactory is getting deprecated and will be removed in the next dtk-tools version! Please use the new way of defining sites and analyzers as shown in examples\example_full_calibration.py /!\\"
         try:
             mod = importlib.import_module('calibtool.study_sites.site_%s' % name)
             return CalibSite.from_setup_functions(

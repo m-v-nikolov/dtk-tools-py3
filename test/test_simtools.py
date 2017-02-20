@@ -5,7 +5,7 @@ import unittest
 from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.ModBuilder import ModBuilder, ModFn, SingleSimulationBuilder, RunNumberSweepBuilder
+from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder, ModFn
 from simtools.SetupParser import SetupParser
 from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
 
@@ -15,6 +15,9 @@ class TestConfigBuilder(unittest.TestCase):
     def setUp(self):
         self.cb = SimConfigBuilder.from_defaults('DUMMY')
         self.setup = SetupParser()
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        self.dummy_exe_folder = os.path.join(self.input_path, 'dummy_exe_folder')
+        self.another_dummy_exe_folder = os.path.join(self.input_path, 'another_dummy_exe_folder')
 
     def test_kwargs(self):
         self.assertEqual(self.cb.get_param('Simulation_Type'), 'DUMMY')
@@ -45,14 +48,14 @@ class TestConfigBuilder(unittest.TestCase):
     def test_stage_exe(self):
         local_setup = dict(self.setup.items())
 
-        file1 = 'input/dummy_exe_folder/dummy_exe.txt'
+        file1 = os.path.join(self.dummy_exe_folder,'dummy_exe.txt')
         md5 = utils.get_md5(file1)
         self.cb.stage_executable(file1, local_setup)
         staged_dir = os.path.join(self.setup.get('bin_staging_root'), md5)
         staged_path = os.path.join(staged_dir, 'dummy_exe.txt')
         self.assertTrue(os.path.exists(staged_path))
 
-        file2 = 'input/another_dummy_exe_folder/dummy_exe.txt'
+        file2 = os.path.join(self.another_dummy_exe_folder,'dummy_exe.txt')
         os.chmod(file2, stat.S_IREAD)  # This is not writeable, but should not error because it isn't copied
         another_md5 = utils.get_md5(file2)
         self.cb.stage_executable(file2, local_setup)
@@ -84,6 +87,7 @@ class TestSetupParser(unittest.TestCase):
 
     def setUp(self):
         self.cwd = os.getcwd()
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
         SetupParser.selected_block = None
         SetupParser.setup_file = None
 
@@ -104,7 +108,7 @@ class TestSetupParser(unittest.TestCase):
         self.assertEqual(sp.selected_block, 'LOCAL')
 
         # Fallback value coming from overlay
-        os.chdir(os.path.abspath('input'))
+        os.chdir(self.input_path)
         SetupParser.selected_block = None
         SetupParser.setup_file = None
         sp = SetupParser(selected_block="BAD_BLOCK", fallback="LOCAL2")
@@ -130,7 +134,7 @@ class TestSetupParser(unittest.TestCase):
         self.assertRaises(ValueError, sp.get, 'WRONG')
 
     def test_block_selection(self):
-        os.chdir(os.path.abspath('input'))
+        os.chdir(self.input_path)
         # Pass a block name
         sp = SetupParser('HPC')
         self.assertEqual(sp.selected_block, 'HPC')
@@ -151,7 +155,7 @@ class TestSetupParser(unittest.TestCase):
         self.assertEqual(sp.selected_block, 'HPC')
 
     def test_overlay_file_cwd(self):
-        os.chdir(os.path.abspath('input'))
+        os.chdir(self.input_path)
         sp = SetupParser('TEST')
 
         # We have the TEST selected
@@ -173,10 +177,9 @@ class TestSetupParser(unittest.TestCase):
         self.assertEqual(sp.get('max_threads'), str(1))
 
     def test_overlay_file_with_path(self):
-        sp = SetupParser('DUMMY','input/dummy_ini.ini')
+        sp = SetupParser('DUMMY',os.path.join(self.input_path,'dummy_ini.ini'))
         self.assertEqual(sp.get('max_threads'),str(1000))
         self.assertEqual(sp.get('type'),'LOCAL')
-
 
 
 class TestBuilders(unittest.TestCase):
@@ -220,7 +223,8 @@ class TestLocalExperimentManager(unittest.TestCase):
     nsims = 3
 
     def test_run(self):
-        model_file = 'input/dummy_model.py'
+        input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        model_file = os.path.join(input_path, 'dummy_model.py')
         local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL')
         local_manager.run_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'),
                                       exp_builder=RunNumberSweepBuilder(self.nsims))

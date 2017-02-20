@@ -22,10 +22,12 @@ class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
     data_group_names = ['sample', 'sim_id', 'channel']
 
     def __init__(self, name, weight):
+        super(PositiveFractionByDistanceAnalyzer, self).__init__(name, weight)
         self.name = name
         self.weight = weight
         self.site = None
         self.setup = {}
+        self.ignore_nodes = []
 
     def set_site(self, site):
         '''
@@ -65,8 +67,10 @@ class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
         pop_data = get_spatial_report_data_at_date(parser.raw_data[self.filenames[1]], self.testday)
         pop_data.rename(columns={ 'data' : 'pop' } , inplace=True)
         df = pd.merge(prev_data, pop_data, on='node')
+
         if any(self.ignore_nodes) :
             df = df[~df['node'].isin(self.ignore_nodes)]
+            
         df['pos'] = df['prev']*df['pop']
         ref_distance = self.reference['distances']
         

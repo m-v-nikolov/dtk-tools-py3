@@ -1,41 +1,39 @@
 # Execute directly: 'python example_calibration.py'
 # or via the calibtool.py script: 'calibtool run example_calibration.py'
-
-from scipy.stats import uniform
-
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
 from calibtool.algo.IMIS import IMIS
-from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-
+from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
-analyzer = DTKCalibFactory.get_analyzer(
-    'ClinicalIncidenceByAgeCohortAnalyzer', weight=1)
+sites = [DielmoCalibSite()]
 
-sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer])]
-
-prior = MultiVariatePrior.by_param(
-    MSP1_Merozoite_Kill_Fraction=uniform(loc=0.4, scale=0.3),  # from 0.4 to 0.7
-    Nonspecific_Antigenicity_Factor=uniform(loc=0.1, scale=0.8))  # from 0.1 to 0.9
+prior = MultiVariatePrior.by_range(
+    Antigen_Switch_Rate_LOG=('linear', -10, -8),
+)
 
 plotters = [LikelihoodPlotter(True), SiteDataPlotter(True)]
 
-def sample_point_fn(cb, param_values):
+def sample_point_fn(cb, sample_dimension_values):
     '''
     A simple example function that takes a list of sample-point values
     and sets parameters accordingly using the parameter names from the prior.
     Note that more complicated logic, e.g. setting campaign event coverage or habitat abundance by species,
     can be encoded in a similar fashion using custom functions rather than the generic "set_param".
     '''
-    params_dict = dict(zip(prior.params, param_values))
-    params_dict['Simulation_Duration'] = 365  # shorter for quick test
-    return cb.update_params(params_dict)
+    sample_point = prior.to_dict(sample_dimension_values)
+    params_to_update = dict()
+    params_to_update['Simulation_Duration'] = 365
+    for sample_dimension_name, sample_dimension_value in sample_point.items():
+        param_name = sample_dimension_name.replace('_LOG', '')
+        params_to_update[param_name] = pow(10, sample_dimension_value)
+
+    return cb.update_params(params_to_update)
 
 
 next_point_kwargs = dict(initial_samples=3,
@@ -45,12 +43,11 @@ next_point_kwargs = dict(initial_samples=3,
 calib_manager = CalibManager(name='test_dummy_calibration',
                              setup=SetupParser(),
                              config_builder=cb,
-                             sample_point_fn=sample_point_fn,
+                             map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
                              next_point=IMIS(prior, **next_point_kwargs),
                              sim_runs_per_param_set=1,
                              max_iterations=2,
-                             num_to_plot=5,
                              plotters=plotters)
 
 run_calib_args = {}

@@ -2,6 +2,7 @@ import base64
 import json
 import numpy as np
 
+
 class NumpyEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -19,6 +20,10 @@ class NumpyEncoder(json.JSONEncoder):
             return dict(__ndarray__=data_b64,
                         dtype=str(obj.dtype),
                         shape=obj.shape)
+
+        elif isinstance(obj, np.int64):
+            return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder(self, obj)
 
@@ -33,3 +38,13 @@ def json_numpy_obj_hook(dct):
         data = base64.b64decode(dct['__ndarray__'])
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
+
+
+from enum import Enum
+
+class ResumePoint(Enum):
+    iteration_start = 0
+    commission = 1
+    analyze = 2
+    plot = 3
+    next_point = 4

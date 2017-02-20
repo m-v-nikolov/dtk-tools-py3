@@ -24,7 +24,7 @@ class BaseSimulationCreator(Process):
         # Extract the path we want from the setup
         # Cannot use self.setup because the selected_block selection is lost during forking
         self.lib_staging_root = utils.translate_COMPS_path(setup.get('lib_staging_root'))
-        self.asset_service = setup.get('use_comps_asset_svc',False)
+        self.asset_service = setup.getboolean('use_comps_asset_svc',False)
         self.dll_path = setup.get('dll_path')
         self.callback = callback
         self.created_simulations = []
@@ -36,6 +36,7 @@ class BaseSimulationCreator(Process):
             print("Exception during commission")
             import traceback
             traceback.print_exc()
+            exit()
 
     def process(self):
         self.pre_creation()

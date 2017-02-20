@@ -188,6 +188,23 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
 
 
 class CampaignTemplate(TaggedTemplate):
+    @classmethod
+    def from_files(cls, template_filepath, additional_filepaths_list, tag='__KP'):
+        # Read in template
+        logger.info("Reading template from file:" + template_filepath)
+        content = json2dict(template_filepath)
+
+        # Get the filename and create a TaggedTemplate
+        template_filename = os.path.basename(template_filepath)
+
+        for additional_filepath in additional_filepaths_list:
+            print additional_filepath
+            logger.info("Reading additional events from file:" + additional_filepath)
+            additional_content = json2dict(additional_filepath)
+            content['Events'] += additional_content['Events']
+
+        return cls(template_filename, content, tag)
+
     def set_params_and_modify_cb(self, params, cb):
         tags = self.set_params(params)
 
@@ -218,5 +235,6 @@ class DemographicsTemplate(TaggedTemplate):
                     "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s",
                     self.get_filename(), demog_filenames)
 
-        self.set_params(params)
+        tags = self.set_params(params)
         cb.add_input_file(self.filename, self.get_contents())
+        return tags

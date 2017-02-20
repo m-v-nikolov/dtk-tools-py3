@@ -10,7 +10,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from simtools.utils import get_os
+from simtools.Utilities.General import get_os
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -19,70 +19,71 @@ installed_packages = dict()
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
+dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
 requirements = OrderedDict([
     ('curses', {
         'platform': ['win'],
         'version': '2.2',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/curses-2.2-cp27-none-win_amd64.whl'
+        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('pyCOMPS', {
         'platform': ['win','lin','mac'],
         'version': '1.0',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0-py2.py3-none-any.whl'
+        'wheel': '%s/pyCOMPS-1.0-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl'
-    }),
-    ('numpy', {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.11.2+mkl',
-        'test': '>=',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/numpy-1.11.2+mkl-cp27-cp27m-win_amd64.whl'
+        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
-        'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/scipy-0.18.1-cp27-cp27m-win_amd64.whl'
+        'test': '>=',
+        'wheel': '%s/scipy-0.18.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('pandas', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
-        'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/pandas-0.18.1-cp27-cp27m-win_amd64.whl'
+        'version': '0.19.2',
+        'test': '>=',
+        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('numpy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.12.0+mkl',
+        'test': '>=',
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/psutil-4.3.1-cp27-cp27m-win_amd64.whl'
+        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('python-snappy', {
         'platform': ['win', 'lin'],
         'version': '0.5',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/python_snappy-0.5-cp27-none-win_amd64.whl'
+        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('seaborn', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.7.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/seaborn-0.7.1-py2.py3-none-any.whl'
+        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('statsmodels', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.6.1',
         'test': '==',
-        'wheel': 'https://institutefordiseasemodeling.github.io/PythonDependencies/statsmodels-0.6.1-cp27-none-win_amd64.whl'
+        'wheel': '%s/statsmodels-0.6.1-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '1.1.0b3',
+        'version': '1.1.5',
         'test': '=='
     }),
     ('npyscreen', {
@@ -106,7 +107,13 @@ requirements = OrderedDict([
     ('networkx', {
         'platform': ['win', 'lin', 'mac'],
     }),
+    ('patsy', {
+        'platform': ['win', 'lin', 'mac'],
+    }),
     ('dill', {
+        'platform': ['win', 'lin', 'mac'],
+    }),
+    ('enum34', {
         'platform': ['win', 'lin', 'mac'],
     })
 ])
@@ -361,7 +368,7 @@ def install_packages(my_os, reqs):
     from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
-              version='0.5',
+              version='0.6',
               description='Facilitating submission and analysis of simulations',
               url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
               author='Edward Wenger,'
@@ -370,14 +377,16 @@ def install_packages(my_os, reqs):
                      'Jaline Gerardin,'
                      'Milen Nikolov,'
                      'Aaron Roney,'
-                     'Zhaowei Du',
+                     'Zhaowei Du,'
+                     'Prashanth Selvaraj',
               author_email='ewenger@intven.com,'
                            'braybaud@intven.com,'
                            'dklein@idmod.org,'
                            'jgerardin@intven.com,'
                            'mnikolov@intven.com,'
                            'aroney@intven.com,'
-                           'zdu@intven.com',
+                           'zdu@intven.com,'
+                           'pselvaraj@intven.com',
               packages=find_packages(),
               install_requires=[],
               entry_points={
@@ -425,6 +434,11 @@ def handle_init():
         cp.add_section('EXAMPLE')
         cp.set('EXAMPLE', 'type', 'LOCAL')
         cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+    if not cp.has_section('EXAMPLEHPC'):
+        cp.add_section('EXAMPLEHPC')
+        cp.set('EXAMPLEHPC', 'type', 'HPC')
+        cp.set('EXAMPLEHPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
+        cp.set('EXAMPLEHPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
 
     cp.write(open(example_simtools, 'w'))
 
@@ -516,3 +530,4 @@ if __name__ == "__main__":
         exit()
 
     main()
+

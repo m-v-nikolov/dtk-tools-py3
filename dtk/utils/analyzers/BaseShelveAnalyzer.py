@@ -20,12 +20,14 @@ class BaseShelveAnalyzer(BaseAnalyzer):
         :param force_combine: Set True to recompute the combine() analysis step instead of retrieving results from the shelve-based cache
         :param verbose: Verbose if True
         """
+        super(BaseShelveAnalyzer, self).__init__()
         self.force_apply = force_apply
         self.force_combine = force_combine
         self.verbose = verbose
 
-        if self.force_apply and not self.force_combine and self.verbose:
-            print "force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache."
+        if self.force_apply and not self.force_combine:
+            if self.verbose:
+                print "force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache."
             self.force_combine = True
 
         self.shelve = None
@@ -70,12 +72,14 @@ class BaseShelveAnalyzer(BaseAnalyzer):
 
             self.shelve = shelve.open(self.shelve_file)
 
-            if self.force_apply and self.verbose:
-                print "User set force_apply = True, so clearing the shelve."
+            if self.force_apply:
+                if self.verbose:
+                    print "User set force_apply = True, so clearing the shelve."
                 self.shelve.clear()
 
         if 'status' in self.shelve:
-            if self.shelve['status'] in ['combine', 'finalize']:   # past apply, don't need to download any files
+            pass
+            if self.shelve['status'] in ['combine', 'finalize'] and not self.force_combine:   # past apply, don't need to download any files
                 if self.verbose:
                     print 'shelve status is %s, so returning False from filter' % self.shelve['status']
                 self.mutex.release()
@@ -128,6 +132,8 @@ class BaseShelveAnalyzer(BaseAnalyzer):
 
         self.shelve_write('status', 'finalize')
         self.shelve.close()
+        self.shelve = None
+        self.shelve_file = None
 
 
     def shelve_write(self, key, value):

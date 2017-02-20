@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 
 import sys
@@ -10,9 +11,11 @@ from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 
 class TestBaseTemplate(unittest.TestCase):
     def setUp(self):
-        self.campaign_tpl = 'input/templates/campaign_template.json'
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        self.campaign_tpl = os.path.join(self.input_path,'templates','campaign_template.json')
         template_content = json.load(open(self.campaign_tpl, 'rb'))
         self.bt = BaseTemplate('campaign_template.json', template_content)
+
 
     def test_basics(self):
         # Test the from_file
@@ -84,7 +87,8 @@ class TestBaseTemplate(unittest.TestCase):
 
 class TestConfigTemplate(unittest.TestCase):
     def setUp(self):
-        self.config_tpl='input/templates/config_template.json'
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        self.config_tpl = os.path.join(self.input_path,'templates','config_template.json')
         self.ct = ConfigTemplate.from_file(self.config_tpl)
 
     def test_class(self):
@@ -120,7 +124,8 @@ class TestConfigTemplate(unittest.TestCase):
 
 class TestTaggedTemplate(unittest.TestCase):
     def setUp(self):
-        self.campaign_tpl = 'input/templates/campaign_template_simple.json'
+        self.input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
+        self.campaign_tpl = os.path.join(self.input_path, 'templates','campaign_template_simple.json')
         self.tt = TaggedTemplate.from_file(self.campaign_tpl)
 
     def test_basics(self):

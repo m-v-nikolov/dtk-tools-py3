@@ -1,13 +1,16 @@
 import logging
 import os
 
+import copy
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import pandas as pd
 import seaborn as sns
+from simtools.OutputParser import CompsDTKOutputParser
+
+from calibtool.utils import ResumePoint
 
 from calibtool.plotters.BasePlotter import BasePlotter
-from calibtool.visualize import combine_by_site
-from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 
 sns.set_style('white', {'axes.linewidth': 0.5})
 
@@ -15,122 +18,112 @@ logger = logging.getLogger(__name__)
 
 
 class SiteDataPlotter(BasePlotter):
-    def __init__(self, combine_sites=True, prior_fn={}):
-        super(SiteDataPlotter, self).__init__(combine_sites, prior_fn)
+    def __init__(self, combine_sites=True, num_to_plot=5):
+        super(SiteDataPlotter, self).__init__(combine_sites)
+        self.num_to_plot = num_to_plot
 
-    def visualize(self, calib_manager):
-        self.all_results = calib_manager.all_results.reset_index()
-        logger.debug(self.all_results)
+    @property
+    def directory(self):
+        return self.get_plot_directory()
 
-        self.num_to_plot = calib_manager.num_to_plot
-        self.site_analyzer_names = calib_manager.site_analyzer_names()
-        self.state_for_iteration = calib_manager.state_for_iteration
-        self.plots_directory = os.path.join(calib_manager.name, '_plots')
+    def get_site_analyzer(self, site_name, analyzer_name):
+        for site in self.manager.sites:
+            if site_name != site.name:
+                continue
+            for analyzer in site.analyzers:
+                if analyzer_name == analyzer.name:
+                    return analyzer
+        raise Exception('Unable to find analyzer=%s for site=%s' % (analyzer_name, site_name))
+
+    def get_analyzer_data(self, iteration, site_name, analyzer_name):
+        site_analyzer = '%s_%s' % (site_name, analyzer_name)
+        return self.manager.state_for_iteration(iteration).analyzers[site_analyzer]
+
+    def visualize(self):
+        iteration_status = self.manager.status
+        if iteration_status != ResumePoint.next_point:
+            return  # Only plot once results are available
 
         if self.combine_sites:
-            for site, analyzers in self.site_analyzer_names.items():
-                self.plot_analyzers(site, analyzers, self.all_results)
+            for site_name, analyzer_names in self.site_analyzer_names.items():
+                sorted_results = self.all_results.sort_values(by='total', ascending=False).reset_index()
+                self.plot_analyzers(site_name, analyzer_names, sorted_results)
         else:
-            for site, analyzers in self.site_analyzer_names.items():
-                combine_by_site(site, analyzers, self.all_results)
-                sorted_results = self.all_results.sort_values(by='%s_total' % site, ascending=False)
-                self.plot_analyzers(site, analyzers, sorted_results)
+            for site_name, analyzer_names in self.site_analyzer_names.items():
+                self.combine_by_site(site_name, analyzer_names, self.all_results)
+                sorted_results = self.all_results.sort_values(by='%s_total' % site_name, ascending=False).reset_index()
+                self.plot_analyzers(site_name, analyzer_names, sorted_results)
 
-    def get_iteration_samples(self, results, subset=False):
-        subset = results.iloc[:self.num_to_plot] if subset else results
-        samples = {k: {'sample': v['sample'].tolist(),
-                       'rank': v.index.tolist(),
-                       'result': v['total'].tolist()}
-                   for k, v in subset.groupby('iteration')}
-        logger.debug(samples)
-        return samples
+         # Data needed for the LL_CSV
+        self.location = self.manager.location
+        self.iteration_state = self.manager.iteration_state
+        self.iteration = self.manager.iteration
+        self.comps_suite_id = self.manager.comps_suite_id
+        try:
+            self.write_LL_csv(self.manager.exp_manager.experiment)
+        except:
+            logger.info("Log likelihood CSV could not be created. Skipping...")
 
-    def plot_analyzers(self, site, analyzers, samples):
+    def plot_analyzers(self, site_name, analyzer_names, samples):
         cmin, cmax = samples['total'].describe()[['min', 'max']].tolist()
         cmin = cmin if cmin < cmax else cmax - 1  # avoid divide by zero in color range
 
-        best_samples = self.get_iteration_samples(samples, subset=True)
-        all_samples = self.get_iteration_samples(samples)
-        for analyzer in analyzers:
-            site_analyzer = '%s_%s' % (site, analyzer)
+        for analyzer_name in analyzer_names:
+            site_analyzer = '%s_%s' % (site_name, analyzer_name)
             try:
-                os.makedirs(os.path.join(self.plots_directory, site_analyzer))
+                os.makedirs(os.path.join(self.directory, site_analyzer))
             except:
                 pass
-            self.plot_best(site_analyzer, best_samples)
-            self.plot_all(site_analyzer, all_samples, clim=(cmin, cmax))
 
-    def plot_best(self, site_analyzer, iter_samples):
+            self.plot_best(site_name, analyzer_name, samples.iloc[:self.num_to_plot])
+            self.plot_all(site_name, analyzer_name, samples, clim=(cmin, cmax))
 
-        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
+    def plot_best(self, site_name, analyzer_name, samples):
 
-        for iteration, samples in iter_samples.items():
-            analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
-            reference = analyzer_data['reference']
-            sims = analyzer_data['sims']
-            x, y = analyzer_data['axis_names']
-            for sample, rank in zip(samples['sample'], samples['rank']):
-                fname = os.path.join(self.plots_directory, site_analyzer, 'rank%d' % rank)
+        analyzer = self.get_site_analyzer(site_name, analyzer_name)
+
+        for iteration, iter_samples in samples.groupby('iteration'):
+            analyzer_data = self.get_analyzer_data(iteration, site_name, analyzer_name)
+
+            for rank, sample in iter_samples['sample'].iteritems():  # index is rank
+                fname = os.path.join(self.directory, '%s_%s' % (site_name, analyzer_name), 'rank%d' % rank)
                 fig = plt.figure(fname, figsize=(4, 3))
-                plt.subplots_adjust(left=0.2, bottom=0.15, right=0.95, hspace=0.4, wspace=0.3)
-                data = sims[sample]
-                try:
-                    analyzer.plot_sim(fig, reference, data, x, y, '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                    analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
-                except AttributeError:
-                    ax = fig.gca()
-                    ax.plot(data[x], data[y], '-o', color='#CB5FA4', alpha=1, linewidth=1)
-                    ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
-                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
+
+                analyzer.plot_comparison(fig, analyzer_data['samples'][sample], fmt='-o', color='#CB5FA4', alpha=1, linewidth=1)
+                analyzer.plot_comparison(fig, analyzer_data['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+
+                fig.set_tight_layout(True)
+
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
-    def plot_all(self, site_analyzer, iter_samples, clim):
+    def plot_all(self, site_name, analyzer_name, samples, clim):
 
-        analyzer = DTKCalibFactory.get_analyzer(site_analyzer.split('_')[-1])
+        analyzer = self.get_site_analyzer(site_name, analyzer_name)
 
-        fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
+        fname = os.path.join(self.directory, '%s_%s_all' % (site_name, analyzer_name))
         fig = plt.figure(fname, figsize=(4, 3))
-        plt.subplots_adjust(left=0.2, bottom=0.15, right=0.95, hspace=0.4, wspace=0.3)
         cmin, cmax = clim
 
-        for iteration, samples in iter_samples.items():
-            analyzer_data = self.state_for_iteration(iteration).analyzers[site_analyzer]
-            reference = analyzer_data['reference']
-            sims = analyzer_data['sims']
-            x, y = analyzer_data['axis_names']
-            for sample, result in zip(samples['sample'], samples['result']):
-                data = sims[sample]
-                try:
-                    analyzer.plot_sim(fig, reference, data, x, y, '-', color=cm.Blues((result - cmin) / (cmax - cmin)),
-                                      alpha=0.5, linewidth=0.5)
-                except AttributeError:
-                    ax = fig.gca()
-                    ax.plot(data[x], data[y], '-', color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5,
-                            linewidth=0.5)
-                    ax.set(xlabel=x, ylabel=y)  # TODO: also cache ylim?
-        try:
-            analyzer.plot_reference(fig, reference, data, x, y, '-o', color='#8DC63F', alpha=1, linewidth=1)
-        except AttributeError:
-            ax = fig.gca()
-            ax.plot(reference[x], reference[y], '-o', color='#8DC63F', alpha=1, linewidth=1)
+        for iteration, iter_samples in samples.groupby('iteration'):
+            analyzer_data = self.get_analyzer_data(iteration, site_name, analyzer_name)
+            results_by_sample = iter_samples.reset_index().set_index('sample')['total']
+            for sample, result in results_by_sample.iteritems():
+                analyzer.plot_comparison(fig, analyzer_data['samples'][sample], fmt='-',
+                              color=cm.Blues((result - cmin) / (cmax - cmin)), alpha=0.5, linewidth=0.5)
+
+        analyzer.plot_comparison(fig, analyzer_data['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
+
+        fig.set_tight_layout(True)
         plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
 
-    def cleanup_plot(self, calib_manager):
+    def cleanup(self):
         """
         cleanup the existing plots
         :param calib_manager:
         :return:
         """
-        # [TODO]: need this? Looks not!
-        self.all_results = calib_manager.all_results.reset_index()
-
-        self.num_to_plot = calib_manager.num_to_plot
-        self.site_analyzer_names = calib_manager.site_analyzer_names()
-        self.state_for_iteration = calib_manager.state_for_iteration
-        self.plots_directory = os.path.join(calib_manager.name, '_plots')
-
         if self.combine_sites:
             for site, analyzers in self.site_analyzer_names.items():
                 self.cleanup_plot_by_analyzers(site, analyzers, self.all_results)
@@ -146,22 +139,22 @@ class SiteDataPlotter(BasePlotter):
         :param samples:
         :return:
         """
-        best_samples = self.get_iteration_samples(samples, subset=True)
+        best_samples = samples.iloc[:self.num_to_plot]
         for analyzer in analyzers:
             site_analyzer = '%s_%s' % (site, analyzer)
             self.cleanup_plot_for_best(site_analyzer, best_samples)
             self.cleanup_plot_for_all(site_analyzer)
 
-    def cleanup_plot_for_best(self, site_analyzer, iter_samples):
+    def cleanup_plot_for_best(self, site_analyzer, samples):
         """
         cleanup the existing plots
         :param site_analyzer:
-        :param iter_samples:
+        :param samples:
         :return:
         """
-        for iteration, samples in iter_samples.items():
-            for sample, rank in zip(samples['sample'], samples['rank']):
-                fname = os.path.join(self.plots_directory, site_analyzer, 'rank%d' % rank)
+        for iteration, iter_samples in samples.groupby('iteration'):
+            for rank, sample in iter_samples['sample'].iteritems():  # index is rank
+                fname = os.path.join(self.directory, site_analyzer, 'rank%d' % rank)
                 plot_path = fname + '.pdf'
                 if os.path.exists(plot_path):
                     try:
@@ -177,7 +170,7 @@ class SiteDataPlotter(BasePlotter):
         :param site_analyzer:
         :return:
         """
-        fname = os.path.join(self.plots_directory, '%s_all' % site_analyzer)
+        fname = os.path.join(self.directory, '%s_all' % site_analyzer)
         plot_path = fname + '.pdf'
         if os.path.exists(plot_path):
             try:
@@ -185,3 +178,56 @@ class SiteDataPlotter(BasePlotter):
                 os.remove(plot_path)
             except OSError:
                 logger.error("Failed to delete %s" % plot_path)
+
+    def write_LL_csv(self, experiment):
+        """
+        Write the LL_summary.csv with what is in the CalibManager
+        """
+        # DJK: RENAME LL everywhere.  It's whatever the analyzer(s) return, e.g. cost per life saved
+        # DJK: That brings up an interesting issue about how to combine analyzers results.  For now, we sum.
+        #      But that might not be sufficiently general - think about this.
+
+        # Deep copy all_results and pnames to not disturb the calibration
+        pnames = copy.deepcopy(self.param_names)
+        all_results = self.all_results.copy(True)
+
+        # Index the likelihood-results DataFrame on (iteration, sample) to join with simulation info
+        results_df = all_results.reset_index().set_index(['iteration', 'sample'])
+
+        # Get the simulation info from the iteration state
+        siminfo_df = pd.DataFrame.from_dict(self.iteration_state.simulations, orient='index')
+        siminfo_df.index.name = 'simid'
+        siminfo_df['iteration'] = self.iteration
+        siminfo_df = siminfo_df.rename(columns={'__sample_index__': 'sample'}).reset_index()
+
+        # Group simIDs by sample point and merge back into results
+        grouped_simids_df = siminfo_df.groupby(['iteration', 'sample']).simid.agg(lambda x: tuple(x))
+        results_df = results_df.join(grouped_simids_df, how='right')  # right: only this iteration with new sim info
+
+        # TODO: merge in parameter values also from siminfo_df (sample points and simulation tags need not be the same)
+
+        # Retrieve the mapping between simID and output file path
+        if self.location == "HPC":
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.comps_suite_id, save=False)
+        else:
+            sims_paths = {sim.id: os.path.join(experiment.get_path(), sim.id) for sim in experiment.simulations}
+
+        # Transform the ids in actual paths
+        def find_path(el):
+            paths = list()
+            try:
+                for e in el:
+                    paths.append(sims_paths[e])
+            except Exception as ex:
+                pass # [TODO]: fix issue later.
+            return ",".join(paths)
+
+        results_df['outputs'] = results_df['simid'].apply(find_path)
+        del results_df['simid']
+
+        # Concatenate with any existing data from previous iterations and dump to file
+        csv_path = os.path.join(self.directory, 'LL_all.csv')
+        if os.path.exists(csv_path):
+            current = pd.read_csv(csv_path, index_col=['iteration', 'sample'])
+            results_df = pd.concat([current, results_df])
+        results_df.sort_values(by='total', ascending=True).to_csv(csv_path)
