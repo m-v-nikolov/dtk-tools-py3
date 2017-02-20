@@ -12,7 +12,7 @@ from calibtool.utils import ResumePoint
 
 from calibtool.plotters.BasePlotter import BasePlotter
 
-sns.set_style('white')
+sns.set_style('white', {'axes.linewidth': 0.5})
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +93,7 @@ class SiteDataPlotter(BasePlotter):
                 analyzer.plot_comparison(fig, analyzer_data['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
 
                 fig.set_tight_layout(True)
+
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
