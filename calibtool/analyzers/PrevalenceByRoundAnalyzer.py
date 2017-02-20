@@ -143,4 +143,6 @@ class PrevalenceByRoundAnalyzer(BaseAnalyzer):
             ax = fig.add_subplot(max([1, (numregions+1)/2]), min([numregions, 2]), i+1)
             ax.plot(range(1, numpoints+1), reference[region], style, color=color, alpha=alpha, linewidth=linewidth)
             ax.set_title(region)
-            ax.set(xlabel='round', ylabel=y)
+
+        fig.text(0.03, 0.5, y, va='center', rotation='vertical')
+        fig.text(0.5, 0.03, 'round', ha='center')
