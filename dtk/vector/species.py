@@ -42,6 +42,9 @@ mod_funestus_params = {
 }
 funestus_param_block.update(mod_funestus_params)
 
+# extra funestus for Munyumbwe
+munyumbwe_funestus_param_block = copy.deepcopy(funestus_param_block)
+
 # An. gambiae
 gambiae_param_block = copy.deepcopy(param_block)
 gambiae_param_block["Indoor_Feeding_Fraction"] = 0.95
@@ -193,6 +196,7 @@ aegypti_param_block = {
 vector_params_by_species = {
     "arabiensis": arabiensis_param_block,
     "funestus": funestus_param_block,
+    "munyumbwe_funestus": munyumbwe_funestus_param_block,
     "farauti": farauti_param_block,
     "gambiae": gambiae_param_block,
     "maculatus": maculatus_param_block,
