@@ -39,12 +39,6 @@ requirements = OrderedDict([
         'test': '>=',
         'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
-    ('numpy', {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.12.0+mkl',
-        'test': '>=',
-        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
-    }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
         'version': '0.18.1',
@@ -56,6 +50,12 @@ requirements = OrderedDict([
         'version': '0.19.2',
         'test': '>=',
         'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
+    }),
+    ('numpy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.12.0+mkl',
+        'test': '>=',
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
         'platform': ['win', 'lin', 'mac'],
@@ -368,7 +368,7 @@ def install_packages(my_os, reqs):
     from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
-              version='0.5',
+              version='0.6',
               description='Facilitating submission and analysis of simulations',
               url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
               author='Edward Wenger,'
@@ -377,14 +377,16 @@ def install_packages(my_os, reqs):
                      'Jaline Gerardin,'
                      'Milen Nikolov,'
                      'Aaron Roney,'
-                     'Zhaowei Du',
+                     'Zhaowei Du,'
+                     'Prashanth Selvaraj',
               author_email='ewenger@intven.com,'
                            'braybaud@intven.com,'
                            'dklein@idmod.org,'
                            'jgerardin@intven.com,'
                            'mnikolov@intven.com,'
                            'aroney@intven.com,'
-                           'zdu@intven.com',
+                           'zdu@intven.com,'
+                           'pselvaraj@intven.com',
               packages=find_packages(),
               install_requires=[],
               entry_points={
@@ -432,6 +434,11 @@ def handle_init():
         cp.add_section('EXAMPLE')
         cp.set('EXAMPLE', 'type', 'LOCAL')
         cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+    if not cp.has_section('EXAMPLEHPC'):
+        cp.add_section('EXAMPLEHPC')
+        cp.set('EXAMPLEHPC', 'type', 'HPC')
+        cp.set('EXAMPLEHPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
+        cp.set('EXAMPLEHPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
 
     cp.write(open(example_simtools, 'w'))
 

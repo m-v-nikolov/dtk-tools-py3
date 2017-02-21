@@ -1,27 +1,24 @@
 # Execute directly: 'python example_optimization.py'
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
-
-from scipy.special import gammaln
 import math
 import random
 
+from scipy.special import gammaln
+
 from calibtool.CalibManager import CalibManager
 from calibtool.algo.OptimTool import OptimTool
-from calibtool.analyzers.DTKCalibFactory import DTKCalibFactory
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
-from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
-
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
+from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
-analyzer = DTKCalibFactory.get_analyzer(
-    'ClinicalIncidenceByAgeCohortAnalyzer', weight=1)
+sites = [DielmoCalibSite(), NdiopCalibSite()]
 
-sites = [DTKCalibFactory.get_site('Dielmo', analyzers=[analyzer]),
-         DTKCalibFactory.get_site('Ndiop', analyzers=[analyzer])]
 print 'Dielmo only for now'
 sites = [sites[0]]
 
@@ -127,8 +124,8 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization1',    # <-- Please customize this name
-                             setup = SetupParser(),
+calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
+                             setup = SetupParser('EXAMPLEHPC'),
                              config_builder = cb,
                              map_sample_to_model_input_fn = map_sample_to_model_input,
                              sites = sites,
@@ -141,5 +138,5 @@ calib_manager = CalibManager(name='ExampleOptimization1',    # <-- Please custom
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='LOCAL'))
+    run_calib_args.update(dict(location='HPC'))
     calib_manager.run_calibration(**run_calib_args)

@@ -230,17 +230,17 @@ class IMIS(NextPointAlgorithm):
         d = (samples - center)
         logger.debug('Directed distance of samples from center:\n%s', d)
 
-        if self.n_dimensions == 1:
-            w = weights / sum(weights)
-            logger.debug('Normalized weights:\n%s', w)
-            logger.debug('Squared-distance of samples:\n%s', np.square(d))
-            d2 = np.square(d)
-            sig2 = np.dot(d2, w)
-        else:
-            weights = weights / sum(weights)
-            w = 1. / (1 - sum(np.square(weights)))
-            wd = np.multiply(d.T, weights).T
-            sig2 = w * np.dot(wd.T, d)
+        # if self.n_dimensions == 1:
+        #     w = weights / sum(weights)
+        #     logger.debug('Normalized weights:\n%s', w)
+        #     logger.debug('Squared-distance of samples:\n%s', np.square(d))
+        #     d2 = np.square(d)
+        #     sig2 = np.dot(d2, w)
+        # else:
+        weights = weights / sum(weights)
+        w = 1. / (1 - sum(np.square(weights)))
+        wd = np.multiply(d.T, weights).T
+        sig2 = w * np.dot(wd.T, d)
 
         logger.debug('Weighted covariance:\n%s', sig2)
 
@@ -270,7 +270,11 @@ class IMIS(NextPointAlgorithm):
         nonzero_idxs = self.weights > 0
         idxs = [i for i, w in enumerate(self.weights[nonzero_idxs])]
         try:
-            resample_idxs = np.random.choice(idxs, self.n_resamples, replace=True, p=self.weights[nonzero_idxs])
+            # Renormalize (disabled for now)
+            probs = self.weights[nonzero_idxs]
+            #probs /= probs.sum()
+
+            resample_idxs = np.random.choice(idxs, self.n_resamples, replace=True, p=probs)
         except ValueError:
             # To isolate dtk-tools issue #96
             print(nonzero_idxs)

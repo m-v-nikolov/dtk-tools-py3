@@ -22,16 +22,17 @@ class ModFn(object):
             md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
 
         # Make sure we cast numpy types into normal system types
-        for k,v in md.iteritems():
+        for k, v in md.iteritems():
             import numpy as np
             if isinstance(v, (np.int64, np.float64, np.float32, np.uint32, np.int16, np.int32)):
                 md[k] = v.item()
-                
+
         # Store the metadata in a class variable
         ModBuilder.metadata.update(md)
         # But also return the metadata because of muddleheaded use
         # TODO: Unify the way we handle metadata by removing the storage in the ModBuilder.metadata
         return md
+
 
 class ModBuilder(object):
     """
@@ -40,7 +41,7 @@ class ModBuilder(object):
     where each ModFn modifies the base SimConfigBuilder (cb)
     and builds a ModBuilder.metadata dict that is reset on ModList init
     """
-    metadata={}
+    metadata = {}
 
     def __init__(self, mod_generator):
         self.tags = {}
@@ -60,7 +61,7 @@ class ModBuilder(object):
             raise ValueError('Only supporting a maximum of one call to configure_site or set_calibration_site.')
 
         if site_mods:
-            funcs.insert(0, funcs.pop(funcs.index(site_mods[0]))) # site configuration first
+            funcs.insert(0, funcs.pop(funcs.index(site_mods[0])))  # site configuration first
 
         m = ModList()
         for func in funcs:
@@ -74,7 +75,7 @@ class ModBuilder(object):
         return cls.from_list(combos)
 
     @classmethod
-    def from_list(cls, combos) :
+    def from_list(cls, combos):
         return cls((cls.set_mods(combo) for combo in combos))
 
 

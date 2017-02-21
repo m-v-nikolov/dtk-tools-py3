@@ -64,11 +64,11 @@ class CalibManager(object):
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.max_iterations = max_iterations
         self.location = self.setup.get('type')
+        self.plotters = [plotter.set_manager(self) for plotter in plotters]
         self.local_suite_id = None
         self.comps_suite_id = None
         self.all_results = None
         self.exp_manager = None
-        self.plotters = plotters
         self.calibration_start = None
         self.iteration_start = None
         self.iter_step = ''
@@ -87,11 +87,7 @@ class CalibManager(object):
         if 'location' in kwargs:
             kwargs.pop('location')
 
-        # Save the selected block the user wants
-        user_selected_block = self.setup.selected_block
         self.create_calibration(self.location, **kwargs)
-        # Restore the selected block
-        self.setup.override_block(user_selected_block)
         self.run_iterations(**kwargs)
 
     def create_calibration(self, location, **kwargs):
@@ -125,7 +121,6 @@ class CalibManager(object):
             elif var == "P":
                 self.replot(iteration=None)
                 exit()     # avoid calling self.run_iterations(**kwargs)
-
 
     @staticmethod
     def retrieve_iteration_state(iter_directory):
@@ -391,7 +386,7 @@ class CalibManager(object):
 
     def plot_iteration(self):
         # Run all the plotters
-        map(lambda plotter: plotter.visualize(self), self.plotters)
+        map(lambda plotter: plotter.visualize(), self.plotters)
         gc.collect()
 
     def give_results_to_next_point_and_cache(self, results):
@@ -843,6 +838,9 @@ class CalibManager(object):
         exp_manager = ExperimentManagerFactory.from_experiment(exp)
         exp_manager.cancel_experiment()
 
+        logger.info("Waiting for COMPS to complete cancellation...")
+        exp_manager.wait_for_finished(verbose=False, sleep_time=1)
+
         # Print confirmation
         logger.info("Calibration %s successfully cancelled!" % self.name)
 
@@ -852,6 +850,9 @@ class CalibManager(object):
         - Delete the result directory
         - If LOCAL -> also delete the simulations
         """
+        # Save the selected block the user wants
+        user_selected_block = self.setup.selected_block
+
         try:
             calib_data = self.read_calib_data()
         except Exception:
@@ -864,6 +865,12 @@ class CalibManager(object):
             comps_suite = calib_data.get('comps_suite_id')
             local_suite = calib_data.get('local_suite_id')
             iter_count = calib_data.get('iteration')
+
+            # Also retrieve the selected block
+            self.setup.override_block(calib_data['selected_block'])
+
+            # Kill
+            self.kill()
 
             # Delete the simulations too
             logger.info('Cleaning up calibration %s' % self.name)
@@ -900,6 +907,9 @@ class CalibManager(object):
             utils.COMPS_login(self.setup.get('server_endpoint'))
             from simtools.Utilities.COMPSUtilities import delete_suite
             delete_suite(comps_suite)
+
+        # Restore the selected block
+        self.setup.override_block(user_selected_block)
 
 
     def reanalyze(self):
