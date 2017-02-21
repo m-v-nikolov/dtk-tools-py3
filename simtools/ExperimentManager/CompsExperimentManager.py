@@ -12,6 +12,7 @@ from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running
 
 
 class CompsExperimentManager(BaseExperimentManager):
@@ -121,8 +122,8 @@ class CompsExperimentManager(BaseExperimentManager):
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
         utils.COMPS_login(self.endpoint)
-        e = Experiment.get(self.experiment.exp_id)
-        if e:
+        e = get_experiment_by_id(self.experiment.exp_id)
+        if e and experiment_is_running(e):
             e.cancel()
 
     def hard_delete(self):

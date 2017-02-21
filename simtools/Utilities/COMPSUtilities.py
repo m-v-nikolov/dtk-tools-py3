@@ -29,6 +29,9 @@ def sims_from_suite_id(suite_id):
     return sims
 
 
+def experiment_is_running(e):
+    return len(e.get_simulations(query_criteria=QueryCriteria().where('state=Running')) + e.get_simulations(query_criteria=QueryCriteria().where('state=Waiting'))) != 0
+
 def workdirs_from_simulations(sims):
     return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims}
 
@@ -50,4 +53,7 @@ def workdirs_from_suite_id(suite_id):
 
 def delete_suite(suite_id):
     s = Suite.get(suite_id)
-    s.delete()
+    try:
+        s.delete()
+    except Exception as e:
+        print "Could not delete suite %s" % suite_id
