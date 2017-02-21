@@ -30,7 +30,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
                 node_order = None,
                 intervention_subset = None,
                 force_apply = False,
-                force_combine = False,
+                force_combine = True,
                 basedir = 'Work',
                 fig_format = 'png',
                 fig_dpi = 600,
@@ -79,7 +79,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         if not os.path.isdir(self.workdir):
             os.makedirs(self.workdir)
 
-        self.figdir = os.path.join(self.workdir, self.name)
+        self.figdir = os.path.join(self.workdir, self.__class__.__name__)
         if not os.path.isdir(self.figdir):
             os.makedirs(self.figdir)
 
