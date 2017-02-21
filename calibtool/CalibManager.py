@@ -838,6 +838,9 @@ class CalibManager(object):
         exp_manager = ExperimentManagerFactory.from_experiment(exp)
         exp_manager.cancel_experiment()
 
+        logger.info("Waiting for COMPS to complete cancellation...")
+        exp_manager.wait_for_finished(verbose=False, sleep_time=1)
+
         # Print confirmation
         logger.info("Calibration %s successfully cancelled!" % self.name)
 
