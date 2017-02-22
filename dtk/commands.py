@@ -22,7 +22,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
-from dtk.utils.setupeditor.SetupApplication import SetupApplication as SetupApplication2
+#from dtk.utils.setupeditor.SetupApplication import SetupApplication as SetupApplication2
 
 logger = utils.init_logging('Commands')
 
@@ -91,23 +91,23 @@ def setup2(args, unknownArgs):
 
     SetupApplication().run()
 
-def setup(args, unknownArgs):
-    """
-    New Setup Configuraiton Editor
-    """
-    if os.name == "nt":
-        # Get the current console size
-        output = subprocess.check_output("mode con", shell=True)
-        original_cols = output.split('\n')[3].split(':')[1].lstrip()
-        original_rows = output.split('\n')[4].split(':')[1].lstrip()
-
-        # Resize only if needed
-        if int(original_cols) < 300 or int(original_rows) < 110:
-            os.system("mode con: cols=100 lines=35")
-    else:
-        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-
-    SetupApplication2().run()
+# def setup(args, unknownArgs):
+#     """
+#     New Setup Configuraiton Editor
+#     """
+#     if os.name == "nt":
+#         # Get the current console size
+#         output = subprocess.check_output("mode con", shell=True)
+#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
+#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
+#
+#         # Resize only if needed
+#         if int(original_cols) < 300 or int(original_rows) < 110:
+#             os.system("mode con: cols=100 lines=35")
+#     else:
+#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
+#
+#     SetupApplication2().run()
 
 
 def run(args, unknownArgs):
@@ -627,8 +627,8 @@ def main():
     parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options
-    parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
-    parser_setup.set_defaults(func=setup)
+    # parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
+    # parser_setup.set_defaults(func=setup)
 
     # Testing: 'dtk setup' options
     parser_setup = subparsers.add_parser('setup2', help='Launch the setup UI allowing to edit ini configuration files.')
