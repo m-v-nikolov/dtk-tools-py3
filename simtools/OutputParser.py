@@ -25,7 +25,7 @@ class SimulationOutputParser(threading.Thread):
         self.semaphore = semaphore
 
         # If all the analyzers present call for deactivating the parsing -> do it
-        self.parse = any([a.parse for a in analyzers])
+        self.parse = any([a.parse for a in analyzers if hasattr(a,'parse')])
 
     def run(self):
         try:
