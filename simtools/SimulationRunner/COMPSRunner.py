@@ -43,17 +43,29 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         # Create the monitor
         monitor = CompsSimulationMonitor(self.experiment.exp_id, None, self.experiment.endpoint)
 
+        # Errors
+        errors = 0
+
         # Until done, update the status
         while True:
             logger.debug('COMPS - Waiting loop')
             try:
                 states, _ = monitor.query()
+                errors = 0
                 if states == {}:
                     # No states returned... Consider failed
                     states = {sim_id:'Failed' for sim_id in last_states.keys()}
-            except KeyError as e:
+            except Exception as e:
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)
+                errors += 1
+                if errors >= 5:
+                    logger.errors("The monitor for this experiment failed 5 times to retrieve status. The runner will exit now. Database may need to be synced.")
+                    exit()
+                # Wait a little bit
+                time.sleep(5)
+                # retry
+                continue
 
             diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key]]
             logger.debug('COMPS - Difflist for experiment %s' % self.experiment.id)
