@@ -4,10 +4,11 @@ from examples.example_iterative.PrevalenceAnalyzer import PrevalenceAnalyzer
 
 
 class MyanmarCalibSite(CalibSite):
-
     def __init__(self):
         super(MyanmarCalibSite, self).__init__('Myanmar')
 
+    def get_reference_data(self, reference_type):
+        return {}
 
     def get_analyzers(self):
         return [PrevalenceAnalyzer(self)]

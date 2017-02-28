@@ -9,5 +9,14 @@ class PrevalenceAnalyzer(BaseComparisonAnalyzer):
     def __init__(self, site):
         super(PrevalenceAnalyzer, self).__init__(site)
 
+        self.result = []
+
     def apply(self, parser):
+        self.result.append(0.5)
+        pass
+
+    def finalize(self):
+        pass
+
+    def cache(self):
         pass
