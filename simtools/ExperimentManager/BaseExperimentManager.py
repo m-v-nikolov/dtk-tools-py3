@@ -149,7 +149,7 @@ class BaseExperimentManager:
         # Called when a simulation finishes
         filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
         if not filtered_analyses:
-            # logger.debug('Simulation did not pass filter on any analyzer.')
+            logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
 
         self.maxThreadSemaphore.acquire()
