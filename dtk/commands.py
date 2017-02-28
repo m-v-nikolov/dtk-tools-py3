@@ -585,8 +585,7 @@ def main():
     parser_exterminate.set_defaults(func=exterminate)
 
     # 'dtk delete' options
-    parser_delete = subparsers.add_parser('delete',
-                                          help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+    parser_delete = subparsers.add_parser('delete', help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
     parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     parser_delete.add_argument('--hard', action='store_true',
                                help='Additionally delete working directory or server entities for experiment.')
