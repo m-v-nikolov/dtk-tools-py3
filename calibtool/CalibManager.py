@@ -20,7 +20,7 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.Encoding import NumpyEncoder
-from simtools.Utilities.Experiments import validate_exp_name
+from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
 from simtools.Utilities.General import init_logging
 
 logger = init_logging("Calibration")
