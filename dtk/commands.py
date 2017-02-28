@@ -19,7 +19,8 @@ from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id
+from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
+    get_experiments_by_name
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
 #from dtk.utils.setupeditor.SetupApplication import SetupApplication as SetupApplication2
@@ -408,8 +409,20 @@ def sync(args, unknownArgs):
 
     # Consider experiment id option
     exp_id = args.exp_id if args.exp_id else None
+    exp_name = args.exp_name if args.exp_name else None
+    user = args.user if args.user else sp.get('user')
 
-    if exp_id:
+    if exp_name:
+        experiments = get_experiments_by_name(exp_name, user)
+        for experiment_data in experiments:
+            experiment = COMPS_experiment_to_local_db(exp_id=str(experiment_data.id),
+                                                      endpoint=endpoint,
+                                                      verbose=False,
+                                                      save_new_experiment=True)
+            if experiment:
+                exp_to_save.append(experiment)
+
+    elif exp_id:
         # Create a new experiment
         experiment = COMPS_experiment_to_local_db(exp_id=exp_id,
                                                   endpoint=endpoint,
@@ -426,7 +439,7 @@ def sync(args, unknownArgs):
         limit_date = today - datetime.timedelta(days=int(day_limit))
 
         # For each of them, check if they are in the db
-        for exp in get_experiments_per_user_and_date(sp.get('user'), limit_date):
+        for exp in get_experiments_per_user_and_date(user, limit_date):
             # Create a new experiment
             experiment = COMPS_experiment_to_local_db(exp_id=str(exp.id),
                                                       endpoint=endpoint,
@@ -439,6 +452,8 @@ def sync(args, unknownArgs):
     # Save the experiments if any
     if len(exp_to_save) > 0 and exp_deleted == 0:
         DataStore.batch_save_experiments(exp_to_save)
+        logger.info("The following experiments have been added to the database:")
+        logger.info("\n".join(["- "+str(exp) for exp in exp_to_save]))
         logger.info("%s experiments have been updated in the DB." % len(exp_to_save))
         logger.info("%s experiments have been deleted from the DB." % exp_deleted)
     else:
@@ -570,8 +585,7 @@ def main():
     parser_exterminate.set_defaults(func=exterminate)
 
     # 'dtk delete' options
-    parser_delete = subparsers.add_parser('delete',
-                                          help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+    parser_delete = subparsers.add_parser('delete', help='Delete most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
     parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     parser_delete.add_argument('--hard', action='store_true',
                                help='Additionally delete working directory or server entities for experiment.')
@@ -624,6 +638,8 @@ def main():
     parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
     parser_analyze_list.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
     parser_analyze_list.add_argument('-id', '--exp_id', help='Sync a specific experiment from COMPS.', dest='exp_id')
+    parser_analyze_list.add_argument('-n', '--name', help='Sync a specific experiment from COMPS (use %% for wildcard character).', dest='exp_name')
+    parser_analyze_list.add_argument('-u', '--user', help='Sync experiments belonging to a particular user', dest='user')
     parser_analyze_list.set_defaults(func=sync)
 
     # 'dtk setup' options

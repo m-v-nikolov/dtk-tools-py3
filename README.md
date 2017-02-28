@@ -83,6 +83,13 @@ Navigate inside the `dtk-tools` folder and install dtk-tools:
 python setup.py
 ```
 
+Note: If you are encountering issues with TK on OSX (for example not being able to plot, or some matplotlib related issues), try:
+```
+brew install homebrew/dupes/tcl-tk
+brew uninstall python
+brew install python --with-brewed-tk
+```
+
 #### Linux users
 Linux users, you need to install:
 - python-snappy

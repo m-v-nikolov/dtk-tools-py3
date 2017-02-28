@@ -26,6 +26,7 @@ from simtools.Utilities.General import get_os
 logger = init_logging('ExperimentManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
     parserClass=SimulationOutputParser
@@ -337,7 +338,7 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
-        print ("")
+        logger.info(" ")
         display = -1 if total_sims == 1 else -2
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if display != -1: logger.info("... and %s more" % (total_sims + display))
