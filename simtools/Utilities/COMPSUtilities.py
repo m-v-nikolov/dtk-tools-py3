@@ -11,6 +11,9 @@ def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
     return Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (user, limit_date_str)))
 
+def get_experiments_by_name(name, user):
+    return Experiment.get(query_criteria=QueryCriteria().where(['name~%s' % name, 'owner=%s' % user]))
+
 def sims_from_experiment(e):
     return e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs'))
 
