@@ -14,14 +14,13 @@ import dill
 import fasteners
 import psutil
 
-from simtools import utils
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging
-from simtools.Utilities.General import get_os
+from simtools.Utilities.Experiments import validate_exp_name
+from simtools.Utilities.General import init_logging, get_tools_revision, get_os
 
 logger = init_logging('ExperimentManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -96,7 +95,7 @@ class BaseExperimentManager:
             location=self.location,
             analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
-            dtk_tools_revision=utils.get_tools_revision(),
+            dtk_tools_revision=get_tools_revision(),
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
             command_line=self.commandline.Commandline)
@@ -187,7 +186,7 @@ class BaseExperimentManager:
         Commission simulations and cache meta-data to local file.
         """
         # Check experiment name as early as possible
-        if not utils.validate_exp_name(exp_name):
+        if not validate_exp_name(exp_name):
             exit()
 
         # Check input files existence

@@ -7,7 +7,6 @@ import subprocess
 import sys
 from importlib import import_module
 
-import simtools.utils as utils
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
@@ -20,12 +19,13 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
-    get_experiments_by_name
+    get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 
 #from dtk.utils.setupeditor.SetupApplication import SetupApplication as SetupApplication2
+from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging
 
-logger = utils.init_logging('Commands')
+logger = init_logging('Commands')
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -168,7 +168,7 @@ def status(args, unknownArgs):
 
 
 def kill(args, unknownArgs):
-    with utils.nostdout():
+    with nostdout():
         exp_manager = reload_experiment(args)
 
     logger.info("Killing Experiment %s" % exp_manager.experiment.id)
@@ -196,7 +196,7 @@ def kill(args, unknownArgs):
 
 
 def exterminate(args, unknownArgs):
-    with utils.nostdout():
+    with nostdout():
         exp_managers = reload_experiments(args)
 
     if args.expId:
@@ -246,7 +246,7 @@ def delete(args, unknownArgs):
 
 
 def clean(args, unknownArgs):
-    with utils.nostdout():
+    with nostdout():
         # Store the current directory to let the reload knows that we want to
         # only retrieve simulations in this directory
         args.current_dir = os.getcwd()
@@ -296,7 +296,7 @@ def stdout(args, unknownArgs):
     exp_manager.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
 
     if args.comps:
-        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
+        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
     exp_manager.analyze_experiment()
 
@@ -310,7 +310,7 @@ def progress(args, unknownArgs):
     exp_manager.add_analyzer(ProgressAnalyzer(args.simIds))
 
     if args.comps:
-        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
+        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
     exp_manager.analyze_experiment()
 
@@ -338,7 +338,7 @@ def analyze(args, unknownArgs):
         return
 
     if args.comps:
-        utils.override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
+        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
 
     exp_manager.analyze_experiment()
 
@@ -392,7 +392,7 @@ def sync(args, unknownArgs):
     # Create a default HPC setup parser
     sp = SetupParser('HPC')
     endpoint = sp.get('server_endpoint')
-    utils.COMPS_login(endpoint)
+    COMPS_login(endpoint)
 
     exp_to_save = list()
     exp_deleted = 0
@@ -461,6 +461,16 @@ def sync(args, unknownArgs):
 
     # Start overseer
     BaseExperimentManager.check_overseer()
+
+def version(args, unknownArgs):
+    logger.info(" ____    ______  __  __          ______                ___ ")
+    logger.info("/\\  _`\\ /\\__  _\\/\\ \\/\\ \\        /\\__  _\\              /\\_ \\")
+    logger.info("\\ \\ \\/\\ \\/_/\\ \\/\\ \\ \\/'/'       \\/_/\\ \\/   ___     ___\\//\\ \\     ____  ")
+    logger.info(" \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ , <    _______\\ \\ \\  / __`\\  / __`\\\\ \\ \\   /',__\\ ")
+    logger.info("  \\ \\ \\_\\ \\ \\ \\ \\ \\ \\ \\\\`\\ /\\______\\\\ \\ \\/\\ \\L\\ \\/\\ \\L\\ \\\\_\\ \\_/\\__, `\\")
+    logger.info("   \\ \\____/  \\ \\_\\ \\ \\_\\ \\_\\/______/ \\ \\_\\ \\____/\\ \\____//\\____\\/\\____/")
+    logger.info("    \\/___/    \\/_/  \\/_/\\/_/          \\/_/\\/___/  \\/___/ \\/____/\\/___/")
+    logger.info("Version: " + get_tools_revision())
 
 
 # List experiments from local database
@@ -635,12 +645,17 @@ def main():
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
     parser_analyze_list.set_defaults(func=analyze_list)
 
-    parser_analyze_list = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
-    parser_analyze_list.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
-    parser_analyze_list.add_argument('-id', '--exp_id', help='Sync a specific experiment from COMPS.', dest='exp_id')
-    parser_analyze_list.add_argument('-n', '--name', help='Sync a specific experiment from COMPS (use %% for wildcard character).', dest='exp_name')
-    parser_analyze_list.add_argument('-u', '--user', help='Sync experiments belonging to a particular user', dest='user')
-    parser_analyze_list.set_defaults(func=sync)
+    # 'dtk sync' options
+    parser_sync = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
+    parser_sync.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
+    parser_sync.add_argument('-id', '--exp_id', help='Sync a specific experiment from COMPS.', dest='exp_id')
+    parser_sync.add_argument('-n', '--name', help='Sync a specific experiment from COMPS (use %% for wildcard character).', dest='exp_name')
+    parser_sync.add_argument('-u', '--user', help='Sync experiments belonging to a particular user', dest='user')
+    parser_sync.set_defaults(func=sync)
+
+    # 'dtk version' options
+    parser_version = subparsers.add_parser('version', help='Display the current dtk-tools version.')
+    parser_version.set_defaults(func=version)
 
     # 'dtk setup' options
     # parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')

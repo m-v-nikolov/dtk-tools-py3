@@ -7,7 +7,7 @@ from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentMan
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 from simtools.Utilities.COMPSUtilities import experiment_needs_commission
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('Runner')
 
@@ -60,7 +60,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.error(e)
                 errors += 1
                 if errors >= 5:
-                    logger.errors("The monitor for this experiment failed 5 times to retrieve status. The runner will exit now. Database may need to be synced.")
+                    logger.error("The monitor for this experiment failed 5 times to retrieve status. The runner will exit now. Database may need to be synced.")
                     exit()
                 # Wait a little bit
                 time.sleep(5)

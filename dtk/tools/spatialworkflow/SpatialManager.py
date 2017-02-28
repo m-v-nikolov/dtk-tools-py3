@@ -8,7 +8,7 @@ from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
-from simtools import utils
+from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 
 
 class SpatialManager:
@@ -87,7 +87,7 @@ class SpatialManager:
 
         # todo: need to modularize the local/remote test; used in other parts of the code
         if self.location == 'HPC':
-            self.sim_data_input = utils.translate_COMPS_path(setup.get('input_root'))
+            self.sim_data_input = translate_COMPS_path(setup.get('input_root'))
         elif self.location == 'LOCAL':
             self.sim_data_input = os.path.join(setup.get('input_root'))
         else:

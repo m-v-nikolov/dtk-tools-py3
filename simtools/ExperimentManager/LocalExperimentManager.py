@@ -9,7 +9,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging("ExperimentManager")
 

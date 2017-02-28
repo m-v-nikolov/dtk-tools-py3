@@ -15,14 +15,15 @@ from IterationState import IterationState
 from calibtool.plotters import SiteDataPlotter
 from calibtool.utils import ResumePoint
 from core.utils.time import verbose_timedelta
-from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
-from simtools.Utilities.Experiments import retrieve_experiment
-from simtools.utils import NumpyEncoder
+from simtools.Utilities.COMPSUtilities import COMPS_login
+from simtools.Utilities.Encoding import NumpyEncoder
+from simtools.Utilities.Experiments import validate_exp_name
+from simtools.Utilities.General import init_logging
 
-logger = logging.getLogger("Calibration")
+logger = init_logging("Calibration")
 
 
 class SampleIndexWrapper(object):
@@ -89,7 +90,7 @@ class CalibManager(object):
         Create and run a complete multi-iteration calibration suite.
         """
         # Check experiment name as early as possible
-        if not utils.validate_exp_name(self.name):
+        if not validate_exp_name(self.name):
             exit()
 
         self.location = self.setup.get('type')
@@ -881,7 +882,7 @@ class CalibManager(object):
             for suite in suites:
                 if suite['type'] == "HPC":
                     logger.info('Delete COMPS suite %s' % suite['id'])
-                    utils.COMPS_login(self.setup.get('server_endpoint'))
+                    COMPS_login(self.setup.get('server_endpoint'))
                     from simtools.Utilities.COMPSUtilities import delete_suite
                     delete_suite(suite['id'])
 
@@ -892,6 +893,7 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
+                logger.error("Try deleting the folder manually before retrying the calibration.")
 
         # Restore the selected block
         self.setup.override_block(user_selected_block)
@@ -908,7 +910,7 @@ class CalibManager(object):
         self.location = self.setup.get('type')
 
         if calib_data['location'] == 'HPC':
-            utils.COMPS_login(self.setup.get('server_endpoint'))
+            COMPS_login(self.setup.get('server_endpoint'))
 
         # Cleanup the LL_all.csv
         if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
