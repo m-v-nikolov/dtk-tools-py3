@@ -1,13 +1,12 @@
-import base64
 import datetime
 
 import numpy as np
-from simtools.DataAccess import session_scope
+
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
-from simtools.DataAccess.Schema import Analyzer, Settings
+from simtools.DataAccess.Schema import Analyzer
 from simtools.DataAccess.SettingsDataStore import SettingsDataStore
 from simtools.DataAccess.SimulationDataStore import SimulationDataStore
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('DataAccess')
 

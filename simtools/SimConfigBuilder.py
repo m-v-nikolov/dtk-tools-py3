@@ -2,7 +2,8 @@ import json
 import logging
 import os
 
-import utils
+from simtools.Utilities.COMPSUtilities import stage_file
+from simtools.Utilities.General import CommandlineGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +55,12 @@ class SimConfigBuilder(object):
         return True
 
     def stage_executable(self, exe_path, paths):
-        staged_bin = utils.stage_file(exe_path, paths['bin_staging_root'])
+        staged_bin = stage_file(exe_path, paths['bin_staging_root'])
         self.set_param('bin_path', staged_bin)
         return staged_bin
 
     def get_commandline(self, exe_path, paths):
-        return utils.CommandlineGenerator(exe_path, {}, [])
+        return CommandlineGenerator(exe_path, {}, [])
 
     def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
         pass
@@ -91,4 +92,4 @@ class SimConfigBuilder(object):
 
 class PythonConfigBuilder(SimConfigBuilder):
     def get_commandline(self, exe_path, paths):
-        return utils.CommandlineGenerator('python', {}, [exe_path])
+        return CommandlineGenerator('python', {}, [exe_path])

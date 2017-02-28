@@ -7,12 +7,12 @@ from COMPS.Data import Configuration
 from COMPS.Data import Experiment
 from COMPS.Data import Priority
 from COMPS.Data import Suite
-from simtools import utils
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, \
+    translate_COMPS_path
 
 
 class CompsExperimentManager(BaseExperimentManager):
@@ -31,7 +31,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.assets_service = self.setup.getboolean('use_comps_asset_svc')
         self.endpoint = self.setup.get('server_endpoint')
         self.compress_assets = self.setup.getboolean('compress_assets')
-        utils.COMPS_login(self.endpoint)
+        COMPS_login(self.endpoint)
         self.creator_semaphore = None
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
@@ -53,14 +53,14 @@ class CompsExperimentManager(BaseExperimentManager):
         Check file exist and return the missing files as dict
         """
         input_root = self.setup.get('input_root')
-        input_root_real = utils.translate_COMPS_path(input_root)
+        input_root_real = translate_COMPS_path(input_root)
         return input_root_real, self.find_missing_files(input_files, input_root_real)
 
     def analyze_experiment(self):
         if not self.assets_service:
             self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
         if self.compress_assets:
-            from simtools.utils import nostdout
+            from simtools.Utilities.General import nostdout
             with nostdout():
                 self.parserClass.enableCompression()
 
@@ -74,7 +74,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
-        utils.COMPS_login(self.setup.get('server_endpoint'))
+        COMPS_login(self.setup.get('server_endpoint'))
 
         config = Configuration(
             environment_name=self.setup.get('environment'),
@@ -121,7 +121,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
-        utils.COMPS_login(self.endpoint)
+        COMPS_login(self.endpoint)
         e = get_experiment_by_id(self.experiment.exp_id)
         if e and experiment_is_running(e):
             e.cancel()
@@ -134,11 +134,11 @@ class CompsExperimentManager(BaseExperimentManager):
         self.soft_delete()
 
         # Mark experiment for deletion in COMPS.
-        utils.COMPS_login(self.endpoint)
+        COMPS_login(self.endpoint)
         e = Experiment.get(self.experiment.exp_id)
         e.delete()
 
     def kill_simulation(self, simulation):
-        utils.COMPS_login(self.endpoint)
+        COMPS_login(self.endpoint)
         s = Simulation.get(simulation.id)
         s.cancel()

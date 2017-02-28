@@ -7,7 +7,7 @@ from sqlalchemy import bindparam
 from sqlalchemy import not_
 from sqlalchemy import update
 
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('DataAccess')
 

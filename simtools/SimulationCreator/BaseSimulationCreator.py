@@ -1,9 +1,11 @@
 from __future__ import print_function
+
 import copy
 from abc import abstractmethod, ABCMeta
-from simtools import utils
-from simtools.DataAccess.DataStore import DataStore
 from multiprocessing import Process
+
+from simtools.DataAccess.DataStore import DataStore
+from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 
 
 class BaseSimulationCreator(Process):
@@ -23,7 +25,7 @@ class BaseSimulationCreator(Process):
         self.return_list=return_list
         # Extract the path we want from the setup
         # Cannot use self.setup because the selected_block selection is lost during forking
-        self.lib_staging_root = utils.translate_COMPS_path(setup.get('lib_staging_root'))
+        self.lib_staging_root = translate_COMPS_path(setup.get('lib_staging_root'))
         self.asset_service = setup.getboolean('use_comps_asset_svc',False)
         self.dll_path = setup.get('dll_path')
         self.callback = callback

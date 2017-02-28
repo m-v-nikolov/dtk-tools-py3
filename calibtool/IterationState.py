@@ -4,7 +4,7 @@ import os
 import copy
 import pandas as pd
 from calibtool.utils import ResumePoint
-from simtools.utils import NumpyEncoder, json_numpy_obj_hook
+from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
 
 logger = logging.getLogger(__name__)
 

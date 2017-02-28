@@ -29,23 +29,22 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
     def run(self):
         try:
-            with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out:
-                with open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
-                    # On windows we want to pass the command to popen as a string
-                    # On Unix, we want to pass it as a sequence
-                    # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
-                    if os.name == "nt":
-                        command = self.experiment.command_line
-                    else:
-                        command = shlex.split(self.experiment.command_line)
+            with open(os.path.join(self.sim_dir, "StdOut.txt"), "w") as out, open(os.path.join(self.sim_dir, "StdErr.txt"), "w") as err:
+                # On windows we want to pass the command to popen as a string
+                # On Unix, we want to pass it as a sequence
+                # See: https://docs.python.org/2/library/subprocess.html#subprocess.Popen
+                if os.name == "nt":
+                    command = self.experiment.command_line
+                else:
+                    command = shlex.split(self.experiment.command_line)
 
-                    # Launch the command
-                    p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
+                # Launch the command
+                p = subprocess.Popen(command, cwd=self.sim_dir, shell=False, stdout=out, stderr=err)
 
-                    # We are now running
-                    self.simulation.pid = p.pid
-                    self.simulation.status = "Running"
-                    self.update_status()
+                # We are now running
+                self.simulation.pid = p.pid
+                self.simulation.status = "Running"
+                self.update_status()
 
             self.monitor()
         except Exception as e:

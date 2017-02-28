@@ -4,8 +4,9 @@ from operator import or_
 
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
-from simtools.utils import remove_null_values, init_logging
 from sqlalchemy.orm import joinedload
+
+from simtools.Utilities.General import init_logging, remove_null_values
 
 logger = init_logging('DataAccess')
 

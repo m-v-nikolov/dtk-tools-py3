@@ -58,7 +58,7 @@ class SiteDataPlotter(BasePlotter):
         self.location = self.manager.location
         self.iteration_state = self.manager.iteration_state
         self.iteration = self.manager.iteration
-        self.comps_suite_id = self.manager.comps_suite_id
+        self.suite_id = self.manager.suite_id
         try:
             self.write_LL_csv(self.manager.exp_manager.experiment)
         except:
@@ -207,7 +207,7 @@ class SiteDataPlotter(BasePlotter):
 
         # Retrieve the mapping between simID and output file path
         if self.location == "HPC":
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.comps_suite_id, save=False)
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id, save=False)
         else:
             sims_paths = {sim.id: os.path.join(experiment.get_path(), sim.id) for sim in experiment.simulations}
 

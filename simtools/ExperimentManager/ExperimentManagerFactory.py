@@ -1,6 +1,5 @@
-from simtools import utils
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging, override_HPC_settings
 
 logger = init_logging('ExperimentManager')
 
@@ -27,7 +26,7 @@ class ExperimentManagerFactory(object):
         if not setup:
             setup = SetupParser()
         if location == 'HPC' and kwargs:
-            utils.override_HPC_settings(setup, **kwargs)
+            override_HPC_settings(setup, **kwargs)
         return cls.factory(location)(model_file, None, setup)
 
     @classmethod
@@ -39,5 +38,5 @@ class ExperimentManagerFactory(object):
         logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
 
         if location == 'HPC' and kwargs:
-            utils.override_HPC_settings(setup, **kwargs)
+            override_HPC_settings(setup, **kwargs)
         return cls.factory(location)(setup.get('exe_path'), None, setup)
