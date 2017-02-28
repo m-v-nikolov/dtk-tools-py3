@@ -65,8 +65,7 @@ class CalibManager(object):
         self.max_iterations = max_iterations
         self.location = self.setup.get('type')
         self.plotters = [plotter.set_manager(self) for plotter in plotters]
-        self.local_suite_id = None
-        self.comps_suite_id = None
+        self.suites = []
         self.all_results = None
         self.exp_manager = None
         self.calibration_start = None
@@ -74,6 +73,16 @@ class CalibManager(object):
         self.iter_step = ''
         self.status = ResumePoint.iteration_start
         self.latest_iteration = 0
+
+    @property
+    def suite_id(self):
+        # Generate the suite ID if not present
+        if not self.suites or self.suites[-1]['type'] != self.location:
+            suite_id = self.exp_manager.create_suite(self.name)
+            self.suites.append({'id':suite_id, 'type':self.location})
+            self.cache_calibration()
+
+        return self.suites[-1]['id']
 
     def run_calibration(self, **kwargs):
         """
@@ -265,10 +274,6 @@ class CalibManager(object):
 
             self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, **kwargs)
 
-            # Generate the suite ID if not present
-            if (self.location == "LOCAL" and not self.local_suite_id) or (self.location=="HPC" and not self.comps_suite_id):
-                self.generate_suite_id(self.exp_manager)
-
             exp_builder = ModBuilder.from_combos(
                 [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
                 [ModFn(site.setup_fn) for site in self.sites],
@@ -283,7 +288,7 @@ class CalibManager(object):
                 config_builder=self.config_builder,
                 exp_name='%s_iter%d' % (self.name, self.iteration),
                 exp_builder=exp_builder,
-                suite_id=self.local_suite_id if self.location == "LOCAL" else self.comps_suite_id)
+                suite_id=self.suite_id)
                 #,analyzers=analyzers)
 
             self.iteration_state.simulations = self.exp_manager.experiment.toJSON()['simulations']
@@ -315,8 +320,9 @@ class CalibManager(object):
                 logger.error(ex)
                 exit()
 
-            # Separate Failed from Canceled case, so that we can handle the following situation later:
-            #   If some simulations failed, we may continue...
+            # Display the statuses
+            if verbose:
+                self.exp_manager.print_status(states, msgs)
 
             # If Calibration has been canceled -> exit
             if self.exp_manager.any_canceled(states) or self.exp_manager.any_failed(states):
@@ -329,18 +335,15 @@ class CalibManager(object):
             # Test if we are all done
             if self.exp_manager.status_finished(states):
                 break
-            else:
-                if verbose:
-                    self.exp_manager.print_status(states, msgs)
-                time.sleep(sleep_time)
+
+            time.sleep(sleep_time)
 
         # Print the status one more time
         iteration_time_elapsed = current_time - self.iteration_start
         logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
-        self.exp_manager.print_status(states, msgs)
 
         # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(sleep_time)
+        time.sleep(1)
 
     def analyze_iteration(self):
         """
@@ -416,30 +419,17 @@ class CalibManager(object):
         self.cache_calibration(**final_samples)
 
 
-    def generate_suite_id(self, exp_manager):
-        """
-        Get a new Suite ID from the LOCAL/HPC ExperimentManager
-        and cache to calibration with this updated info.
-        """
-        if self.location == "LOCAL":
-            self.local_suite_id = exp_manager.create_suite(self.name)
-        elif self.location == "HPC":
-            self.comps_suite_id = exp_manager.create_suite(self.name)
-        self.cache_calibration()
-
     def cache_calibration(self, **kwargs):
         """
         Cache information about the CalibManager that is needed to resume after an interruption.
         N.B. This is not currently the complete state, some of which relies on nested and frozen functions.
              As such, the 'resume' logic relies on the existence of the original configuration script.
         """
-
         # TODO: resolve un-picklable nested SetupFunctions.set_calibration_site for self.sites
         #       and frozen scipy.stats functions in MultiVariatePrior.function for self.next_point
         state = {'name': self.name,
                  'location': self.location,
-                 'local_suite_id': self.local_suite_id,
-                 'comps_suite_id': self.comps_suite_id,
+                 'suites': self.suites,
                  'iteration': self.iteration,
                  'status': self.status.name,
                  'param_names': self.param_names(),
@@ -497,7 +487,6 @@ class CalibManager(object):
         """
         Restore summary results from serialized state.
         """
-
         if not results:
             logger.debug('No cached results to reload from CalibManager.')
             return
@@ -517,7 +506,7 @@ class CalibManager(object):
         try:
             exp_id = self.iteration_state.experiment_id
             exp = retrieve_experiment(exp_id)
-        except Exception as ex:
+        except:
             exp = None
             import traceback
             traceback.print_exc()
@@ -540,19 +529,19 @@ class CalibManager(object):
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
 
+        # Save the selected block the user wants
+        user_selected_block = self.setup.selected_block
+
         # Step 2: Checking possible leftovers
         try:
-            # Save the selected block the user wants
-            user_selected_block = self.setup.selected_block
             # Retrieve the experiment manager. Note: it changed selected_block
             self.exp_manager = ExperimentManagerFactory.from_experiment(exp)
-            # Restore the selected block
-            self.setup.selected_block = user_selected_block
         except Exception:
             logger.info('Proceed without checking the possible leftovers.')
+        finally:
             # Restore the selected block
-            self.setup.selected_block = user_selected_block
-            return
+            self.setup.override_block(user_selected_block)
+            if not self.exp_manager: return
 
         # Don't do the leftover checking for a special case
         if self.iter_step == 'commission':
@@ -564,7 +553,7 @@ class CalibManager(object):
         try:
             # check the status
             states = self.exp_manager.get_simulation_status()[0]
-        except Exception as ex:
+        except:
             # logger.info(ex)
             logger.info('Proceed without checking the possible leftovers.')
             return
@@ -617,8 +606,7 @@ class CalibManager(object):
         if not calib_data:
             calib_data = self.read_calib_data()
 
-        self.local_suite_id = calib_data.get('local_suite_id')
-        self.comps_suite_id = calib_data.get('comps_suite_id')
+        self.suites = calib_data.get('suites')
 
         if self.iteration_state.resume_point.value < ResumePoint.plot.value:
             # it will combine current results with previous results
@@ -833,6 +821,7 @@ class CalibManager(object):
         Kill the current calibration
         """
         exp = self.load_experiment_from_iteration()
+        if not exp: return
 
         # Cancel simulations for all active managers
         exp_manager = ExperimentManagerFactory.from_experiment(exp)
@@ -858,12 +847,10 @@ class CalibManager(object):
         except Exception:
             logger.info('Calib data cannot be read -> skip')
             calib_data = None
-            comps_suite = None
 
         if calib_data:
             # Retrieve suite ids and iter_count
-            comps_suite = calib_data.get('comps_suite_id')
-            local_suite = calib_data.get('local_suite_id')
+            suites = calib_data.get('suites')
             iter_count = calib_data.get('iteration')
 
             # Also retrieve the selected block
@@ -890,8 +877,13 @@ class CalibManager(object):
                 except:
                     continue
 
-            # Delete all associated experiments in db
-            DataStore.delete_experiments_by_suite([local_suite, comps_suite])
+            # Delete all HPC suites (the local suites are only carried by experiments)
+            for suite in suites:
+                if suite['type'] == "HPC":
+                    logger.info('Delete COMPS suite %s' % suite['id'])
+                    utils.COMPS_login(self.setup.get('server_endpoint'))
+                    from simtools.Utilities.COMPSUtilities import delete_suite
+                    delete_suite(suite['id'])
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -900,13 +892,6 @@ class CalibManager(object):
                 shutil.rmtree(calib_dir)
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
-
-        # To finish delete the COMPS suite
-        if comps_suite:
-            logger.info('Delete COMPS suite %s' % comps_suite)
-            utils.COMPS_login(self.setup.get('server_endpoint'))
-            from simtools.Utilities.COMPSUtilities import delete_suite
-            delete_suite(comps_suite)
 
         # Restore the selected block
         self.setup.override_block(user_selected_block)
@@ -938,8 +923,7 @@ class CalibManager(object):
             self.reanalyze_iteration(i)
 
         # Before leaving -> set back the suite_id
-        self.local_suite_id = calib_data.get('local_suite_id')
-        self.comps_suite_id = calib_data.get('comps_suite_id')
+        self.suites = calib_data['suites']
         self.location = calib_data['location']
 
         # Also finalize
@@ -964,7 +948,7 @@ class CalibManager(object):
         self.plot_iteration()
 
         # Analyze again!
-        res = self.analyze_iteration()
+        self.analyze_iteration()
 
         # Call all plotters
         self.status = ResumePoint.next_point
@@ -1130,7 +1114,7 @@ class CalibManager(object):
             if exp_id:
                 exp_ids.append(exp_id)
 
-        return [calib_data.get('local_suite_id'), calib_data.get('comps_suite_id')], exp_ids
+        return [suite['id'] for suite in calib_data['suites']], exp_ids
 
     @property
     def iteration(self):
