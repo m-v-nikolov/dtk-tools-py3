@@ -19,6 +19,7 @@ initial_values = {
 
 
 def sample_point_fn(cb, sample_dimension_values):
+    print sample_dimension_values
     return cb.update_params(sample_dimension_values)
 
 calib_manager = CalibManager(name='FullCalibrationExample',

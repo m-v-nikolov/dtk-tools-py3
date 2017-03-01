@@ -3,10 +3,12 @@ import logging
 import numpy as np
 import pandas as pd
 
+from calibtool.algo.BaseNextPointAlgorithm import BaseNextPointAlgorithm
+
 logger = logging.getLogger(__name__)
 
 
-class NextPointAlgorithm(object):
+class NextPointAlgorithm(BaseNextPointAlgorithm):
     """
     The algorithm that chooses a next set of sample points
     based on the results of analyses on previous iterations.

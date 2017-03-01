@@ -12,7 +12,7 @@ class PrevalenceAnalyzer(BaseComparisonAnalyzer):
         self.result = []
 
     def apply(self, parser):
-        self.result.append(0.5)
+        self.result.append({'NodeIds':[1,2,3]})
         pass
 
     def finalize(self):

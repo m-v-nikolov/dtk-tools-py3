@@ -130,7 +130,7 @@ class OptimTool(NextPointAlgorithm):
             # Move X_center, choose hypersphere, save in dataframe
             samples = self.choose_samples_via_gradient_ascent(iteration)
 
-        #return self.data.query('Iteration == @iteration').sort_values('__sample_index__')[self.get_param_names()] # Query makes a copy
+        samples.reset_index(drop=True, inplace=True)
         return samples
 
     def clamp(self, X):
