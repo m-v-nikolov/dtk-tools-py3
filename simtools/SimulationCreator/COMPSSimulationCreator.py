@@ -39,7 +39,7 @@ class COMPSSimulationCreator(BaseSimulationCreator):
         s.set_tags(tags)
 
     def pre_creation(self):
-        # Call login now (even if we are already logged in, we need to call login to initialize the COMPS Client)
+        # Call login now (even if we are already logged in, we need to call login to initialize the COMPSAccess Client)
         COMPS_login(self.server_endpoint)
 
 

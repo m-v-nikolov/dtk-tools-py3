@@ -3,6 +3,7 @@ import multiprocessing
 import sys
 import threading
 import time
+import traceback
 from collections import OrderedDict
 from datetime import datetime
 
@@ -84,6 +85,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     logger.error('Exception in creation manager for experiment %s' % experiment.id)
                     logger.error(e)
+                    logger.error(traceback.format_exc())
                     exit()
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore

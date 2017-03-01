@@ -64,8 +64,8 @@ class BaseExperimentManager:
     def commission_simulations(self, states):
         pass
 
-    @abstractmethod
-    def create_suite(self, suite_name):
+    @staticmethod
+    def create_suite(suite_name):
         pass
 
     @abstractmethod

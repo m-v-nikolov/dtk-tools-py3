@@ -3,10 +3,7 @@ import os
 import re
 from datetime import datetime
 
-from COMPS.Data import Configuration
-from COMPS.Data import Experiment
-from COMPS.Data import Priority
-from COMPS.Data import Suite
+from COMPS.Data import Experiment, Configuration,Priority, Suite
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
@@ -17,7 +14,7 @@ from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_i
 
 class CompsExperimentManager(BaseExperimentManager):
     """
-    Extends the LocalExperimentManager to manage DTK simulations through COMPS wrappers
+    Extends the LocalExperimentManager to manage DTK simulations through COMPSAccess wrappers
     e.g. creation of Simulation, Experiment, Suite objects
     """
     location = 'HPC'
@@ -35,6 +32,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.creator_semaphore = None
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+        # Creator semaphore limits the number of thread accessing the database at the same time
         if not self.creator_semaphore:
             self.creator_semaphore = multiprocessing.Semaphore(4)
 
@@ -66,7 +64,8 @@ class CompsExperimentManager(BaseExperimentManager):
 
         super(CompsExperimentManager, self).analyze_experiment()
 
-    def create_suite(self, suite_name):
+    @staticmethod
+    def create_suite(suite_name):
         suite = Suite(suite_name)
         suite.save()
 

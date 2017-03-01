@@ -65,7 +65,8 @@ class LocalExperimentManager(BaseExperimentManager):
         if not os.path.exists(experiment_path):
             os.makedirs(experiment_path)
 
-    def create_suite(self, suite_name):
+    @staticmethod
+    def create_suite(suite_name):
         suite_id = suite_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating suite_id = " + suite_id)
         return suite_id

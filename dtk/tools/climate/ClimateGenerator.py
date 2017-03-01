@@ -3,7 +3,7 @@ import os
 import time
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
-from simtools.COMPS.WorkOrderGenerator import WorkOrderGenerator
+from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
 from simtools.Utilities.COMPSUtilities import COMPS_login
 
 
