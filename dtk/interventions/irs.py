@@ -215,15 +215,17 @@ def add_reactive_node_IRS(config_builder, start, duration=10000, trigger_coverag
                         "Event_Coordinator_Config":
                         {
                             "class": "StandardInterventionDistributionEventCoordinator",
-                            'Node_Property_Restrictions': [{'SprayStatus': 'None'}],
                             "Intervention_Config" : {
                                 "class": "NodeLevelHealthTriggeredIV",
+                                'Node_Property_Restrictions': [{'SprayStatus': 'None'}],
                                 "Demographic_Coverage": irs_coverage,
                                 "Trigger_Condition": "TriggerString",
                                 "Trigger_Condition_String": "Spray_IRS",
+                                "Blackout_Event_Trigger": "IRS_Blackout",
+                                "Blackout_Period": 1,
+                                "Blackout_On_First_Occurrence": 1,
                                 "Actual_IndividualIntervention_Config" : {
                                     "Intervention_List" : irs_config,
-                                    "Disqualifying_Properties" : [ "SprayStatus:RecentSpray"],
                                     "class" : "MultiInterventionDistributor"
                                 }
                             }

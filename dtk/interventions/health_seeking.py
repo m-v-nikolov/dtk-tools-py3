@@ -7,7 +7,7 @@ def add_health_seeking(config_builder,
                        drug=['Artemether', 'Lumefantrine'],
                        dosing='FullTreatmentNewDetectionTech',
                        nodes={"class": "NodeSetAll"},
-                       prop_group={},
+                       node_property_restrictions=[],
                        drug_ineligibility_duration=0,
                        duration=-1,
                        repetitions=1,
@@ -24,8 +24,8 @@ def add_health_seeking(config_builder,
     :param nodes: nodes to target.
     # All nodes: {"class": "NodeSetAll"}.
     # Subset of nodes: {"class": "NodeSetNodeList", "Node_List": list_of_nodeIDs}
-    :param prop_group: used with NodePropertyRestrictions. Format: { "NodeProperty" : "PropertyValue" }. Currently works
-    only with single NP restriction and should be extended to work with list of dicts.
+    :param node_property_restrictions: used with NodePropertyRestrictions.
+    Format: list of dicts: [{ "NodeProperty1" : "PropertyValue1" }, {'NodeProperty2': "PropertyValue2"}, ...]
     :param drug_ineligibility_duration: if this param is > 0, use IndividualProperties to prevent people from receiving
     drugs too frequently. Demographics file will need to define the IP DrugStatus with possible values None and
     RecentDrug. Individuals who receive drugs for treatment will have their DrugStatus changed to RecentDrug for
@@ -100,8 +100,8 @@ def add_health_seeking(config_builder,
         if drug_ineligibility_duration > 0 :
             health_seeking_config['Intervention_Config']["Property_Restrictions_Within_Node"] = [{"DrugStatus": "None"}]
 
-        if prop_group:
-            health_seeking_config['Intervention_Config']['Node_Property_Restrictions'] = [prop_group]
+        if node_property_restrictions:
+            health_seeking_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
 
         if all([k in t.keys() for k in ['agemin', 'agemax']]):
             health_seeking_config["Intervention_Config"].update({

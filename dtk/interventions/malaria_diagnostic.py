@@ -6,7 +6,7 @@ positive_broadcast = {
 def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target='Everyone', start_day=0,
                           diagnostic_type='NewDetectionTech', diagnostic_threshold=40,
                           nodes={"class": "NodeSetAll"}, positive_diagnosis_configs=[],
-                          received_test_event='Received_Test', IP_restrictions=[]):
+                          received_test_event='Received_Test', IP_restrictions=[], NP_restrictions=[]):
     """
     Function to add recurring prevalence surveys with configurable diagnostic
 
@@ -24,6 +24,7 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
     :param positive_diagnosis_configs: list of events to happen to individual who receive a positive result from test
     :param received_test_event: string for individuals to broadcast upon receiving diagnostic
     :param IP_restrictions: list of IndividualProperty restrictions to restrict who takes action upon positive diagnosis
+    :param NP_restrictions: node property restrictions
     :return: nothing
     """
 
@@ -46,21 +47,24 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
             intervention_cfg["Positive_Diagnosis_Config"]["Property_Restrictions_Within_Node"] = IP_restrictions
 
     survey_event = { "class" : "CampaignEvent",
-                                 "Start_Day": start_day,
-                                 "Event_Name" : "Malaria Diagnostic Survey",
-                                 "Event_Coordinator_Config": {
-                                     "class": "StandardInterventionDistributionEventCoordinator",
-                                     "Number_Distributions": -1,
-                                     "Number_Repetitions": repetitions,
-                                     "Timesteps_Between_Repetitions": tsteps_btwn,
-                                     "Demographic_Coverage": coverage,
-                                     "Intervention_Config": {  "Intervention_List" : [  { "class": "BroadcastEvent",
-                                                                                          "Broadcast_Event": received_test_event },
-                                                                                        intervention_cfg ] ,
-                                                               "class" : "MultiInterventionDistributor" }
-                                     },
-                                 "Nodeset_Config": nodes
-                                 }
+                     "Start_Day": start_day,
+                     "Event_Name" : "Malaria Diagnostic Survey",
+                     "Event_Coordinator_Config": {
+                         "class": "StandardInterventionDistributionEventCoordinator",
+                         "Number_Distributions": -1,
+                         "Number_Repetitions": repetitions,
+                         "Timesteps_Between_Repetitions": tsteps_btwn,
+                         "Demographic_Coverage": coverage,
+                         "Intervention_Config": {  "Intervention_List" : [  { "class": "BroadcastEvent",
+                                                                              "Broadcast_Event": received_test_event },
+                                                                            intervention_cfg ] ,
+                                                   "class" : "MultiInterventionDistributor" }
+                         },
+                     "Nodeset_Config": nodes
+                     }
+
+    if NP_restrictions:
+        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({
@@ -78,7 +82,8 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
                          diagnostic_type='NewDetectionTech', diagnostic_threshold=40,
                          nodes={"class": "NodeSetAll"}, trigger_string='Diagnostic_Survey',
                          event_name='Diagnostic Survey',
-                         positive_diagnosis_configs=[], received_test_event='Received_Test', IP_restrictions=[]) :
+                         positive_diagnosis_configs=[], received_test_event='Received_Test',
+                         IP_restrictions=[], NP_restrictions=[]) :
 
     intervention_cfg = {
                     "Diagnostic_Type": diagnostic_type, 
@@ -116,6 +121,9 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
                             }
                         },
                         "Nodeset_Config": nodes}
+
+    if NP_restrictions:
+        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({

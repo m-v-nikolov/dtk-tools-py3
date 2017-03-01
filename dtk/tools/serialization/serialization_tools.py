@@ -1,81 +1,128 @@
 from __future__ import print_function
-
-import os
-
-import dtk.tools.serialization.idtkFileTools as idtk
+import dtkFileToolsToo as dtk
 
 STATE_ADULT = 1         # implies female, I believe
 STATE_INFECTED = 2
 STATE_INFECTIOUS = 3
 
+_endings = [ 'th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th' ]
+
 # functions need comments and/or cleaning.
 
 
-def zero_infections(ser_date, ser_paths, ignore_nodeids=[], keep_humanids=[]):
+def zero_infections(source_filename, dest_filename, ignore_nodes=[], keep_individuals=[]):
 
-    for s, serpath in enumerate(ser_paths) :
-        print('processing simulation %d of %d' % (s+1, len(ser_paths)))
-        serialization_files = [os.path.join(serpath, x) for x in os.listdir(serpath) if ('.dtk' in x and 'zero' not in x and ser_date in x)]
-        for filename in serialization_files:
-            root, ext = os.path.splitext(filename)
-            output_filename = root + '_zero' + ext
-            if os.path.basename(output_filename) in os.listdir(serpath) :
-                print(os.path.basename(output_filename), 'already zeroed')
-                continue
-            print('Reading: {0}'.format(filename))
-            header, _, _, data = idtk.read_idtk_file(filename)
-            for node in data['simulation']['nodes']:
-                if node['node']['externalId'] in ignore_nodeids:
-                    continue
-                zero_vector_infections(node)
-                zero_human_infections(node, keep_humanids)
-            print('Writing: {0}'.format(output_filename))
-            idtk.write_idtk_file(header, data, output_filename)
-            del data
+    print('Ignoring nodes {0}'.format(ignore_nodes))
+    print('Keeping infections in humans {0}'.format(keep_individuals))
+
+    print("Reading file: '{0}'".format(source_filename))
+    source = dtk.DtkFile(source_filename)
+
+    for index in range(0, len(source.nodes)):
+        print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
+        obj = source.nodes[index]
+        node = obj.node
+        print(', externalId = {0}'.format(node.externalId))
+        if node.externalId not in ignore_nodes:
+            print('Zeroing vector infections')
+            zero_vector_infections(node.m_vectorpopulations)
+            print('Zeroing human infections')
+            zero_human_infections(node.individualHumans, keep_individuals)
+            print('Saving updated node')
+            source.nodes[index] = obj
+        else:
+            print('Ignoring node {0}'.format(index))
+
+    print("Writing file: '{0}'".format(dest_filename))
+    source.write(dest_filename)
 
     return
 
 
-def zero_vector_infections(node, remove=False):
+def zero_vector_infections(vectors, remove=False):
 
-    for vector_population in node['node']['m_vectorpopulations'] :
+    for vector_population in vectors:
         class_name = vector_population['__class__']
         if class_name == 'VectorPopulation' or class_name == 'VectorPopulationAging':
             if not remove:
-                vector_population['AdultQueues'].extend(vector_population['InfectedQueues'])
-                vector_population['AdultQueues'].extend(vector_population['InfectiousQueues'])
-            vector_population['InfectedQueues'] = []
-            vector_population['InfectiousQueues'] = []
+                vector_population.AdultQueues.extend(vector_population.InfectedQueues)
+                vector_population.AdultQueues.extend(vector_population.InfectiousQueues)
+            vector_population.InfectedQueues = []
+            vector_population.InfectiousQueues = []
         elif class_name == 'VectorPopulationIndividual':
             if not remove:
-                for cohort in vector_population['AdultQueues']:
+                for cohort in vector_population.AdultQueues:
                     assert(cohort['__class__'] == 'VectorCohortIndividual')
-                    state = cohort['state']
+                    state = cohort.state
                     if state == STATE_INFECTED or state == STATE_INFECTIOUS:
-                        cohort['state'] = STATE_ADULT
+                        cohort.state = STATE_ADULT
             else:
-                adults = vector_population['AdultQueues']
-                vector_population['AdultQueues'] = [cohort for cohort in adults if cohort['state'] != STATE_INFECTED and cohort['state'] != STATE_INFECTIOUS]
+                adults = vector_population.AdultQueues
+                vector_population.AdultQueues = [cohort for cohort in adults if cohort.state != STATE_INFECTED and cohort.state != STATE_INFECTIOUS]
         else:
             raise RuntimeError("Encountered unknown vector population class - '{0}'".format(class_name))
 
     return
 
 
-def zero_human_infections(node, keep_ids) :
-    for person in node['node']['individualHumans'] :
-        if person['suid']['id'] not in keep_ids :
-            person['infections'] = []
-            person['infectiousness'] = 0
-            person['m_is_infected'] = False
-            person['m_female_gametocytes'] = 0
-            person['m_female_gametocytes_by_strain'] = []
-            person['m_male_gametocytes'] = 0
-            person['m_male_gametocytes_by_strain'] = []
-            person['m_gametocytes_detected'] = 0
-            person['m_new_infection_state'] = 0
-            person['m_parasites_detected_by_blood_smear'] = 0
-            person['m_parasites_detected_by_new_diagnostic'] = 0
+def zero_human_infections(humans, keep_ids=[]):
+    for person in humans:
+        if person.suid.id not in keep_ids:
+            person.infections = []
+            person.infectiousness = 0
+            person.m_is_infected = False
+            person.m_female_gametocytes = 0
+            person.m_female_gametocytes_by_strain = []
+            person.m_male_gametocytes = 0
+            person.m_male_gametocytes_by_strain = []
+            person.m_gametocytes_detected = 0
+            person.m_new_infection_state = 0
+            person.m_parasites_detected_by_blood_smear = 0
+            person.m_parasites_detected_by_new_diagnostic = 0
+
+    return
+
+
+def remove_vectors_by_nodeid(source_filename, dest_filename, removal_nodes):
+
+    print("Reading file: '{0}'".format(source_filename))
+    source = dtk.DtkFile(source_filename)
+
+    for index in range(0, len(source.nodes)):
+        print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
+        obj = source.nodes[index]
+        node = obj.node
+        if node.externalId in removal_nodes:
+            node.m_vectorpopulations = []
+            source.nodes[index] = obj
+        else:
+            print('Ignoring node {0}'.format(index))
+
+    print("Writing file: '{0}'".format(dest_filename))
+    source.write(dest_filename)
+
+    return
+
+
+def remove_humans_by_nodeid(source_filename, dest_filename, removal_nodes):
+
+    print("Reading file: '{0}'".format(source_filename))
+    source = dtk.DtkFile(source_filename)
+
+    for index in range(0, len(source.nodes)):
+        print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
+        obj = source.nodes[index]
+        node = obj.node
+        if node.externalId in removal_nodes:
+            for person in node.individualHumans:
+                if person.home_node_id in removal_nodes:
+                    node.individualHumans.remove(person)
+            source.nodes[index] = obj
+        else:
+            print('Ignoring node {0}'.format(index))
+
+    print("Writing file: '{0}'".format(dest_filename))
+    source.write(dest_filename)
 
     return
 
