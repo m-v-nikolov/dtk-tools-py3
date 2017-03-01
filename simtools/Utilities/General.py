@@ -17,6 +17,11 @@ def init_logging(name):
         logging_initialized = True
     return logging.getLogger(name)
 
+try:
+    logger = init_logging('Utils')
+except:
+    pass
+
 def get_os():
     """
     Retrieve OS
