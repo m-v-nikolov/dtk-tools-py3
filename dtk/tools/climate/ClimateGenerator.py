@@ -2,8 +2,8 @@ import glob
 import os
 import time
 
-from WorkOrderGenerator import WorkOrderGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+from simtools.COMPS.WorkOrderGenerator import WorkOrderGenerator
 from simtools.Utilities.COMPSUtilities import COMPS_login
 
 

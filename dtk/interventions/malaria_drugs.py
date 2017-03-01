@@ -45,8 +45,8 @@ def drug_configs_from_code(cb,drug_code):
     :param drug_code: Code of the drug to add
     :return: A dictionary containing the parameters for an intervention using the given drug
     """
-    dosing_type = drug_cfg[drug_code]["dosing"]
-    drug_array = drug_cfg[drug_code]["drugs"]
+    dosing_type = "FullTreatmentCourse"
+    drug_array = drug_cfg[drug_code]
 
     cb.set_param("PKPD_Model", "CONCENTRATION_VERSUS_TIME")
 
@@ -240,7 +240,124 @@ drug_params = {
     "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 9, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 14, "Fraction_Of_Adult_Dose": 0.67}]
   },
 
-  "Abstract": { # abstracted drug
+  "Chloroquine" : {
+     # Drug PkPd
+    "Drug_Cmax": 150,
+    "Drug_Decay_T1": 8.9,
+    "Drug_Decay_T2": 244,
+    "Drug_Vd": 3.9,
+    "Drug_PKPD_C50": 150,
+
+    # Treatment regimen
+    "Drug_Fulltreatment_Doses": 3,
+    "Drug_Dose_Interval": 1,
+
+    # These are daily parasite killing rates for:
+    "Drug_Gametocyte02_Killrate": 0.0,   # ... gametocyte - early stages
+    "Drug_Gametocyte34_Killrate": 0.0,   # ...            - late stages
+    "Drug_GametocyteM_Killrate":  0.0,   # ...            - mature
+    "Drug_Hepatocyte_Killrate":   0.0,   # ... hepatocytes
+    "Max_Drug_IRBC_Kill":         4.8,   # ... asexual parasites
+
+    # Adherence rate for subsequent doses
+    "Drug_Adherence_Rate" : 1.0,
+
+    # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+    "Bodyweight_Exponent": 1,
+    "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.17},{"Upper_Age_In_Years": 9, "Fraction_Of_Adult_Dose": 0.33},{"Upper_Age_In_Years": 14, "Fraction_Of_Adult_Dose": 0.67}]
+  },
+
+    "Sulfadoxine": {
+        # Drug PkPd
+        "Drug_Cmax": 64,  # ... Barnes et al. 2006
+        "Drug_Decay_T1": 7,
+        "Drug_Decay_T2": 7,
+        "Drug_Vd": 1,
+        "Drug_PKPD_C50": .62,
+
+        # Treatment regimen
+        "Drug_Fulltreatment_Doses": 1,
+        "Drug_Dose_Interval": 1,
+
+        # These are daily parasite killing rates for:
+        "Drug_Gametocyte02_Killrate": 0.0,  # ... gametocyte - early stages
+        "Drug_Gametocyte34_Killrate": 0.0,  # ...            - late stages
+        "Drug_GametocyteM_Killrate": 0.0,  # ...            - mature
+        "Drug_Hepatocyte_Killrate": 0.0,  # ... hepatocytes
+        "Max_Drug_IRBC_Kill": 3.5,  # ... asexual parasites
+
+        # Adherence rate for subsequent doses
+        "Drug_Adherence_Rate": 1.0,
+
+        # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+        "Bodyweight_Exponent": 1,
+        "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 1, "Fraction_Of_Adult_Dose": 0.16},
+                                         {"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.2},
+                                         {"Upper_Age_In_Years": 3, "Fraction_Of_Adult_Dose": 0.25},
+                                         {"Upper_Age_In_Years": 4, "Fraction_Of_Adult_Dose": 0.27},
+                                         {"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.32}]
+    },
+    "Pyrimethamine": {
+        # Drug PkPd
+        "Drug_Cmax": 281,  # ... Barnes et al. 2006
+        "Drug_Decay_T1": 3,
+        "Drug_Decay_T2": 3,
+        "Drug_Vd": 1,
+        "Drug_PKPD_C50": .24,  # ... Pertersen Eskild 1987
+
+        # Treatment regimen
+        "Drug_Fulltreatment_Doses": 1,
+        "Drug_Dose_Interval": 1,
+
+        # These are daily parasite killing rates for:
+        "Drug_Gametocyte02_Killrate": 0.0,  # ... gametocyte - early stages
+        "Drug_Gametocyte34_Killrate": 0.0,  # ...            - late stages
+        "Drug_GametocyteM_Killrate": 0.0,  # ...            - mature
+        "Drug_Hepatocyte_Killrate": 0.0,  # ... hepatocytes
+        "Max_Drug_IRBC_Kill": 3.5,  # ... asexual parasites; Sanz et al. 2012 PLoS ONE
+
+        # Adherence rate for subsequent doses
+        "Drug_Adherence_Rate": 1.0,
+
+        # Cmax modifications due to age-based dosing and bodyweight-dependence Vd ... Zongo et al. 2015
+        "Bodyweight_Exponent": 1,
+        "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 1, "Fraction_Of_Adult_Dose": 0.16},
+                                         {"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.2},
+                                         {"Upper_Age_In_Years": 3, "Fraction_Of_Adult_Dose": 0.25},
+                                         {"Upper_Age_In_Years": 4, "Fraction_Of_Adult_Dose": 0.27},
+                                         {"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.32}]
+    },
+    "Amodiaquine": {
+        # Drug PkPd
+        "Drug_Cmax": 478,  # ... Adjei et al. 2008
+        "Drug_Decay_T1": 2.7,
+        "Drug_Decay_T2": 60,
+        "Drug_Vd": 16,
+        "Drug_PKPD_C50": 0.0064,
+
+        # Treatment regimen
+        "Drug_Fulltreatment_Doses": 3,
+        "Drug_Dose_Interval": 1,
+
+        # These are daily parasite killing rates for:
+        "Drug_Gametocyte02_Killrate": 0.0,  # ... gametocyte - early stages
+        "Drug_Gametocyte34_Killrate": 0.0,  # ...            - late stages
+        "Drug_GametocyteM_Killrate": 0.0,  # ...            - mature
+        "Drug_Hepatocyte_Killrate": 0.0,  # ... hepatocytes
+        "Max_Drug_IRBC_Kill": 3.5,  # ... asexual parasites
+
+        # Adherence rate for subsequent doses
+        "Drug_Adherence_Rate": 1.0,
+
+        # Cmax modifications due to age-based dosing and bodyweight-dependence Vd
+        "Bodyweight_Exponent": 1,
+        "Fractional_Dose_By_Upper_Age": [{"Upper_Age_In_Years": 1, "Fraction_Of_Adult_Dose": 0.16},
+                                         {"Upper_Age_In_Years": 2, "Fraction_Of_Adult_Dose": 0.2},
+                                         {"Upper_Age_In_Years": 3, "Fraction_Of_Adult_Dose": 0.25},
+                                         {"Upper_Age_In_Years": 4, "Fraction_Of_Adult_Dose": 0.27},
+                                         {"Upper_Age_In_Years": 5, "Fraction_Of_Adult_Dose": 0.32}]
+    },
+    "Abstract": { # abstracted drug
      # Drug PkPd
     "Drug_Cmax": 100, 
     "Drug_Decay_T1": 10, 
@@ -296,72 +413,18 @@ drug_params = {
 
 # Different configurations of regimens and drugs
 drug_cfg = {
-    "MSAT_ALP": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["Artemether", "Lumefantrine", "Primaquine"]
-    },
-    "MSAT_AL": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["Artemether", "Lumefantrine"]
-    },
-    "MDA_AL": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["Artemether", "Lumefantrine"]
-    },
-    "MDA_ALP": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["Artemether", "Lumefantrine", "Primaquine"]
-    },
-    "MSAT_DP": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["DHA", "Piperaquine"]
-    },
-    "MSAT_DPP": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["DHA", "Piperaquine", "Primaquine"]
-    },
-    "MSAT_PPQ": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["Piperaquine"]
-    },
-    "MSAT_DHA_PQ": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["DHA", "Primaquine"]
-    },
-    "MSAT_DHA": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["DHA"]
-    },
-    "MSAT_PMQ": {
-        "dosing" : "FullTreatmentNewDetectionTech",
-        "drugs" : ["Primaquine"]
-    },
-    "MDA_DP": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["DHA", "Piperaquine"]
-    },
-    "MDA_DA": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["DHA", "Abstract"]
-    },
-    "MDA_DHA": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["DHA"]
-    },
-    "MDA_PPQ": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["Piperaquine"]
-    },
-    "MDA_DPP": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["DHA", "Piperaquine", "Primaquine"]
-    },
-    "MDA_PMQ": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["Primaquine"]
-    },
-    "MDA_Vehicle": {
-        "dosing" : "FullTreatmentCourse",
-        "drugs" : ["Vehicle"]
-    }
+    "ALP": ["Artemether", "Lumefantrine", "Primaquine"],
+    "AL" : ["Artemether", "Lumefantrine"],
+    "DP" : ["DHA", "Piperaquine"],
+    "DPP" : ["DHA", "Piperaquine", "Primaquine"],
+    "PPQ" : ["Piperaquine"],
+    "DHA_PQ" : ["DHA", "Primaquine"],
+    "DHA" : ["DHA"],
+    "PMQ" : ["Primaquine"],
+    "DA" : ["DHA", "Abstract"],
+    "CQ" : ["Chloroquine"],
+    "SP" : ["Sulfadoxine", "Pyrimethamine"],
+    "SPP" : ["Sulfadoxine", "Pyrimethamine", 'Primaquine'],
+    "SPA" : ["Sulfadoxine", "Pyrimethamine", 'Amodiaquine'],
+    "Vehicle" : ["Vehicle"]
 }

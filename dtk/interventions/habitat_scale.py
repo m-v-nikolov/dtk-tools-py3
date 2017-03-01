@@ -1,6 +1,6 @@
 import random
 
-def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0, start_day=0):
+def scale_larval_habitats(cb, scales, target={"ALL_HABITATS" : 1}, variation=0, start_day=0):
     """
     Reduce available larval habitat in a node-specific way.
 
@@ -14,7 +14,6 @@ def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0, start_
     if variation > 1 or variation < 0:
         raise Exception("Variation is a fraction of the overall scale and cannot be set to less than zero or more than 1.")
 
-    rando = 1
     for (nodeIDs, scale) in scales:
 
         if variation > 0 :
@@ -25,9 +24,9 @@ def scale_larval_habitats(cb, scales, target="ALL_HABITATS", variation=0, start_
                                     "Event_Coordinator_Config": {
                                         "class": "NodeEventCoordinator",
                                         "Intervention_Config": {
-                                            "Habitat_Scale": float(scale)*rando,
-                                            "Habitat_Target": target, 
-                                            "class": "ScaleLarvalHabitat"
+                                            "Larval_Habitat_Multiplier" :
+                                                { key : val*scale for key, val in target.iteritems()},
+                                            "class": "ScaleLarvalHabitatLHM"
                                          }
                                         },
                                     "Nodeset_Config": {
