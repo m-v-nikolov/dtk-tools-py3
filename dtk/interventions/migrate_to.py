@@ -1,9 +1,11 @@
-def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365, 
+# the old MigrateTo has now been split into MigrateIndividuals and MigrateFamily.
+# add_migration_event adds a MigrateIndividuals event.
+def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365,
                         duration_at_node_distr_type='FIXED_DURATION', 
                         duration_of_stay=100, duration_of_stay_2=0, 
                         duration_before_leaving_distr_type='FIXED_DURATION', 
                         duration_before_leaving=0, duration_before_leaving_2=0, 
-                        is_family_trip=0, target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
+                        target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
 
     migration_event = { "Event_Name": "Migration Event", 
                         "class": "CampaignEvent",
@@ -17,9 +19,8 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                             "Timesteps_Between_Repetitions": tsteps_btwn,
                             "Demographic_Coverage": coverage,
                             "Intervention_Config": {
-                                "class": "MigrateTo",
+                                "class": "MigrateIndividuals",
                                 "NodeID_To_Migrate_To": nodeto,
-                                "Is_Family_Trip": is_family_trip,
                                 "Is_Moving" : 0 }
                             },
                         "Nodeset_Config": nodesfrom

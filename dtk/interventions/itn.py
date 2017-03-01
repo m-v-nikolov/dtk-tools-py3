@@ -1,47 +1,49 @@
+import copy
+
 # new campaign format : need to fix some add_itn() functionalities
 itn_bednet = { "class": "SimpleBednet",
                "Bednet_Type": "ITN", 
-                "Killing_Config": {
+               "Killing_Config": {
                     "Initial_Effect": 0.6,
                     "Decay_Time_Constant": 1460,
                     "class": "WaningEffectExponential"
                 },
-                "Blocking_Config": {
+               "Blocking_Config": {
                     "Initial_Effect": 0.9,
                     "Decay_Time_Constant": 730,
                     "class": "WaningEffectExponential"
                 },
+               "Usage_Config": {
+                   "Expected_Discard_Time": 3650, # default: keep nets for 10 years
+                   "Initial_Effect": 1.0,
+                   "class": "WaningEffectRandomBox"
+               },
                "Cost_To_Consumer": 3.75
 }
 
-def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], perfect=False):
+receiving_itn_event = {
+    "class": "BroadcastEvent",
+    "Broadcast_Event": "Received_ITN"
+}
+
+
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[]):
     """
     Add an ITN intervention to the config_builder passed.
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bednet distribution
     :param coverage_by_ages: a list of dictionaries defining the coverage per age group
-    :param waning: a dictionary defining the durability of the nets. if empty the default ``DECAYDURABILITY`` with 4 years primary and 2 years secondary will be used.
+    :param waning: a dictionary defining the durability of the nets. if empty the default decay profile will be used.
+    For example, update usage duration to 180 days as waning={'Usage_Config' : {"Expected_Discard_Time": 180}}
     :param cost: Set the ``Cost_To_Consumer`` parameter
     :param nodeIDs: If empty, all nodes will get the intervention. If set, only the nodeIDs specified will receive the intervention.
     :return: Nothing
     """
-    receiving_itn_event = {
-        "class": "BroadcastEvent",
-        "Broadcast_Event": "Received_ITN"
-    }
 
     if waning:
-        itn_bednet.update({ "Durability_Time_Profile":       waning['profile'], 
-                            "Primary_Decay_Time_Constant":   waning['kill'] * 365,
-                            "Secondary_Decay_Time_Constant": waning['block'] * 365 })
+        for cfg in waning :
+            itn_bednet[cfg].update(waning[cfg])
 
-    if perfect :
-        itn_bednet.update({ "Blocking_Rate": 1.0,
-                            "Killing_Rate": 1.0, 
-                            "Durability_Time_Profile": "BOXDURABILITY", 
-                            "Primary_Decay_Time_Constant":   400 * 365,   # killing
-                            "Secondary_Decay_Time_Constant": 400 * 365    # blocking
-                            })
     if cost:
         itn_bednet['Cost_To_Consumer'] = cost
 
