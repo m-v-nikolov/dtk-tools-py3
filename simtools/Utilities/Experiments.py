@@ -3,11 +3,19 @@ from __future__ import print_function
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiment_by_id
-from simtools.Utilities.General import utc_to_local
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging, utc_to_local
 
-logger = init_logging('DataStore')
+max_exp_name_len = 100
 
+logger = init_logging('Utils')
+def validate_exp_name(exp_name):
+    if len(exp_name) > max_exp_name_len:
+        logger.info(
+            "The experiment name '%s' exceeds the max length %s, please adjust your experiment name. Exiting...",
+            exp_name, max_exp_name_len)
+        return False
+    else:
+        return True
 
 def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False):
     """
@@ -51,7 +59,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
         # Do not bother with finished experiments
         return None
 
-    from COMPS.Data import Experiment, QueryCriteria
+    from COMPS.Data import QueryCriteria
     try:
         exp_comps = get_experiment_by_id(exp_id)
     except:

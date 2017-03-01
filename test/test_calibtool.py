@@ -1,29 +1,26 @@
-import copy
 import glob
 import json
 import os
-import shutil
 import unittest
-from ConfigParser import ConfigParser
+from argparse import Namespace
 from subprocess import Popen, PIPE, STDOUT
 
-from argparse import Namespace
-from calibtool.commands import get_calib_manager_args
-from calibtool.commands import load_config_module
-from simtools import utils
-from simtools.utils import nostdout
-
+import copy
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import shutil
+from ConfigParser import ConfigParser
 from scipy.stats import norm, uniform, multivariate_normal
 
 from calibtool.IterationState import IterationState
 from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContainer
 from calibtool.algo.IMIS import IMIS
+from calibtool.commands import get_calib_manager_args
+from calibtool.commands import load_config_module
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.ExperimentManager import LocalExperimentManager
+from simtools.Utilities.General import nostdout
 
 
 class TestCommands(unittest.TestCase):
@@ -36,6 +33,7 @@ class TestCommands(unittest.TestCase):
             shutil.rmtree(self.calibration_dir)
 
         os.mkdir(self.calibration_dir)
+        os.chdir(self.calibration_dir)
 
         cp = ConfigParser()
         cp.add_section('LOCAL')
@@ -57,6 +55,7 @@ class TestCommands(unittest.TestCase):
 
         # Clear the dir
         shutil.rmtree(self.calibration_dir)
+
 
     def exec_calib(self, params):
         """
@@ -98,7 +97,6 @@ class TestCommands(unittest.TestCase):
             self.assertEqual(self.samples_per_iteration, len(it['parameters']['values']))
 
     def test_last_iteration(self):
-        os.chdir(self.calibration_dir)
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
         self.max_iterations = manager.max_iterations
@@ -122,7 +120,6 @@ class TestCommands(unittest.TestCase):
         self.assertListEqual(it_flds, it_dirs)
 
     def test_experiment_length(self):
-        os.chdir(self.calibration_dir)
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
@@ -158,7 +155,6 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(len(empty_files), 0)
 
     def test_validate_input_files(self):
-        os.chdir(self.calibration_dir)
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
@@ -166,7 +162,6 @@ class TestCommands(unittest.TestCase):
         self.assertTrue(exp_manager.validate_input_files(manager.config_builder))
 
     def test_find_best_iteration_for_resume(self):
-        os.chdir(self.calibration_dir)
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
@@ -190,7 +185,6 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(iteration, 1)
 
     def test_resume_point_white_box(self):
-        os.chdir(self.calibration_dir)
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
@@ -343,7 +337,6 @@ class TestCommands(unittest.TestCase):
 
     @unittest.skip("demonstrating skipping")
     def test_selected_block_hpc_white_box(self):
-        os.chdir(self.calibration_dir)
         args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
                          priority=None)
 
@@ -352,7 +345,6 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(manager.setup.selected_block, 'HPC')
 
     def test_selected_block_white_box(self):
-        os.chdir(self.calibration_dir)
         args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
                          priority=None)
 
@@ -390,37 +382,8 @@ class TestCommands(unittest.TestCase):
         manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
-    def test_experiment_type_white_box(self):
-        # Make sure we have calibration before resume
-        self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
-
-        args = Namespace(config_name='dummy_calib.py', iter_step=None, iteration=None, ini=None, node_group=None,
-                         priority=None)
-
-        # Case: default location (LOCAL), LOCAL, AZU
-        unknownArgs = []
-        # unknownArgs = ['--LOCAL']
-        # unknownArgs = ['--AZU']
-        manager, kwargs = get_calib_manager_args(args, unknownArgs)
-
-        manager.location = manager.setup.get('type')
-        if 'location' in kwargs:
-            kwargs.pop('location')
-
-        # Save the selected block the user wants
-        user_selected_block = manager.setup.selected_block
-        manager.create_calibration(manager.location, **kwargs)
-        # Restore the selected block
-        manager.setup.selected_block = user_selected_block
-
-        exp_manager = ExperimentManagerFactory.from_setup(manager.setup, **kwargs)
-
-        self.assertTrue(isinstance(exp_manager, LocalExperimentManager.LocalExperimentManager))
 
     def test_reanalyze(self):
-        # Run the calibration
-        os.chdir(self.calibration_dir)
-
         ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
         ctool.communicate()
 
@@ -440,9 +403,6 @@ class TestCommands(unittest.TestCase):
                 self.assertAlmostEqual(cm['results']['total'][i], self.totals[i])
 
     def test_cleanup(self):
-        # Run the calibration
-        os.chdir(self.calibration_dir)
-
         ctool = Popen(['calibtool', 'run', 'dummy_calib.py'], stdout=PIPE, stderr=STDOUT)
         ctool.communicate()
 

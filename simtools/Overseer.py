@@ -9,7 +9,7 @@ from datetime import datetime
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('Overseer')
 

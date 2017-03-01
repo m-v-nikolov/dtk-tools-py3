@@ -10,7 +10,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from simtools.Utilities.General import get_os
+from simtools.Utilities.General import get_os, nostdout
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -365,7 +365,6 @@ def install_packages(my_os, reqs):
 
     from setuptools import setup, find_packages
     # Suppress the outputs except the errors
-    from simtools.utils import nostdout
     with nostdout(stderr=True):
         setup(name='dtk-tools',
               version='0.6',

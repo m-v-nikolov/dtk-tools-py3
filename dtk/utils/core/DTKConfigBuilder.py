@@ -31,9 +31,11 @@ from dtk.interventions.si_initial_seeding import si_campaign
 from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
-from simtools import utils
+import simtools.Utilities as utils
 from simtools.SimConfigBuilder import SimConfigBuilder
-from simtools.utils import NumpyEncoder
+from simtools.Utilities.COMPSUtilities import translate_COMPS_path, stage_file
+from simtools.Utilities.Encoding import NumpyEncoder
+from simtools.Utilities.General import CommandlineGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -389,7 +391,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         if 'python_path' in paths and paths['python_path'] != '':
             eradication_options['--python-script-path'] = paths['python_path']
 
-        return utils.CommandlineGenerator(exe_path, eradication_options, [])
+        return CommandlineGenerator(exe_path, eradication_options, [])
 
     def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
         """
@@ -416,14 +418,14 @@ class DTKConfigBuilder(SimConfigBuilder):
             if not staged_dll:
                 if not assets_service:
                     # If the assets service is not use, actually stage the dll file
-                    staged_dll = utils.stage_file(os.path.join(dll_path, dll_type, dll_name),
+                    staged_dll = stage_file(os.path.join(dll_path, dll_type, dll_name),
                                                   os.path.join(staging_root, dll_type))
                 else:
                     # If the assets service is used, assume that the dll is staged already
                     staged_dll = os.path.join(staging_root, dll_type, dll_name)
 
                 # Translate just in case
-                staged_dll = utils.translate_COMPS_path(staged_dll)
+                staged_dll = translate_COMPS_path(staged_dll)
 
                 # caching to avoid repeat md5 and os calls
                 self.staged_dlls[(dll_type, dll_name)] = staged_dll

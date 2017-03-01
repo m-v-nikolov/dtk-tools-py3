@@ -5,6 +5,8 @@ from simtools.OutputParser import CompsDTKOutputParser as parser
 from dtk.tools.demographics.compiledemog import CompileDemographics
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+from simtools.Utilities.COMPSUtilities import COMPS_login
+
 
 class ImmunityOverlaysGenerator(object):
     '''
@@ -154,12 +156,11 @@ class ImmunityOverlaysGenerator(object):
                     if exp_location_type == 'HPC':
 
                         from simtools.SetupParser import SetupParser
-                        from simtools import utils
                         sp = SetupParser('HPC')
                         om("Pulling immunization data from COMPs.")
                         om("This requires a login.")
 
-                        utils.COMPS_login(sp.get('server_endpoint'))
+                        COMPS_login(sp.get('server_endpoint'))
                         om("Login success!")
 
                         sim_dir_map = parser.createSimDirectoryMap(exp_id)
