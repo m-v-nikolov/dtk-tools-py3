@@ -1,13 +1,14 @@
 import json
 import logging
 
-import datetime
+
 import os
 import copy
 import pandas as pd
 import re
 
 from calibtool.utils import ResumePoint
+from datetime import datetime
 from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
 
 logger = logging.getLogger(__name__)
@@ -147,7 +148,7 @@ class IterationState(object):
         iter_state_path = os.path.join(self.iteration_directory, 'IterationState.json')
         if backup_existing and os.path.exists(iter_state_path):
             backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
-            os.rename(iter_state_path, os.path.join(self.iter_directory, 'IterationState_%s.json' % backup_id))
+            os.rename(iter_state_path, os.path.join(self.iteration_directory, 'IterationState_%s.json' % backup_id))
 
         self.to_file(iter_state_path)
 
