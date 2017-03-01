@@ -31,7 +31,7 @@ sites = [
 
 initial_values = {
     'x_Temporary_Larval_Habitat':[1,2,3],
-    'Run_Nunber':[4,5,6]
+    'Run_Number':[4,5,6]
 }
 
 
