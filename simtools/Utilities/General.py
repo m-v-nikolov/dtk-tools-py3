@@ -5,8 +5,6 @@ import os
 import platform
 import sys
 
-from matplotlib.finance import md5
-
 
 logging_initialized = False
 def init_logging(name):
@@ -18,8 +16,6 @@ def init_logging(name):
         logging.config.fileConfig(os.path.join(current_dir, 'logging.ini'), disable_existing_loggers=False)
         logging_initialized = True
     return logging.getLogger(name)
-
-logger = init_logging('Utils')
 
 def get_os():
     """
@@ -130,6 +126,7 @@ def get_tools_revision():
     return revision
 
 def get_md5(filename):
+    from matplotlib.finance import md5
     logger.info('Getting md5 for ' + filename)
     with open(filename) as file:
         md5calc = md5()
