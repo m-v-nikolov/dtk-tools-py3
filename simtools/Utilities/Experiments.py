@@ -2,7 +2,9 @@ from __future__ import print_function
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id
+from simtools.Utilities.General import init_logging, utc_to_local
+
 max_exp_name_len = 100
 
 logger = init_logging('Utils')
