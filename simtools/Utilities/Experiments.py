@@ -59,7 +59,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
         # Do not bother with finished experiments
         return None
 
-    from COMPS.Data import Experiment, QueryCriteria
+    from COMPS.Data import QueryCriteria
     try:
         exp_comps = get_experiment_by_id(exp_id)
     except:
