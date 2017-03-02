@@ -472,9 +472,9 @@ class DTKConfigBuilder(SimConfigBuilder):
                         f.write(content)
         """
         if self.human_readability:
-            dump = lambda content: json.dumps(content, sort_keys=True, cls=NumpyEncoder).strip('"')
+            dump = lambda content: json.dumps(content, sort_keys=True, indent=3, cls=NumpyEncoder).strip('"')
         else:
-            dump = lambda content: json.dumps(content, sort_keys=True, indent=3,  cls=NumpyEncoder).strip('"')
+            dump = lambda content: json.dumps(content, sort_keys=True, cls=NumpyEncoder).strip('"')
 
         write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
 
