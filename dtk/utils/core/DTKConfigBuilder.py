@@ -88,6 +88,8 @@ class DTKConfigBuilder(SimConfigBuilder):
     def __init__(self, config={'parameters': {}}, campaign=empty_campaign, **kwargs):
         self.config = config
         self.campaign = campaign
+        # Indent the files when dumping or not
+        self.human_readability = True
         self.demog_overlays = {}
         self.input_files = {}
         self.custom_reports = []
@@ -469,8 +471,10 @@ class DTKConfigBuilder(SimConfigBuilder):
                     with open(filename, 'w') as f:
                         f.write(content)
         """
-
-        dump = lambda content: json.dumps(content, sort_keys=True, indent=4, cls=NumpyEncoder).strip('"')
+        if self.human_readability:
+            dump = lambda content: json.dumps(content, sort_keys=True, cls=NumpyEncoder).strip('"')
+        else:
+            dump = lambda content: json.dumps(content, sort_keys=True, indent=3,  cls=NumpyEncoder).strip('"')
 
         write_fn(self.config['parameters']['Campaign_Filename'], dump(self.campaign))
 
