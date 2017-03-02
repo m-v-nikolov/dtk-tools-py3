@@ -1,11 +1,11 @@
 import json
 from collections import Counter
 
-import utils
 from simtools.DataAccess.DataStore import DataStore
-from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id
+from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id, COMPS_login
+from simtools.Utilities.General import init_logging
 
-logger = utils.init_logging('Monitor')
+logger = init_logging('Monitor')
 
 
 class SimulationMonitor(object):
@@ -48,7 +48,7 @@ class CompsSimulationMonitor(SimulationMonitor):
     def query(self):
         logger.debug("Query the HPC Monitor for Experiment %s" % self.exp_id)
 
-        utils.COMPS_login(self.server_endpoint)
+        COMPS_login(self.server_endpoint)
         if self.suite_id:
             sims = sims_from_suite_id(self.suite_id)
         elif self.exp_id:

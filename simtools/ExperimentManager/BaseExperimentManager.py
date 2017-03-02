@@ -14,17 +14,17 @@ import dill
 import fasteners
 import psutil
 
-from simtools import utils
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging
-from simtools.Utilities.General import get_os
+from simtools.Utilities.Experiments import validate_exp_name
+from simtools.Utilities.General import init_logging, get_tools_revision, get_os
 
 logger = init_logging('ExperimentManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
+
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -64,8 +64,8 @@ class BaseExperimentManager:
     def commission_simulations(self, states):
         pass
 
-    @abstractmethod
-    def create_suite(self, suite_name):
+    @staticmethod
+    def create_suite(suite_name):
         pass
 
     @abstractmethod
@@ -95,7 +95,7 @@ class BaseExperimentManager:
             location=self.location,
             analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
-            dtk_tools_revision=utils.get_tools_revision(),
+            dtk_tools_revision=get_tools_revision(),
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
             command_line=self.commandline.Commandline)
@@ -149,7 +149,7 @@ class BaseExperimentManager:
         # Called when a simulation finishes
         filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
         if not filtered_analyses:
-            # logger.debug('Simulation did not pass filter on any analyzer.')
+            logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
 
         self.maxThreadSemaphore.acquire()
@@ -186,7 +186,7 @@ class BaseExperimentManager:
         Commission simulations and cache meta-data to local file.
         """
         # Check experiment name as early as possible
-        if not utils.validate_exp_name(exp_name):
+        if not validate_exp_name(exp_name):
             exit()
 
         # Check input files existence
@@ -337,7 +337,7 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
-        print ("")
+        logger.info(" ")
         display = -1 if total_sims == 1 else -2
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if display != -1: logger.info("... and %s more" % (total_sims + display))

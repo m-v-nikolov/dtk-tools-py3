@@ -110,8 +110,8 @@ class SetupParser:
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.get('type') == "HPC":
-            from simtools import utils
-            utils.COMPS_login(self.get('server_endpoint'))
+            from simtools.Utilities.COMPSUtilities import COMPS_login
+            COMPS_login(self.get('server_endpoint'))
 
     def override_block(self,block):
         """

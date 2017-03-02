@@ -11,9 +11,9 @@ import struct
 
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
 from dtk.tools.climate.WeatherNode import WeatherNode
-from dtk.tools.climate.WorkOrderGenerator import WorkOrderGenerator
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
 from dtk.tools.demographics.node import Node
+from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 

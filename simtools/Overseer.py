@@ -3,13 +3,14 @@ import multiprocessing
 import sys
 import threading
 import time
+import traceback
 from collections import OrderedDict
 from datetime import datetime
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.utils import init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('Overseer')
 
@@ -84,6 +85,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     logger.error('Exception in creation manager for experiment %s' % experiment.id)
                     logger.error(e)
+                    logger.error(traceback.format_exc())
                     exit()
                 managers[experiment.id] = manager
                 manager.maxThreadSemaphore = analysis_semaphore

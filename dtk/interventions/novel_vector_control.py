@@ -1,12 +1,12 @@
 
-def add_ATSB(config_builder, start, initial_killing=0.15, duration=180, cost=None, nodeIDs=[]):
+def add_ATSB_individual_vector(config_builder, start, initial_killing=0.15, duration=180, cost=0, nodeIDs=[]):
 
     atsb_config = { 
                     "Cost_To_Consumer": cost, 
                     "Killing_Config": {
                         "Decay_Time_Constant": duration, 
                         "Initial_Effect": initial_killing, 
-                        "class": "WaningEffectBox"
+                        "class": "WaningEffectExponential"
                     }, 
                     "class": "SugarTrap"
                 }
@@ -29,7 +29,43 @@ def add_ATSB(config_builder, start, initial_killing=0.15, duration=180, cost=Non
     config_builder.add_event(ATSB_event)
 
 
-def add_topical_repellent(config_builder, start, coverage_by_ages, cost=None, initial_blocking=0.95, duration=0.3, 
+def add_ATSB_cohort_vector(config_builder, start, coverage=0.15, initial_killing=1.0, duration=180, cost=0, nodeIDs=[]):
+
+    atsb_config = {  "Reduction_Config": {
+                        "Decay_Time_Constant": 365,
+                        "Initial_Effect": 0,
+                        "class": "WaningEffectBox"
+                    },
+                    "Habitat_Target": "ALL_HABITATS",
+                    "Cost_To_Consumer": cost,
+                    "Killing_Config": {
+                        "Decay_Time_Constant": duration,
+                        "Initial_Effect": initial_killing*coverage,
+                        "class": "WaningEffectExponential"
+                    },
+                    "Spray_Kill_Target": "SpaceSpray_FemalesAndMales",
+                    "class": "SpaceSpraying"
+                }
+
+    ATSB_event = {  "Event_Coordinator_Config": {
+                        "Intervention_Config": atsb_config,
+                        "class": "NodeEventCoordinator"
+                    },
+                    "Nodeset_Config": {
+                        "class": "NodeSetAll"
+                    },
+                    "Start_Day": start,
+                    "Event_Name": "Attractive Toxic Sugar Bait",
+                    "class": "CampaignEvent"
+                }
+
+    if nodeIDs:
+        ATSB_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
+
+    config_builder.add_event(ATSB_event)
+
+
+def add_topical_repellent(config_builder, start, coverage_by_ages, cost=0, initial_blocking=0.95, duration=0.3,
                           repetitions=1, interval=1, nodeIDs=[]):
 
     repellent = {   "class": "SimpleIndividualRepellent",
@@ -39,7 +75,7 @@ def add_topical_repellent(config_builder, start, coverage_by_ages, cost=None, in
                         "Decay_Time_Constant": duration,
                         "class": "WaningEffectBox"
                     },
-                   "Cost_To_Consumer": cost
+                    "Cost_To_Consumer": cost
     }
 
     for coverage_by_age in coverage_by_ages:
@@ -83,8 +119,8 @@ def add_topical_repellent(config_builder, start, coverage_by_ages, cost=None, in
 
 
 
-def add_ors_node(config_builder, start, coverage=1, initial_killing=0.95, duration=180, cost=None, 
-                 repetitions=1, interval=1, nodeIDs=[]):
+def add_ors_node(config_builder, start, coverage=1, initial_killing=0.95, duration=30, cost=0,
+                 nodeIDs=[]):
 
     ors_config = {  "Reduction_Config": {
                         "Decay_Time_Constant": 365, 
@@ -96,22 +132,20 @@ def add_ors_node(config_builder, start, coverage=1, initial_killing=0.95, durati
                     "Killing_Config": {
                         "Decay_Time_Constant": duration, 
                         "Initial_Effect": initial_killing*coverage, 
-                        "class": "WaningEffectBox"
+                        "class": "WaningEffectExponential"
                     }, 
                     "Spray_Kill_Target": "SpaceSpray_FemalesAndMales", 
                     "class": "SpaceSpraying"
                 }
 
     ORS_event = {   "Event_Coordinator_Config": {
-                        "Intervention_Config": ors_config, 
-                        "Number_Repetitions": repetitions,
-                        "Timesteps_Between_Repetitions": interval,
+                        "Intervention_Config": ors_config,
                         "class": "NodeEventCoordinator"
-                    }, 
+                    },
                     "Nodeset_Config": {
                         "class": "NodeSetAll"
-                    }, 
-                    "Start_Day": start, 
+                    },
+                    "Start_Day": start,
                     "Event_Name": "Outdoor Residual Spray",
                     "class": "CampaignEvent"
                 }
@@ -122,10 +156,10 @@ def add_ors_node(config_builder, start, coverage=1, initial_killing=0.95, durati
     config_builder.add_event(ORS_event)
 
 
-def add_larvicide(config_builder, start, coverage=1, initial_killing=1.0, duration=30, cost=None, 
-                  habitat_target="ALL_HABITATS", repetitions=1, interval=1, nodeIDs=[]):
+def add_larvicide(config_builder, start, coverage=1, initial_killing=1.0, duration=30, cost=0,
+                  habitat_target="ALL_HABITATS", nodeIDs=[]):
 
-    larvicide_config = {  "Reduction_Config": {
+    larvicide_config = {  "Blocking_Config": {
                         "Decay_Time_Constant": 365, 
                         "Initial_Effect": 0, 
                         "class": "WaningEffectBox"
@@ -142,8 +176,6 @@ def add_larvicide(config_builder, start, coverage=1, initial_killing=1.0, durati
 
     larvicide_event = {   "Event_Coordinator_Config": {
                         "Intervention_Config": larvicide_config, 
-                        "Number_Repetitions": repetitions,
-                        "Timesteps_Between_Repetitions": interval,
                         "class": "NodeEventCoordinator"
                     }, 
                     "Nodeset_Config": {
@@ -161,25 +193,28 @@ def add_larvicide(config_builder, start, coverage=1, initial_killing=1.0, durati
 
 
 def add_eave_tubes(config_builder, start, coverage=1, initial_killing=1.0, killing_duration=180, 
-                   initial_blocking=0.8, blocking_duration=730, outdoor_killing_discount=0.3, cost=None, 
-                   habitat_target="ALL_HABITATS", repetitions=1, interval=1, nodeIDs=[]):
+                   initial_blocking=1.0, blocking_duration=730, outdoor_killing_discount=0.3, cost=0,
+                   nodeIDs=[]):
 
     indoor_config = {   "class": "IRSHousingModification",
                         "Killing_Config": {
-                            "Decay_Time_Constant": duration, 
+                            "Decay_Time_Constant": killing_duration,
                             "Initial_Effect": initial_killing, 
-                            "class": "WaningEffectBox"
+                            "class": "WaningEffectExponential"
                         },
                         "Blocking_Config": {
                             "Decay_Time_Constant": blocking_duration, 
                             "Initial_Effect": initial_blocking, 
-                            "class": "WaningEffectBox"
+                            "class": "WaningEffectExponential"
                         },
                         "Cost_To_Consumer": cost
                         }
 
     indoor_event = {"class": "CampaignEvent",
                     "Start_Day": start,
+                    "Nodeset_Config": {
+                        "class": "NodeSetAll"
+                    },
                     "Event_Coordinator_Config": {
                         "class": "StandardInterventionDistributionEventCoordinator",
                         "Demographic_Coverage": coverage,
@@ -195,4 +230,4 @@ def add_eave_tubes(config_builder, start, coverage=1, initial_killing=1.0, killi
     add_ors_node(config_builder, start, coverage=coverage, 
                  initial_killing=initial_killing*outdoor_killing_discount, 
                  duration=killing_duration, cost=cost, 
-                 repetitions=repetitions, interval=interval, nodeIDs=nodeIDs)
+                 nodeIDs=nodeIDs)

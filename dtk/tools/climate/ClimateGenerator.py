@@ -2,9 +2,9 @@ import glob
 import os
 import time
 
-from WorkOrderGenerator import WorkOrderGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
-from simtools import utils
+from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
+from simtools.Utilities.COMPSUtilities import COMPS_login
 
 
 class ClimateGenerator:
@@ -30,12 +30,11 @@ class ClimateGenerator:
         om("Submitting request for climate files generation to COMPS.")
         om("This requires a login.")
 
-        from COMPS import Client
         from COMPS.Data import QueryCriteria, AssetType
         from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
         from java.util import HashMap, ArrayList
 
-        utils.COMPS_login(self.setup.get('server_endpoint'))
+        COMPS_login(self.setup.get('server_endpoint'))
         om("Login success!")
 
         workerkey = WorkerKey('InputDataWorker', '1.0.0.0_RELEASE')

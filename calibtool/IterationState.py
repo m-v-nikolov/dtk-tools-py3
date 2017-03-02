@@ -1,10 +1,15 @@
 import json
 import logging
+
+
 import os
 import copy
 import pandas as pd
+import re
+
 from calibtool.utils import ResumePoint
-from simtools.utils import NumpyEncoder, json_numpy_obj_hook
+from datetime import datetime
+from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +26,20 @@ class IterationState(object):
     def __init__(self, **kwargs):
         self.iteration = 0
         self.resume_point = ResumePoint.iteration_start
-        self.reset_state()
+        self.samples_for_this_iteration = {}
+        self.next_point = {}
+        self.simulations = {}
+        self.experiment_id = None
+        self.analyzers = {}
+        self.results = {}
+        self.working_directory = None
+
         for k, v in kwargs.items():
             setattr(self, k, v)
+
+    @property
+    def iteration_directory(self):
+        return os.path.join(self.working_directory, 'iter%d' % self.iteration)
 
     def reset_state(self):
         self.samples_for_this_iteration = {}
@@ -50,6 +66,7 @@ class IterationState(object):
                     attr.clear()
 
     def increment_iteration(self):
+        self.save()
         self.iteration += 1
         self.reset_state()
 
@@ -98,3 +115,40 @@ class IterationState(object):
         iter_directory = os.path.join(exp_name, 'iter%d' % iteration)
         iter_file = os.path.join(iter_directory, 'IterationState.json')
         return cls.from_file(iter_file)
+
+    def set_samples_for_iteration(self, iteration, samples, next_point):
+        if isinstance(samples, pd.DataFrame):
+            dtypes = {name:str(data.dtype) for name, data in samples.iteritems()}
+            self.samples_for_this_iteration_dtypes = dtypes # Argh
+
+            # samples_for_this_iteration[ samples_for_this_iteration.isnull() ] = None # DJK: Is this is necessary on Windows?
+            samples_NaN_to_Null = samples.where(~samples.isnull(), other=None)
+            self.samples_for_this_iteration = samples_NaN_to_Null.to_dict(orient='list')
+        else:
+            self.samples_for_this_iteration = samples
+
+        # Also refresh the next point state
+        self.set_next_point(next_point)
+
+    # Always trigger a save when setting next_point
+    def set_next_point(self, next_point):
+        self.next_point = next_point.get_state()
+        self.save()
+
+    def save(self, backup_existing=False):
+        """
+        Cache information about the IterationState that is needed to resume after an interruption.
+        If resuming from an existing iteration, also copy to backup the initial cached state.
+        """
+        try:
+            os.makedirs(self.iteration_directory)
+        except OSError:
+            pass
+
+        iter_state_path = os.path.join(self.iteration_directory, 'IterationState.json')
+        if backup_existing and os.path.exists(iter_state_path):
+            backup_id = 'backup_' + re.sub('[ :.-]', '_', str(datetime.now().replace(microsecond=0)))
+            os.rename(iter_state_path, os.path.join(self.iteration_directory, 'IterationState_%s.json' % backup_id))
+
+        self.to_file(iter_state_path)
+
