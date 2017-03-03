@@ -44,7 +44,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     analyzeManager = AnalyzeManager(final_exp_list, analyzers)
 
     # save/create batch
-    save_batch(args, exp_list)
+    save_batch(args, final_exp_list)
 
     # start to analyze
     analyzeManager.analyze()
@@ -59,9 +59,9 @@ def validate_parameters(args, unknownArgs):
         exit()
 
 
-def save_batch(args, exp_list=None):
-    if len(exp_list) == 0:
-        print 'Please to privide some experiment(s) to analyze.'
+def save_batch(args, final_exp_list=None):
+    if len(final_exp_list) == 0:
+        print 'Please to provide some experiment(s) to analyze.'
         exit()
 
     batch = BatchDataStore.get_batch_by_name(args.batchName)
@@ -72,7 +72,8 @@ def save_batch(args, exp_list=None):
         batch = Batch()
 
     # add experiments
-    for exp in exp_list:
+    for exp in final_exp_list:
+        # ok, SqlAlchemy won't add duplicated experiment
         batch.experiments.append(exp)
 
     # create batch and save with experiments
