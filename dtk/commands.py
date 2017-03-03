@@ -7,6 +7,7 @@ import subprocess
 import sys
 from importlib import import_module
 
+import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
@@ -22,8 +23,6 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-
-#from dtk.utils.setupeditor.SetupApplication import SetupApplication as SetupApplication2
 from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging
 
 logger = init_logging('Commands')
@@ -150,6 +149,12 @@ def run(args, unknownArgs):
 
 
 def status(args, unknownArgs):
+
+    print args
+    print unknownArgs
+
+    # exit()
+
     # No matter what check the overseer
     from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
     BaseExperimentManager.check_overseer()
@@ -321,34 +326,24 @@ def progress(args, unknownArgs):
 
 
 def analyze(args, unknownArgs):
-    logger.info('Analyzing results...')
+    # logger.info('Analyzing results...')
+    AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers)
 
-    exp_manager = reload_experiment(args)
-    exp_manager.analyzers = []
-    states, msgs = exp_manager.get_simulation_status()
 
-    if not args.force:
-        if not exp_manager.status_succeeded(states):
-            logger.warning('Not all jobs have finished successfully yet...')
-            logger.info('Job states:')
-            logger.info(json.dumps(states, sort_keys=True, indent=4))
-            return
+def create_batch(args, unknownArgs):
+    AnalyzeHelper.create_batch(args, unknownArgs)
 
-    if os.path.exists(args.config_name):
-        analyze_from_script(args, exp_manager)
-    elif args.config_name in builtinAnalyzers.keys():
-        exp_manager.add_analyzer(builtinAnalyzers[args.config_name])
-    else:
-        logger.error('Unknown analyzer...available builtin analyzers: ' + ', '.join(builtinAnalyzers.keys()))
-        return
 
-    if args.comps:
-        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
+def list_batch(args, unknownArgs):
+    AnalyzeHelper.list_batch(args, unknownArgs)
 
-    exp_manager.analyze_experiment()
 
-    import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
-    plt.show()
+def delete_batch(args, unknownArgs):
+    AnalyzeHelper.delete_batch(args, unknownArgs)
+
+
+def clear_batch(args, unknownArgs):
+    AnalyzeHelper.clear_batch(args.batchId, True)
 
 
 def analyze_list(args, unknownArgs):
@@ -480,6 +475,12 @@ def version(args, unknownArgs):
 
 # List experiments from local database
 def db_list(args, unknownArgs):
+
+    print args
+    print unknownArgs
+
+    # exit()
+
     format_string = "%s - %s (%s) - %d simulations - %s"
     experiments = []
 
@@ -637,14 +638,42 @@ def main():
     # 'dtk analyze' options
     parser_analyze = subparsers.add_parser('analyze',
                                            help='Analyze finished simulations in experiment according to analyzers.')
-    parser_analyze.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_analyze.add_argument(dest='config_name', default=None,
+    parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name for analyze.')
+    parser_analyze.add_argument('-bi', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
+    parser_analyze.add_argument('-ei', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID.')
+    parser_analyze.add_argument('-a', '--config_name', dest='config_name', default=None,
                                 help='Python script or builtin analyzer name for custom analysis of simulations.')
     parser_analyze.add_argument('-c', '--comps', action='store_true',
                                 help='Use COMPS asset service to read output files (default is direct file access).')
     parser_analyze.add_argument('-f', '--force', action='store_true',
                                 help='Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func=analyze)
+
+    # 'dtk create_batch' options
+    parser_analyze = subparsers.add_parser('create_batch',
+                                           help='Create a Batch for later use in Analyze.')
+    parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
+    parser_analyze.add_argument('-bi', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
+    parser_analyze.add_argument('-ei', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID or name.')
+    parser_analyze.set_defaults(func=create_batch)
+
+
+    # 'dtk list_batch' options
+    parser_list = subparsers.add_parser('list_batch',
+                                        help='Report recent 20 list of batches in Batch.')
+    parser_list.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_list.add_argument('-n', '--number',  help='Get given number recent batch list', dest='limit')
+    parser_list.set_defaults(func=list_batch)
+
+    # 'dtk delete_batch' options
+    parser_clean = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID.')
+    parser_clean.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_clean.set_defaults(func=delete_batch)
+
+    # 'dtk clear_batch' options
+    parser_clean = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch or remove all Batches with empty experiments.')
+    parser_clean.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_clean.set_defaults(func=clear_batch)
 
     # 'dtk analyze-list' options
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
