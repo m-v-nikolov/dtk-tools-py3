@@ -144,12 +144,6 @@ def run(args, unknownArgs):
 
 
 def status(args, unknownArgs):
-
-    print args
-    print unknownArgs
-
-    # exit()
-
     # No matter what check the overseer
     from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
     BaseExperimentManager.check_overseer()
@@ -651,7 +645,6 @@ def main():
     parser_analyze.add_argument('-bi', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
     parser_analyze.add_argument('-ei', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID or name.')
     parser_analyze.set_defaults(func=create_batch)
-
 
     # 'dtk list_batch' options
     parser_list = subparsers.add_parser('list_batch',
