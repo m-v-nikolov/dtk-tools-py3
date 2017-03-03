@@ -153,7 +153,6 @@ class NextPointAlgorithm(BaseNextPointAlgorithm):
                     data_dtypes={name: str(data.dtype) for name, data in self.data.iteritems()}
         )
 
-
     def prep_for_dict(self, df):
         return df.where(~df.isnull(), other=None).to_dict(orient='list')
 
@@ -225,3 +224,32 @@ class NextPointAlgorithm(BaseNextPointAlgorithm):
 
     def restore(self, iteration_state):
         pass
+
+    def update_summary_table(self, iteration_state, previous_results):
+        """
+        Returns a summary table of the form:
+          [result1 result2 results_total param1 param2 iteration simIds]
+          index = sample
+          Used by OptimTool and IMIS algorithm
+        """
+        results_df = pd.DataFrame.from_dict(iteration_state.results, orient='columns')
+        results_df.index.name = 'sample'
+
+        params_df = pd.DataFrame.from_dict(iteration_state.samples_for_this_iteration, orient='columns')
+
+        for c in params_df.columns:  # Argh
+            params_df[c] = params_df[c].astype(iteration_state.samples_for_this_iteration_dtypes[c])
+
+        sims_df = pd.DataFrame.from_dict(iteration_state.simulations, orient='index')
+        grouped = sims_df.groupby('__sample_index__', sort=True)
+        simIds = tuple(group.index.values for sample, group in grouped)
+
+        df = pd.concat((results_df, params_df), axis=1)
+        df['iteration'] = iteration_state.iteration
+
+        previous_results = pd.concat((previous_results, df)).sort_values(by='total', ascending=False)
+        return previous_results, previous_results[['iteration', 'total']].head(10)
+
+    def get_results_to_cache(self, results):
+        results['total'] = results.sum(axis=1)
+        return results.to_dict(orient='list')

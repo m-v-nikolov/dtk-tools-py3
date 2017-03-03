@@ -83,30 +83,6 @@ class IterationState(object):
         with open(filepath, 'w') as f:
             json.dump(it_dict, f, indent=4, cls=NumpyEncoder)
 
-    def summary_table(self):
-        '''
-        Returns a summary table of the form:
-          [result1 result2 results_total param1 param2 iteration simIds]
-          index = sample
-        '''
-
-        results_df = pd.DataFrame.from_dict(self.results, orient='columns')
-        results_df.index.name = 'sample'
-
-        params_df = pd.DataFrame.from_dict(self.samples_for_this_iteration, orient='columns')
-
-        for c in params_df.columns: # Argh
-            params_df[c] = params_df[c].astype( self.samples_for_this_iteration_dtypes[c])
-
-        sims_df = pd.DataFrame.from_dict(self.simulations, orient='index')
-        grouped = sims_df.groupby('__sample_index__', sort=True)
-        simIds = tuple(group.index.values for sample, group in grouped)
-
-        df = pd.concat((results_df , params_df), axis=1)
-        df['iteration'] = self.iteration
-
-        return df
-
     @classmethod
     def restore_state(cls, exp_name, iteration):
         """
