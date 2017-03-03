@@ -373,26 +373,27 @@ class CalibManager(object):
                 exp_manager.add_analyzer(analyzer)
         exp_manager.analyze_experiment()
 
+        # Ask the analyzers to cache themselves
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
 
+        # Get the results from the analyzers and ask the next point how it wants to cache them
         results = pd.DataFrame({a.uid(): a.result for a in exp_manager.analyzers})
-        results['total'] = results.sum(axis=1)
+        cached_results = self.next_point.get_results_to_cache(results)
+        logger.debug(cached_results)
 
-        logger.debug(results)
-        cached_results = results.to_dict(orient='list')
-
+        # Store the analyzers and results in the iteration state
         self.iteration_state.analyzers = cached_analyses
         self.iteration_state.results = cached_results
 
-        iteration_summary = self.iteration_state.summary_table()
-
-        self.all_results = pd.concat((self.all_results, iteration_summary)).sort_values(by='total', ascending=False)
-        logger.info(self.all_results[['iteration', 'total']].head(10))
+        # Update the summary table and all the results
+        all_results, summary_table = self.next_point.update_summary_table(self.iteration_state, self.all_results)
+        self.all_results = all_results
+        logger.info(summary_table)
 
         self.cache_calibration()
 
-        return results.total.tolist()
+        return results
 
     def plot_iteration(self):
         # Run all the plotters

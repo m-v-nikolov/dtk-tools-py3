@@ -145,6 +145,7 @@ class OptimTool(NextPointAlgorithm):
 
 
     def set_results_for_iteration(self, iteration, results):
+        results = results.total.tolist()
         logger.info('%s: Choosing samples at iteration %d:', self.__class__.__name__, iteration)
         logger.debug('Results:\n%s', results)
 

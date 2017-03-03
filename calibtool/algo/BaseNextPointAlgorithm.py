@@ -24,7 +24,6 @@ class BaseNextPointAlgorithm:
     def get_state(self):
         pass
 
-
     @abstractmethod
     def set_results_for_iteration(self, iteration, results):
         pass
@@ -35,4 +34,12 @@ class BaseNextPointAlgorithm:
 
     @abstractmethod
     def get_final_samples(self):
+        pass
+
+    @abstractmethod
+    def update_summary_table(self, iteration_state, previous_results):
+        pass
+
+    @abstractmethod
+    def get_results_to_cache(self, results):
         pass
