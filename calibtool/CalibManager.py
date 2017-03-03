@@ -282,12 +282,9 @@ class CalibManager(object):
             exp_builder = ModBuilder.from_combos(
                 [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
                 [ModFn(site.setup_fn) for site in self.sites],
-                # itertuples preserves datatype
-                # First tuple element is index (use this instead of enumerate)
-                # Because parameter names are not necessarily valid python identifiers, have to build my own dictionary here
-                [ModFn(self.map_sample_to_model_input_fn(sample[0]),
-                    {k: v for k, v in zip(next_params.columns.values, sample[1:])})
-                 for sample in next_params.itertuples()])
+                [ModFn(self.map_sample_to_model_input_fn(index), samples) for index, samples in enumerate(next_params)]
+            )
+
 
             self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
