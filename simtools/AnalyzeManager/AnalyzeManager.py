@@ -11,18 +11,13 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list, analyzers):
+    def __init__(self, exp_list, analyzers, setup=SetupParser()):
         self.exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
         self.analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
-        self.maxThreadSemaphore = 10
-        self.parsers = []
+        self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
 
-        self.set_semaphore()
+        self.parsers = {}
         self.initialize(self.exp_list)
-
-    def set_semaphore(self):
-        setup = SetupParser()
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads')))
 
     def initialize(self, exp_list):
         for exp in exp_list:
@@ -49,6 +44,21 @@ class AnalyzeManager:
             if filtered_analyses:
                 parser = exp_manager.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
                 self.parsers.append(parser)
+
+    def analyze_simulation(self, simulation, manager):
+        # Add the simulation_id to the tags
+        simulation.tags['sim_id'] = simulation.id
+
+        # Called when a simulation finishes
+        filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
+        if not filtered_analyses:
+            logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
+            return
+
+        self.maxThreadSemaphore.acquire()
+        parser = manager.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
+        parser.start()
+        self.parsers[parser.sim_id] = parser
 
     def analyze(self):
         # If no analyzers -> quit
@@ -78,7 +88,8 @@ class AnalyzeManager:
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
             except Exception as e:
-                logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
+                logger.error("Error in the plotting process for analyzer %s" % a)
+                logger.error("Experiments list %s" % self.exp_list)
                 logger.error(e)
 
         for p in plotting_processes:
