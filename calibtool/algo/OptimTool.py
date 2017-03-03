@@ -131,7 +131,7 @@ class OptimTool(NextPointAlgorithm):
             samples = self.choose_samples_via_gradient_ascent(iteration)
 
         samples.reset_index(drop=True, inplace=True)
-        return samples
+        return self.generate_samples_from_df(samples)
 
     def clamp(self, X):
 

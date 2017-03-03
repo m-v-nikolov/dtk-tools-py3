@@ -235,10 +235,10 @@ class NextPointAlgorithm(BaseNextPointAlgorithm):
         results_df = pd.DataFrame.from_dict(iteration_state.results, orient='columns')
         results_df.index.name = 'sample'
 
-        params_df = pd.DataFrame.from_dict(iteration_state.samples_for_this_iteration, orient='columns')
+        params_df = pd.DataFrame(iteration_state.samples_for_this_iteration)
 
-        for c in params_df.columns:  # Argh
-            params_df[c] = params_df[c].astype(iteration_state.samples_for_this_iteration_dtypes[c])
+        #for c in params_df.columns:  # Argh
+        #    params_df[c] = params_df[c].astype(iteration_state.samples_for_this_iteration_dtypes[c])
 
         sims_df = pd.DataFrame.from_dict(iteration_state.simulations, orient='index')
         grouped = sims_df.groupby('__sample_index__', sort=True)
@@ -253,3 +253,12 @@ class NextPointAlgorithm(BaseNextPointAlgorithm):
     def get_results_to_cache(self, results):
         results['total'] = results.sum(axis=1)
         return results.to_dict(orient='list')
+
+    def generate_samples_from_df(self, dfsamples):
+        # itertuples preserves datatype
+        # First tuple element is index
+        # Because parameter names are not necessarily valid python identifiers, have to build my own dictionary here
+        samples = []
+        for sample in dfsamples.itertuples():
+            samples.append({k: v for k, v in zip(dfsamples.columns.values, sample[1:])})
+        return samples
