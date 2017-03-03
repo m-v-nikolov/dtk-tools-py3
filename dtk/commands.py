@@ -633,8 +633,8 @@ def main():
     parser_analyze = subparsers.add_parser('analyze',
                                            help='Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name for analyze.')
-    parser_analyze.add_argument('-bi', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
-    parser_analyze.add_argument('-ei', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID.')
+    parser_analyze.add_argument('-bid', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
+    parser_analyze.add_argument('-eid', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID.')
     parser_analyze.add_argument('-a', '--config_name', dest='config_name', default=None,
                                 help='Python script or builtin analyzer name for custom analysis of simulations.')
     parser_analyze.add_argument('-c', '--comps', action='store_true',
@@ -647,25 +647,25 @@ def main():
     parser_analyze = subparsers.add_parser('create_batch',
                                            help='Create a Batch for later use in Analyze.')
     parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
-    parser_analyze.add_argument('-bi', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
-    parser_analyze.add_argument('-ei', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID or name.')
+    parser_analyze.add_argument('-bid', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
+    parser_analyze.add_argument('-eid', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID or name.')
     parser_analyze.set_defaults(func=create_batch)
 
     # 'dtk list_batch' options
     parser_list = subparsers.add_parser('list_batch',
                                         help='Report recent 20 list of batches in Batch.')
-    parser_list.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
-    parser_list.add_argument('-n', '--number',  help='Get given number recent batch list', dest='limit')
+    parser_list.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_list.add_argument('-n', '--number',  dest='limit', help='Get given number recent batch list')
     parser_list.set_defaults(func=list_batch)
 
     # 'dtk delete_batch' options
     parser_clean = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID.')
-    parser_clean.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_clean.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
     parser_clean.set_defaults(func=delete_batch)
 
     # 'dtk clear_batch' options
     parser_clean = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch or remove all Batches with empty experiments.')
-    parser_clean.add_argument('-bi', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_clean.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
     parser_clean.set_defaults(func=clear_batch)
 
     # 'dtk analyze-list' options
