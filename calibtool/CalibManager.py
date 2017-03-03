@@ -238,12 +238,8 @@ class CalibManager(object):
         # Make sure all our simulations finished first
         self.wait_for_finished()
 
-        # Get the results of the iteration
-        results = self.analyze_iteration()
-
-        # Set those results in the next point algorithm
-        self.next_point.set_results_for_iteration(self.iteration, results)
-        self.iteration_state.set_next_point(self.next_point)
+        # Analyze the iteration
+        self.analyze_iteration()
 
         # Ready for plotting
         self.status = ResumePoint.plot
@@ -386,14 +382,17 @@ class CalibManager(object):
         self.iteration_state.analyzers = cached_analyses
         self.iteration_state.results = cached_results
 
+        # Set those results in the next point algorithm
+        self.next_point.set_results_for_iteration(self.iteration, results)
+        self.iteration_state.set_next_point(self.next_point)
+
         # Update the summary table and all the results
         all_results, summary_table = self.next_point.update_summary_table(self.iteration_state, self.all_results)
         self.all_results = all_results
         logger.info(summary_table)
 
+        # Cache
         self.cache_calibration()
-
-        return results
 
     def plot_iteration(self):
         # Run all the plotters
