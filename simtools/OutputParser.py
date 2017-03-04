@@ -97,7 +97,10 @@ class SimulationOutputParser(threading.Thread):
 
     def load_csv_file(self, filename, *args):
         with open(self.get_path(filename)) as csv_file:
-            self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
+            csv_read = pd.read_csv(csv_file, skipinitialspace=True)
+            # For headers, take everything up to the first space
+            csv_read.columns = [s.split(' ')[0] for s in csv_read.columns]
+            self.raw_data[filename] = csv_read
 
     def load_xlsx_file(self, filename, *args):
         excel_file = pd.ExcelFile(self.get_path(filename))

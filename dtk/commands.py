@@ -10,6 +10,8 @@ from importlib import import_module
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+from dtk.HIV.analyzers import ReportHIVByAgeAndGenderAnalyzer
+from dtk.HIV.analyzers import RelationshipDurationAnalyzer
 from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
@@ -30,7 +32,9 @@ logger = init_logging('Commands')
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
                                       plot_function=plot_grouped_lines),
-    'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'))
+    'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_')),
+    'hiv_ReportHIVByAgeAndGender': ReportHIVByAgeAndGenderAnalyzer(force_apply=True, force_combine=True, verbose=True),
+    'hiv_RelationshipDuration': RelationshipDurationAnalyzer()
 }
 
 
