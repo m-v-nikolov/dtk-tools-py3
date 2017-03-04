@@ -4,8 +4,7 @@ import numpy as np
 import logging
 import os
 import math
-# import scipy.stats as sps
-import dtk.utils.statstest.statstest as statstest
+import core.utils.stats as stats
 
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 from enum import Enum
@@ -118,9 +117,9 @@ class RelationshipDurationAnalyzer(BaseAnalyzer):
             relname = REL_NAMES[reltype]
 
             # Note dummy parameters in the lambda below kapp necessary variable (lam, kap) in scope
-            self.fun[relname] = lambda x, lam=lam, kap=kap: statstest.weib_cdf(x, lam, kap)
+            self.fun[relname] = lambda x, lam=lam, kap=kap: stats.weib_cdf(x, lam, kap)
 
-            self.results[relname] = statstest.kstest(duration, self.fun[relname], self.alpha, )
+            self.results[relname] = stats.kstest(duration, self.fun[relname], self.alpha, )
 
             if self.verbose:
                 if self.results[relname]['Valid']:
