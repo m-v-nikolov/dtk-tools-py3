@@ -21,7 +21,6 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
                     name,
                     reference_sheet,
 
-                    #iteration = 0,
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -41,8 +40,6 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         self.name = name
         self.reference_sheet = reference_sheet
-
-        #self.iteration = iteration
 
         self.cache_data = {}
 
@@ -182,7 +179,7 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         writer = pd.ExcelWriter(os.path.join(self.workdir,'Results.xlsx'))
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
-        self.data.to_excel(writer, sheet_name=self.__class__.__name__)
+        self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
 
         f, axes = plt.subplots(1, 1, figsize=(12, 8), sharex=False)
