@@ -16,8 +16,8 @@ class CommandsArgsTest(unittest.TestCase):
         self.parser = ErrorRaisingArgumentParser(prog='dtk')
         self.flags = []
         self.subparsers = self.parser.add_subparsers(parser_class=ErrorRaisingArgumentParser)
-        run_parser = self.subparsers.add_parser('run')
         run_parser = CMDarg.populate_run_arguments(self.subparsers)
+        status_parser = CMDarg.populate_status_arguments(self.subparsers)
 
     def getArgs(self, debug=False):
         if debug:
@@ -28,10 +28,11 @@ class CommandsArgsTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    # region add flags
+
     def add_help(self):
         self.flags += ['-h']
 
+    # region run flags
     def run_flag(self):
         self.flags = ['run']
 
@@ -64,6 +65,25 @@ class CommandsArgsTest(unittest.TestCase):
 
     # endregion
 
+    # region status flags
+
+    def status_flag(self):
+        self.flags = ['status']
+
+    def status_add_expid(self, experiment_id):
+        self.flags += [str(experiment_id)]
+
+    def status_add_repeat(self, short_version=False):
+        status_flag = '-r' if short_version else '--repeat'
+        self.flags += [status_flag]
+
+    def status_add_active(self, short_version=False):
+        active_flag = '-a' if short_version else '--active'
+        self.flags += [active_flag]
+
+    # endregion
+
+    # region run tests
     def test_run_minimal(self):
         figgy = "configgy.json"
         self.run_flag()
@@ -182,7 +202,9 @@ class CommandsArgsTest(unittest.TestCase):
         self.assertEqual(args.node_group, nodegroup)
         self.assertEqual(args.priority, pri)
         pass
+    # endregion
 
+    # region help tests
     @unittest.skip("This is not feasbile, see http://goo.gl/a2nfIU")
     def test_run_help(self):
         self.run_flag()
@@ -193,6 +215,54 @@ class CommandsArgsTest(unittest.TestCase):
 
         message = str(cm.exception)
         self.assertIn("usage:", message)
+    # endregion
+
+    # region status tests
+    def test_status_minimal(self):
+        experiment_id = 1234
+        self.status_flag()
+        self.status_add_expid(experiment_id)
+
+        args = self.getArgs(debug=False)
+
+        self.assertEqual(args.expId, str(experiment_id))
+        self.assertFalse(args.repeat)
+        self.assertFalse(args.active)
+
+    def test_status_expid_required(self):
+        self.status_flag()
+
+        with self.assertRaises(ValueError) as cm:
+            self.getArgs()
+
+        self.assertIn("too few arguments", cm.exception)
+
+    def test_status_a_r_shorts(self):
+        experiment_id = 'Great SIR experiment'
+        self.status_flag()
+        self.status_add_expid(experiment_id)
+        self.status_add_active(True)
+        self.status_add_repeat(True)
+
+        args = self.getArgs(debug=False)
+
+        self.assertEqual(args.expId, experiment_id)
+        self.assertTrue(args.active)
+        self.assertTrue(args.repeat)
+
+    def test_status_repeat_active_longs(self):
+        experiment_id = 'Cool households experiment'
+        self.status_flag()
+        self.status_add_repeat(False)
+        self.status_add_active(False)
+        self.status_add_expid(experiment_id)
+
+        args = self.getArgs(debug=False)
+
+        self.assertEqual(args.expId, experiment_id)
+        self.assertTrue(args.active)
+        self.assertTrue(args.repeat)
+    # endregion
 
 
 

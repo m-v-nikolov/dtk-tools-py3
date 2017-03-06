@@ -16,9 +16,12 @@ def populate_run_arguments(subparsers):
     return parser_run
 
 
-def populate_status_arguments(parser_status):
+def populate_status_arguments(subparsers):
+    parser_status = subparsers.add_parser('status',
+                                          help='Report status of simulations in experiment specified by ID or name.')
     parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
     parser_status.add_argument('-r', '--repeat', action='store_true',
                                help='Repeat status check until job is done processing.')
     parser_status.add_argument('-a', '--active', action='store_true',
                                help='Get the status of all active experiments (mutually exclusive to all other options).')
+    return parser_status

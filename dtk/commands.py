@@ -554,13 +554,11 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = commands_args.populate_run_arguments(parser_run)
+    parser_run = commands_args.populate_run_arguments(subparsers)
     parser_run.set_defaults(func=run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status',
-                                          help='Report status of simulations in experiment specified by ID or name.')
-    parser_status = commands_args.populate_status_arguments(parser_status)
+    parser_status = commands_args.populate_status_arguments(subparsers)
     parser_status.set_defaults(func=status)
 
     # 'dtk list' options
