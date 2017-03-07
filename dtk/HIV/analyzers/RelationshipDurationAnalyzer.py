@@ -27,8 +27,10 @@ def default_plot_fn(df, ax):
 # a class to analyze relationship durations
 class RelationshipDurationAnalyzer(BaseAnalyzer):
 
-    def __init__(self, filter_function=lambda md: True,
-                 select_function=lambda ts: pd.Series(ts), group_function=lambda k, v: k,
+    def __init__(self,
+                 filter_function=lambda md: True,
+                 select_function=lambda ts: pd.Series(ts),
+                 group_function=lambda k, v: k,
                  alpha=1e-3, verbose=False, output_dir='output'):
         super(RelationshipDurationAnalyzer, self).__init__()
         self.alpha = alpha
@@ -162,6 +164,5 @@ class RelationshipDurationAnalyzer(BaseAnalyzer):
 
     def finalize(self):
         self.plot_figure()
-        pass
 
 
