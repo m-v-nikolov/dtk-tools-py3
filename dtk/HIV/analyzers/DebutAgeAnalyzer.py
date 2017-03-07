@@ -42,8 +42,6 @@ class DebutAgeAnalyzer(BaseAnalyzer):
         # Extract parameters from config
         config_json = parser.raw_data[ self.filenames[0]]
         cp = config_json['parameters']
-        muv = {}
-        kapv = {}
         heterogeneity = {}
         scale = {}
         scale[MALE]  = float(cp['Sexual_Debut_Age_Male_Weibull_Scale'])
@@ -51,12 +49,8 @@ class DebutAgeAnalyzer(BaseAnalyzer):
         scale[FEMALE] = float(cp['Sexual_Debut_Age_Female_Weibull_Scale'])
         heterogeneity[FEMALE] = float(cp['Sexual_Debut_Age_Female_Weibull_Heterogeneity'])
 
-        # kapv[MALE] = 1 / heterogeneity[MALE]
-        # muv[MALE] = scale[MALE] * math.gamma(1+1/kapv[MALE])
-        # kapv[FEMALE] = 1 / heterogeneity[FEMALE]
-        # muv[FEMALE] = scale[FEMALE] * math.gamma(1+1/kapv[FEMALE])
-        kapv = 1 / heterogeneity
-        muv = scale * math.gamma(1 + 1/kapv)
+        kapv = {k: 1/v for k, v in heterogeneity.iteritems()}
+        muv = {k: scale[k] * math.gamma(1+1/v) for k, v in kapv.iteritems()}
 
         for gender in [MALE, FEMALE]:
             gendername = gendernames[gender]

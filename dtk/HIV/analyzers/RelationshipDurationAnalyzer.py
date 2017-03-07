@@ -31,7 +31,7 @@ class RelationshipDurationAnalyzer(BaseAnalyzer):
                  filter_function=lambda md: True,
                  select_function=lambda ts: pd.Series(ts),
                  group_function=lambda k, v: k,
-                 alpha=1e-3, verbose=False, output_dir='output'):
+                 alpha=1e-3, verbose=True, output_dir='output'):
         super(RelationshipDurationAnalyzer, self).__init__()
         self.alpha = alpha
         self.verbose = verbose
@@ -63,22 +63,11 @@ class RelationshipDurationAnalyzer(BaseAnalyzer):
         cp = config_json['parameters']
         pfa_overlay_json = parser.raw_data[ self.filenames[2] ]
         pfap = pfa_overlay_json['Defaults']['Society']
-        muv = {}
-        kapv = {}
-        heterogeneity = {}
-        scale = {}
-        scale[RelationshipType.TRANSITORY]  =        float(pfap['TRANSITORY']['Relationship_Parameters']['Duration_Weibull_Scale'])
-        heterogeneity[RelationshipType.TRANSITORY] = float(pfap['TRANSITORY']['Relationship_Parameters']['Duration_Weibull_Heterogeneity'])
-        scale[RelationshipType.INFORMAL]    =        float(pfap['INFORMAL']['Relationship_Parameters']['Duration_Weibull_Scale'])
-        heterogeneity[RelationshipType.INFORMAL]   = float(pfap['INFORMAL']['Relationship_Parameters']['Duration_Weibull_Heterogeneity'])
-        scale[RelationshipType.MARITAL]     =        float(pfap['MARITAL']['Relationship_Parameters']['Duration_Weibull_Scale'])
-        heterogeneity[RelationshipType.MARITAL]    = float(pfap['MARITAL']['Relationship_Parameters']['Duration_Weibull_Heterogeneity'])
-        kapv[RelationshipType.TRANSITORY] = 1 / heterogeneity[RelationshipType.TRANSITORY]
-        muv[RelationshipType.TRANSITORY]  = scale[RelationshipType.TRANSITORY] * math.gamma(1+1/kapv[RelationshipType.TRANSITORY])
-        kapv[RelationshipType.INFORMAL] = 1 / heterogeneity[RelationshipType.INFORMAL]
-        muv[RelationshipType.INFORMAL]  = scale[RelationshipType.INFORMAL] * math.gamma(1+1/kapv[RelationshipType.INFORMAL])
-        kapv[RelationshipType.MARITAL] = 1 / heterogeneity[RelationshipType.MARITAL]
-        muv[RelationshipType.MARITAL]  = scale[RelationshipType.MARITAL] * math.gamma(1+1/kapv[RelationshipType.MARITAL])
+        scale = {r: pfap[REL_NAMES[r].upper()]['Relationship_Parameters']['Duration_Weibull_Scale'] for r in RelationshipType}
+        heterogeneity = {r: pfap[REL_NAMES[r].upper()]['Relationship_Parameters']['Duration_Weibull_Heterogeneity'] for
+                         r in RelationshipType}
+        kapv = {k: 1 / v for k, v in heterogeneity.iteritems()}
+        muv = {k: scale[k] * math.gamma(1+1/v) for k, v in kapv.iteritems()}
 
         for reltype in [RelationshipType.TRANSITORY, RelationshipType.INFORMAL, RelationshipType.MARITAL]:
             relname = REL_NAMES[reltype]
