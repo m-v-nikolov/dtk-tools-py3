@@ -3,7 +3,7 @@ import os
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 import multiprocessing
-from simtools.Utilities.General import get_os, init_logging
+from simtools.Utilities.General import get_os, init_logging, nostdout
 
 logger = init_logging('AnalyzeManager')
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -31,7 +31,6 @@ class AnalyzeManager:
                 exp_manager.parserClass.createSimDirectoryMap(exp_manager.experiment.exp_id, exp_manager.experiment.suite_id)
 
             if exp_manager.compress_assets:
-                from simtools.Utilities.General import nostdout
                 with nostdout():
                     exp_manager.parserClass.enableCompression()
 

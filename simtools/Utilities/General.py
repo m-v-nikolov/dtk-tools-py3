@@ -5,7 +5,6 @@ import os
 import platform
 import sys
 
-
 logging_initialized = False
 def init_logging(name):
     import logging.config
@@ -21,6 +20,39 @@ try:
     logger = init_logging('Utils')
 except:
     pass
+
+
+def retrieve_item(itemid):
+    """
+    Return the object identified by id.
+    Can be an experiment, a suite or a batch.
+    If it is a suite, all experiments with this suite_id will be returned.
+    """
+    # First try to get an experiment
+    from simtools.Utilities.Experiments import retrieve_experiment
+    from simtools.DataAccess.DataStore import DataStore
+    from simtools.Utilities.COMPSUtilities import exps_for_suite_id
+    try:
+        return retrieve_experiment(itemid)
+    except: pass
+
+    # This was not an experiment, maybe a batch ?
+    batch = DataStore.get_batch_by_id(itemid)
+    if batch: return batch
+
+    batch = DataStore.get_batch_by_name(itemid)
+    if batch: return batch
+
+    # Still no item found -> test the suites
+    exps = DataStore.get_experiments_by_suite(itemid)
+    if exps: return exps
+
+    # Still not -> last chance is a COMPS suite
+    exps = exps_for_suite_id(itemid)
+    if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
+
+    # Didnt find anything sorry
+    raise(Exception('Could not find any item corresponding to %s' % itemid))
 
 def get_os():
     """

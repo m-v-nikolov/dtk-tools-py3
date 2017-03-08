@@ -5,17 +5,6 @@ from simtools.DataAccess.Schema import Batch, BatchExperiment
 class BatchDataStore:
 
     @classmethod
-    def get_batch(cls, batch):
-        if batch is None:
-            return None
-
-        with session_scope() as session:
-            batch = session.query(Batch).filter(Batch.id == batch.id).one_or_none()
-            session.expunge_all()
-
-        return batch
-
-    @classmethod
     def get_batch_by_id(cls, batch_id):
         if batch_id is None:
             return None

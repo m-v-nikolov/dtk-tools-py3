@@ -133,6 +133,12 @@ def sims_from_suite_id(suite_id):
         sims += sims_from_experiment(e)
     return sims
 
+def exps_for_suite_id(suite_id):
+    try:
+        return Experiment.get(query_criteria=QueryCriteria().where('suite_id=%s' % suite_id))
+    except:
+        return None
+
 
 def experiment_is_running(e):
     return len(e.get_simulations(query_criteria=QueryCriteria().where('state=Running')) + e.get_simulations(
