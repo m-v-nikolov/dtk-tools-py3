@@ -36,7 +36,8 @@ builtinAnalyzers = {
     'hiv_RelationshipDuration': RelationshipDurationAnalyzer(),
     'hiv_HIVDebutAnalyzer': RelationshipDurationAnalyzer(),
     'hiv_DebutAgeAnalyzer': DebutAgeAnalyzer(),
-    'hiv_PrognosisAnalyzer': PrognosisAnalyzer()
+    'hiv_PrognosisAnalyzer': PrognosisAnalyzer(),
+    'hiv_CircumcisionAnalyzer': CircumcisionAnalyzer()
 }
 
 
