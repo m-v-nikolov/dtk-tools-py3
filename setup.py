@@ -77,9 +77,9 @@ requirements = OrderedDict([
     }),
     ('statsmodels', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '0.6.1',
+        'version': '0.8.0',
         'test': '==',
-        'wheel': '%s/statsmodels-0.6.1-cp27-none-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('SQLAlchemy', {
         'platform': ['win', 'lin', 'mac'],
