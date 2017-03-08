@@ -631,30 +631,21 @@ def main():
     parser_progress.set_defaults(func=progress)
 
     # 'dtk analyze' options
-    parser_analyze = subparsers.add_parser('analyze',
-                                           help='Analyze finished simulations in experiment according to analyzers.')
+    parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name for analyze.')
-    parser_analyze.add_argument('-bid', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
-    parser_analyze.add_argument('-eid', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID.')
-    parser_analyze.add_argument('-a', '--config_name', dest='config_name', default=None,
-                                help='Python script or builtin analyzer name for custom analysis of simulations.')
-    parser_analyze.add_argument('-c', '--comps', action='store_true',
-                                help='Use COMPS asset service to read output files (default is direct file access).')
-    parser_analyze.add_argument('-f', '--force', action='store_true',
-                                help='Force analyzer to run even if jobs are not all finished.')
+    parser_analyze.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
+    parser_analyze.add_argument('-a', '--config_name', dest='config_name', default=None,  help='Python script or builtin analyzer name for custom analysis of simulations.')
+    parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
     parser_analyze.set_defaults(func=analyze)
 
     # 'dtk create_batch' options
-    parser_analyze = subparsers.add_parser('create_batch',
-                                           help='Create a Batch for later use in Analyze.')
+    parser_analyze = subparsers.add_parser('create_batch',     help='Create a Batch for later use in Analyze.')
     parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
-    parser_analyze.add_argument('-bid', '--batchId', dest='batchId', default=None, nargs='*', help='Batch ID.')
-    parser_analyze.add_argument('-eid', '--expId', dest='expId', default=None, nargs='*', help='Experiment ID or name.')
+    parser_analyze.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
     parser_analyze.set_defaults(func=create_batch)
 
     # 'dtk list_batch' options
-    parser_list = subparsers.add_parser('list_batch',
-                                        help='Report recent 20 list of batches in Batch.')
+    parser_list = subparsers.add_parser('list_batch', help='Report recent 20 list of batches in Batch.')
     parser_list.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
     parser_list.add_argument('-n', '--number',  dest='limit', help='Get given number recent batch list')
     parser_list.set_defaults(func=list_batch)
