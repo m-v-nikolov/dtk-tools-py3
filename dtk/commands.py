@@ -337,6 +337,16 @@ def delete_batch(args, unknownArgs):
 
 
 def clear_batch(args, unknownArgs):
+    if len(unknownArgs) > 1:
+        print "/!\\ BATCH WARNING /!\\"
+        print 'Too many batch names are provided: %s' % unknownArgs
+        exit()
+
+    if args.batchId and len(unknownArgs) > 0:
+        print "/!\\ BATCH WARNING /!\\"
+        print 'Both batchId and batchName are provided. This action cannot take both!\n'
+        exit()
+
     AnalyzeHelper.clear_batch(args.batchId, True)
 
 

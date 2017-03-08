@@ -91,8 +91,6 @@ def save_batch(args, final_exp_list=None):
     return batch_id
 
 
-
-
 def create_batch(args, unknownArgs):
     """
      - create or use existing batch
@@ -238,8 +236,27 @@ def list_batch(args, unknownArgs):
     """
     List experiments from local database
     """
-    batches = BatchDataStore.get_batch_list(args.batchId)
+    if len(unknownArgs) > 1:
+        print "/!\\ BATCH WARNING /!\\"
+        print 'Too many batch names are provided: %s' % unknownArgs
+        exit()
 
+    batches = None
+    if args.batchId and len(unknownArgs) > 0:
+        print "/!\\ BATCH WARNING /!\\"
+        print 'Both batchId and batchName are provided. We will ignore both and list all batches in DB!\n'
+        batches = BatchDataStore.get_batch_list()
+    elif args.batchId:
+        batches = BatchDataStore.get_batch_list(args.batchId)
+    elif len(unknownArgs) > 0:
+        batches = BatchDataStore.get_batch_list_by_name(unknownArgs[0])
+    else:
+        batches = BatchDataStore.get_batch_list()
+
+    display_batch(batches)
+
+
+def display_batch(batches):
     if batches:
         print '---------- Batch(s) in DB -----------'
         if isinstance(batches, list):
@@ -261,6 +278,15 @@ def delete_batch(args, unknownArgs):
     """
     Delete a particular batch or all batches in DB
     """
+    if len(unknownArgs) > 1:
+        print 'Too many parameters are provided: %s' % unknownArgs
+        exit()
+
+    if args.batchId and len(unknownArgs) > 0:
+        print "/!\\ BATCH WARNING /!\\"
+        print 'Both batchId and batchName are provided. This action cannot take both!\n'
+        exit()
+
     msg = ''
     if args.batchId:
         msg = 'Are you sure you want to delete the Batch %s (Y/n)? ' % args.batchId
@@ -285,7 +311,7 @@ def clear_batch(batchId=None, ask=False):
     """
 
     if batchId:
-        msg = 'Are you sure you want to remove all associated experiments (Y/n)? '
+        msg = 'Are you sure you want to detach all associated experiments (Y/n)? '
     else:
         msg = 'Are you sure you want to remove all empty Batches (Y/n)? '
 

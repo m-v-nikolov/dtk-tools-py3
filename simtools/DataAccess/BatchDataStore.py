@@ -1,8 +1,5 @@
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Batch, BatchExperiment
-from simtools.DataAccess.Schema import Experiment, Simulation
-from sqlalchemy import func
-from operator import or_, is_
 
 
 class BatchDataStore:
@@ -68,6 +65,18 @@ class BatchDataStore:
         with session_scope() as session:
             if batch_id:
                 batches = session.query(Batch).filter(Batch.id == batch_id).one_or_none()
+            else:
+                batches = session.query(Batch).all()
+
+            session.expunge_all()
+
+        return batches
+
+    @classmethod
+    def get_batch_list_by_name(cls, batch_name=None):
+        with session_scope() as session:
+            if batch_name:
+                batches = session.query(Batch).filter(Batch.name == batch_name).one_or_none()
             else:
                 batches = session.query(Batch).all()
 
