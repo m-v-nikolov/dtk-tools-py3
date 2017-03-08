@@ -43,8 +43,15 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(final_exp_list, analyzers)
 
-    # save/create batch
-    save_batch(args, final_exp_list)
+    # check if there is any existing batch containing the same experiments
+    batch_existing = check_existing_batch(final_exp_list)
+
+    if batch_existing is None:
+        # save/create batch
+        save_batch(args, final_exp_list)
+    else:
+        # display the exisng batch
+        print '\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id)
 
     # start to analyze
     analyzeManager.analyze()
@@ -57,6 +64,20 @@ def validate_parameters(args, unknownArgs):
     if args.config_name is None:
         print 'Please provide Analyze (-a or --config_name).'
         exit()
+
+
+def check_existing_batch(final_exp_list):
+    final_exp_list_ids = [exp.exp_id for exp in final_exp_list]
+    batch_list = BatchDataStore.get_batch_list()
+
+    for batch in batch_list:
+        exp_list_ids = batch.get_experiment_ids()
+
+        if len(exp_list_ids) == len(final_exp_list_ids):
+            if set(exp_list_ids) == set(final_exp_list_ids):
+                return batch
+
+    return None
 
 
 def save_batch(args, final_exp_list=None):
