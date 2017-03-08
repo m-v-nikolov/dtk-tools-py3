@@ -120,7 +120,7 @@ class SimulationOutputParser(threading.Thread):
             n_tstep, = struct.unpack('i', data[4:8])
             # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids_dtype = np.dtype([('ids', '<i4', (1, n_nodes))])
+            nodeids_dtype = np.dtype([('ids', '<u4', (1, n_nodes))])
             nodeids = np.fromfile(bin_file, dtype=nodeids_dtype, count=1)
             nodeids = nodeids['ids'][:, :, :].ravel()
             # print( "node IDs: " + str(nodeids) )
@@ -225,7 +225,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
             n_tstep, = struct.unpack('i', arr[4:8])
             # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids = struct.unpack(str(n_nodes) + 'i', arr[8:8 + n_nodes * 4])
+            nodeids = struct.unpack(str(n_nodes) + 'I', arr[8:8 + n_nodes * 4])
             nodeids = np.asarray(nodeids)
             # print( "node IDs: " + str(nodeids) )
 
