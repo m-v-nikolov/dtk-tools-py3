@@ -35,7 +35,8 @@ builtinAnalyzers = {
     'hiv_ReportHIVByAgeAndGender': ReportHIVByAgeAndGenderAnalyzer(force_apply=True, force_combine=True, verbose=True),
     'hiv_RelationshipDuration': RelationshipDurationAnalyzer(),
     'hiv_HIVDebutAnalyzer': RelationshipDurationAnalyzer(),
-    'hiv_DebutAgeAnalyzer': DebutAgeAnalyzer()
+    'hiv_DebutAgeAnalyzer': DebutAgeAnalyzer(),
+    'hiv_PrognosisAnalyzer': PrognosisAnalyzer()
 }
 
 

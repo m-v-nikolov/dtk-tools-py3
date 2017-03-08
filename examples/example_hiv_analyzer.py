@@ -1,5 +1,5 @@
 from dtk.HIV.analyzers import *
 
-analyzers = [ RelationshipDurationAnalyzer(), DebutAgeAnalyzer() ]
+# analyzers = [ RelationshipDurationAnalyzer(), DebutAgeAnalyzer(), PrognosisAnalyzer() ]
 
-# analyzers = [ RelationshipDurationAnalyzer() ]
+analyzers = [ PrognosisAnalyzer() ]
