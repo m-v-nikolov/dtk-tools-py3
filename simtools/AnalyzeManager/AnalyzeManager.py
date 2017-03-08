@@ -16,7 +16,7 @@ class AnalyzeManager:
         self.analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
 
-        self.parsers = {}
+        self.parsers = []
         self.initialize(self.exp_list)
 
     def initialize(self, exp_list):
@@ -58,7 +58,6 @@ class AnalyzeManager:
         self.maxThreadSemaphore.acquire()
         parser = manager.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
         parser.start()
-        self.parsers[parser.sim_id] = parser
 
     def analyze(self):
         # If no analyzers -> quit
@@ -76,7 +75,7 @@ class AnalyzeManager:
         plotting_processes = []
         from multiprocessing import Process
         for a in self.analyzers:
-            a.combine({parser.sim_id:parser for parser in self.parsers})
+            a.combine({parser.sim_id: parser for parser in self.parsers})
             a.finalize()
             # Plot in another process
             try:
