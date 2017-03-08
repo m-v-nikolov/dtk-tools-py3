@@ -13,8 +13,6 @@ import seaborn as sns
 from dtk.utils.parsers.malaria_summary import \
     summary_channel_to_pandas, get_grouping_for_summary_channel, get_bins_for_summary_grouping
 
-from calibtool.utils import NumpyEncoder
-
 from calibtool.analyzers.Helpers import \
     convert_annualized, convert_to_counts, age_from_birth_cohort, season_from_time
 
@@ -23,6 +21,7 @@ from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
 from calibtool.study_sites.MatsariCalibSite import MatsariCalibSite
 
 from calibtool.LL_calculators import dirichlet_multinomial, gamma_poisson, beta_binomial
+from simtools.Utilities.Encoding import NumpyEncoder
 
 sns.set_style('white')
 

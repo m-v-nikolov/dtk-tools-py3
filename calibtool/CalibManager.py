@@ -238,12 +238,8 @@ class CalibManager(object):
         # Make sure all our simulations finished first
         self.wait_for_finished()
 
-        # Get the results of the iteration
-        results = self.analyze_iteration()
-
-        # Set those results in the next point algorithm
-        self.next_point.set_results_for_iteration(self.iteration, results)
-        self.iteration_state.set_next_point(self.next_point)
+        # Analyze the iteration
+        self.analyze_iteration()
 
         # Ready for plotting
         self.status = ResumePoint.plot
@@ -286,12 +282,9 @@ class CalibManager(object):
             exp_builder = ModBuilder.from_combos(
                 [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
                 [ModFn(site.setup_fn) for site in self.sites],
-                # itertuples preserves datatype
-                # First tuple element is index (use this instead of enumerate)
-                # Because parameter names are not necessarily valid python identifiers, have to build my own dictionary here
-                [ModFn(self.map_sample_to_model_input_fn(sample[0]),
-                    {k: v for k, v in zip(next_params.columns.values, sample[1:])})
-                 for sample in next_params.itertuples()])
+                [ModFn(self.map_sample_to_model_input_fn(index), samples) for index, samples in enumerate(next_params)]
+            )
+
 
             self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
@@ -373,26 +366,30 @@ class CalibManager(object):
                 exp_manager.add_analyzer(analyzer)
         exp_manager.analyze_experiment()
 
+        # Ask the analyzers to cache themselves
         cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
         logger.debug(cached_analyses)
 
+        # Get the results from the analyzers and ask the next point how it wants to cache them
         results = pd.DataFrame({a.uid(): a.result for a in exp_manager.analyzers})
-        results['total'] = results.sum(axis=1)
+        cached_results = self.next_point.get_results_to_cache(results)
+        logger.debug(cached_results)
 
-        logger.debug(results)
-        cached_results = results.to_dict(orient='list')
-
+        # Store the analyzers and results in the iteration state
         self.iteration_state.analyzers = cached_analyses
         self.iteration_state.results = cached_results
 
-        iteration_summary = self.iteration_state.summary_table()
+        # Set those results in the next point algorithm
+        self.next_point.set_results_for_iteration(self.iteration, results)
+        self.iteration_state.set_next_point(self.next_point)
 
-        self.all_results = pd.concat((self.all_results, iteration_summary)).sort_values(by='total', ascending=False)
-        logger.info(self.all_results[['iteration', 'total']].head(10))
+        # Update the summary table and all the results
+        all_results, summary_table = self.next_point.update_summary_table(self.iteration_state, self.all_results)
+        self.all_results = all_results
+        logger.info(summary_table)
 
+        # Cache
         self.cache_calibration()
-
-        return results.total.tolist()
 
     def plot_iteration(self):
         # Run all the plotters

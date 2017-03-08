@@ -86,7 +86,7 @@ class IMIS(NextPointAlgorithm):
             samples = self.choose_next_point_samples(iteration)
             self.update_gaussian_probabilities(iteration - 1)
         samples.reset_index(drop=True, inplace=True)
-        return samples
+        return self.generate_samples_from_df(samples)
 
     def update_iteration(self, iteration):
         '''
@@ -314,6 +314,7 @@ class IMIS(NextPointAlgorithm):
             self.validate_parameters()  # if the current state is being reset from file
 
     def set_results_for_iteration(self, iteration, results):
+        results = results.total.tolist()
         logger.info('%s: Choosing samples at iteration %d:', self.__class__.__name__, iteration)
         logger.debug('Results:\n%s', results)
 

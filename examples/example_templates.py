@@ -14,11 +14,13 @@ Template files, e.g. the ones we're going to generate on a per-simulation basis,
 """
 
 import os
-from dtk.utils.builders.TemplateHelper import TemplateHelper
+
 from dtk.utils.builders.ConfigTemplate import ConfigTemplate
 from dtk.utils.builders.TaggedTemplate import CampaignTemplate, DemographicsTemplate
+from dtk.utils.builders.TemplateHelper import TemplateHelper
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from simtools.ModBuilder import ModBuilder, ModList, ModFn
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.SetupParser import SetupParser
 
 # For example only -- Force the selected block to be EXAMPLE
@@ -113,8 +115,7 @@ run_sim_args =  {'config_builder': config_builder,
                  'exp_name': 'TemplateDemo'}
 
 if __name__ == "__main__":
-    from simtools.ExperimentManager import ExperimentManagerFactory
-
     exp_manager = ExperimentManagerFactory.from_setup(SetupParser())
     exp_manager.run_simulations(**run_sim_args)
+    exp_manager.wait_for_finished(verbose=True)
 

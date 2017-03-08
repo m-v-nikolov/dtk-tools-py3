@@ -131,7 +131,7 @@ class OptimTool(NextPointAlgorithm):
             samples = self.choose_samples_via_gradient_ascent(iteration)
 
         samples.reset_index(drop=True, inplace=True)
-        return samples
+        return self.generate_samples_from_df(samples)
 
     def clamp(self, X):
 
@@ -145,6 +145,7 @@ class OptimTool(NextPointAlgorithm):
 
 
     def set_results_for_iteration(self, iteration, results):
+        results = results.total.tolist()
         logger.info('%s: Choosing samples at iteration %d:', self.__class__.__name__, iteration)
         logger.debug('Results:\n%s', results)
 
