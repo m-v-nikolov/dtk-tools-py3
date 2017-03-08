@@ -1,17 +1,16 @@
 import argparse
 import csv
 import datetime
-import json
 import os
 import subprocess
 import sys
 from importlib import import_module
 
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
+from dtk.HIV.analyzers import *
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
-from dtk.HIV.analyzers import *
 from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
@@ -60,9 +59,6 @@ def load_config_module(config_name):
         logger.error("ImportError: '%s' during loading module '%s' in %s. Exiting...",
                      e.message, module_name, os.getcwd())
         exit()
-    else:
-        logger.error("Unexpected error: %s", sys.exc_info()[0])
-        raise
 
 
 def test(args, unknownArgs):
