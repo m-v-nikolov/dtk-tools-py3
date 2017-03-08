@@ -1,5 +1,5 @@
 import logging
-import pandas as pd
+
 import numpy as np
 from scipy.stats import multivariate_normal
 from scipy.spatial.distance import seuclidean
@@ -292,28 +292,6 @@ class IMIS(NextPointAlgorithm):
         ret['weights'] = [val for val in self.weights[resample_idxs]]
 
         return {'final_samples': ret}
-
-    def get_final_samples_new(self):
-        nonzero_idxs = self.weights > 0
-        idxs = [i for i, w in enumerate(self.weights[nonzero_idxs])]
-        try:
-            resample_idxs = np.random.choice(idxs, self.n_resamples, replace=True, p=self.weights[nonzero_idxs])
-        except ValueError:
-            # To isolate dtk-tools issue #96
-            print(nonzero_idxs)
-            print(self.weights)
-            print(idxs)
-            raise
-
-        # Get final samples and add the weight column
-        samples_df = pd.DataFrame(self.samples[resample_idxs], columns=self.get_param_names())
-        samples_df['weights'] = self.weights[resample_idxs]   # [val for val in self.weights[resample_idxs]]
-        # return {'final_samples': samples_df.to_dict(orient='list')}
-
-        # Get dtypes and cleanup
-        dtypes = {name: str(data.dtype) for name, data in samples_df.iteritems()}
-        final_samples_NaN_to_Null = samples_df.where(~samples_df.isnull(), other=None)
-        return {'final_samples': final_samples_NaN_to_Null.to_dict(orient='list'), 'final_samples_dtypes': dtypes}
 
     def get_state(self):
         state = super(IMIS, self).get_state()
