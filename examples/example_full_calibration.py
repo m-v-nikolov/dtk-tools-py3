@@ -63,7 +63,7 @@ def sample_point_fn(cb, sample_dimension_values):
     sample_point = prior.to_dict(sample_dimension_values)  # aligns names and values; rounds integer-range_type params
 
     params_to_update = dict()
-    params_to_update['Simulation_Duration'] = 365   # 365 * 5  # shorter for quick test
+    params_to_update['Simulation_Duration'] = 365 * 5  # shorter for quick test
 
     for sample_dimension_name, sample_dimension_value in sample_point.items():
         # Apply specific logic to convert sample-point dimensions into simulation configuration parameters
@@ -80,8 +80,8 @@ next_point_kwargs = dict(initial_samples=4,
                          samples_per_iteration=2,
                          n_resamples=100)
 
-calib_manager = CalibManager(name='FullCalibrationExample7',
-                             setup=SetupParser(),           # setup=SetupParser('EXAMPLEHPC'),
+calib_manager = CalibManager(name='FullCalibrationExample',
+                             setup=SetupParser('EXAMPLEHPC'),
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
