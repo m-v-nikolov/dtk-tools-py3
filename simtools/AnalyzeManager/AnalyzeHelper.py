@@ -40,6 +40,10 @@ def analyze(args, unknownArgs, builtinAnalyzers):
 
     final_exp_list = exp_list + exp_existing if batch else exp_list
 
+    if len(final_exp_list) == 0:
+        # No experiment specified -> using latest
+        final_exp_list = [DataStore.get_most_recent_experiment()]
+
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(final_exp_list, analyzers)
 
@@ -61,7 +65,7 @@ def validate_parameters(args, unknownArgs):
 
 def save_batch(args, final_exp_list=None):
     if len(final_exp_list) == 0:
-        print 'Please to provide some experiment(s) to analyze.'
+        print 'Please provide some experiment(s) to analyze.'
         exit()
 
     batch = BatchDataStore.get_batch_by_name(args.batchName)
