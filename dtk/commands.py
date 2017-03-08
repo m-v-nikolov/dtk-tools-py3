@@ -479,12 +479,6 @@ def version(args, unknownArgs):
 
 # List experiments from local database
 def db_list(args, unknownArgs):
-
-    print args
-    print unknownArgs
-
-    # exit()
-
     format_string = "%s - %s (%s) - %d simulations - %s"
     experiments = []
 
