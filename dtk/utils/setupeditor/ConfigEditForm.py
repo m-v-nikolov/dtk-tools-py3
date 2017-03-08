@@ -71,6 +71,7 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
 
     def onFocus(self, event):
         cb = event.GetEventObject()
+        print '%s got focus' % cb.GetName()
         if self.helps[cb.GetName()]:
             self.helps[cb.GetName()].Show()
             self.Layout()
@@ -83,6 +84,7 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
 
     def onKillFocus(self, event):
         cb = event.GetEventObject()
+        print '%s leave focus' % cb.GetName()
         if self.helps[cb.GetName()]:
             self.helps[cb.GetName()].Hide()
             self.Layout()

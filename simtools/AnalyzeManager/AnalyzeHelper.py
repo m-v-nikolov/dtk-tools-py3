@@ -46,7 +46,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # check if there is any existing batch containing the same experiments
     batch_existing = check_existing_batch(final_exp_list)
 
-    if batch_existing is None:
+    if batch_existing is None or args.batchName:
         # save/create batch
         save_batch(args, final_exp_list)
     else:
