@@ -27,26 +27,32 @@ def analyze(args, unknownArgs, builtinAnalyzers):
         batch = DataStore.get_batch_by_name(args.batchName)
         if batch:
             exp_ids_from_batch = batch.get_experiment_ids()
+            exp_list_ids = exp_list.keys()
 
-            print("\nBatch with name %s already exists and contains the following experiment(s):\n" % args.batchName)
-            print '\n'.join([' - %s' % exp_id for exp_id in exp_ids_from_batch])
+            if not compare_two_ids_list(exp_list_ids, exp_ids_from_batch):
 
-            if exp_list:
-                var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
-                # print "You selected '%s'" % var
-                if var == 'O':
-                    # clear existing experiments associated with this Batch
-                    DataStore.clear_batch(batch)
-                elif var == 'M':
-                    # collect 'new' experiments to be added to the existing batch
-                    for exp_id in exp_ids_from_batch:
-                        if not exp_list.has_key(exp_id):
-                            exp_list[exp_id] = retrieve_experiment(exp_id)
-                elif var == 'C':
-                    exit()
-                else:
-                    print "Option '%s' is invalid..." % var
-                    exit()
+                # confirm only if existing batch contains different experiments
+                print("\nBatch with name %s already exists and contains the following experiment(s):\n" % args.batchName)
+                print '\n'.join([' - %s' % exp_id for exp_id in exp_ids_from_batch])
+
+                if exp_list:
+                    var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
+                    # print "You selected '%s'" % var
+                    if var == 'O':
+                        # clear existing experiments associated with this Batch
+                        DataStore.clear_batch(batch)
+                    elif var == 'M':
+                        # collect 'new' experiments to be added to the existing batch
+                        for exp_id in exp_ids_from_batch:
+                            if not exp_list.has_key(exp_id):
+                                exp_list[exp_id] = retrieve_experiment(exp_id)
+                    elif var == 'C':
+                        exit()
+                    else:
+                        print "Option '%s' is invalid..." % var
+                        exit()
+            else:
+                pass
 
     # check status for each experiment
     if not args.force:
@@ -63,8 +69,15 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(exp_list.values(), analyzers)
 
-    # save/create batch
-    save_batch(args, exp_list.values())
+    # check if there is any existing batch containing the same experiments
+    batch_existing = check_existing_batch(exp_list)
+
+    if batch_existing is None or args.batchName:
+        # save/create batch
+        save_batch(args, exp_list.values())
+    else:
+        # display the exisng batch
+        print '\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id)
 
     # start to analyze
     analyzeManager.analyze()
@@ -75,8 +88,28 @@ def analyze(args, unknownArgs, builtinAnalyzers):
 
 def validate_parameters(args, unknownArgs):
     if args.config_name is None:
-        print 'Please provide Analyze (-a or --config_name).'
+        print 'Please provide Analyzer (-a or --config_name).'
         exit()
+
+
+def check_existing_batch(exp_list):
+    exp_list_ids = exp_list.keys()
+    batch_list = DataStore.get_batch_list()
+
+    for batch in batch_list:
+        batch_list_ids = batch.get_experiment_ids()
+
+        if compare_two_ids_list(exp_list_ids, batch_list_ids):
+            return batch
+
+    return None
+
+
+def compare_two_ids_list(ids_1, ids_2):
+    if len(ids_1) == len(ids_2) and set(ids_1) == set(ids_2):
+            return True
+    else:
+        return False
 
 
 def save_batch(args, final_exp_list=None):
