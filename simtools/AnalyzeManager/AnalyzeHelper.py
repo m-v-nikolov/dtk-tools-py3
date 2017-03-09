@@ -88,7 +88,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
 
 def validate_parameters(args, unknownArgs):
     if args.config_name is None:
-        print 'Please provide Analyze (-a or --config_name).'
+        print 'Please provide Analyzer (-a or --config_name).'
         exit()
 
 
