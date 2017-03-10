@@ -11,7 +11,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list, analyzers, setup):
+    def __init__(self, exp_list, analyzers, setup=None):
         if not setup:
             setup = SetupParser()
         self.exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
