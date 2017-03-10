@@ -135,7 +135,7 @@ class SimulationOutputParser(threading.Thread):
                                    'data': channel_data}
 
     def get_sim_dir(self):
-        return os.path.join(self.sim_dir, self.sim_id)
+        return self.sim_dir
 
 
 class CompsDTKOutputParser(SimulationOutputParser):
