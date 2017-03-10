@@ -35,7 +35,9 @@ builtinAnalyzers = {
     'hiv_HIVDebutAnalyzer': RelationshipDurationAnalyzer(),
     'hiv_DebutAgeAnalyzer': DebutAgeAnalyzer(),
     'hiv_PrognosisAnalyzer': PrognosisAnalyzer(),
-    'hiv_CircumcisionAnalyzer': CircumcisionAnalyzer()
+    'hiv_CircumcisionAnalyzer': CircumcisionAnalyzer(),
+    'hiv_CD4ProgressionAnalyzer': CD4ProgressionAnalyzer(),
+    'hiv_WHOStageAnalyzer': WHOStageAnalyzer()
 }
 
 
