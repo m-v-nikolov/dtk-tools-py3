@@ -11,7 +11,9 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list, analyzers, setup=SetupParser()):
+    def __init__(self, exp_list, analyzers, setup):
+        if not setup:
+            setup = SetupParser()
         self.exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
         self.analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
