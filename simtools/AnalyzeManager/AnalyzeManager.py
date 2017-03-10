@@ -43,7 +43,7 @@ class AnalyzeManager:
             # Called when a simulation finishes
             filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
             if filtered_analyses:
-                parser = exp_manager.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
+                parser = exp_manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses)
                 self.parsers.append(parser)
 
     def analyze_simulation(self, simulation, manager):
@@ -57,7 +57,7 @@ class AnalyzeManager:
             return
 
         self.maxThreadSemaphore.acquire()
-        parser = manager.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
+        parser = manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses)
         parser.start()
 
     def analyze(self):
