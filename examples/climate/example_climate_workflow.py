@@ -4,19 +4,32 @@
 import csv
 import json
 import os
+import struct
 import time
 from collections import OrderedDict
 
-import struct
+from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
+from COMPS.Data import QueryCriteria, AssetType
+from COMPS.Data import WorkItem, WorkItemFile
 
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
 from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
 from dtk.tools.demographics.node import Node
 from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
-from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 
+# Set up the paths
+current_dir = os.path.dirname(os.path.realpath(__file__))
+output_path = os.path.join(current_dir,'output')
+internediate_dir = os.path.join(current_dir, 'intermediate','climate')
+
+# Make sure we have directory created
+if not os.path.exists(internediate_dir): os.makedirs(internediate_dir)
+if not os.path.exists(output_path): os.makedirs(output_path)
+
+# Get a setup
+sp = SetupParser('HPC')
 
 # Create the 2 nodes we need to pull weather for
 nodes = [
@@ -29,55 +42,42 @@ dg = DemographicsFile(nodes)
 dg.generate_file('climate_demog.json')
 
 # Create the workorder
-wo = WorkOrderGenerator(demographics_file_path='climate_demog.json',wo_output_path='output',  project_info='IDM-Zambia', start_year='2008', num_years='1', resolution='0')
+wo = WorkOrderGenerator(demographics_file_path='climate_demog.json', wo_output_path='output',  project_info='IDM-Zambia', start_year='2008', num_years='1', resolution='0')
 
 # Get the weather from COMPS
-sp = SetupParser('HPC')
-from COMPS import Client
-from COMPS.Data import QueryCriteria, AssetType
-from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
-from java.util import HashMap, ArrayList
+workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
 
-workerkey = WorkerKey('InputDataWorker', '1.0.0.0_RELEASE')
-wi = WorkItem('dtk-tools InputDataWorker WorkItem', sp.get('environment'), workerkey)
-tagmap = HashMap()
-tagmap.put('dtk-tools', None)
-tagmap.put('WorkItem type', 'InputDataWorker dtk-tools')
-wi.SetTags(tagmap)
+wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, sp.get('environment'))
+wi.set_tags({'dtk-tools':None, 'WorkItem type':'InputDataWorker dtk-tools'})
+wi.add_work_order(data=json.dumps(wo.wo_2_dict()))
+wi.add_file(WorkItemFile('climate_demog.json', 'Demographics', ''), data=json.dumps(dg.content))
+wi.save()
+wi.commission()
 
-wi.AddWorkOrder(json.dumps(wo.wo_2_dict()))
-wi.AddFile(WorkItemFile('climate_demog.json', 'Demographics', ''),json.dumps(dg.content))
-wi.Save()
-wi.Commission()
-
-while (wi.getState().toString() not in ['Succeeded', 'Failed', 'Canceled']):
-    print "Waiting for work order to finish..."
-    time.sleep(1)
-    wi.Refresh()
+while wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]:
+    print "Waiting for work order to finish... (Current state = %s)" % wi.state
+    time.sleep(3)
+    wi.refresh()
 
 print "Successfully generated"
 
-wi.Refresh(QueryCriteria().select_children('files'))
-wifiles = wi.getFiles().toArray()
-wifilenames = [wif.getFileName() for wif in wifiles if wif.getFileType() == 'Output']
+# Get the files out of the workorder
+wi.refresh(QueryCriteria().select_children('files'))
+wifilenames = [wif.file_name for wif in wi.files if wif.file_type == 'Output']
+
 if len(wifilenames) > 0:
-    print 'Found output files: ' + str(wifilenames)
+    print 'Found output files: ' + str('\n'.join(wifilenames))
     print 'Downloading now'
 
-    javalist = ArrayList()
-    for f in wifilenames:
-        javalist.add(f)
-
-    assets = wi.RetrieveAssets(AssetType.Linked,  javalist)
+    assets = wi.retrieve_assets(AssetType.Linked, wifilenames)
 
     for i in range(len(wifilenames)):
-        with open(os.path.join('intermediate/climate', wifilenames[i]), 'wb') as outfile:
-            outfile.write(assets.get(i).tostring())
+        with open(os.path.join(internediate_dir, wifilenames[i]), 'wb') as outfile:
+            outfile.write(assets[i])
 
 
 # We now have the intermediate weather -> Create the list of nodes
 # Extract the nodes from the demog
-
 def extract_data_from_bin(node, binary_file):
     meta = json.load(open(binary_file+'.json','rb'))
     tsteps = meta['Metadata']['DatavalueCount']
@@ -113,13 +113,13 @@ for node in demog['Nodes']:
 
     climate_nodes[node['NodeAttributes']['FacilityName']] = n
 
-# Load Jaline's nodes from the demographics file
+# Load nodes from the demographics file
 demog = json.load(open('inputs/Bbondo_households_demographics_CBfilled_noworkvector.json'))
 nodes = []
 
 # Get the temperature from CSV
 temperature_csv = list()
-for temp in csv.DictReader(open('inputs/one_year_series_add_one_degree.csv')):
+for temp in csv.DictReader(open('inputs/temperature_one_year_series.csv')):
     temperature_csv.append(float(temp['temperature']))
 
 for node in demog['Nodes']:
@@ -141,5 +141,7 @@ for node in demog['Nodes']:
 
 # Create our files from the nodes
 cfc = ClimateFileCreator(nodes,'Bbondo_households_CBfilled_noworkvector','daily','2008-2008','Household-Scenario-Small', True)
-current_dir = os.path.dirname(os.path.realpath(__file__))
-cfc.generate_climate_files(os.path.join(current_dir,'output'))
+cfc.generate_climate_files(output_path)
+
+print "--------------------------------------"
+print "Climate generated in %s" % output_path
