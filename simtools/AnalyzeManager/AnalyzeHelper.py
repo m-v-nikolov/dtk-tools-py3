@@ -70,6 +70,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(exp_list.values(), analyzers)
 
+    # Only create a batch if we pass more than one experiment
     if len(exp_list) != 1:
         # check if there is any existing batch containing the same experiments
         batch_existing = check_existing_batch(exp_list)
@@ -108,10 +109,7 @@ def check_existing_batch(exp_list):
 
 
 def compare_two_ids_list(ids_1, ids_2):
-    if len(ids_1) == len(ids_2) and set(ids_1) == set(ids_2):
-        return True
-    else:
-        return False
+    return len(ids_1) == len(ids_2) and set(ids_1) == set(ids_2)
 
 
 def save_batch(args, final_exp_list=None):
