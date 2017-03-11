@@ -70,15 +70,16 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(exp_list.values(), analyzers)
 
-    # check if there is any existing batch containing the same experiments
-    batch_existing = check_existing_batch(exp_list)
+    if len(exp_list) != 1:
+        # check if there is any existing batch containing the same experiments
+        batch_existing = check_existing_batch(exp_list)
 
-    if batch_existing is None or args.batchName:
-        # save/create batch
-        save_batch(args, exp_list.values())
-    else:
-        # display the exisng batch
-        logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
+        if batch_existing is None or args.batchName:
+            # save/create batch
+            save_batch(args, exp_list.values())
+        else:
+            # display the exisng batch
+            logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
 
     # start to analyze
     analyzeManager.analyze()
