@@ -18,6 +18,9 @@ class BaseAnalyzer(object):
     @abstractmethod
     def __init__(self):
         self.parse = True
+        self.exp_id = None
+        self.exp_name = None
+        self.working_dir = None
 
     def initialize(self):
         pass
