@@ -11,22 +11,28 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list, analyzers, setup=None):
+    def __init__(self, exp_list, analyzers, setup=None, working_dir=None):
         if not setup:
             setup = SetupParser()
         self.exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
         self.analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
+        self.working_dir = working_dir or os.getcwd()
 
         self.parsers = []
         self.initialize(self.exp_list)
 
     def initialize(self, exp_list):
-        for exp in exp_list:
-            self.generate_sim_parser(exp)
+        for analyzer in self.analyzers:
+            analyzer.working_dir = self.working_dir
+            analyzer.initialize()
 
-    def generate_sim_parser(self, exp):
-        exp_manager = ExperimentManagerFactory.from_experiment(exp)
+        for exp in exp_list:
+            self.create_parsers_for_experiment(exp)
+
+    def create_parsers_for_experiment(self, experiment):
+        # Create a manager for the current experiment
+        exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
         if exp_manager.location == 'HPC':
             if not exp_manager.assets_service:
@@ -37,28 +43,29 @@ class AnalyzeManager:
                     exp_manager.parserClass.enableCompression()
 
         for simulation in exp_manager.experiment.simulations:
-            # Add the simulation_id to the tags
-            simulation.tags['sim_id'] = simulation.id
-
-            # Called when a simulation finishes
-            filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
-            if filtered_analyses:
-                parser = exp_manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses)
+            parser = self.parser_for_simulation(simulation, experiment, exp_manager)
+            if parser:
                 self.parsers.append(parser)
 
-    def analyze_simulation(self, simulation, manager):
+    def parser_for_simulation(self, simulation, experiment, manager):
         # Add the simulation_id to the tags
         simulation.tags['sim_id'] = simulation.id
 
-        # Called when a simulation finishes
-        filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
+        filtered_analyses = []
+        for a in self.analyzers:
+            # set the analyzer info fot the current sim
+            a.exp_id = experiment.exp_id
+            a.exp_name = experiment.exp_name
+
+            if a.filter(simulation.tags):
+                filtered_analyses.append(a)
+
         if not filtered_analyses:
             logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
 
-        self.maxThreadSemaphore.acquire()
         parser = manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses)
-        parser.start()
+        return parser
 
     def analyze(self):
         # If no analyzers -> quit

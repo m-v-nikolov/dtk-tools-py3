@@ -158,7 +158,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
         print('Populated map of %d simulation IDs to output directories' % len(sim_map))
         if save:
-            cls.sim_dir_map = sim_map
+            cls.sim_dir_map = cls.sim_dir_map or {}
+            cls.sim_dir_map.update(sim_map)
         return sim_map
 
     def load_all_files(self, filenames):
