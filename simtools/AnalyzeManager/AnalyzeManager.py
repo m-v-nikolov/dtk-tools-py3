@@ -28,9 +28,9 @@ class AnalyzeManager:
             analyzer.initialize()
 
         for exp in exp_list:
-            self.analyze_experiment(exp)
+            self.create_parsers_for_experiment(exp)
 
-    def analyze_experiment(self, experiment):
+    def create_parsers_for_experiment(self, experiment):
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
