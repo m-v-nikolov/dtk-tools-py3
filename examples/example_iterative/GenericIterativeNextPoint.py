@@ -1,55 +1,53 @@
+import copy
+import json
+
 import pandas as pd
-import numpy as np
 
 from calibtool.algo.BaseNextPointAlgorithm import BaseNextPointAlgorithm
 
 
 class GenericIterativeNextPoint(BaseNextPointAlgorithm):
-    def __init__(self,initial_values):
-        self.initial_values = initial_values
-        self.data = pd.DataFrame({
-            'Iteration': 0,
-            'Result': []
-        })
-        self.data['Result'] = self.data['Result'].astype(object)
-
+    def __init__(self, initial_state):
+        self.data = [
+            {
+                'iteration':0,
+                'samples':initial_state
+            }
+        ]
 
     def set_state(self, state, iteration):
-        self.data = pd.DataFrame.from_dict(state['data'], orient='columns')
+        pass
 
     def cleanup(self):
         pass
 
     def get_param_names(self):
-        return self.initial_values.keys()
+        return []
 
     def get_samples_for_iteration(self, iteration):
-
-        iterationData = pd.DataFrame({
-            'Iteration': iteration,
-            'Result': []
-        })
-        for param, values in self.initial_values.iteritems():
-            param_df = pd.DataFrame({param: values, 'Iteration': iteration})
-            iterationData = pd.merge(iterationData, param_df, on="Iteration", how='right')
-
-        self.data = pd.concat([self.data,iterationData])
-
-        return self.data[self.data['Iteration'] == iteration][self.get_param_names()]
-
+        return self.data[iteration]['samples']
 
     def get_state(self):
-        return dict(data=self.prep_for_dict(self.data),
-                    data_dtypes={name: str(data.dtype) for name, data in self.data.iteritems()})
+        return self.data
 
     def prep_for_dict(self, df):
         return df.where(~df.isnull(), other=None).to_dict(orient='list')
 
     def set_results_for_iteration(self, iteration, results):
-        self.data.loc[self.data['Iteration'] == iteration,"Result"] = results
+        resultsdict = results.to_dict(orient='list').values()[0]
+        new_iter = copy.deepcopy(self.data[iteration])
+        new_iter['iteration'] = iteration+1
+        for idx,sample in enumerate(new_iter['samples']): sample.update(resultsdict[idx])
+        self.data.append(new_iter)
 
     def end_condition(self):
         return False
 
     def get_final_samples(self):
         return {}
+
+    def update_summary_table(self, iteration_state, previous_results):
+        return self.data, self.data #json.dumps(self.data, indent=3)
+
+    def get_results_to_cache(self, results):
+        return results.to_dict(orient='list')
