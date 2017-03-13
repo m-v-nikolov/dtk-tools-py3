@@ -39,7 +39,6 @@ dtk/calibration/calib_example/*test*/
 examples/calibration/
 examples/ExampleCalibration/
 examples/FullCalibrationExample/
-IterativeTest
 test/tmp/
 
 # Helper
