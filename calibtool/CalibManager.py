@@ -453,7 +453,7 @@ class CalibManager(object):
             return []
 
         if not isinstance(self.all_results, pd.DataFrame):
-            raise Exception('all_results must be a pandas DataFrame')
+            return self.all_results
 
         self.all_results.index.name = 'sample'
         data = self.all_results.reset_index()

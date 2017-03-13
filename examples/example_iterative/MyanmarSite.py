@@ -16,5 +16,6 @@ class MyanmarCalibSite(CalibSite):
 
     def get_setup_functions(self):
         return [
-            summary_report_fn(start=50*365)
+            summary_report_fn(start=50*365),
+            lambda cb: cb.update_params( { 'logLevel_LarvalHabitatMultiplier' : 'WARNING'})
         ]
