@@ -7,6 +7,7 @@ from COMPS.Data import QueryCriteria
 from COMPS.Data import Simulation
 from COMPS.Data import Suite
 from COMPS import Client
+from COMPS.Data.Simulation import SimulationState
 
 from simtools.Utilities.General import is_remote_path, init_logging, get_md5
 
@@ -141,8 +142,10 @@ def exps_for_suite_id(suite_id):
 
 
 def experiment_is_running(e):
-    return len(e.get_simulations(query_criteria=QueryCriteria().where('state=Running')) + e.get_simulations(
-        query_criteria=QueryCriteria().where('state=Waiting'))) != 0
+    for sim in e.get_simulations():
+        if not sim.state in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
+            return True
+    return False
 
 
 def workdirs_from_simulations(sims):
