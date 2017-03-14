@@ -332,7 +332,7 @@ class IMIS(NextPointAlgorithm):
         # make two properties available which will be used in the following steps: self.update_state
         self.priors = list(data_by_iter['Prior'])
         self.results = list(data_by_iter['Result'])
-        self.update_state(self.iteration)
+        self.update_state(iteration)
 
     def cleanup(self):
         self.gaussian_probs = {}
