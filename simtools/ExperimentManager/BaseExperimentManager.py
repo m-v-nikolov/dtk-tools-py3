@@ -153,7 +153,7 @@ class BaseExperimentManager:
             return
 
         self.maxThreadSemaphore.acquire()
-        parser = self.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses)
+        parser = self.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
         parser.start()
         self.parsers[parser.sim_id] = parser
 
