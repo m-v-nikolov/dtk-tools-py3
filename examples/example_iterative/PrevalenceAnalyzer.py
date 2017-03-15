@@ -25,8 +25,9 @@ class PrevalenceAnalyzer(BaseComparisonAnalyzer):
         nodes_idx = [i for i,val in enumerate(prev_data) if val > threshold]
         nodes_ids = [int(nodes[i]) for i in nodes_idx]
 
-        self.result.append({'NodeIds':nodes_ids,
-                            'Serialization':serialization_date,
+        print nodes_ids
+
+        self.result.append({'NodeIDs':nodes_ids,
                             'Serialized_Population_Path': os.path.join(parser.sim_dir, 'output'),
                             'Serialized_Population_Filenames': ['state-%05d-%03d.dtk' % (serialization_date, x) for x in range(24)]
                             })

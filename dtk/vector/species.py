@@ -42,6 +42,9 @@ mod_funestus_params = {
 }
 funestus_param_block.update(mod_funestus_params)
 
+# extra funestus for Munyumbwe
+munyumbwe_funestus_param_block = copy.deepcopy(funestus_param_block)
+
 # An. gambiae
 gambiae_param_block = copy.deepcopy(param_block)
 gambiae_param_block["Indoor_Feeding_Fraction"] = 0.95
@@ -74,18 +77,21 @@ farauti_param_block.update(mod_farauti_params)
 #    "Anthropophily": 0.3,
 #    "Indoor_Feeding_Fraction": 0.4,
 # on 160722, modified to Trung Trop Med Intl Health 2005 data from Ratanakiri
-# maculatus seasonal with rainfall (Durnez Malar J 2013)
+# on 161103, modified to mean values across sites from Trung Trop Med 2005 for anthropophily, indoor feeding fraction
+# maculatus seasonal with rainfall (Durnez Malar J 2013), but also found in permanent/semipermanent bodies of water
+# near forest camps or rice fields. For more info see https://wiki.idmod.org/display/EMOD/2016/10/21/SE+Asia+Larval+Habitats+Lit+Review
 maculatus_param_block = copy.deepcopy(param_block)
 mod_maculatus_params = {
 
     "Larval_Habitat_Types": {
         "TEMPORARY_RAINFALL": 1e7,
+        "WATER_VEGETATION": 1e6,
         "CONSTANT": 1e6
     },
     "Adult_Life_Expectancy": 7,
     "Days_Between_Feeds": 3,
-    "Anthropophily": 0.5,
-    "Indoor_Feeding_Fraction": 0.05,
+    "Anthropophily": 0.19,
+    "Indoor_Feeding_Fraction": 0.01,
     "Egg_Batch_Size": 70,
     "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
@@ -102,17 +108,20 @@ maculatus_param_block.update(mod_maculatus_params)
 #    "Anthropophily": 0.93,
 #    "Indoor_Feeding_Fraction": 0.95,
 # on 160722, modified to Trung Trop Med Intl Health 2005 data from Ratanakiri
+# on 161103, modified to mean values across sites from Trung Trop Med 2005 for anthropophily, indoor feeding fraction
 # minimus more present during drier periods after rainy season
+# for more info see https://wiki.idmod.org/display/EMOD/2016/10/21/SE+Asia+Larval+Habitats+Lit+Review
 minimus_param_block = copy.deepcopy(param_block)
 mod_minimus_params = {
 
     "Larval_Habitat_Types": {
-        "WATER_VEGETATION": 1e7 # update habitat type?
+        "WATER_VEGETATION": 1e7, # update habitat type?
+        "CONSTANT": 1e6
     },
     "Adult_Life_Expectancy": 7,
     "Days_Between_Feeds": 3,
-    "Anthropophily": 0.5,
-    "Indoor_Feeding_Fraction": 0.5,
+    "Anthropophily": 0.85,
+    "Indoor_Feeding_Fraction": 0.73,
     "Egg_Batch_Size": 70,
     "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
@@ -122,7 +131,9 @@ minimus_param_block.update(mod_minimus_params)
 # An. dirus
 # Trung Trop Med Intl Health 2005
 # Durnez Malar J 2013
+# on 161103, modified to mean values across sites from Trung Trop Med 2005 for anthropophily, indoor feeding fraction
 # dirus more abundant during rainy season but also some constant portion in forest
+# dirus also has longer lifespan, see https://wiki.idmod.org/display/EMOD/2016/10/21/SE+Asia+Larval+Habitats+Lit+Review
 dirus_param_block = copy.deepcopy(param_block)
 mod_dirus_params = {
 
@@ -130,10 +141,10 @@ mod_dirus_params = {
         "TEMPORARY_RAINFALL": 1e7,
         "CONSTANT": 1e6
     },
-    "Adult_Life_Expectancy": 7,
+    "Adult_Life_Expectancy": 14,
     "Days_Between_Feeds": 3,
-    "Anthropophily": 0.95,
-    "Indoor_Feeding_Fraction": 0.3,
+    "Anthropophily": 0.96,
+    "Indoor_Feeding_Fraction": 0.01,
     "Egg_Batch_Size": 70,
     "Acquire_Modifier": 0.2,
     "Transmission_Rate": 0.8
@@ -193,6 +204,7 @@ aegypti_param_block = {
 vector_params_by_species = {
     "arabiensis": arabiensis_param_block,
     "funestus": funestus_param_block,
+    "munyumbwe_funestus": munyumbwe_funestus_param_block,
     "farauti": farauti_param_block,
     "gambiae": gambiae_param_block,
     "maculatus": maculatus_param_block,
@@ -229,7 +241,7 @@ def set_species_param(cb, species, parameter, value):
     return {'.'.join([species, parameter]): value}
 
 
-def update_species_param(cb, species, parameter, value, overwrite):
+def update_species_param(cb, species, parameter, value, overwrite=True):
     """ Update a 'Vector_Species_Param' variable in a config file; return a length-one dict with a numeric value.
 
     :param cb: DTKConfigBuilder object with a 'config' attribute.
@@ -244,7 +256,7 @@ def update_species_param(cb, species, parameter, value, overwrite):
 
     if isinstance(value, dict):
 
-        if overwrite:
+        if not overwrite:
             # update values in 'parameter' without deleting what's already there.
             # i.e: update the "TEMPORARY RAINFALL" value in a "Larval_Habitat_Types" object
             # without eliminating the "CONSTANT" value
