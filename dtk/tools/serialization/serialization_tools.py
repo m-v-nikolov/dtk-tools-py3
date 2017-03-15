@@ -115,7 +115,7 @@ def remove_humans_by_nodeid(source_filename, dest_filename, removal_nodes):
         node = obj.node
         if node.externalId in removal_nodes:
             for person in node.individualHumans:
-                if person.home_node_id.id == node.suid.id:
+                if person.home_node_id in removal_nodes:
                     node.individualHumans.remove(person)
             source.nodes[index] = obj
         else:
