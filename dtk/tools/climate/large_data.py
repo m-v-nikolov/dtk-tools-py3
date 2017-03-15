@@ -16,37 +16,37 @@ to output DTK-consumable input files.
 LDTools_path = 'E:/LDTools/Release'
 tmp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tmp')
 
-def dump_climate_files( geography  = "EMOD-Zambia",
-                        resolution = 150,
-                        tag        = "_test_",
-                        nodelist   = []):
 
+def dump_climate_files(geography="EMOD-Zambia",
+                       resolution=150,
+                       tag="_test_",
+                       nodelist=[]):
     # Read, modify, and dump local copy of JSON instructions
     # Expose other options directly, e.g. year range?
-    with open(os.path.join(LDTools_path,'MergeNodeJson.json'),'r') as mnjf:
+    with open(os.path.join(LDTools_path, 'MergeNodeJson.json'), 'r') as mnjf:
         mnj = json.loads(mnjf.read())
 
     mnj['startyear'] = 2001
-    mnj['numyears']  = 11
-    mnj['author']    = 'Institute for Disease Modeling'
-    mnj['tag']       = tag
+    mnj['numyears'] = 11
+    mnj['author'] = 'Institute for Disease Modeling'
+    mnj['tag'] = tag
     if nodelist:
         mnj['usenodelist'] = True
-        mnj['nodelist']    = nodelist
+        mnj['nodelist'] = nodelist
     print(mnj)
 
     if not os.path.exists(tmp_path):
         os.makedirs(tmp_path)
-    
-    with open( os.path.join( tmp_path, "mnj.json"), "w" ) as mnjf:
-        mnjf.write( json.dumps( mnj, sort_keys=True, indent=2 ) )
+
+    with open(os.path.join(tmp_path, "mnj.json"), "w") as mnjf:
+        mnjf.write(json.dumps(mnj, sort_keys=True, indent=2))
 
     # Construct three function calls:
     # tmean, humid, rain (--yislat on rain)
-    for mn_param in ['tmean','humid','rain']:
-        mn_args = [os.path.join(LDTools_path,'MergeNodes.exe'),
-                         '-j' + os.path.join(tmp_path, 'mnj.json'),
-                         '-p' + mn_param]
+    for mn_param in ['tmean', 'humid', 'rain']:
+        mn_args = [os.path.join(LDTools_path, 'MergeNodes.exe'),
+                   '-j' + os.path.join(tmp_path, 'mnj.json'),
+                   '-p' + mn_param]
         if 'rain' in mn_param:
             print(mn_param)
             mn_args.append('--yislat')
@@ -55,6 +55,7 @@ def dump_climate_files( geography  = "EMOD-Zambia",
         print(mn_args)
         subprocess.call(mn_args)
 
+
 '''
 Two more helper functions to copy climate and demographics files from where they are dumped
 by Dennis' scripts and put them into the SVN repository directory for check-in.
@@ -62,47 +63,47 @@ by Dennis' scripts and put them into the SVN repository directory for check-in.
 Some clean-up and validation done on the fly.
 '''
 
+
 def copy_demog(geography, resolution, tag, source, target):
-    
     # Demographics
-    demogfiles = glob.glob(source + '/*.json') # refine by tag?
+    demogfiles = glob.glob(source + '/*.json')  # refine by tag?
     for file in demogfiles:
         if not 'compiled' in file:
             demogfile = file
             break
 
     # Finally the demographics file
-    with open( demogfile, "r" ) as json_file:
-        demog = json.loads( json_file.read() )
+    with open(demogfile, "r") as json_file:
+        demog = json.loads(json_file.read())
 
     # Fix malformed bits
     if "BirthRate" in demog["Defaults"]["IndividualAttributes"]:
         del demog["Defaults"]["IndividualAttributes"]["BirthRate"]
     for node in demog["Nodes"]:
-        na=node["NodeAttributes"]
+        na = node["NodeAttributes"]
         if "AbovePoverety" in na:
             na["AbovePoverty"] = na.pop("AbovePoverety")
-        na["AbovePoverty"] = 0.5 # NodeDemographics complains if it is NULL
+        na["AbovePoverty"] = 0.5  # NodeDemographics complains if it is NULL
         if "NodeId" in node:
             node["NodeID"] = node.pop("NodeId")
 
     import collections
     nodelist = [node["NodeID"] for node in demog["Nodes"]]
-    #for x,y in collections.Counter(nodelist).items():
+    # for x,y in collections.Counter(nodelist).items():
     #    print("Node id %d has %d entries" % (x,y))
     print("There are %d nodes" % len(nodelist))
     print("There are %d unique nodes" % len(collections.Counter(nodelist)))
 
     demog_output = target + "/" + geography + "_" + resolution + "_demographics.json"
-    output_file = open( demog_output, "w" )
-    output_file.write( json.dumps( demog, sort_keys=True, indent=4 ) )
+    output_file = open(demog_output, "w")
+    output_file.write(json.dumps(demog, sort_keys=True, indent=4))
     output_file.close()
 
     # Compile the demographics file (forcing overwrite)
     subprocess.call([sys.executable, 'compiledemog.py', demog_output, "--forceoverwrite"])
 
-def copy_climate(geography, resolution, tag, source, target):
 
+def copy_climate(geography, resolution, tag, source, target):
     wildcard = '*'
     if tag:
         wildcard += tag + '*'
@@ -134,33 +135,35 @@ def copy_climate(geography, resolution, tag, source, target):
     shutil.copyfile(airtempfile, target + "/" + geography + "_" + resolution + "_land_temperature_daily.bin")
 
     # Put a note of this into land-temperature meta-data
-    json_file = open( airtempfileheader, "r" )
-    header = json.loads( json_file.read() )
-    header["Metadata"]["DataProvenance"] = "Temporarily just a copy of air-temperature for " + geography + " - currently unused by the DTK"
+    json_file = open(airtempfileheader, "r")
+    header = json.loads(json_file.read())
+    header["Metadata"][
+        "DataProvenance"] = "Temporarily just a copy of air-temperature for " + geography + " - currently unused by the DTK"
     json_file.close()
-    output_file = open( target + "/" + geography + "_" + resolution + "_land_temperature_daily.bin.json", "w" )
-    output_file.write( json.dumps( header, sort_keys=True, indent=4 ) )
+    output_file = open(target + "/" + geography + "_" + resolution + "_land_temperature_daily.bin.json", "w")
+    output_file.write(json.dumps(header, sort_keys=True, indent=4))
     output_file.close()
+
 
 if __name__ == "__main__":
 
-    geography  = "Zambia"      #  "Zambia" "Mozambique_Zambezia" "Kenya_Nyanza"
-    resolution = "30arcsec"   #  "2_5arcmin" "30arcsec"
-    tag        = "Gwembe_Sinazongwe"  #  "Sinamalima", "Manhica"
+    geography = "Zambia"  # "Zambia" "Mozambique_Zambezia" "Kenya_Nyanza"
+    resolution = "30arcsec"  # "2_5arcmin" "30arcsec"
+    tag = "Gwembe_Sinazongwe"  # "Sinamalima", "Manhica"
 
     sourcedir = "IDM-" + geography
     source_res = '2.5m' if resolution == '2_5arcmin' else '30s'
     source = "//rivendell/archive/LargeData/Data/Out/" + sourcedir + "/" + geography + "/DTK_" + source_res
     target = "D:/Eradication/Data_Files/" + geography
     if tag:
-        target = os.path.join(target,tag)
-        geography = '_'.join([geography,tag])
+        target = os.path.join(target, tag)
+        geography = '_'.join([geography, tag])
 
     # Create output directory if it doesn't yet exist
     if not os.path.exists(target):
         os.makedirs(target)
 
-    #dump_climate_files('EMOD-Zambia', 150, '_Sinamalima_',[326436567])
+    # dump_climate_files('EMOD-Zambia', 150, '_Sinamalima_',[326436567])
     '''
     dump_climate_files('EMOD-Zambia',30,'_Gwembe_Sinazongwe_',
                         [1631855153, 1631920687, 1631920699, 1632117293, 1632117296, 1632182850, 1632248369, 1632248372, 1632313919, 1632379437,
@@ -178,4 +181,4 @@ if __name__ == "__main__":
     '''
 
     copy_climate(geography, resolution, tag, source, target)
-    #copy_demog(geography, resolution, tag, source, target)
+    # copy_demog(geography, resolution, tag, source, target)

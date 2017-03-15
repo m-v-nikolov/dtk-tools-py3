@@ -1,10 +1,12 @@
 import glob
 import os
 import time
+from collections import namedtuple
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
 from simtools.Utilities.COMPSUtilities import COMPS_login
+from simtools.SetupParser import SetupParser
 
 
 class ClimateGenerator:
@@ -18,10 +20,20 @@ class ClimateGenerator:
         self.climate_project = climate_project
 
         # see WorkOrderGenerator for other work options
-        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project, idRef='Gridded world grump30arcsec')
+        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project,
+                                     idRef='Gridded world grump30arcsec')
 
     def set_climate_project_info(self, climate_project):
         self.wo.set_project_info(climate_project)
+
+    def set_climate_start_year(self, start_year):
+        self.wo.set_start_year(start_year)
+
+    def set_climate_num_years(self, num_years):
+        self.wo.set_num_years(num_years)
+
+    def set_climate_id_ref(self, id_ref):
+        self.wo.set_id_ref(id_ref)
 
     def generate_climate_files(self):
         # login to COMPS (if not already logged in) to submit climate files generation work order
@@ -30,62 +42,63 @@ class ClimateGenerator:
         om("Submitting request for climate files generation to COMPS.")
         om("This requires a login.")
 
+        from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
         from COMPS.Data import QueryCriteria, AssetType
-        from COMPS.Data import WorkItem, WorkItemFile, WorkItem__WorkerOrPluginKey as WorkerKey
-        from java.util import HashMap, ArrayList
+        from COMPS.Data import WorkItem, WorkItemFile
 
-        COMPS_login(self.setup.get('server_endpoint'))
+        # COMPS_login(self.setup.get('server_endpoint'))
         om("Login success!")
 
-        workerkey = WorkerKey('InputDataWorker', '1.0.0.0_RELEASE')
-        wi = WorkItem('dtk-tools InputDataWorker WorkItem',self.setup.get('environment'), workerkey)
+        # workerkey = namedtuple('InputDataWorker', '1.0.0.0_RELEASE')
+        # wi = WorkItem('dtk-tools InputDataWorker WorkItem',self.setup.get('environment'), workerkey)
 
-        tagmap = HashMap()
-        tagmap.put('dtk-tools', None)
-        tagmap.put('WorkItem type', 'InputDataWorker dtk-tools')
-        wi.SetTags(tagmap)
+
+        sp = SetupParser('HPC', force=True)
+
+        workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
+
+        # wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, self.setup.get('environment'))
+        wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, sp.get('environment'))
+        wi.set_tags({'dtk-tools': None, 'WorkItem type': 'InputDataWorker dtk-tools'})
 
         with open(self.work_order_path, 'r') as workorder_file:
-            wi.AddWorkOrder(workorder_file.read())
+            # wi.AddWorkOrder(workorder_file.read())
+            wi.add_work_order(data=workorder_file.read())
 
         with open(self.demographics_file_path, 'r') as demog_file:
-            wi.AddFile(WorkItemFile(os.path.basename(self.demographics_file_path), 'Demographics', ''),
-                       demog_file.read())
+            wi.add_file(WorkItemFile(os.path.basename(self.demographics_file_path), 'Demographics', ''),
+                        data=demog_file.read())
 
-        wi.Save()
+        wi.save()
 
         om("Created request for climate files generation.")
         om("Commissioning...")
 
-        wi.Commission()
+        wi.commission()
 
-        while (wi.getState().toString() not in ['Succeeded', 'Failed', 'Canceled']):
-            om('Waiting for climate generation to complete (current state: ' + wi.getState().toString() + ')',
+        while (wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]):
+            om('Waiting for climate generation to complete (current state: ' + str(wi.state) + ')',
                style='flushed')
             time.sleep(0.1)
-            wi.Refresh()
+            wi.refresh()
 
         om("Climate files SUCCESSFULLY generated")
 
-        wi.Refresh(QueryCriteria().SelectChildren('files'))
-        wifiles = wi.getFiles().toArray()
+        wi.refresh(QueryCriteria().select_children('files'))
+        wifilenames = [wif.file_name for wif in wi.files if wif.file_type == 'Output']
 
-        wifilenames = [wif.getFileName() for wif in wifiles if wif.getFileType() == 'Output']
+        # wifilenames = [wif.file_name() for wif in wifiles if wif.file_type() == 'Output']
         if len(wifilenames) > 0:
             om('Found output files: ' + str(wifilenames))
             om('Downloading now')
 
-            javalist = ArrayList()
-            for f in wifilenames:
-                javalist.add(f)
-
-            assets = wi.RetrieveAssets(AssetType.Linked, javalist)
+            assets = wi.retrieve_assets(AssetType.Linked, wifilenames)
 
             for i in range(len(wifilenames)):
                 om('Writing ' + wifilenames[i] + ' to ' + self.climate_files_output_path)
 
                 with open(os.path.join(self.climate_files_output_path, wifilenames[i]), 'wb') as outfile:
-                    outfile.write(assets.get(i).tostring())
+                    outfile.write(assets[i])
 
             # return filenames; this use of re in conjunction w/ glob is not great; consider refactor
             rain_bin_re = os.path.abspath(self.climate_files_output_path + '/*rain*.bin')
