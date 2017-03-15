@@ -367,7 +367,7 @@ class CalibManager(object):
             for analyzer in site.analyzers:
                 analyzer_list.append(analyzer)
 
-        analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list)
+        analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list, working_dir=self.iteration_directory())
         analyzerManager.analyze()
 
         # Ask the analyzers to cache themselves
