@@ -33,7 +33,7 @@ params = {
     "Enable_Rainfall_Stochasticity": 0,
     "Enable_Superinfection":0,
     "Enable_Temperature_Dependent_Egg_Hatching": 1,
-    "Enable_Temperature_Dependent_Feeding_Cycle": "ARRHENIUS_DEPENDENCE",
+    "Temperature_Dependent_Feeding_Cycle": "ARRHENIUS_DEPENDENCE",
     "Immunity_Acquisition_Factor": 0,
     "Infectiousness_Asymptomatic_Naive_1": 0.1740627,
     "Infectiousness_Asymptomatic_Naive_2": 5.6850991,
