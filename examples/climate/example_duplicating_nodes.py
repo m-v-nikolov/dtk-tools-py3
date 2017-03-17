@@ -57,7 +57,12 @@ meta = json.load(open(os.path.join(input_path, 'Colombia_Santander_2.5arcmin_air
 output_path = 'outputs_Santander'
 if not os.path.exists(output_path): os.makedirs(output_path)
 
-cfc = ClimateFileCreator(nodes,'Colombia_Santander_2.5arcmin','daily',meta['OriginalDataYears'],meta['Resolution'])
+cfc = ClimateFileCreator(nodes,
+                         prefix='Colombia_Santander_2.5arcmin',
+                         suffix='daily',
+                         original_data_years=meta['OriginalDataYears'],
+                         idref=meta['IdReference'])
+
 cfc.generate_climate_files(output_path)
 
 # Create the demographics file
