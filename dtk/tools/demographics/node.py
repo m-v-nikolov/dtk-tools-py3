@@ -6,11 +6,12 @@ class Node:
     default_density=200   # people/km^2
     res_in_degrees = 2.5/60
 
-    def __init__(self, lat, lon, pop, name='', area=None):
+    def __init__(self, lat, lon, pop, name='', area=None, forced_id=None):
         self.name=name
         self.lat=lat
         self.lon=lon
         self.pop=pop
+        self.forced_id = forced_id
         if area:
             self.density=pop/area
         else:
@@ -32,7 +33,7 @@ class Node:
     
     @property
     def id(self):
-        return nodeid_from_lat_lon(self.lat,self.lon,self.res_in_degrees)
+        return self.forced_id or nodeid_from_lat_lon(self.lat,self.lon,self.res_in_degrees)
 
     @classmethod
     def init_resolution_from_file(cls, fn):

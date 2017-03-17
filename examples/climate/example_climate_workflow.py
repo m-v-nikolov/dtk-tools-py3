@@ -4,14 +4,13 @@
 import csv
 import json
 import os
-import struct
 import time
-from collections import OrderedDict
 
-from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
 from COMPS.Data import QueryCriteria, AssetType
 from COMPS.Data import WorkItem, WorkItemFile
+from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
 
+from dtk.tools.climate.BinaryFilesHelpers import extract_data_from_climate_bin_for_node
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
 from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
@@ -78,38 +77,17 @@ if len(wifilenames) > 0:
 
 # We now have the intermediate weather -> Create the list of nodes
 # Extract the nodes from the demog
-def extract_data_from_bin(node, binary_file):
-    meta = json.load(open(binary_file+'.json','rb'))
-    tsteps = meta['Metadata']['DatavalueCount']
-    offsets = meta['NodeOffsets']
-    offsets_nodes = OrderedDict()
-    i=0
-    while i <len(offsets):
-        nodeid = int(offsets[i:i+8],16)
-        offset = int(offsets[i+9:i+16], 16)
-        offsets_nodes[nodeid] = offset
-        i+=16
-
-    series = []
-    with open(binary_file, 'rb') as bin_file:
-        bin_file.seek(offsets_nodes[node.id])
-
-        # Read the data
-        for i in range(tsteps):
-            series.append(struct.unpack('f', bin_file.read(4))[0])
-    return series
-
 # Load or base climate nodes
-demog = json.load(open('climate_demog.json','rb'))
+demog = json.load(open('climate_demog.json', 'rb'))
 climate_nodes = {}
 for node in demog['Nodes']:
     n = WeatherNode()
     n.id = node['NodeID']
 
-    n.air_temperature = extract_data_from_bin(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
-    n.land_temperature = extract_data_from_bin(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
-    n.rainfall = extract_data_from_bin(n, 'intermediate/climate/Zambia_30arcsec_rainfall_daily.bin')
-    n.humidity = extract_data_from_bin(n, 'intermediate/climate/Zambia_30arcsec_relative_humidity_daily.bin')
+    n.air_temperature = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
+    n.land_temperature = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
+    n.rainfall = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_rainfall_daily.bin')
+    n.humidity = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_relative_humidity_daily.bin')
 
     climate_nodes[node['NodeAttributes']['FacilityName']] = n
 
@@ -140,7 +118,7 @@ for node in demog['Nodes']:
     nodes.append(n)
 
 # Create our files from the nodes
-cfc = ClimateFileCreator(nodes,'Bbondo_households_CBfilled_noworkvector','daily','2008-2008','Household-Scenario-Small', True)
+cfc = ClimateFileCreator(nodes,'Bbondo_households_CBfilled_noworkvector','daily','2008-2008','Household-Scenario-Small')
 cfc.generate_climate_files(output_path)
 
 print "--------------------------------------"
