@@ -8,33 +8,17 @@ from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
-from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 
 
 class SpatialManager:
     """
     Manages the creation of spatial input files.
-
-    Need to make architecture more flexible so that parameters of generators internal to SpatialManager are exposed to the user,
-    e.g. climate generation parameters such as years, region, etc.; migration generation parameters such as graph topology and link rates types, etc.
-    Preferably that shouldn't require the user knowing explicitly about the existence of CliamteGenerator, MigrationGenerator, etc. but only about the
-    existence of their parameter sets
-
-    - the obvious way is to expose these parameters as SpatialManager constructor arguments;
-    that would be the constructor with the most arguments in the world and we might bump into the 256 arguments of c/python in which case we still could transition to kwargs and args...
-
-    - another way could be a set of mutator methods, each corresponding to generator class; e.g. something along the lines of a method
-    setClimateGeneratorParams(**kwargs):
-        for key in attributes: # attributes is a list of climate parameters exposed to the user
-            if key in kwargs:
-                setattr(climate_generator_instance, key, kwargs[key])
-
-    This approach may require generators instantiation in the contructor of SpatialManager.
     """
 
     def __init__(self, location, cb, setup, geography, name, working_dir, input_dir,
                  population_input_file=None,
                  output_dir='output',
+                 sim_data_input_root='input',
                  log=True,
                  num_cores=1,
                  migration_matrix_input_file=None,
@@ -78,23 +62,24 @@ class SpatialManager:
         self.log_path = os.path.join(self.current_path, "logs")
         self.input_path = input_dir
 
-        # get local or hpc simulation data input directories from setup (i.e. dtk_setup.cfg)
-        # depending o nuser input (e.g. self.location)
-        # the generated demographics, migration, etc. files will be placed there
+        # the generated demographics, migration, etc. files will be placed in the provided sim_data_input
         # todo: need to add checks if these are existing directories and if not attempt to create them
         # e.g.  some users may not have access to a remote cluster and need to set up the files locally only'
-        self.sim_data_input = None
+        self.sim_data_input = sim_data_input_root
 
         # todo: need to modularize the local/remote test; used in other parts of the code
+        '''
         if self.location == 'HPC':
-            self.sim_data_input = translate_COMPS_path(setup.get('input_root'))
+            self.sim_data_input = os.path.join(setup.get('input_root'))
         elif self.location == 'LOCAL':
             self.sim_data_input = os.path.join(setup.get('input_root'))
         else:
             raise ValueError(self.location + ' is not supported; select LOCAL or HPC.')
+        '''
 
         if not existing_demographics_file_path and not population_input_file:
-            raise ValueError('Valid demographics file input is required! Provide either a valid DTK demographics JSON file or a valid demographics csv file (see class DemographicsGenerator documentation for format).')
+            raise ValueError(
+                'Valid demographics file input is required! Provide either a valid DTK demographics JSON file or a valid demographics csv file (see class DemographicsGenerator documentation for format).')
 
         self.existing_migration_file_path = existing_migration_file_path
         self.existing_load_balancing_file_path = existing_load_balancing_file_path
@@ -154,11 +139,11 @@ class SpatialManager:
         self.demographics_output_file_path = os.path.join(self.sim_data_input, self.demographics_output_file)
 
         # demographics generator instance
-        self.dg = DemographicsGenerator.from_file(
+        self.dg = DemographicsGenerator(
             self.cb,
             self.population_input_file_path,
             # demographics_type = 'static',
-            # update_demographics = self.update_demographics
+            update_demographics=self.update_demographics
         )
 
         self.lb = None
@@ -212,6 +197,15 @@ class SpatialManager:
     def set_climate_project_info(self, project_info):
         self.cg.set_climate_project_info(project_info)
 
+    def set_climate_start_year(self, start_year):
+        self.cg.set_climate_start_year(start_year)
+
+    def set_climate_num_years(self, num_years):
+        self.cg.set_climate_num_years(num_years)
+
+    def set_climate_id_ref(self, id_ref):
+        self.cg.set_climate_id_ref(id_ref)
+
     def set_graph_topo_type(self, graph_topo_type):
         self.mg.set_graph_topo_type(graph_topo_type)
 
@@ -227,7 +221,7 @@ class SpatialManager:
             raise Exception('The input path does not exist! (%s)' % self.input_path)
 
         # Create the directories (output, logs, etc)
-        #self.create_dirs()
+        # self.create_dirs()
 
         # generate demographics file if it doesn't exist
         demographics = None
@@ -278,7 +272,7 @@ class SpatialManager:
 
         # generate migration file if existing migration file is not provided and migration generation is requested
         if self.mg:
-            if not self.existing_migration_file_path and self.migration_matrix_file_path:
+            if not self.existing_migration_file_path:
 
                 # instantiate a migration generator; default is geo-graph topology w/ gravity link rates model
                 # todo: expose link rates/topology parameters to user
@@ -308,7 +302,7 @@ class SpatialManager:
                 om("Looking for existing migration binary and header...", style='bold')
 
                 shutil.copy(self.existing_migration_file_path, os.path.join(self.sim_data_input, migration_filename))
-                om("Existing binary found at : " + self.existing_load_balancing_file_path)
+                om("Existing binary found at : " + self.existing_migration_file_path)
                 om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
 
                 shutil.copy(self.existing_migration_file_path + '.json',
@@ -357,12 +351,14 @@ class SpatialManager:
         if self.cg:
             om("generating climate files.", style='bold')
 
+            # set id ref correspondgin to demographics file's id ref
+            self.cg.set_climate_id_ref(demographics["Metadata"]["IdReference"])
+
             climate_file_names = self.cg.generate_climate_files()
 
             rain_file_path = os.path.join(self.geography, climate_file_names['rain'])
             humidity_file_path = os.path.join(self.geography, climate_file_names['humidity'])
             temperature_file_path = os.path.join(self.geography, climate_file_names['temp'])
-
             self.cb.update_params({
                 'Land_Temperature_Filename': temperature_file_path,
                 'Air_Temperature_Filename': temperature_file_path,
@@ -405,7 +401,10 @@ class SpatialManager:
                 MigrationGenerator.save_migration_visualization(
                     os.path.join(self.log_path, self.name + '_demographics_log.json'),
                     os.path.join(self.log_path, self.name + '_migration.bin'), os.path.join(self.log_path))
-                om("LOG: migration network stored in " + os.path.join(self.log_path))
+
+                self.mg.save_migration_graph_topo_visualization(os.path.join(self.log_path))
+
+                om("LOG: migration rates and network stored in " + os.path.join(self.log_path))
 
             if self.cg:
                 om("LOG: climate work order stored in " + os.path.join(self.log_path))

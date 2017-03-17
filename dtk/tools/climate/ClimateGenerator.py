@@ -47,17 +47,10 @@ class ClimateGenerator:
         from COMPS.Data import WorkItem, WorkItemFile
 
         # COMPS_login(self.setup.get('server_endpoint'))
+        sp = SetupParser('HPC', force=True)
         om("Login success!")
 
-        # workerkey = namedtuple('InputDataWorker', '1.0.0.0_RELEASE')
-        # wi = WorkItem('dtk-tools InputDataWorker WorkItem',self.setup.get('environment'), workerkey)
-
-
-        sp = SetupParser('HPC', force=True)
-
         workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
-
-        # wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, self.setup.get('environment'))
         wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, sp.get('environment'))
         wi.set_tags({'dtk-tools': None, 'WorkItem type': 'InputDataWorker dtk-tools'})
 
