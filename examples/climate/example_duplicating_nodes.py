@@ -11,6 +11,8 @@ from dtk.tools.climate.WeatherNode import WeatherNode
 
 # First lets define which node will be our base node
 # For now we are using the only node present in the demographics file (inputs/Santander/IDM-Colombia_Santander_shape_nodes_demographics.json)
+from dtk.tools.demographics.DemographicsFile import DemographicsFile
+
 input_path = os.path.join('inputs', 'Santander')
 base_demog_path = os.path.join(input_path, 'IDM-Colombia_Santander_shape_nodes_demographics.json')
 base_demog = json.load(open(base_demog_path,'rb'))
@@ -57,6 +59,10 @@ if not os.path.exists(output_path): os.makedirs(output_path)
 
 cfc = ClimateFileCreator(nodes,'Colombia_Santander_2.5arcmin','daily',meta['OriginalDataYears'],meta['Resolution'])
 cfc.generate_climate_files(output_path)
+
+# Create the demographics file
+dg = DemographicsFile(nodes, base_file=base_demog_path)
+dg.generate_file(os.path.join(output_path, 'demographics.json'))
 
 # The files should be created -> display a message
 print "The output files have been created in the %s folder!" % output_path
