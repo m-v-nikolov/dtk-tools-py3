@@ -1,6 +1,6 @@
 import argparse
 import unittest
-import commands_args as CMDarg
+import dtk.commands_args as CMDarg
 
 
 class ErrorRaisingArgumentParser(argparse.ArgumentParser):
