@@ -27,8 +27,7 @@ def setup_recent_drug_states(cb, drug_events=["Received_Treatment", "Received_Ca
                                      "class": "StandardInterventionDistributionEventCoordinator",
                                      "Intervention_Config": {
                                          "class": "NodeLevelHealthTriggeredIV",
-                                         "Trigger_Condition": "TriggerList",
-                                         "Trigger_Condition_List": drug_events,
+                                         "Trigger_Condition_List": [drug_events],
                                          "Actual_IndividualIntervention_Config": {
                                              "class": "MultiInterventionDistributor",
                                                       "Intervention_List" : [set_to_recent_drugs, expire_recent_drugs] }

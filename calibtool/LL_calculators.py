@@ -30,33 +30,33 @@ def dirichlet_multinomial_pandas(df):
 
 def gamma_poisson_pandas(df):
 
-    LL = gammaln(df.ref.Incidents + df.sim.Incidents + 1) \
-       - gammaln(df.ref.Incidents + 1) \
-       - gammaln(df.sim.Incidents + 1)
+    LL = gammaln(df.ref.Observations + df.sim.Observations + 1) \
+       - gammaln(df.ref.Observations + 1) \
+       - gammaln(df.sim.Observations + 1)
 
-    ix = df.ref['Person Years'] > 0
-    LL.loc[ix] += (df.loc[ix].ref.Incidents + 1) * np.log(df.loc[ix].ref['Person Years'])
+    ix = df.ref.Trials > 0
+    LL.loc[ix] += (df.loc[ix].ref.Observations + 1) * np.log(df.loc[ix].ref.Trials)
 
-    ix = df.sim['Person Years'] > 0
-    LL.loc[ix] += (df.loc[ix].sim.Incidents + 1) * np.log(df.loc[ix].sim['Person Years'])
+    ix = df.sim.Trials > 0
+    LL.loc[ix] += (df.loc[ix].sim.Observations + 1) * np.log(df.loc[ix].sim.Trials)
 
-    ix = (df.ref['Person Years'] > 0) & (df.sim['Person Years'] > 0)
-    LL.loc[ix] -= (df.loc[ix].ref.Incidents + df.loc[ix].sim.Incidents + 1) \
-                  * np.log(df.loc[ix].ref['Person Years'] + df.loc[ix].sim['Person Years'])
+    ix = (df.ref.Trials > 0) & (df.sim.Trials > 0)
+    LL.loc[ix] -= (df.loc[ix].ref.Observations + df.loc[ix].sim.Observations + 1) \
+                  * np.log(df.loc[ix].ref.Trials + df.loc[ix].sim.Trials)
 
     return LL.mean()
 
 
 def beta_binomial_pandas(df):
-    LL = gammaln(df.ref['Person Years'] + 1) \
-       + gammaln(df.sim['Person Years'] + 2) \
-       - gammaln(df.ref['Person Years'] + df.sim['Person Years'] + 2) \
-       + gammaln(df.ref.Incidents + df.sim.Incidents + 1) \
-       + gammaln(df.ref['Person Years'] - df.ref.Incidents + df.sim['Person Years'] - df.sim.Incidents + 1) \
-       - gammaln(df.ref.Incidents + 1) \
-       - gammaln(df.ref['Person Years'] - df.ref.Incidents + 1) \
-       - gammaln(df.sim.Incidents + 1) \
-       - gammaln(df.sim['Person Years'] - df.sim.Incidents + 1)
+    LL = gammaln(df.ref.Trials + 1) \
+       + gammaln(df.sim.Trials + 2) \
+       - gammaln(df.ref.Trials + df.sim.Trials + 2) \
+       + gammaln(df.ref.Observations + df.sim.Observations + 1) \
+       + gammaln(df.ref.Trials - df.ref.Observations + df.sim.Trials - df.sim.Observations + 1) \
+       - gammaln(df.ref.Observations + 1) \
+       - gammaln(df.ref.Trials - df.ref.Observations + 1) \
+       - gammaln(df.sim.Observations + 1) \
+       - gammaln(df.sim.Trials - df.sim.Observations + 1)
 
     return LL.mean()
 
