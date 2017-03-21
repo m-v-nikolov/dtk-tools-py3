@@ -34,6 +34,7 @@ class AnalyzeManager:
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.working_dir = working_dir or self.working_dir
         analyzer.initialize()
+
         self.analyzers.append(analyzer)
 
         # We have to refresh the parsers
@@ -108,6 +109,7 @@ class AnalyzeManager:
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
             except Exception as e:
+                print e
                 logger.error("Error in the plotting process for analyzer %s" % a)
                 logger.error("Experiments list %s" % self.experiments)
                 logger.error(e)
@@ -115,5 +117,5 @@ class AnalyzeManager:
         for p in plotting_processes:
             p.join()
 
-        import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
+        import matplotlib.pyplot as plt
         plt.show()
