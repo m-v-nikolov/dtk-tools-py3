@@ -6,6 +6,7 @@ import subprocess
 import sys
 from importlib import import_module
 
+import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
 from dtk.HIV.analyzers import *
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
@@ -556,27 +557,11 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
-    parser_run.add_argument(dest='config_name', default=None,
-                            help='Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
-    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_run.add_argument('-b', '--blocking', action='store_true',
-                            help='Block the thread until the simulations are done.')
-    parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
-    parser_run.add_argument('-a', '--analyzer', default=None,
-                            help='Specify an analyzer name or configuartion to run upon completion (this operation is blocking).')
+    parser_run = commands_args.populate_run_arguments(subparsers)
     parser_run.set_defaults(func=run)
 
     # 'dtk status' options
-    parser_status = subparsers.add_parser('status',
-                                          help='Report status of simulations in experiment specified by ID or name.')
-    parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
-    parser_status.add_argument('-r', '--repeat', action='store_true',
-                               help='Repeat status check until job is done processing.')
-    parser_status.add_argument('-a', '--active', action='store_true',
-                               help='Get the status of all active experiments (mutually exclusive to all other options).')
+    parser_status = commands_args.populate_status_arguments(subparsers)
     parser_status.set_defaults(func=status)
 
     # 'dtk list' options
