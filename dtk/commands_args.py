@@ -96,3 +96,45 @@ def populate_createbatch_arguments(subparsers):
     parser_createbatch.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
     return parser_createbatch
 
+
+# 'dtk list_batch' options
+def populate_listbatch_arguments(subparsers):
+    parser_listbatch=subparsers.add_parser('list_batch', help='Report recent 20 list of batches in Batch.')
+    parser_listbatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_listbatch.add_argument('-n', '--number', dest='limit', help='Get given number recent batch list')
+    return parser_listbatch
+
+
+# 'dtk clear_batch' options
+def populate_clearbatch_arguments(subparsers):
+    parser_clearbatch = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch or remove all Batches with empty experiments.')
+    parser_clearbatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    return parser_clearbatch
+
+
+# 'dtk delete_batch' options
+def populate_deletebatch_arguments(subparsers):
+    parser_deletebatch = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID.')
+    parser_deletebatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    return parser_deletebatch
+
+
+# 'dtk sync' options
+def populate_sync_arguments(subparsers):
+    parser_sync = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
+    parser_sync.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
+    parser_sync.add_argument('-id', '--exp_id', help='Sync a specific experiment from COMPS.', dest='exp_id')
+    parser_sync.add_argument('-n', '--name', help='Sync a specific experiment from COMPS (use %% for wildcard character).', dest='exp_name')
+    parser_sync.add_argument('-u', '--user', help='Sync experiments belonging to a particular user', dest='user')
+    return parser_sync
+
+
+# 'dtk log' options
+def populate_log_arguments(subparsers):
+    parser_log = subparsers.add_parser('log', help="Allow to query and export the logs.")
+    parser_log.add_argument('-l', '--level', help="Only display logs for a certain level and above (DEBUG,INFO,ERROR)", dest="level", default="DEBUG")
+    parser_log.add_argument('-m', '--module', help="Only display logs for a given module.", dest="module", nargs='+')
+    parser_log.add_argument('-n', '--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
+    parser_log.add_argument('-e', '--export', help="Export the log to the given file.", dest="export")
+    parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
+    return parser_log
