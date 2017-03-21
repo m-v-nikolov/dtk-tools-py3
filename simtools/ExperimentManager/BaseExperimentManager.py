@@ -14,6 +14,7 @@ import dill
 import fasteners
 import psutil
 
+from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
@@ -46,13 +47,7 @@ class BaseExperimentManager:
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
-
-        self.analyzers = []
-        self.parsers = {}
-        # if self.experiment and self.experiment.analyzers:
-        #     for analyzer in experiment.analyzers:
-        #         self.add_analyzer(dill.loads(analyzer.analyzer))
-
+        self.amanager = None
         self.assets_service = None
         self.exp_builder = None
         self.staged_bin_path = None
@@ -140,22 +135,7 @@ class BaseExperimentManager:
         """
         Called when the given simulation is done successfully
         """
-        self.analyze_simulation(simulation)
-
-    def analyze_simulation(self, simulation):
-        # Add the simulation_id to the tags
-        simulation.tags['sim_id'] = simulation.id
-
-        # Called when a simulation finishes
-        filtered_analyses = [a for a in self.analyzers if a.filter(simulation.tags)]
-        if not filtered_analyses:
-            logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
-            return
-
-        self.maxThreadSemaphore.acquire()
-        parser = self.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
-        parser.start()
-        self.parsers[parser.sim_id] = parser
+        pass
 
     def get_property(self, prop):
         return self.setup.get(prop)
@@ -404,6 +384,8 @@ class BaseExperimentManager:
 
     def analyze_experiment(self):
         """
+        Deprecated: Use AnalyzeManager instead
+        
         Apply one or more analyzers to the outputs of simulations.
         A parser thread will be spawned for each simulation with filtered analyzers to run,
         following which the combined outputs of all threads are reduced and displayed or saved.
@@ -413,51 +395,13 @@ class BaseExperimentManager:
            * combine -- reduce the data emitted by each parser
            * finalize -- plotting and saving output files
         """
-        # If no analyzers -> quit
-        if len(self.analyzers) == 0:
-            return
-        for simulation in self.experiment.simulations:
-            # We already processed this simulation
-            if self.parsers.has_key(simulation.id):
-                continue
-
-            self.analyze_simulation(simulation)
-
-        # We are all done, finish analyzing
-        for p in self.parsers.values():
-            p.join()
-
-        plotting_processes = []
-        from multiprocessing import Process
-        for a in self.analyzers:
-            a.combine(self.parsers)
-            a.finalize()
-            # Plot in another process
-            try:
-                # If on mac just plot and continue
-                if get_os() == 'mac':
-                    a.plot()
-                    continue
-                plotting_process = Process(target=a.plot)
-                plotting_process.start()
-                plotting_processes.append(plotting_process)
-            except Exception as e:
-                logger.error("Error in the plotting process for analyzer %s and experiment %s" % (a, self.experiment.id))
-                logger.error(e)
-
-        for p in plotting_processes:
-            p.join()
+        self.amanager.analyze()
 
     def add_analyzer(self, analyzer, working_dir=None):
-        analyzer.exp_id = self.experiment.exp_id
-        analyzer.exp_name = self.experiment.exp_name
-        analyzer.working_dir = working_dir if working_dir else os.getcwd()
-
-        # Initialize
-        analyzer.initialize()
-
-        # Add to the list
-        self.analyzers.append(analyzer)
+        logger.warning("The add_analyzer and analyze_experiment methods are deprecated. "
+                       "The new way of analyzing an experiment is through AnalyzeManager. See examples/features/example_analyze.py for more information.")
+        if not self.amanager: self.amanager = AnalyzeManager(self.experiment)
+        self.amanager.add_analyzer(analyzer, working_dir)
 
     def kill(self, args, unknownArgs):
         if args.simIds:
