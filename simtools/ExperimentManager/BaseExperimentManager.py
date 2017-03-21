@@ -153,7 +153,7 @@ class BaseExperimentManager:
             return
 
         self.maxThreadSemaphore.acquire()
-        parser = self.get_output_parser(simulation.id, simulation.tags, filtered_analyses)
+        parser = self.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
         parser.start()
         self.parsers[parser.sim_id] = parser
 
@@ -173,12 +173,12 @@ class BaseExperimentManager:
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
-    def get_output_parser(self, sim_id, sim_tags, filtered_analyses):
-        return self.parserClass(self.experiment.get_path(),
+    def get_output_parser(self, sim_path, sim_id, sim_tags, filtered_analyses, semaphore):
+        return self.parserClass(sim_path,
                                 sim_id,
                                 sim_tags,
                                 filtered_analyses,
-                                self.maxThreadSemaphore)
+                                semaphore)
 
     def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, analyzers=[]):
         """

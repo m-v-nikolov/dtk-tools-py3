@@ -4,7 +4,7 @@ import pandas as pd
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
 
-from calibtool.analyzers.BaseSummaryCalibrationAnalyzer import BaseSummaryCalibrationAnalyzer, thread_lock
+from calibtool.analyzers.BaseCalibrationAnalyzer import BaseCalibrationAnalyzer, thread_lock
 from calibtool import LL_calculators
 from calibtool.analyzers.Helpers import \
     convert_to_counts, age_from_birth_cohort, season_from_time, aggregate_on_index
@@ -12,7 +12,7 @@ from calibtool.analyzers.Helpers import \
 logger = logging.getLogger(__name__)
 
 
-class ChannelBySeasonAgeDensityCohortAnalyzer(BaseSummaryCalibrationAnalyzer):
+class ChannelBySeasonAgeDensityCohortAnalyzer(BaseCalibrationAnalyzer):
     """
     Compare reference season-, age-, and density-binned reference observations to simulation output.
     """

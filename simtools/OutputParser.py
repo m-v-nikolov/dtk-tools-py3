@@ -97,7 +97,10 @@ class SimulationOutputParser(threading.Thread):
 
     def load_csv_file(self, filename, *args):
         with open(self.get_path(filename)) as csv_file:
-            self.raw_data[filename] = pd.read_csv(csv_file, skipinitialspace=True)
+            csv_read = pd.read_csv(csv_file, skipinitialspace=True)
+            # For headers, take everything up to the first space
+            csv_read.columns = [s.split(' ')[0] for s in csv_read.columns]
+            self.raw_data[filename] = csv_read
 
     def load_xlsx_file(self, filename, *args):
         excel_file = pd.ExcelFile(self.get_path(filename))
@@ -117,7 +120,7 @@ class SimulationOutputParser(threading.Thread):
             n_tstep, = struct.unpack('i', data[4:8])
             # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids_dtype = np.dtype([('ids', '<i4', (1, n_nodes))])
+            nodeids_dtype = np.dtype([('ids', '<u4', (1, n_nodes))])
             nodeids = np.fromfile(bin_file, dtype=nodeids_dtype, count=1)
             nodeids = nodeids['ids'][:, :, :].ravel()
             # print( "node IDs: " + str(nodeids) )
@@ -132,7 +135,7 @@ class SimulationOutputParser(threading.Thread):
                                    'data': channel_data}
 
     def get_sim_dir(self):
-        return os.path.join(self.sim_dir, self.sim_id)
+        return self.sim_dir
 
 
 class CompsDTKOutputParser(SimulationOutputParser):
@@ -155,7 +158,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
         print('Populated map of %d simulation IDs to output directories' % len(sim_map))
         if save:
-            cls.sim_dir_map = sim_map
+            cls.sim_dir_map = cls.sim_dir_map or {}
+            cls.sim_dir_map.update(sim_map)
         return sim_map
 
     def load_all_files(self, filenames):
@@ -222,7 +226,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
             n_tstep, = struct.unpack('i', arr[4:8])
             # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids = struct.unpack(str(n_nodes) + 'i', arr[8:8 + n_nodes * 4])
+            nodeids = struct.unpack(str(n_nodes) + 'I', arr[8:8 + n_nodes * 4])
             nodeids = np.asarray(nodeids)
             # print( "node IDs: " + str(nodeids) )
 

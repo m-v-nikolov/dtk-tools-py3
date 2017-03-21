@@ -22,6 +22,7 @@ from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
 from simtools.Utilities.General import init_logging
+from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 
 logger = init_logging("Calibration")
 
@@ -361,17 +362,20 @@ class CalibManager(object):
             exp = retrieve_experiment(self.iteration_state.experiment_id, verbose=True)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
 
+        analyzer_list = []
         for site in self.sites:
             for analyzer in site.analyzers:
-                exp_manager.add_analyzer(analyzer)
-        exp_manager.analyze_experiment()
+                analyzer_list.append(analyzer)
+
+        analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list, working_dir=self.iteration_directory())
+        analyzerManager.analyze()
 
         # Ask the analyzers to cache themselves
-        cached_analyses = {a.uid(): a.cache() for a in exp_manager.analyzers}
+        cached_analyses = {a.uid(): a.cache() for a in analyzerManager.analyzers}
         logger.debug(cached_analyses)
 
         # Get the results from the analyzers and ask the next point how it wants to cache them
-        results = pd.DataFrame({a.uid(): a.result for a in exp_manager.analyzers})
+        results = pd.DataFrame({a.uid(): a.result for a in analyzerManager.analyzers})
         cached_results = self.next_point.get_results_to_cache(results)
         logger.debug(cached_results)
 
@@ -449,7 +453,7 @@ class CalibManager(object):
             return []
 
         if not isinstance(self.all_results, pd.DataFrame):
-            raise Exception('all_results must be a pandas DataFrame')
+            return self.all_results
 
         self.all_results.index.name = 'sample'
         data = self.all_results.reset_index()

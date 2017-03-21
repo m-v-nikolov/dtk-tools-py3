@@ -12,3 +12,4 @@ analyzers = [ TimeseriesAnalyzer(
                 group_function=group_by_name('_site_'),
                 )
             ]
+

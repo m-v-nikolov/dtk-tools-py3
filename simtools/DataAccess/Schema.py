@@ -1,7 +1,6 @@
 import datetime
 import inspect
 import os
-
 from sqlalchemy import Binary
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -56,7 +55,7 @@ class Simulation(Base):
             return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
         else:
             from simtools.OutputParser import CompsDTKOutputParser
-            if not CompsDTKOutputParser.sim_dir_map or  not self.id in CompsDTKOutputParser.sim_dir_map:
+            if not CompsDTKOutputParser.sim_dir_map or not self.id in CompsDTKOutputParser.sim_dir_map:
                 CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, save=True)
             return CompsDTKOutputParser.sim_dir_map[self.id]
 
@@ -134,5 +133,34 @@ class Experiment(Base):
             ret[name] = value
 
         return ret
+
+
+class Batch(Base):
+    __tablename__ = "batches"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=True)
+    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
+
+    experiments = relationship("Experiment", secondary="batch_experiment", lazy='subquery',
+                               order_by="Experiment.date_created")
+
+    def __repr__(self):
+        return "%s (id=%s)" % (self.name, self.id)
+
+    # must be called from an instance
+    def get_experiment_ids(self):
+        exp_ids = [exp.exp_id for exp in self.experiments]
+        return exp_ids
+
+
+class BatchExperiment(Base):
+    __tablename__ = "batch_experiment"
+    batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
+    exp_id = Column(String, ForeignKey('experiments.exp_id'), primary_key=True)
+    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
+
+    def __repr__(self):
+        return "batch_experiment"
+
 
 Base.metadata.create_all(engine)

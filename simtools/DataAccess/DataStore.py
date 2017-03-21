@@ -2,6 +2,7 @@ import datetime
 
 import numpy as np
 
+from simtools.DataAccess.BatchDataStore import BatchDataStore
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.Schema import Analyzer
 from simtools.DataAccess.SettingsDataStore import SettingsDataStore
@@ -53,7 +54,7 @@ def batch(iterable, n=1):
         yield iterable[ndx:min(ndx + n, l)]
 
 
-class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore):
+class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore, BatchDataStore):
     """
     Class holding static methods to abstract the access to the database.
     """

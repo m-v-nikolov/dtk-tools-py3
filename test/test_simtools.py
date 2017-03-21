@@ -2,12 +2,12 @@ import os
 import stat
 import unittest
 
-from simtools import utils
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder, ModFn
 from simtools.SetupParser import SetupParser
 from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
+from simtools.Utilities.General import get_md5, CommandlineGenerator
 
 
 class TestConfigBuilder(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestConfigBuilder(unittest.TestCase):
         local_setup = dict(self.setup.items())
 
         file1 = os.path.join(self.dummy_exe_folder,'dummy_exe.txt')
-        md5 = utils.get_md5(file1)
+        md5 = get_md5(file1)
         self.cb.stage_executable(file1, local_setup)
         staged_dir = os.path.join(self.setup.get('bin_staging_root'), md5)
         staged_path = os.path.join(staged_dir, 'dummy_exe.txt')
@@ -57,7 +57,7 @@ class TestConfigBuilder(unittest.TestCase):
 
         file2 = os.path.join(self.another_dummy_exe_folder,'dummy_exe.txt')
         os.chmod(file2, stat.S_IREAD)  # This is not writeable, but should not error because it isn't copied
-        another_md5 = utils.get_md5(file2)
+        another_md5 = get_md5(file2)
         self.cb.stage_executable(file2, local_setup)
         self.assertEqual(md5, another_md5)
 
@@ -70,7 +70,7 @@ class TestConfigBuilder(unittest.TestCase):
         commandline = self.cb.get_commandline('input/file.txt', dict(self.setup.items()))
         self.assertEqual('input/file.txt', commandline.Commandline)
 
-        another_command = utils.CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
+        another_command = CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
         self.assertEqual('input/file.txt --config config.json', another_command.Commandline)
 
 
