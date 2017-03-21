@@ -38,3 +38,6 @@ def combo_filter(*args):
         return all(filter(metadata) for filter in args)
 
     return f
+
+def defualt_filter_fn(md):
+    return True

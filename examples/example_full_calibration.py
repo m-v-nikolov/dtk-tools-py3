@@ -81,7 +81,7 @@ next_point_kwargs = dict(initial_samples=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
-                             setup=SetupParser('EXAMPLEHPC'),
+                             setup=SetupParser('HPC'),
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,

@@ -18,3 +18,6 @@ def combo_group(*args):
         return tuple(group(simid, metadata) for group in args)
 
     return f
+
+def default_group_fn(k,v):
+    return k

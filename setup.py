@@ -433,11 +433,11 @@ def handle_init():
         cp.add_section('EXAMPLE')
         cp.set('EXAMPLE', 'type', 'LOCAL')
         cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
-    if not cp.has_section('EXAMPLEHPC'):
-        cp.add_section('EXAMPLEHPC')
-        cp.set('EXAMPLEHPC', 'type', 'HPC')
-        cp.set('EXAMPLEHPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
-        cp.set('EXAMPLEHPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
+    if not cp.has_section('HPC'):
+        cp.add_section('HPC')
+        cp.set('HPC', 'type', 'HPC')
+        cp.set('HPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
+        cp.set('HPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
 
     cp.write(open(example_simtools, 'w'))
 

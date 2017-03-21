@@ -557,8 +557,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = commands_args.populate_run_arguments(subparsers)
-    parser_run.set_defaults(func=run)
+    parser_run = commands_args.populate_run_arguments(subparsers, run)
 
     # 'dtk status' options
     parser_status = commands_args.populate_status_arguments(subparsers)
