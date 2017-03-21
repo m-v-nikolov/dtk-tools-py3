@@ -322,7 +322,7 @@ class BaseExperimentManager:
 
         # Display some info
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
-        logger.info(" | Creator processes: %s (max: %s)"% (len(creator_processes),max_creator_processes))
+        logger.info(" | Creator processes: %s (max: %s)"% (len(creator_processes),max_creator_processes+1))
         logger.info(" | Simulations per batch: %s"% sim_per_batch)
         logger.info(" | Simulations Count: %s" % total_sims)
         logger.info(" | Max simulations per threads: %s"% nbatches)
