@@ -196,9 +196,8 @@ def add_reactive_node_IRS(config_builder, start, duration=10000, trigger_coverag
                         "Intervention_Config" : { 
                             "class": "NodeLevelHealthTriggeredIV",
                             "Demographic_Coverage": trigger_coverage,
-                            "Trigger_Condition": "TriggerString",
-                            "Trigger_Condition_String": "Received_Treatment", # triggered by successful health-seeking
-                            "Duration" : duration,
+                            "Trigger_Condition_List": ["Received_Treatment"], # triggered by successful health-seeking
+                            "Duration": duration,
                             "Actual_IndividualIntervention_Config" : { 
                                 "class": "DelayedIntervention",                    
                                 "Delay_Distribution": "FIXED_DURATION",
@@ -219,8 +218,7 @@ def add_reactive_node_IRS(config_builder, start, duration=10000, trigger_coverag
                                 "class": "NodeLevelHealthTriggeredIV",
                                 'Node_Property_Restrictions': [{'SprayStatus': 'None'}],
                                 "Demographic_Coverage": irs_coverage,
-                                "Trigger_Condition": "TriggerString",
-                                "Trigger_Condition_String": "Spray_IRS",
+                                "Trigger_Condition_List": ["Spray_IRS"],
                                 "Blackout_Event_Trigger": "IRS_Blackout",
                                 "Blackout_Period": 1,
                                 "Blackout_On_First_Occurrence": 1,

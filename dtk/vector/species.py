@@ -26,6 +26,7 @@ param_block = {
     "Infected_Egg_Batch_Factor": 0.8,
 
     "Infectious_Human_Feed_Mortality_Factor": 1.5,
+    "Nighttime_Feeding_Fraction": 1,
     "Transmission_Rate": 0.9  # Based on late-2013 calibration of PfPR vs EIR favoring 1.0 to 0.5
 }
 
