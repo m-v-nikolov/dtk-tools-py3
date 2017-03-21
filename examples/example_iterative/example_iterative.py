@@ -13,7 +13,8 @@ from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
 
 
 # Find experiment from whose config/campaigns we want to use (also get sweep params)
-comparison_exp_id = "9945ae69-3106-e711-9400-f0921c16849c"
+comparison_exp_id =  "9945ae69-3106-e711-9400-f0921c16849c"
+sim_name = 'Rerun_Rampup_MDA_Better_Diagnostic'
 expt = retrieve_experiment(comparison_exp_id)
 sp = SetupParser('HPC')
 
@@ -29,13 +30,9 @@ cb = DTKConfigBuilder.from_files(config_name=os.path.join(cb_dir, 'config.json')
 CompsDTKOutputParser.sim_dir_map = None
 #cb.update_params({'Num_Cores': 1})
 
-sweep_params = [{'LINEAR_SPLINE': df['minimus.LINEAR_SPLINE'][x]} for x in df.index]
-
 sites = [
     MyanmarCalibSite()
 ]
-
-
 
 # Here we are specifying the initial values for the next point data
 initial_state = [{
@@ -49,7 +46,7 @@ initial_state = [{
     # should analyzer return path to previous segment?
     # 'Serialized_Population_Path':'', #os.path.join(cb_dir, 'output'),
     # 'Serialized_Population_Filenames':[]#['state-18250-%03d.dtk' % x for x in range(24)]
-} for rn in range(10)]
+} for rn in range(2)]
 
 # initial_state = [{
 #     'NodeIDs':[],
@@ -71,6 +68,7 @@ def sample_point_fn(cb, sample_dimension_values):
     cb.update_params({'Simulation_Duration': sample_dimension_values['Serialization'],
                       'Spatial_Output_Channels': ['New_Diagnostic_Prevalence', 'Population', 'Prevalence'],
                       'Serialization_Time_Steps': [sample_dimension_values['Serialization']],
+                      'New_Diagnostic_Sensitivity': 50
                       })
 
     # also need to pick up serialization path to load serialized file for each iteration.
@@ -82,7 +80,7 @@ def sample_point_fn(cb, sample_dimension_values):
                 event['Start_Day'] = sample_dimension_values['Serialization']
 
         add_drug_campaign(cb, 'MDA', 'DP', [sample_dimension_values['Serialization']],
-                          coverage=0.7, nodes=sample_dimension_values['NodeIDs'], interval=30)
+                          coverage=0.5, nodes=sample_dimension_values['NodeIDs'], interval=30)
 
         # for the second round, we want to set the start time equal to the last day of the old sim.
         # We also want duration to be equal to the new duration value, and for it to serialize at the
@@ -108,14 +106,14 @@ def sample_point_fn(cb, sample_dimension_values):
     return tags
 
 # sp.override_block('LOCAL')
-calib_manager = CalibManager(name='IterativeTest',
+calib_manager = CalibManager(name=sim_name,
                              setup=sp,
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
                              next_point=GenericIterativeNextPoint(initial_state),
                              sim_runs_per_param_set=1,
-                             max_iterations=2,
+                             max_iterations=1,
                              plotters=[])
 
 run_calib_args = {}

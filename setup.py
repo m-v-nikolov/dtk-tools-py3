@@ -41,9 +41,9 @@ requirements = OrderedDict([
     }),
     ('scipy', {
         'platform': ['win', 'lin', 'mac'],
-        'version': '0.18.1',
+        'version': '0.19.0',
         'test': '>=',
-        'wheel': '%s/scipy-0.18.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('pandas', {
         'platform': ['win', 'lin', 'mac'],
