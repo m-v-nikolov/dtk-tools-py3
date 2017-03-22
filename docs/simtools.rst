@@ -1,6 +1,5 @@
 Simtools package
 ===================
-
 .. toctree::
        :maxdepth: 2
 

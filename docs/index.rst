@@ -1,7 +1,5 @@
-.. DTK Package documentation master file
-
 =======================================
-Welcome to DTK Package's documentation!
+Welcome to DTKTools documentation!
 =======================================
 
 Contents:
