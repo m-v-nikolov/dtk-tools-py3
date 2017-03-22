@@ -37,23 +37,21 @@ class AnalyzeManager:
 
         self.analyzers.append(analyzer)
 
-        # We have to refresh the parsers
-        self.parsers = []
-        # Create the parsers for the experiments
-        for exp in self.experiments:
-            self.create_parsers_for_experiment(exp)
-
     def create_parsers_for_experiment(self, experiment):
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
         if exp_manager.location == 'HPC':
-            if not exp_manager.assets_service:
-                exp_manager.parserClass.createSimDirectoryMap(exp_manager.experiment.exp_id, exp_manager.experiment.suite_id)
+            # Get the sim map no matter what
+            exp_manager.parserClass.createSimDirectoryMap(exp_manager.experiment.exp_id, exp_manager.experiment.suite_id)
 
+            # Enable asset service if needed
+            if exp_manager.assets_service:
+                exp_manager.parserClass.enableAssetService()
+
+            # Enable compression if needed
             if exp_manager.compress_assets:
-                with nostdout():
-                    exp_manager.parserClass.enableCompression()
+                exp_manager.parserClass.enableCompression()
 
         for simulation in exp_manager.experiment.simulations:
             parser = self.parser_for_simulation(simulation, experiment, exp_manager)
@@ -77,8 +75,7 @@ class AnalyzeManager:
             logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
 
-        simulation_path = simulation.get_path((manager.location == "HPC" and not manager.assets_service) or manager.location == "LOCAL")
-        parser = manager.get_output_parser(simulation_path, simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
+        parser = manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
 
         return parser
 
@@ -86,6 +83,10 @@ class AnalyzeManager:
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
+
+        # Create the parsers for the experiments
+        for exp in self.experiments:
+            self.create_parsers_for_experiment(exp)
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()
