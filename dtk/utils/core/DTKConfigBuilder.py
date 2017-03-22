@@ -3,41 +3,39 @@ import logging
 import os
 import re # find listed events by regex
 
+import dtk.dengue.params as dengue_params
 import dtk.generic.params as generic_params
+import dtk.generic.seir as seir_params
+import dtk.generic.seir_vitaldynamics as seir_vitaldynamics_params
+import dtk.generic.seirs as seirs_params
+import dtk.generic.si as si_params
 import dtk.generic.sir as sir_params
 import dtk.generic.sir_vaccinations_a as sir_vaccinations_a_params
 import dtk.generic.sir_vaccinations_b as sir_vaccinations_b_params
 import dtk.generic.sir_vaccinations_c as sir_vaccinations_c_params
-import dtk.generic.seir as seir_params
-import dtk.generic.seir_vitaldynamics as seir_vitaldynamics_params
 import dtk.generic.sirs as sirs_params
-import dtk.generic.seirs as seirs_params
-import dtk.generic.si as si_params
 import dtk.generic.sis as sis_params
 import dtk.malaria.params as malaria_params
 import dtk.vector.params as vector_params
-import dtk.dengue.params as dengue_params
-
 from dtk.interventions.empty_campaign import empty_campaign
+from dtk.interventions.seir_initial_seeding import seir_campaign
+from dtk.interventions.seir_vitaldynamics import seir_vitaldynamics_campaign
+from dtk.interventions.seirs import seirs_campaign
+from dtk.interventions.si_initial_seeding import si_campaign
 from dtk.interventions.sir_initial_seeding import sir_campaign
 from dtk.interventions.sir_vaccinations_a_initial_seeding import sir_vaccinations_a_campaign
 from dtk.interventions.sir_vaccinations_b_initial_seeding import sir_vaccinations_b_campaign
 from dtk.interventions.sir_vaccinations_c_initial_seeding import sir_vaccinations_c_campaign
-from dtk.interventions.seir_initial_seeding import seir_campaign
-from dtk.interventions.seir_vitaldynamics import seir_vitaldynamics_campaign
 from dtk.interventions.sirs_initial_seeding import sirs_campaign
-from dtk.interventions.seirs import seirs_campaign
-from dtk.interventions.si_initial_seeding import si_campaign
 from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
-import simtools.Utilities as utils
 from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.COMPSUtilities import translate_COMPS_path, stage_file
 from simtools.Utilities.Encoding import NumpyEncoder
-from simtools.Utilities.General import CommandlineGenerator
+from simtools.Utilities.General import CommandlineGenerator, init_logging
 
-logger = logging.getLogger(__name__)
+logger = init_logging('ConfigBuilder')
 
 
 class DTKConfigBuilder(SimConfigBuilder):

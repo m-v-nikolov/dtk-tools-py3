@@ -154,8 +154,20 @@ def workdirs_from_simulations(sims):
 
 def workdirs_from_experiment_id(exp_id):
     e = Experiment.get(exp_id)
-    sims = sims_from_experiment(e)
-    return workdirs_from_simulations(sims)
+    try:
+        sims = sims_from_experiment(e)
+        return workdirs_from_simulations(sims)
+    except Exception as e:
+        # Can remove this when https://github.com/InstituteforDiseaseModeling/pyCOMPS-internal/issues/2 is fixed
+        # Only use what is in the try
+        e = Experiment.get(exp_id)
+        sims = e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs').where('state=Succeeded'))
+        paths = workdirs_from_simulations(sims)
+        sims = e.get_simulations(QueryCriteria().select(['id', 'state']).where('state=Failed'))
+        for sim in sims:
+            paths[str(sim.id)] = "NA"
+
+        return paths
 
 
 def workdirs_from_suite_id(suite_id):

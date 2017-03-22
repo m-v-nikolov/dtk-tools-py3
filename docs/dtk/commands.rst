@@ -41,7 +41,7 @@ Force analyzer to run even if jobs are not all finished.
 Hard deletes **ALL** experiments matched by the id or name (or literally all experiments if nothing is passed).
 
 ``delete``
--------------
+----------
 
 .. dtk-cmd:: delete {none|id|name}
 
@@ -52,7 +52,7 @@ Deletes the cached JSON file for the selected experiment (or most recent).
 Deletes the cached JSON file and deletes local working directory or marks the experimented as deleted in COMPS for the selected experiment (or most recent).
 
 ``exterminate``
--------------
+---------------
 
 .. dtk-cmd:: exterminate {none|id|name}
 
@@ -60,7 +60,7 @@ Kills ALL experiments matched by the id or name (or literally all experiments if
 
 
 ``kill``
--------------
+--------
 
 .. dtk-cmd:: kill {none|id|name}
 
@@ -73,7 +73,7 @@ Comma separated list of job IDs or process of simulations to kill in the *most r
 
 
 ``progress``
--------------
+------------
 
 .. dtk-cmd:: progress {none|id|name}
 
@@ -81,7 +81,7 @@ Analyzes ``StdOut.txt`` and ``status.txt`` and prints the percent progress, time
 
 
 ``resubmit``
--------------
+------------
 
 .. dtk-cmd:: resubmit {none|id|name}
 
@@ -96,7 +96,7 @@ Comma separated list of job IDs or process of simulations to resubmit in the *mo
 Resubmit all failed or canceled simulations in selected experiments.
 
 ``run``
----------
+-------
 
 .. dtk-cmd:: run {config_name}
 
@@ -141,7 +141,7 @@ Allows to overrides the :setting:`node_group` setting of the :ref:`simtoolsini`.
 
 
 ``status``
------------
+----------
 
 .. dtk-cmd:: status {none|id|name}
 
@@ -237,7 +237,7 @@ For example:
 
 
 ``stdout``
--------------
+----------
 
 .. dtk-cmd:: stdout {none|id|name}
 
@@ -257,7 +257,7 @@ Prints ``StdOut.txt`` for the *first* failed or succeeded (depending on flag) si
 
 
 ``list``
--------------
+--------
 .. dtk-cmd:: list {none|name}
 
 list 20 *most recent* experiment containing specified **name** in the experiment name (or just the 20 most recent). For example::
@@ -265,11 +265,13 @@ list 20 *most recent* experiment containing specified **name** in the experiment
     dtk list TestExperiment
 
 .. dtk-cmd-option:: --<location>
+
 list 20 *most recent* experiment by matched specified **location** in the experiment location. For example, to list experiments with HPC as a location::
 
     dtk list --HPC
 
 .. dtk-cmd-option:: --number, -n
+
 Use any number following by the command option to **limit** the number of *most recent* experiments to display. For example::
 
     dtk list -n 100
