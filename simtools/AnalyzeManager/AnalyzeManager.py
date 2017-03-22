@@ -11,23 +11,36 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list, analyzers, setup=None, working_dir=None):
+    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None):
         if not setup:
             setup = SetupParser()
-        self.exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
-        self.analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
+        self.experiments = []
+        self.analyzers = []
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
-
         self.parsers = []
-        self.initialize(self.exp_list)
 
-    def initialize(self, exp_list):
-        for analyzer in self.analyzers:
-            analyzer.working_dir = self.working_dir
-            analyzer.initialize()
+        # Initial adding of experiments
+        exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
+        for exp in exp_list: self.add_experiment(exp)
 
-        for exp in exp_list:
+        # Initial adding of the analyzers
+        analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
+        for analyzer in analyzers: self.add_analyzer(analyzer)
+
+    def add_experiment(self, experiment):
+        self.experiments.append(experiment)
+
+    def add_analyzer(self, analyzer, working_dir=None):
+        analyzer.working_dir = working_dir or self.working_dir
+        analyzer.initialize()
+
+        self.analyzers.append(analyzer)
+
+        # We have to refresh the parsers
+        self.parsers = []
+        # Create the parsers for the experiments
+        for exp in self.experiments:
             self.create_parsers_for_experiment(exp)
 
     def create_parsers_for_experiment(self, experiment):
@@ -53,7 +66,7 @@ class AnalyzeManager:
 
         filtered_analyses = []
         for a in self.analyzers:
-            # set the analyzer info fot the current sim
+            # set the analyzer info for the current sim
             a.exp_id = experiment.exp_id
             a.exp_name = experiment.exp_name
 
@@ -63,7 +76,8 @@ class AnalyzeManager:
         if not filtered_analyses:
             logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
-        simulation_path = simulation.get_path() if (manager.location == "HPC" and not manager.assets_service) or manager.location == "LOCAL" else None
+
+        simulation_path = simulation.get_path((manager.location == "HPC" and not manager.assets_service) or manager.location == "LOCAL")
         parser = manager.get_output_parser(simulation_path, simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
 
         return parser
@@ -96,12 +110,13 @@ class AnalyzeManager:
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
             except Exception as e:
+                print e
                 logger.error("Error in the plotting process for analyzer %s" % a)
-                logger.error("Experiments list %s" % self.exp_list)
+                logger.error("Experiments list %s" % self.experiments)
                 logger.error(e)
 
         for p in plotting_processes:
             p.join()
 
-        import matplotlib.pyplot as plt  # avoid OS X conflict with Tkinter COMPS authentication
+        import matplotlib.pyplot as plt
         plt.show()

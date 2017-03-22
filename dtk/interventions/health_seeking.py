@@ -89,7 +89,7 @@ def add_health_seeking(config_builder,
             "Timesteps_Between_Repetitions": tsteps_btwn_repetitions,
             "Intervention_Config": {
                 "class": "NodeLevelHealthTriggeredIV",
-                "Trigger_Condition": t['trigger'],
+                "Trigger_Condition_List": [t['trigger']],
                 "Duration": duration,
                 # "Tendency": t['seek'],
                 "Demographic_Coverage": t['coverage'] * t['seek'],  # to be FIXED later for individual properties

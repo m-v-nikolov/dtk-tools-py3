@@ -24,7 +24,6 @@ cohort_params = {
     "Vector_Sampling_Type": "VECTOR_COMPARTMENTS_NUMBER",
     "Mosquito_Weight": 1,
 
-    "Enable_Temperature_Dependent_Feeding_Cycle": 0,
     "Enable_Vector_Aging": 0,
     "Enable_Vector_Mortality": 1,
     "Enable_Vector_Migration": 0,
@@ -54,7 +53,13 @@ cohort_params = {
     "HEG_Fecundity_Limiting": 0.0,
     "HEG_Model": "OFF",
 
-    "x_Temporary_Larval_Habitat": 1
+    "x_Temporary_Larval_Habitat": 1,
+
+    "Egg_Hatch_Density_Dependence": "NO_DENSITY_DEPENDENCE",
+    "Enable_Temperature_Dependent_Egg_Hatching": 0,
+    "Enable_Egg_Mortality": 0,
+    "Enable_Drought_Egg_Hatch_Delay": 0,
+    "Temperature_Dependent_Feeding_Cycle": "NO_TEMPERATURE_DEPENDENCE"
 }
 
 params = copy.deepcopy(cohort_params)

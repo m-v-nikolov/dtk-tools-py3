@@ -1,7 +1,7 @@
 Outbreak
 --------
 
-.. automodule:: dtk.interventions.outbreak
+.. automodule:: dtk.interventions.outbreakindividual
     :members:
     :undoc-members:
 

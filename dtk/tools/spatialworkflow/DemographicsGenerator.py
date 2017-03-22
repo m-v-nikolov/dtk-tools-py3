@@ -1,8 +1,10 @@
+import os
+import json
 import csv
 from datetime import datetime
 
-from dtk.generic.demographics import distribution_types
 from dtk.tools.demographics.node import Node, nodeid_from_lat_lon
+from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 
 
 class DemographicsGenerator:
@@ -15,58 +17,38 @@ class DemographicsGenerator:
     *-ed columns are optional
     """
 
-    def __init__(self, cb, nodes, demographics_type='static', res_in_arcsec=30, update_demographics=None,
-                 default_pop=1000):
+    def __init__(self, cb, population_input_file, demographics_type='static', res_in_arcsec=30.0,
+                 update_demographics=None):
+
         """
         Initialize the SpatialManager
         :param cb: config builder reference, updated after the demographics file is generated.
         :param demographics_type: could be 'static', 'growing' or a different type; currently only static is implemented in generate_nodes(self)
         :param res_in_arsec: sim grid resolution
-        :param update_demographics: provide the user with a chance to update the demographics file before it's written via a user-defined function; (e.g. scale larval habitats based on initial population per node in the demographics file) see generate_demographics(self)
+        :param update_demographics: provide the user with a chance to update the demographics file before it's written via a user-defined function; (e.g. scale larval habitats based on initial population per node in the demographics file) see generate_demographics(self) 
         :return:
         """
-        self.nodes = nodes
+
+        self.population_input_file = population_input_file
 
         self.cb = cb
+
         self.demographics_type = demographics_type
+
         self.res_in_arcsec = res_in_arcsec
-        self.res_in_degrees = self.arcsec_to_deg(self.res_in_arcsec)
+
+        if not self.res_in_arcsec == "custom":
+            self.res_in_degrees = self.res_in_arcsec / 3600.0
+
         self.update_demographics = update_demographics
+
+        # list of DTK nodes
+        self.nodes = []
 
         # demographics data dictionary (working DTK demographics file when dumped as json)
         self.demographics = None
-        self.default_pop = default_pop
 
-    @staticmethod
-    def arcsec_to_deg(arcsec):
-        return arcsec / 3600.0
-
-    @classmethod
-    def from_file(cls, cb, population_input_file, demographics_type='static', res_in_arcsec=30.0,
-                  update_demographics=None, default_pop=1000):
-        nodes_list = list()
-        with open(population_input_file, 'r') as pop_csv:
-            reader = csv.DictReader(pop_csv)
-            for row in reader:
-                # Latitude
-                if not 'lat' in row: raise ValueError('Column lat is required in input population file.')
-                lat = row['lat']
-
-                # Longitude
-                if not 'lon' in row: raise ValueError('Column lon is required in input population file.')
-                lon = row['lon']
-
-                # Node label
-                res_in_deg = cls.arcsec_to_deg(res_in_arcsec)
-                node_label = row['node_label'] if 'node_label' in row else nodeid_from_lat_lon(lat, lon, res_in_deg)
-
-                # Population
-                pop = row['pop'] if 'pop' in row else default_pop
-
-                # Append the newly created node to the list
-                nodes_list.append(Node(lat, lon, pop, node_label))
-
-        return cls(cb, nodes_list, demographics_type, res_in_arcsec, update_demographics, default_pop)
+        self.default_pop = None
 
     def set_demographics_type(self, demographics_type):
         self.demographics_type = demographics_type
@@ -76,17 +58,65 @@ class DemographicsGenerator:
 
     def set_res_in_arcsec(self, res_in_arcsec):
         self.res_in_arcsec = res_in_arcsec
-        self.res_in_degrees = self.arcsec_to_deg(res_in_arcsec)
+
+    def process_input(self):
+        """
+        generate a list of dtk nodes from input csv
+        """
+
+        with open(self.population_input_file, 'r') as pop_csv:
+            reader = csv.DictReader(pop_csv)
+
+            lat = None
+            lon = None
+            node_label = None
+            pop = 1000
+
+            idx = 1  # unique index to be used for node_label if node_label is not provided and for household-like setups where dtknodeids are not derived from lat/lon
+            for row in reader:
+                if not 'lat' in row:
+                    raise ValueError('Column lat is required in input population file.')
+                else:
+                    lat = row['lat']
+
+                if not 'lon' in row:
+                    raise ValueError('Column lon is required in input population file.')
+                else:
+                    lon = row['lon']
+
+                if 'node_label' in row:
+                    node_label = row['node_label']
+                else:
+                    # node_label = nodeid_from_lat_lon(lat, lon, self.res_in_degrees)
+                    node_label = str(idx)
+
+                if 'pop' in row:
+                    pop = row['pop']
+                else:
+                    self.default_pop = pop
+
+                self.nodes.append(Node(lat, lon, pop, node_label))
+
 
 
     def generate_defaults(self):
         """
-        Generate the defaults section of the demographics file
-
+        generate the defaults section of the demographics file
         all of the below can be taken care of by a generic Demographics class
         (see note about refactor in dtk.generic.demographics)
         """
-        # Currently support only static population; after demographics related refactor this whole method will likely disappear anyway
+
+        distribution_types = {
+            "CONSTANT_DISTRIBUTION": 0,
+            "UNIFORM_DISTRIBUTION": 1,
+            "GAUSSIAN_DISTRIBUTION": 2,
+            "EXPONENTIAL_DISTRIBUTION": 3,
+            "POISSON_DISTRIBUTION": 4,
+            "LOG_NORMAL": 5,
+            "BIMODAL_DISTRIBUTION": 6
+        }
+
+        # currently support only static population; after demographics related refactor this whole method will likely disappear anyway
         if self.demographics_type == 'static':
             self.cb.set_param("Birth_Rate_Dependence", "FIXED_BIRTH_RATE")
         else:
@@ -151,15 +181,19 @@ class DemographicsGenerator:
 
         return defaults
 
+
     def generate_nodes(self):
-        """
+        """       
         this function is currently replicated to a large extent in dtk.tools.demographics.node.nodes_for_DTK() but perhaps should not belong there
         it probably belongs to a generic Demographics class (also see one-liner note about refactor in dtk.generic.demographics)
         """
 
         nodes = []
-        for node in self.nodes:
-            node_id = nodeid_from_lat_lon(float(node.lat), float(node.lon), self.res_in_degrees)
+        for i, node in enumerate(self.nodes):
+            if self.res_in_arcsec == "custom":  # if re_in_degrees is custom assume node_ids are generated for a household-lie setup and not based on lat/lon
+                node_id = i + 1
+            else:
+                node_id = nodeid_from_lat_lon(float(node.lat), float(node.lon), self.res_in_degrees)
             node_attributes = node.toDict()
 
             if self.demographics_type == 'static':
@@ -175,6 +209,8 @@ class DemographicsGenerator:
 
         return nodes
 
+
+
     def generate_metadata(self):
         """
         generate demographics file metadata
@@ -189,21 +225,30 @@ class DemographicsGenerator:
             "Resolution": self.res_in_arcsec
         }
 
-        return metadata
+        if self.res_in_arcsec == "custom":  # if resolution is custom; still set meta data arcsec resolution to 30 (highest possible)
+            del metadata["Resolution"]
+            metadata["IdReference"] = "dtk-tools-DemographicsGenerator-node-enumeration"
 
+        return metadata
 
     def generate_demographics(self):
         """
         return all demographics file components in a single dictionary; a valid DTK demographics file when dumped as json
         """
-        self.demographics = {'Nodes': self.generate_nodes(),
-                             'Defaults': self.generate_defaults(),
-                             'Metadata': self.generate_metadata()}
+
+        self.process_input()
+
+        self.demographics = {}
+        self.demographics['Nodes'] = self.generate_nodes()
+        self.demographics['Defaults'] = self.generate_defaults()
+        self.demographics['Metadata'] = self.generate_metadata()
 
         if self.update_demographics:
             # update demographics before dict is written to file, via a user defined function and arguments
-            # self.update_demographics is a partial object (see python docs functools.partial) and self.update_demographics.func references the user's function 
+            # self.update_demographics is a partial object (see python docs functools.partial) and self.update_demographics.func references the user's function
             # the only requirement for the user defined function is that it needs to take a keyword argument demographics
+            # om("Updating demographics")
             self.update_demographics(demographics=self.demographics)
+            om("Updated demographics")
 
         return self.demographics

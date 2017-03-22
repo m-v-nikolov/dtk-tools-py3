@@ -1,9 +1,10 @@
 import json
 
+
 class WorkOrderGenerator:
     def __init__(self, demographics_file_path, wo_output_path, project_info="IDM-Democratic_Republic_of_the_Congo",
                  include_non_pop=True, shape_id="", resolution="30", parameters=['tmean', 'humid', 'rain'],
-                 start_year='2009', num_years="4", nan_check=True, idRef = 'Gridded world grump2.5arcmin'):
+                 start_year='2009', num_years="4", nan_check=True, idRef='Gridded world grump2.5arcmin'):
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
         self.work_item_type = "InputDataWorker"
@@ -34,9 +35,9 @@ class WorkOrderGenerator:
               'NaNCheck': self.nan_check,
               'Migration': self.migration,
               'IdReference': self.id_reference,
-              'ProjectRoot':'v2014',
-              'Mode':'upload'
-        }
+              'ProjectRoot': 'v2014',
+              'Mode': 'upload'
+              }
 
         # add the work order items
         # wo['Path'] = self.path
@@ -76,6 +77,9 @@ class WorkOrderGenerator:
 
     def set_nan_check(self, nan_check):
         self.nan_check = nan_check
+
+    def set_id_ref(self, id_ref):
+        self.id_reference = id_ref
 
     def wo_2_json(self):
         with open(self.wo_output_path, 'w') as wo_f:

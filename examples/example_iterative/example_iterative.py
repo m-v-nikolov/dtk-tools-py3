@@ -13,7 +13,8 @@ from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
 
 
 # Find experiment from whose config/campaigns we want to use (also get sweep params)
-comparison_exp_id = "9e042fad-27fb-e611-9400-f0921c16849c"
+comparison_exp_id =  "9945ae69-3106-e711-9400-f0921c16849c"
+sim_name = 'Rerun_Rampup_MDA_Better_Diagnostic'
 expt = retrieve_experiment(comparison_exp_id)
 sp = SetupParser('HPC')
 
@@ -29,33 +30,65 @@ cb = DTKConfigBuilder.from_files(config_name=os.path.join(cb_dir, 'config.json')
 CompsDTKOutputParser.sim_dir_map = None
 #cb.update_params({'Num_Cores': 1})
 
-sweep_params = [{'LINEAR_SPLINE': df['minimus.LINEAR_SPLINE'][x]} for x in df.index]
-
-
 sites = [
     MyanmarCalibSite()
 ]
 
 # Here we are specifying the initial values for the next point data
 initial_state = [{
-    'NodeIds':[],
-    'Serialization':30,
-    'Prevalence_date':365-1,
-    'Prevalence_threshold':.1
+    'NodeIDs':[],
+    'Serialization':2007,
+    'Prevalence_date':2006,
+    'Prevalence_threshold':0.4,
+    'New_Duration': 1643, # Duration of second iteration
+    'Run_Number': rn
     # for first iteration, set serialization path and filenames to burn-in
     # should analyzer return path to previous segment?
-    #'Serialized_Population_Path':'', #os.path.join(cb_dir, 'output'),
-    #'Serialized_Population_Filenames':[]#['state-18250-%03d.dtk' % x for x in range(24)]
-}]
+    # 'Serialized_Population_Path':'', #os.path.join(cb_dir, 'output'),
+    # 'Serialized_Population_Filenames':[]#['state-18250-%03d.dtk' % x for x in range(24)]
+} for rn in range(2)]
+
+# initial_state = [{
+#     'NodeIDs':[],
+#     'Serialization':10,
+#     'Prevalence_date':9,
+#     'Prevalence_threshold':0.4,
+#     'New_Duration': 10, # Duration of second iteration
+#     'Run_Number': rn
+#     # for first iteration, set serialization path and filenames to burn-in
+#     # should analyzer return path to previous segment?
+#     # 'Serialized_Population_Path':'', #os.path.join(cb_dir, 'output'),
+#     # 'Serialized_Population_Filenames':[]#['state-18250-%03d.dtk' % x for x in range(24)]
+# } for rn in range(10)]
 
 
 def sample_point_fn(cb, sample_dimension_values):
-    print len(sample_dimension_values['NodeIds'])
+
+    # require multinode to read in burn-in
+    cb.update_params({'Simulation_Duration': sample_dimension_values['Serialization'],
+                      'Spatial_Output_Channels': ['New_Diagnostic_Prevalence', 'Population', 'Prevalence'],
+                      'Serialization_Time_Steps': [sample_dimension_values['Serialization']],
+                      'New_Diagnostic_Sensitivity': 50
+                      })
 
     # also need to pick up serialization path to load serialized file for each iteration.
-    if sample_dimension_values['NodeIds'] :
+    if sample_dimension_values['NodeIDs'] :
+
+        # adjust the start date of VMW campaigns
+        for event in cb.campaign['Events']:
+            if event['Start_Day'] < sample_dimension_values['Serialization']:
+                event['Start_Day'] = sample_dimension_values['Serialization']
+
         add_drug_campaign(cb, 'MDA', 'DP', [sample_dimension_values['Serialization']],
-                          coverage=0.7, nodes=sample_dimension_values['NodeIds'])
+                          coverage=0.5, nodes=sample_dimension_values['NodeIDs'], interval=30)
+
+        # for the second round, we want to set the start time equal to the last day of the old sim.
+        # We also want duration to be equal to the new duration value, and for it to serialize at the
+        # proper point.
+        cb.update_params({'Start_Time': sample_dimension_values['Serialization'],
+                          'Simulation_Duration': sample_dimension_values['New_Duration'],
+                          'Serialization_Time_Steps': [sample_dimension_values['Serialization']+
+                                                       sample_dimension_values['New_Duration']]})
         
     if 'Serialized_Population_Path' in sample_dimension_values:
         cb.set_param('Serialized_Population_Path',sample_dimension_values['Serialized_Population_Path'])
@@ -63,30 +96,24 @@ def sample_point_fn(cb, sample_dimension_values):
     if 'Serialized_Population_Filenames' in sample_dimension_values:
         cb.set_param('Serialized_Population_Filenames',sample_dimension_values['Serialized_Population_Filenames'])
 
-    # to speed up simulations: no vectors, no people
-    # require multinode to read in burn-in
-    cb.update_params({'x_Temporary_Larval_Habitat':0,
-                      'Base_Population_Scale_Factor' : 0.01,
-                      'Enable_Vital_Dynamics' : 0,
-                      'Simulation_Duration':365,
-                      'Spatial_Output_Channels': ['New_Diagnostic_Prevalence'],
-                      'New_Diagnostic_Sensitivity': 1,
-                      'Serialization_Time_Steps': [sample_dimension_values['Serialization']]
-                      })
-
-    return {'Prevalence_date':sample_dimension_values['Prevalence_date'],
+    tags = {'Prevalence_date':sample_dimension_values['Prevalence_date'],
             'Prevalence_threshold': sample_dimension_values['Prevalence_threshold'],
-            'Serialization':sample_dimension_values['Serialization']}
+            'Serialization': sample_dimension_values['New_Duration'] if sample_dimension_values['NodeIDs'] else
+            sample_dimension_values['Serialization']}
+
+    tags.update(cb.set_param('Run_Number', sample_dimension_values['Run_Number']))
+
+    return tags
 
 # sp.override_block('LOCAL')
-calib_manager = CalibManager(name='IterativeTest',
+calib_manager = CalibManager(name=sim_name,
                              setup=sp,
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
                              next_point=GenericIterativeNextPoint(initial_state),
                              sim_runs_per_param_set=1,
-                             max_iterations=2,
+                             max_iterations=1,
                              plotters=[])
 
 run_calib_args = {}

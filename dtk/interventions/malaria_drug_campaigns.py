@@ -220,8 +220,7 @@ def add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving
                                                  "class": "NodeLevelHealthTriggeredIV",
                                                  "Demographic_Coverage": coverage,
                                                  "Duration": 2, # fMDA is today only, to avoid confusion with RCD
-                                                 "Trigger_Condition": "TriggerString",
-                                                 "Trigger_Condition_String": "Give_Drugs",
+                                                 "Trigger_Condition_List": ["Give_Drugs"],
                                                  "Actual_IndividualIntervention_Config": {
                                                      "Intervention_List": event_config,
                                                      "class": "MultiInterventionDistributor"
@@ -255,8 +254,7 @@ def add_rfMSAT(cb, start_day, coverage, drug_configs, receiving_drugs_event, int
                          "Intervention_Config": {
                              "class": "NodeLevelHealthTriggeredIV",
                              "Demographic_Coverage": trigger_coverage,
-                             "Trigger_Condition": "TriggerString",
-                             "Trigger_Condition_String": "Received_Treatment",  # triggered by successful health-seeking
+                             "Trigger_Condition_List": ["Received_Treatment"],  # triggered by successful health-seeking
                              "Duration": interval,  # interval argument indicates how long RCD will be implemented
                              "Actual_IndividualIntervention_Config": {
                                  "class": "DelayedIntervention",
@@ -322,8 +320,7 @@ def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, inte
                                         "class": "NodeLevelHealthTriggeredIV",
                                         "Demographic_Coverage": coverage,
                                         "Duration": interval, # interval argument indicates how long RCD will be implemented
-                                        "Trigger_Condition": "TriggerString",
-                                        "Trigger_Condition_String": "Give_Drugs",
+                                        "Trigger_Condition_List": ["Give_Drugs"],
                                         "Actual_IndividualIntervention_Config" : {
                                             "Intervention_List" : event_config,
                                             "class" : "MultiInterventionDistributor"
@@ -346,8 +343,7 @@ def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, inte
                         "Intervention_Config" : {
                             "class": "NodeLevelHealthTriggeredIV",
                             "Demographic_Coverage": trigger_coverage,
-                            "Trigger_Condition": "TriggerString",
-                            "Trigger_Condition_String": "Received_Treatment", # triggered by successful health-seeking
+                            "Trigger_Condition_List": ["Received_Treatment"], # triggered by successful health-seeking
                             "Duration" : interval, # interval argument indicates how long RCD will be implemented
                             "Actual_IndividualIntervention_Config" : {
                                 "class": "DelayedIntervention",
@@ -388,8 +384,7 @@ def add_borderscreen(cb, start_day, coverage, drug_configs, receiving_drugs_even
                          "Intervention_Config": {
                              "class": "NodeLevelHealthTriggeredIV",
                              "Demographic_Coverage": trigger_coverage,
-                             "Trigger_Condition": "TriggerString",
-                             "Trigger_Condition_String": "Emigrating",  # triggered by successful health-seeking
+                             "Trigger_Condition_List": ["Emigrating"],  # triggered by successful health-seeking
                              "Duration": interval,  # interval argument indicates how long RCD will be implemented
                              "Actual_IndividualIntervention_Config": {
                                  "class": "DelayedIntervention",
