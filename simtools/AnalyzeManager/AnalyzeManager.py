@@ -76,7 +76,8 @@ class AnalyzeManager:
         if not filtered_analyses:
             logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
-        simulation_path = simulation.get_path() if (manager.location == "HPC" and not manager.assets_service) or manager.location == "LOCAL" else None
+
+        simulation_path = simulation.get_path((manager.location == "HPC" and not manager.assets_service) or manager.location == "LOCAL")
         parser = manager.get_output_parser(simulation_path, simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
 
         return parser
