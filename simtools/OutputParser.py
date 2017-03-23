@@ -141,11 +141,15 @@ class SimulationOutputParser(threading.Thread):
 class CompsDTKOutputParser(SimulationOutputParser):
     sim_dir_map = None
     use_compression = False
+    asset_service = False
 
     @classmethod
     def enableCompression(cls):
-        print('Enabling COMPS asset service compression')
         cls.use_compression = True
+
+    @classmethod
+    def enableAssetService(cls):
+        cls.asset_service = True
 
     @classmethod
     def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True):
@@ -165,8 +169,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
     def load_all_files(self, filenames):
         from COMPS.Data import Simulation, AssetType
 
-        if self.sim_dir_map is not None:
-            # sim_dir_map -> we can just open files locally...
+        if not self.asset_service:
+            #  we can just open files locally...
             super(CompsDTKOutputParser, self).load_all_files(filenames)
             return
 
@@ -183,13 +187,13 @@ class CompsDTKOutputParser(SimulationOutputParser):
             self.load_single_file(filename, byte_array)
 
     def load_json_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_json_file(filename)
         else:
             self.raw_data[filename] = json.loads(str(args[0]))
 
     def load_csv_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_csv_file(filename)
         else:
             from StringIO import StringIO
@@ -197,7 +201,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
             self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
 
     def load_xlsx_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_xlsx_file(filename)
         else:
             excel_file = pd.ExcelFile( self.get_path(filename) )
@@ -205,19 +209,19 @@ class CompsDTKOutputParser(SimulationOutputParser):
               for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_txt_file(filename)
         else:
             self.raw_data[filename] = str(args[0])
 
     def load_raw_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_raw_file(filename)
         else:
             self.raw_data[filename] = args[0]
 
     def load_bin_file(self, filename, *args):
-        if self.sim_dir_map is not None:
+        if not self.asset_service:
             super(CompsDTKOutputParser, self).load_bin_file(filename)
         else:
             arr = args[0]
