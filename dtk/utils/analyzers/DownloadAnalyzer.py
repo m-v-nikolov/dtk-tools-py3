@@ -1,3 +1,4 @@
+import json
 import os
 
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
@@ -51,4 +52,7 @@ class DownloadAnalyzer(BaseAnalyzer):
         for filename in self.filenames:
             file_path = os.path.join(sim_folder, os.path.basename(filename))
             with open(file_path, 'wb') as outfile:
-                outfile.write(parser.raw_data[filename])
+                if not isinstance(parser.raw_data[filename], str):
+                    outfile.write(json.dumps(parser.raw_data[filename]))
+                else:
+                    outfile.write(parser.raw_data[filename])
