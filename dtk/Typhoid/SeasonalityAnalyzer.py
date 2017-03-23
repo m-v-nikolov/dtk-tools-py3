@@ -75,6 +75,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         sim_output = pd.DataFrame()
         for year_bin in self.year_bins:
             year_edges = [int(s) for s in re.findall(r'\b\d+\b', year_bin)]
+
             # Select years, assuming sequential
             sim_year = sim.query('Year >= @year_edges[0] & Year < @year_edges[1]').set_index('Year')
 
@@ -123,10 +124,15 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
 
             self.shelve_combine( { 'Data' : self.data } )
 
+        self.data.reset_index('Month', inplace=True)
+        self.data['Month'] = pd.Categorical(self.data['Month'].astype('category'), categories=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], ordered=True)
+        self.data.set_index('Month', append=True, inplace=True)
+        #self.data.sort_index(level='Month', sort_remaining=False, inplace=True)
+        self.data.sort_index(level='Sample', inplace=True, sort_remaining=True)
+        print self.data.index
+
         d = self.data.reset_index()
         self.cache_data['Sim'] = d.where((pd.notnull(d)), None).to_dict(orient='list')
-
-        logger.debug(self.data)
 
 
     def compare_age(self, sample):
