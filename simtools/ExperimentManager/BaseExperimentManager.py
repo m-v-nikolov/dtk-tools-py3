@@ -298,7 +298,6 @@ class BaseExperimentManager:
                                             callback=lambda: print('.', end=""),
                                             return_list=return_list)
             creator_processes.append(c)
-            c.start()
 
         # Display some info
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
@@ -308,6 +307,7 @@ class BaseExperimentManager:
         logger.info(" | Max simulations per threads: %s"% nbatches)
 
         # Wait for all to finish
+        map(lambda c: c.start(), creator_processes)
         map(lambda c: c.join(), creator_processes)
 
         # Insert all those newly created simulations to the DB
