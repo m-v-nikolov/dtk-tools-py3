@@ -185,7 +185,7 @@ class CalibManager(object):
 
             # COMMISSION STEP
             if self.iteration_state.resume_point.value <= ResumePoint.commission.value:
-                self.commission_step()
+                self.commission_step(**kwargs)
 
             # ANALYZE STEP
             if self.iteration_state.resume_point.value <= ResumePoint.analyze.value:
