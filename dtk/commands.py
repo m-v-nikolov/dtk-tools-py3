@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from importlib import import_module
+import shutil
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
@@ -24,6 +25,7 @@ from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date,
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging
+import simtools.Utilities.disease_packages as disease_packages
 
 logger = init_logging('Commands')
 
@@ -516,6 +518,74 @@ def db_list(args, unknownArgs):
     else:
         print "No experiments to display."
 
+def list_packages(args, unknownArgs):
+    package_names = sorted(disease_packages.get_available('branch'))
+    print "\n".join(package_names)
+
+def list_package_versions(args, unknownArgs):
+    package_name = args.package_name
+    if disease_packages.package_exists(package_name):
+        versions = sorted(disease_packages.get_versions_for_package(package_name))
+        print "\n".join(versions)
+    else:
+        print "Package %s does not exist." % package_name
+
+# handler for shutil.rmtree to deal with files with no write (delete) permissions
+def onerror(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        # Is the error an access error ?
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise
+
+def get_package(args, unknownArgs):
+    # overwrite any existing package by the same name (any version) with the specified version
+    package_name = args.package_name
+    if disease_packages.package_exists(package_name):
+        if args.package_version == 'latest':
+            version = disease_packages.get_latest_version_for_package(package_name) # if no versions exist, returns None
+        elif disease_packages.version_exists_for_package(args.package_version, package_name):
+            version = args.package_version
+        else:
+            version = None
+
+        if version == None:
+            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+            return
+
+        # prepare for cloning the package repo
+        packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
+        package_dir = os.path.join(packages_dir, package_name)
+        if os.path.exists(package_dir):
+            shutil.rmtree(package_dir, onerror=onerror) # make sure the whole dir is removed recursively
+        os.makedirs(package_dir)
+
+        # obtain desired version of desired package
+        print 'Obtaining package: %s version: %s .' % (package_name, version)
+        disease_packages.clone(dest=package_dir)
+
+        # we construct the remote tag name containing package-version info
+        disease_packages.checkout(package_dir, disease_packages.construct_version(package_name, version))
+
+        # Update the (local) mysql db with the version being used
+        db_key = package_name + '_package_version' # c4. move this key construction elsewhere?
+        DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
+
+        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
+    else:
+        print "Package %s does not exist, no changes made." % package_name
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -638,6 +708,18 @@ def main():
     # 'dtk log' options
     parser_log = commands_args.populate_log_arguments(subparsers)
     parser_log.set_defaults(func=log)
+
+    # 'dtk list_packages' options
+    parser_list_packages = commands_args.populate_list_packages_arguments(subparsers)
+    parser_list_packages.set_defaults(func=list_packages)
+
+    # 'dtk list_package_versions' options
+    parser_list_package_versions = commands_args.populate_list_package_versions_arguments(subparsers)
+    parser_list_package_versions.set_defaults(func=list_package_versions)
+
+    # 'dtk get_package' options
+    parser_get_package = commands_args.populate_get_package_arguments(subparsers)
+    parser_get_package.set_defaults(func=get_package)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
