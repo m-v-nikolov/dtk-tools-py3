@@ -47,7 +47,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         self.reference = site.reference_data[self.reference_sheet].set_index(['Year', 'Month', 'AgeBin'])
 
         year_bins = sorted(self.reference.index.get_level_values('Year').unique().tolist())
-        self.ref_pop = site.reference_data['PopulationByAge'].groupby('Year')['Pop'].sum().loc[year_bins[0]:year_bins[-1]+2].sum()
+        self.ref_pop = site.reference_data['PopulationByAge'].groupby('Year')['Population'].sum().loc[year_bins[0]:year_bins[-1]+2].sum()
         self.year_bins = ['[%d, %d)'%(min(year_bins), max(year_bins)+1)]
         self.reference = self.reference.groupby(level=['Month', 'AgeBin']).sum()
         self.reference['Year'] = self.year_bins[0]
