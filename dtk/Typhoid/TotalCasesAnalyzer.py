@@ -62,9 +62,9 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         '''
         Extract data from output data and accumulate in same bins as reference.
         '''
-        sim = super(TotalCasesAnalyzer, self).apply(parser)
+        (sim, pop_scaling) = super(TotalCasesAnalyzer, self).apply(parser)
         if self.verbose:
-            print 'Population scaling factor is', self.pop_scaling
+            print 'Population scaling factor is', pop_scaling
 
         sim_age_bins = sorted( list(set(sim['Age'].tolist())) )
 
@@ -90,13 +90,13 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
                 # Undo parent's pop scaling for beta-binomial likelihood
                 simbin['Sim_Cases'] = simbin['Acute (Inc)']
-                simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / self.pop_scaling # Note: pop_scaling comes from parent
+                simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / pop_scaling # Note: pop_scaling comes from parent
                 simbin.rename(index={'Population':'Sim_Population'}, inplace=True)
-                simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / self.pop_scaling
+                simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
                 err = simbin['Sim_Population']-self.pop_scaling_pop
                 #if abs(err) > 1e-6:
-                print parser.sim_id, 'RawPop =', simbin['Sim_Population_Unscaled'], 'PopScale =', self.pop_scaling, 'ScaledSimPop =', simbin['Sim_Population'], 'Err =', err
+                print parser.sim_id, 'RawPop =', simbin['Sim_Population_Unscaled'], 'PopScale =', pop_scaling, 'ScaledSimPop =', simbin['Sim_Population'], 'Err =', err
 
                 #assert( abs(simbin['Sim_Population']-self.pop_scaling_pop)<1e-6 )
 
@@ -116,7 +116,7 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             'Sim_Id': parser.sim_id,
             'Sample': parser.sim_data.get('__sample_index__'),
             #'Replicate': parser.sim_data.get('__replicate_index__'),
-            'Pop_Scaling': self.pop_scaling # From base class
+            'Pop_Scaling': pop_scaling # From base class
         }
         self.shelve_apply( parser.sim_id, shelve_data)
 

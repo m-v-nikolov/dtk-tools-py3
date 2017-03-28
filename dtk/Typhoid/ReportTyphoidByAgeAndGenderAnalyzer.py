@@ -102,7 +102,7 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pdata.rename({0:'Male', 1:'Female'}, inplace=True)
         pdata.reset_index(inplace=True)
 
-        return pdata
+        return (pdata, pop_scaling)
 
     def combine(self, parsers):
         return super(ReportTyphoidByAgeAndGenderAnalyzer, self).combine(parsers)
