@@ -3,7 +3,7 @@ from collections import Counter
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id, COMPS_login
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, retry_function
 
 logger = init_logging('Monitor')
 
@@ -40,11 +40,12 @@ class CompsSimulationMonitor(SimulationMonitor):
     """
 
     def __init__(self, exp_id, suite_id, endpoint):
+        super(CompsSimulationMonitor, self).__init__(exp_id)
         logger.debug("Create a COMPS Monitor with exp_id=%s, suite_id=%s, endpoint=%s" % (exp_id,suite_id,endpoint))
-        self.exp_id = exp_id
         self.suite_id = suite_id
         self.server_endpoint = endpoint
 
+    @retry_function
     def query(self):
         logger.debug("Query the HPC Monitor for Experiment %s" % self.exp_id)
 
