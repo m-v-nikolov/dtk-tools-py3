@@ -557,7 +557,7 @@ def get_package(args, unknownArgs):
         db_key = package_name + '_package_version' # move this key construction elsewhere?
         DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
-        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir) # ck4, this is currently printed as the wrong dir, asked Benoit about desired location
+        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
     else:
         print "Package %s does not exist, no changes made." % package_name
 
