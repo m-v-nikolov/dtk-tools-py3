@@ -233,3 +233,28 @@ class CommandlineGenerator(object):
         return ' '.join(filter(None, [self.Executable, self.Options, self.Params]))  # join ignores empty strings
 
 
+
+def rmtree_f(dir):
+    import shutil
+    if os.path.exists(dir):
+        shutil.rmtree(dir, onerror=rmtree_f_on_error)
+
+# handler for rmtree_ to deal with files with no write (delete) permissions
+def rmtree_f_on_error(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        # Is the error an access error ?
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise

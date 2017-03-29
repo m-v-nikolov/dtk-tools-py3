@@ -24,7 +24,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging
+from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging, rmtree_f
 import simtools.Utilities.disease_packages as disease_packages
 
 logger = init_logging('Commands')
@@ -530,26 +530,6 @@ def list_package_versions(args, unknownArgs):
     else:
         print "Package %s does not exist." % package_name
 
-# handler for shutil.rmtree to deal with files with no write (delete) permissions
-def onerror(func, path, exc_info):
-    """
-    Error handler for ``shutil.rmtree``.
-
-    If the error is due to an access error (read only file)
-    it attempts to add write permission and then retries.
-
-    If the error is for another reason it re-raises the error.
-
-    Usage : ``shutil.rmtree(path, onerror=onerror)``
-    """
-    import stat
-    if not os.access(path, os.W_OK):
-        # Is the error an access error ?
-        os.chmod(path, stat.S_IWUSR)
-        func(path)
-    else:
-        raise
-
 def get_package(args, unknownArgs):
     # overwrite any existing package by the same name (any version) with the specified version
     package_name = args.package_name
@@ -565,25 +545,23 @@ def get_package(args, unknownArgs):
             print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
             return
 
-        # prepare for cloning the package repo
+        # obtain desired version of desired package, overwriting any existing version
+        # of this package
         packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
         package_dir = os.path.join(packages_dir, package_name)
-        if os.path.exists(package_dir):
-            shutil.rmtree(package_dir, onerror=onerror) # make sure the whole dir is removed recursively
+        #if os.path.exists(package_dir):
+        #    shutil.rmtree(package_dir, onerror=onerror)
+        rmtree_f(package_dir) # make sure the whole dir is removed recursively
         os.makedirs(package_dir)
 
-        # obtain desired version of desired package
         print 'Obtaining package: %s version: %s .' % (package_name, version)
-        disease_packages.clone(dest=package_dir)
-
-        # we construct the remote tag name containing package-version info
-        disease_packages.checkout(package_dir, disease_packages.construct_version(package_name, version))
+        disease_packages.get(package = package_name, version = version, dest=package_dir)
 
         # Update the (local) mysql db with the version being used
-        db_key = package_name + '_package_version' # c4. move this key construction elsewhere?
+        db_key = package_name + '_package_version' # move this key construction elsewhere?
         DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
-        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
+        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir) # ck4, this is currently printed as the wrong dir, asked Benoit about desired location
     else:
         print "Package %s does not exist, no changes made." % package_name
 
