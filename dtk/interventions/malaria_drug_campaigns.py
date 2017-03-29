@@ -153,7 +153,7 @@ def add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repet
                 "Target_Age_Max": target_group['agemax']
                 })
         if node_property_restrictions:
-            drug_event['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+            drug_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
         cb.add_event(drug_event)
 
 
