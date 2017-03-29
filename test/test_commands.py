@@ -13,7 +13,6 @@ class TestCommands(unittest.TestCase):
         'v1.0': '1.0 \n',
         'v1.2': '1.2\n'
     }
-    TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
@@ -28,12 +27,12 @@ class TestCommands(unittest.TestCase):
         namespace = self.init_namespace(args)
         packages = dtk.commands.list_packages(args=namespace, unknownArgs=None)
         self.assertTrue(isinstance(packages, list))
-        self.assertTrue(packages.__contains__(self.TEST_DISEASE_PACKAGE_NAME))
+        self.assertTrue(packages.__contains__(disease_packages.TEST_DISEASE_PACKAGE_NAME))
 
     def test_list_package_versions(self):
         # positive test
         args = {
-            'package_name': self.TEST_DISEASE_PACKAGE_NAME
+            'package_name': disease_packages.TEST_DISEASE_PACKAGE_NAME
         }
         namespace = self.init_namespace(args)
         versions = dtk.commands.list_package_versions(args=namespace, unknownArgs=None)
@@ -54,7 +53,7 @@ class TestCommands(unittest.TestCase):
 
         # no existing version, default version obtained
         # ... and NO local package directory
-        package_name = self.TEST_DISEASE_PACKAGE_NAME
+        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
         args = {
             'package_name': package_name,
             'package_version': 'latest',
@@ -75,7 +74,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual('v1.2', DataStore.get_setting(db_key).value)
 
         # preexisting version, specified version obtained
-        package_name = self.TEST_DISEASE_PACKAGE_NAME
+        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
         args = {
             'package_name': package_name,
             'package_version': 'v1.0',
@@ -96,7 +95,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual('v1.0', DataStore.get_setting(db_key).value)
 
         # specified package exists, but version does not
-        package_name = self.TEST_DISEASE_PACKAGE_NAME
+        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
         db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
         original_version = DataStore.get_setting(db_key).value
         args = {

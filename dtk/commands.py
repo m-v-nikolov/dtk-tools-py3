@@ -552,7 +552,7 @@ def get_package(args, unknownArgs):
 
         # obtain desired version of desired package, overwriting any existing version
         # of this package
-        if args.dest:
+        if hasattr(args, 'dest'):
             packages_dir = args.dest # test code only
         else:
             packages_dir = os.path.join(os.path.dirname(__file__), 'packages')

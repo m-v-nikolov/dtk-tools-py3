@@ -8,6 +8,7 @@ from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
 
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
+TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
 
 def parse_version(tag):
     """
