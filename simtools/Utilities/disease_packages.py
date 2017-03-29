@@ -26,6 +26,14 @@ def construct_version(disease, ver):
         """
     return '-'.join([disease, ver])
 
+def construct_package_version_db_key(disease):
+    '''
+    Creates a key for the local DB for recording the package version currently being used.
+    :param disease: Construct the package version key for this disease/package
+    :return: A key into sqlite DB.
+    '''
+    return disease + '_package_version'
+
 def get_latest_version_for_package(package_name):
     """
         Determines the most recent inputs version for a given disease.

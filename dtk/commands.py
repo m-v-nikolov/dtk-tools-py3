@@ -520,7 +520,10 @@ def db_list(args, unknownArgs):
 
 def list_packages(args, unknownArgs):
     package_names = sorted(disease_packages.get_available('branch'))
+    if not hasattr(args, 'is_test'):
+        package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
     print "\n".join(package_names)
+    return package_names
 
 def list_package_versions(args, unknownArgs):
     package_name = args.package_name
@@ -528,7 +531,9 @@ def list_package_versions(args, unknownArgs):
         versions = sorted(disease_packages.get_versions_for_package(package_name))
         print "\n".join(versions)
     else:
+        versions = []
         print "Package %s does not exist." % package_name
+    return versions
 
 def get_package(args, unknownArgs):
     # overwrite any existing package by the same name (any version) with the specified version
@@ -547,14 +552,17 @@ def get_package(args, unknownArgs):
 
         # obtain desired version of desired package, overwriting any existing version
         # of this package
-        packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
+        if args.dest:
+            packages_dir = args.dest # test code only
+        else:
+            packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
         package_dir = os.path.join(packages_dir, package_name)
 
         print 'Obtaining package: %s version: %s .' % (package_name, version)
         disease_packages.get(package = package_name, version = version, dest = package_dir)
 
         # Update the (local) mysql db with the version being used
-        db_key = package_name + '_package_version' # move this key construction elsewhere?
+        db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
         DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
         print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
