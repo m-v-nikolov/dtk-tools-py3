@@ -5,6 +5,7 @@ import zipfile
 import uuid
 import github3
 from simtools.Utilities.General import rmtree_f
+from simtools.DataAccess.DataStore import DataStore
 
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
 
@@ -135,10 +136,10 @@ def get(package, version, dest):
             os.remove(zip_file)
 
 class DTKGitHub(object):
-    CREDENTIAL_FILE = os.path.join(os.path.expanduser("~"), 'githubcred.txt') # ck4 get rid of credential file
     OWNER = 'InstituteforDiseaseModeling'
     PACKAGE_REPOSITORY = 'dtk-packages'
     DTK_TOOLS_REPOSITORY = 'dtk-tools'
+    AUTH_TOKEN_FIELD = 'github_authentication_token'
 
     @classmethod
     def login(cls):
@@ -168,19 +169,17 @@ class DTKGitHub(object):
         auth = github3.authorize(user, password, scopes, note, note_url)
 
         # Write the info to disk
-        with open(cls.CREDENTIAL_FILE, 'w') as fd:
-            fd.write(auth.token + '\n')
+        # Update the (local) mysql db with the token
+        DataStore.save_setting(DataStore.create_setting(key=cls.AUTH_TOKEN_FIELD, value=auth.token))
 
         return auth.token
 
     @classmethod
     def retrieve_token(cls):
-        if os.path.exists(cls.CREDENTIAL_FILE):
-            # The token file exists -> use the token
-            with open(cls.CREDENTIAL_FILE, 'r') as fd:
-                token = fd.readline().strip()
+        setting = DataStore.get_setting(cls.AUTH_TOKEN_FIELD)
+        if setting:
+            token = setting.value
         else:
-            # The token file does not exist -> create a token
             token = cls.create_token()
         return token
 # class DTKGitHub
