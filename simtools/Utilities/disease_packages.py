@@ -123,11 +123,15 @@ def get(package, version, dest):
         try:
             # Extract and move package to desired location
             zip_ref.extractall()
-            if os.path.exists(package):
-                rmtree_f(package)
-            os.rename(dir, package)
+            containing_dir = os.path.dirname(dest)
+            if not os.path.exists(containing_dir):
+                os.makedirs(containing_dir)
+            if os.path.exists(dest):
+                rmtree_f(dest)
+            os.rename(dir, dest)
         except:
             rmtree_f(dir) # do not leave garbage around
+            raise
     finally:
         # Always close/delete the zip, successful or not
         if zip_ref:

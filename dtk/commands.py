@@ -549,13 +549,9 @@ def get_package(args, unknownArgs):
         # of this package
         packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
         package_dir = os.path.join(packages_dir, package_name)
-        #if os.path.exists(package_dir):
-        #    shutil.rmtree(package_dir, onerror=onerror)
-        rmtree_f(package_dir) # make sure the whole dir is removed recursively
-        os.makedirs(package_dir)
 
         print 'Obtaining package: %s version: %s .' % (package_name, version)
-        disease_packages.get(package = package_name, version = version, dest=package_dir)
+        disease_packages.get(package = package_name, version = version, dest = package_dir)
 
         # Update the (local) mysql db with the version being used
         db_key = package_name + '_package_version' # move this key construction elsewhere?
