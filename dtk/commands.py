@@ -522,7 +522,8 @@ def list_packages(args, unknownArgs):
     package_names = sorted(disease_packages.get_available('branch'))
     if not hasattr(args, 'is_test'):
         package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
-    print "\n".join(package_names)
+    if not hasattr(args, 'quiet'):
+        print "\n".join(package_names)
     return package_names
 
 def list_package_versions(args, unknownArgs):
@@ -560,10 +561,6 @@ def get_package(args, unknownArgs):
 
         print 'Obtaining package: %s version: %s .' % (package_name, version)
         disease_packages.get(package = package_name, version = version, dest = package_dir)
-
-        # Update the (local) mysql db with the version being used
-        db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
-        DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
         print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
     else:

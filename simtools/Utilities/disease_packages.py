@@ -148,6 +148,10 @@ def get(package, version, dest):
         if os.path.exists(zip_file):
             os.remove(zip_file)
 
+    # Update the (local) sqlite DB with the version being used
+    db_key = db_key = construct_package_version_db_key(package)
+    DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
+
 class DTKGitHub(object):
     OWNER = 'InstituteforDiseaseModeling'
     PACKAGE_REPOSITORY = 'dtk-packages'
