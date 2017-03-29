@@ -1,9 +1,12 @@
 import cStringIO
 import contextlib
+import functools
 import logging
 import os
 import platform
 import sys
+
+import time
 
 logging_initialized = False
 def init_logging(name):
@@ -112,6 +115,35 @@ def nostdout(stdout = False, stderr=False):
 
     logging.disable(previous_level)
 
+
+def retry_function(func, wait=1, max_retries=5):
+    """
+    Decorator allowing to retry the call to a function with some time in between.
+    Usage: 
+        @retry_function
+        def my_func():
+            pass
+            
+        @retry_function(max_retries=10, wait=2)
+        def my_func():
+            pass
+            
+    :param func: 
+    :param time_between_tries: 
+    :param max_retries: 
+    :return: 
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        retExc = None
+        for i in xrange(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except Exception, e:
+                retExc = e
+                time.sleep(wait)
+        raise retExc
+    return wrapper
 
 def caller_name(skip=2):
     """
