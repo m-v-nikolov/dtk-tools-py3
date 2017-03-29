@@ -143,9 +143,6 @@ def populate_log_arguments(subparsers, func=None):
 # 'dtk list_packages' options
 def populate_list_packages_arguments(subparsers, func=None):
     parser = subparsers.add_parser('list_packages', help="List the packages available to get_package command.")
-    parser.add_argument('-v', '--versions', help="List the versions available for the given package.",
-                        dest="package_name",
-                        default=None)
     return parser
 
 # 'dtk list_package_versions' options
