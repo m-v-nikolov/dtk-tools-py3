@@ -121,7 +121,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=None, nodeIDs=[],
 
 
 def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, cost=None,
-                 irs_ineligibility_duration=0, nodeIDs=[]):
+                 irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[]):
 
     irs_config = copy.deepcopy(node_irs_config)
     irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
@@ -130,17 +130,19 @@ def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, co
     if cost:
         node_irs_config['Cost_To_Consumer'] = cost
 
-    IRS_event = {   "Event_Coordinator_Config": {
-                        "Intervention_Config": irs_config, 
-                        "class": "NodeEventCoordinator"
-                    }, 
-                    "Nodeset_Config": {
-                        "class": "NodeSetAll"
-                    }, 
-                    "Start_Day": int(start), 
-                    "Event_Name": "Node Level IRS",
-                    "class": "CampaignEvent"
-                }
+    IRS_event = {
+        "Event_Coordinator_Config": {
+            "Intervention_Config": irs_config,
+            'Node_Property_Restrictions': [],
+            "class": "NodeEventCoordinator"
+        },
+        "Nodeset_Config": {
+            "class": "NodeSetAll"
+        },
+        "Start_Day": int(start),
+        "Event_Name": "Node Level IRS",
+        "class": "CampaignEvent"
+    }
 
     if not nodeIDs:
         IRS_event["Nodeset_Config"] = { "class": "NodeSetAll" }
@@ -161,8 +163,10 @@ def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, co
             recent_irs]
         del IRS_cfg['Event_Coordinator_Config']['Intervention_Config']
 
-        IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'] = [ { 'SprayStatus' : 'None'}]
+        IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend({ 'SprayStatus' : 'None'})
 
+    if node_property_restrictions:
+        IRS_cfg['Intervention_Config']['Node_Property_Restrictions'].extend(node_property_restrictions)
     config_builder.add_event(IRS_cfg)
 
 

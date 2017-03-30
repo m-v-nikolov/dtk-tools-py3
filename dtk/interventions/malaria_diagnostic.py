@@ -64,7 +64,7 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
                      }
 
     if NP_restrictions:
-        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
+        survey_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({
@@ -122,7 +122,7 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
                         "Nodeset_Config": nodes}
 
     if NP_restrictions:
-        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
+        survey_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({
