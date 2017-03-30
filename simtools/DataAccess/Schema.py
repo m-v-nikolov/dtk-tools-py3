@@ -76,7 +76,7 @@ class Experiment(Base):
     sim_root = Column(String)
     sim_type = Column(String)
     command_line = Column(String)
-    working_directory = Column(String, default=os.getcwd())
+    working_directory = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     endpoint = Column(String)
 
