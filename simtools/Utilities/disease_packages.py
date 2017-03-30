@@ -8,6 +8,7 @@ from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
 
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
+TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
 
 def parse_version(tag):
     """
@@ -25,6 +26,14 @@ def construct_version(disease, ver):
             :return: A len 2 list: PACKAGE_NAME-VERSION_STR
         """
     return '-'.join([disease, ver])
+
+def construct_package_version_db_key(disease):
+    '''
+    Creates a key for the local DB for recording the package version currently being used.
+    :param disease: Construct the package version key for this disease/package
+    :return: A key into sqlite DB.
+    '''
+    return disease + '_package_version'
 
 def get_latest_version_for_package(package_name):
     """
@@ -138,6 +147,10 @@ def get(package, version, dest):
             zip_ref.close()
         if os.path.exists(zip_file):
             os.remove(zip_file)
+
+    # Update the (local) sqlite DB with the version being used
+    db_key = db_key = construct_package_version_db_key(package)
+    DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
 class DTKGitHub(object):
     OWNER = 'InstituteforDiseaseModeling'

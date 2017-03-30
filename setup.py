@@ -516,6 +516,17 @@ def main():
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
 
+    # Obtain the most recent disease input packages
+    from argparse import Namespace
+    import dtk.commands
+    namespace = Namespace()
+    setattr(namespace, 'quiet', True)
+    package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
+    for package_name in package_names:
+        setattr(namespace, 'package_name', package_name)
+        setattr(namespace, 'package_version', 'latest')
+        dtk.commands.get_package(args=namespace, unknownArgs=None)
+
     # Success !
     print ("\n=======================================================")
     print ("| Dtk-Tools and dependencies installed successfully.  |")
