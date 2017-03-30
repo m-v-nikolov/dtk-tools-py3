@@ -153,7 +153,7 @@ def add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repet
                 "Target_Age_Max": target_group['agemax']
                 })
         if node_property_restrictions:
-            drug_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+            drug_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
         cb.add_event(drug_event)
 
 
@@ -231,7 +231,7 @@ def add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving
                                      }
 
             if node_property_restrictions:
-                fmda_distribute_drugs['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+                fmda_distribute_drugs['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
 
             if expire_recent_drugs:
                 fmda_distribute_drugs['Event_Coordinator_Config']["Intervention_Config"]["Property_Restrictions_Within_Node"] = [{"DrugStatus": "None"}]
@@ -267,7 +267,7 @@ def add_rfMSAT(cb, start_day, coverage, drug_configs, receiving_drugs_event, int
                  "Nodeset_Config": nodes}
 
     if node_property_restrictions:
-        rcd_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+        rcd_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
     cb.add_event(rcd_event)
 
     event_config = drug_configs + [receiving_drugs_event]
@@ -330,7 +330,7 @@ def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, inte
                                 "Nodeset_Config": nodes
                             }
     if node_property_restrictions:
-        fmda_distribute_drugs['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+        fmda_distribute_drugs['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
     if expire_recent_drugs:
         fmda_distribute_drugs['Event_Coordinator_Config']["Intervention_Config"]["Property_Restrictions_Within_Node"] = [{"DrugStatus": "None"}]
 
@@ -356,7 +356,7 @@ def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, inte
                     "Nodeset_Config": nodes}
 
     if node_property_restrictions:
-        rcd_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+        rcd_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
 
     cb.add_event(rcd_event)
     cb.add_event(fmda_distribute_drugs)
