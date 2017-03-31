@@ -989,27 +989,27 @@ class CalibManager(object):
     def check_orphan_experiments(self, ask=True):
         """
             - Display all orphan experiments for this calibration
-            - Provide user option to clean up
+            - Hard delete all orphans
         """
-        if not ask:
-            self.clear_orphan_experiments()
-            return
-
-        # Continue if ask == True
         exp_orphan_list = self.list_orphan_experiments()
         if exp_orphan_list is None or len(exp_orphan_list) == 0:
             return
 
-        orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
-        logger.info('\nOrphan Experiment List:')
-        logger.info('\n'.join(orphan_str_list))
-        logger.info('\n')
+        if ask:
+            orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
+            logger.info('\nOrphan Experiment List:')
+            logger.info('\n'.join(orphan_str_list))
+            logger.info('\n')
 
-        DataStore.delete_experiments(exp_orphan_list)
-        if len(exp_orphan_list) > 1:
-            logger.info('Note: the detected orphan experiments have been deleted.')
-        else:
-            logger.info('Note: the detected orphan experiment has been deleted.')
+        for experiment in exp_orphan_list:
+            experiment.hard_delete()
+
+        if ask:
+            DataStore.delete_experiments(exp_orphan_list)
+            if len(exp_orphan_list) > 1:
+                logger.info('Note: the detected orphan experiments have been deleted.')
+            else:
+                logger.info('Note: the detected orphan experiment has been deleted.')
 
     def clear_orphan_experiments(self):
         """
