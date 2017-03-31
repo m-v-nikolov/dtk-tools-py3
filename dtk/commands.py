@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from importlib import import_module
+import shutil
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
@@ -23,7 +24,8 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging
+from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging, rmtree_f
+import simtools.Utilities.disease_packages as disease_packages
 
 logger = init_logging('Commands')
 
@@ -516,6 +518,53 @@ def db_list(args, unknownArgs):
     else:
         print "No experiments to display."
 
+def list_packages(args, unknownArgs):
+    package_names = sorted(disease_packages.get_available('branch'))
+    if not hasattr(args, 'is_test'):
+        package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
+    if not hasattr(args, 'quiet'):
+        print "\n".join(package_names)
+    return package_names
+
+def list_package_versions(args, unknownArgs):
+    package_name = args.package_name
+    if disease_packages.package_exists(package_name):
+        versions = sorted(disease_packages.get_versions_for_package(package_name))
+        print "\n".join(versions)
+    else:
+        versions = []
+        print "Package %s does not exist." % package_name
+    return versions
+
+def get_package(args, unknownArgs):
+    # overwrite any existing package by the same name (any version) with the specified version
+    package_name = args.package_name
+    if disease_packages.package_exists(package_name):
+        if args.package_version == 'latest':
+            version = disease_packages.get_latest_version_for_package(package_name) # if no versions exist, returns None
+        elif disease_packages.version_exists_for_package(args.package_version, package_name):
+            version = args.package_version
+        else:
+            version = None
+
+        if version == None:
+            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+            return
+
+        # obtain desired version of desired package, overwriting any existing version
+        # of this package
+        if hasattr(args, 'dest'):
+            packages_dir = args.dest # test code only
+        else:
+            packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
+        package_dir = os.path.join(packages_dir, package_name)
+
+        print 'Obtaining package: %s version: %s .' % (package_name, version)
+        disease_packages.get(package = package_name, version = version, dest = package_dir)
+
+        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
+    else:
+        print "Package %s does not exist, no changes made." % package_name
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -638,6 +687,18 @@ def main():
     # 'dtk log' options
     parser_log = commands_args.populate_log_arguments(subparsers)
     parser_log.set_defaults(func=log)
+
+    # 'dtk list_packages' options
+    parser_list_packages = commands_args.populate_list_packages_arguments(subparsers)
+    parser_list_packages.set_defaults(func=list_packages)
+
+    # 'dtk list_package_versions' options
+    parser_list_package_versions = commands_args.populate_list_package_versions_arguments(subparsers)
+    parser_list_package_versions.set_defaults(func=list_package_versions)
+
+    # 'dtk get_package' options
+    parser_get_package = commands_args.populate_get_package_arguments(subparsers)
+    parser_get_package.set_defaults(func=get_package)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()

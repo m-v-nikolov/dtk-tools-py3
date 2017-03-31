@@ -115,7 +115,12 @@ requirements = OrderedDict([
     }),
     ('enum34', {
         'platform': ['win', 'lin', 'mac'],
-    })
+    }),
+    ('github3.py', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '0.9.6',
+        'test': '>='
+    }),
 ])
 
 
@@ -166,7 +171,6 @@ def install_package(my_os, name, val, upgrade=False):
     package_str = build_package_str(my_os, name, val)
 
     host, path = urlparse(package_str)[1:3]
-
     # It is an internet file
     if len(host) > 0 and len(path) > 0:
         if os.path.exists(get_local_file_path(package_str)):
@@ -511,6 +515,17 @@ def main():
 
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
+
+    # Obtain the most recent disease input packages
+    from argparse import Namespace
+    import dtk.commands
+    namespace = Namespace()
+    setattr(namespace, 'quiet', True)
+    package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
+    for package_name in package_names:
+        setattr(namespace, 'package_name', package_name)
+        setattr(namespace, 'package_version', 'latest')
+        dtk.commands.get_package(args=namespace, unknownArgs=None)
 
     # Success !
     print ("\n=======================================================")

@@ -9,7 +9,7 @@ from COMPS.Data import Suite
 from COMPS import Client
 from COMPS.Data.Simulation import SimulationState
 
-from simtools.Utilities.General import is_remote_path, init_logging, get_md5
+from simtools.Utilities.General import is_remote_path, init_logging, get_md5, retry_function
 
 logger = init_logging('Utils')
 
@@ -102,6 +102,7 @@ def COMPS_login(endpoint):
 
     return Client
 
+@retry_function
 def get_experiment_by_id(exp_id):
     return Experiment.get(exp_id)
 
