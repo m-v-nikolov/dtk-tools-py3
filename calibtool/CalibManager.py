@@ -719,8 +719,8 @@ class CalibManager(object):
         # enter iteration loop
         self.run_iterations(**kwargs)
 
-        # check possible leftover experiments
-        self.check_orphan_experiments()
+        # remove any leftover experiments
+        self.cleanup_orphan_experiments()
 
         # delete all backup file for CalibManger and each of iterations
         self.cleanup_backup_files()
@@ -986,42 +986,21 @@ class CalibManager(object):
 
         return iteration
 
-    def check_orphan_experiments(self, ask=True):
+    def cleanup_orphan_experiments(self):
         """
             - Display all orphan experiments for this calibration
             - Hard delete all orphans
         """
         exp_orphan_list = self.list_orphan_experiments()
-        if exp_orphan_list is None or len(exp_orphan_list) == 0:
-            return
-
-        if ask:
+        for experiment in exp_orphan_list:
+            ExperimentManagerFactory.from_experiment(experiment).delete(hard=True)
+        
+        if len(exp_orphan_list) > 0:
             orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
             logger.info('\nOrphan Experiment List:')
             logger.info('\n'.join(orphan_str_list))
             logger.info('\n')
-
-        for experiment in exp_orphan_list:
-            experiment.hard_delete()
-
-        if ask:
-            if len(exp_orphan_list) > 1:
-                logger.info('Note: the detected orphan experiments have been deleted.')
-            else:
-                logger.info('Note: the detected orphan experiment has been deleted.')
-
-    def clear_orphan_experiments(self):
-        """
-        Cleanup the experiments in db, which are associated with THIS calibration's
-        suite_id and exp_ids
-        """
-        # make sure data exists
-        if not os.path.isdir(self.name):
-            logger.info('Unable to find existing calibration in directory (%s), no experiments cleanup is processed.', self.name)
-            return
-
-        suite_ids, exp_ids = self.get_experiments()
-        DataStore.clear_leftover(suite_ids, exp_ids)
+            logger.info('Note: the detected orphan experiment(s) have been deleted.')
 
     def cleanup_backup_files(self):
         """

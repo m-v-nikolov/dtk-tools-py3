@@ -64,16 +64,6 @@ class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore, Bat
         return Analyzer(**kwargs)
 
     @classmethod
-    def clear_leftover(cls, suite_ids, exp_ids):
-        """
-        Delete those experiments which are associated with suite_id and not in exp_ids
-        suite_ids: list of suite ids
-        exp_ids: list of experiment ids
-        """
-        exp_orphan_list = cls.list_leftover(suite_ids, exp_ids)
-        cls.delete_experiments(exp_orphan_list)
-
-    @classmethod
     def list_leftover(cls, suite_ids, exp_ids):
         """
         List those experiments which are associated with suite_id and not in exp_ids
