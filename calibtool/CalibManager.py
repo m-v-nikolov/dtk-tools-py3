@@ -1005,7 +1005,6 @@ class CalibManager(object):
             experiment.hard_delete()
 
         if ask:
-            DataStore.delete_experiments(exp_orphan_list)
             if len(exp_orphan_list) > 1:
                 logger.info('Note: the detected orphan experiments have been deleted.')
             else:
