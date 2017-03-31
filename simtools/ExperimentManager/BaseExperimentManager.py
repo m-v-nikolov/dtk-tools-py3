@@ -93,6 +93,7 @@ class BaseExperimentManager:
             dtk_tools_revision=get_tools_revision(),
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
+            working_directory = os.getcwd(),
             command_line=self.commandline.Commandline)
 
     def done_commissioning(self):
