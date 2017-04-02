@@ -29,9 +29,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': ['win','lin','mac'],
-        'version': '1.0',
+        'version': '1.0.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0-py2.py3-none-any.whl' % dependencies_repo
+        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
         'platform': ['win', 'lin', 'mac'],
