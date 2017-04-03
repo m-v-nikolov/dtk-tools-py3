@@ -19,8 +19,6 @@ params = {
     "Minimum_Adult_Age_Years" : 15,
 
     "Vector_Migration_Base_Rate": 0.5,
-    "Default_Geography_Initial_Node_Population": 1000,
-    "Default_Geography_Torus_Size": 10,
 
     "Geography": "", ###
     "Node_Grid_Size": 0.042, ###
@@ -39,7 +37,9 @@ params = {
     "Serialization_Test_Cycles": 0,
 
     "Load_Balance_Filename": "",
-    "Load_Balance_Scheme": "STATIC"
+    "Load_Balance_Scheme": "STATIC",
+
+    "Valid_Intervention_States" : ['None']
 }
 
 params.update(climate.params)
