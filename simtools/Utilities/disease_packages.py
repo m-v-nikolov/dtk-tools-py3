@@ -135,6 +135,10 @@ def get(package, version, dest):
             containing_dir = os.path.dirname(dest)
             if not os.path.exists(containing_dir):
                 os.makedirs(containing_dir)
+            init_filename = os.path.join(containing_dir, '__init__.py')
+            if not os.path.exists(init_filename):
+                with open(init_filename,'w') as f:
+                    pass # blank init file for python inclusion
             if os.path.exists(dest):
                 rmtree_f(dest)
             os.rename(dir, dest)
