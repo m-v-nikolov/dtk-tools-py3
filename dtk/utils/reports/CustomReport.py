@@ -16,7 +16,9 @@ class BaseReport(object):
             'ReportVectorMigration': 'libvectormigration.dll',
             'ReportHumanMigrationTracking': 'libhumanmigrationtracking.dll',
             'ReportEventCounter': 'libreporteventcounter.dll',
-            'ReportMalariaFiltered': 'libReportMalariaFiltered.dll'}
+            'ReportMalariaFiltered': 'libReportMalariaFiltered.dll',
+            'SpatialReportMalariaFiltered': 'libSpatialReportMalariaFiltered.dll'
+            }
 
     def __init__(self, type=""):
         self.type = type
