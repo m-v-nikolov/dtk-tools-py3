@@ -9,7 +9,7 @@ from COMPS.Data import Suite
 from COMPS import Client
 from COMPS.Data.Simulation import SimulationState
 
-from simtools.Utilities.General import is_remote_path, init_logging, get_md5
+from simtools.Utilities.General import is_remote_path, init_logging, get_md5, retry_function
 
 logger = init_logging('Utils')
 
@@ -102,6 +102,7 @@ def COMPS_login(endpoint):
 
     return Client
 
+@retry_function
 def get_experiment_by_id(exp_id):
     return Experiment.get(exp_id)
 
@@ -154,20 +155,8 @@ def workdirs_from_simulations(sims):
 
 def workdirs_from_experiment_id(exp_id):
     e = Experiment.get(exp_id)
-    try:
-        sims = sims_from_experiment(e)
-        return workdirs_from_simulations(sims)
-    except Exception as e:
-        # Can remove this when https://github.com/InstituteforDiseaseModeling/pyCOMPS-internal/issues/2 is fixed
-        # Only use what is in the try
-        e = Experiment.get(exp_id)
-        sims = e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs').where('state=Succeeded'))
-        paths = workdirs_from_simulations(sims)
-        sims = e.get_simulations(QueryCriteria().select(['id', 'state']).where('state=Failed'))
-        for sim in sims:
-            paths[str(sim.id)] = "NA"
-
-        return paths
+    sims = sims_from_experiment(e)
+    return workdirs_from_simulations(sims)
 
 
 def workdirs_from_suite_id(suite_id):

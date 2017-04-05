@@ -43,7 +43,8 @@ node_irs_config = { "Reduction_Config": {
                 }
 
 
-def add_IRS(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[]):
+def add_IRS(config_builder, start, coverage_by_ages, cost=None, nodeIDs=[],
+            initial_killing=0.5, duration=90, waning={}):
     """
     Add an IRS intervention to the config_builder passed.
 
@@ -64,6 +65,13 @@ def add_IRS(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     if waning:
         for cfg in waning :
             irs_housingmod[cfg].update(waning[cfg])
+
+    if initial_killing:
+        irs_housingmod['Killing_Config']['Initial_Effect'] = initial_killing
+
+
+    if duration:
+        irs_housingmod['Killing_Config']['Decay_Time_Constant'] = duration
 
     if cost:
         irs_housingmod['Cost_To_Consumer'] = cost

@@ -93,6 +93,7 @@ class BaseExperimentManager:
             dtk_tools_revision=get_tools_revision(),
             selected_block=self.setup.selected_block,
             setup_overlay_file=self.setup.setup_file,
+            working_directory = os.getcwd(),
             command_line=self.commandline.Commandline)
 
     def done_commissioning(self):
@@ -298,7 +299,6 @@ class BaseExperimentManager:
                                             callback=lambda: print('.', end=""),
                                             return_list=return_list)
             creator_processes.append(c)
-            c.start()
 
         # Display some info
         logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
@@ -308,6 +308,7 @@ class BaseExperimentManager:
         logger.info(" | Max simulations per threads: %s"% nbatches)
 
         # Wait for all to finish
+        map(lambda c: c.start(), creator_processes)
         map(lambda c: c.join(), creator_processes)
 
         # Insert all those newly created simulations to the DB

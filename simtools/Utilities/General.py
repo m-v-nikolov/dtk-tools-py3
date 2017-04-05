@@ -1,9 +1,12 @@
 import cStringIO
 import contextlib
+import functools
 import logging
 import os
 import platform
 import sys
+
+import time
 
 logging_initialized = False
 def init_logging(name):
@@ -112,6 +115,35 @@ def nostdout(stdout = False, stderr=False):
 
     logging.disable(previous_level)
 
+
+def retry_function(func, wait=1, max_retries=5):
+    """
+    Decorator allowing to retry the call to a function with some time in between.
+    Usage: 
+        @retry_function
+        def my_func():
+            pass
+            
+        @retry_function(max_retries=10, wait=2)
+        def my_func():
+            pass
+            
+    :param func: 
+    :param time_between_tries: 
+    :param max_retries: 
+    :return: 
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        retExc = None
+        for i in xrange(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except Exception, e:
+                retExc = e
+                time.sleep(wait)
+        raise retExc
+    return wrapper
 
 def caller_name(skip=2):
     """
@@ -233,3 +265,28 @@ class CommandlineGenerator(object):
         return ' '.join(filter(None, [self.Executable, self.Options, self.Params]))  # join ignores empty strings
 
 
+
+def rmtree_f(dir):
+    import shutil
+    if os.path.exists(dir):
+        shutil.rmtree(dir, onerror=rmtree_f_on_error)
+
+# handler for rmtree_ to deal with files with no write (delete) permissions
+def rmtree_f_on_error(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        # Is the error an access error ?
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise

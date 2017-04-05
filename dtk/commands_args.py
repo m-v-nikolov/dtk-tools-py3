@@ -139,3 +139,22 @@ def populate_log_arguments(subparsers, func=None):
     parser_log.add_argument('-e', '--export', help="Export the log to the given file.", dest="export")
     parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
     return parser_log
+
+# 'dtk list_packages' options
+def populate_list_packages_arguments(subparsers, func=None):
+    parser = subparsers.add_parser('list_packages', help="List the packages available to get_package command.")
+    return parser
+
+# 'dtk list_package_versions' options
+def populate_list_package_versions_arguments(subparsers, func=None):
+    parser = subparsers.add_parser('list_package_versions', help="List the versions available for this particular package.")
+    parser.add_argument('package_name', help='The package to list versions of.')
+    return parser
+
+# 'dtk get_package' options
+def populate_get_package_arguments(subparsers, func=None):
+    parser = subparsers.add_parser('get_package', help="Obtain the specified disease configuration package for use.")
+    parser.add_argument('package_name', help='The package name to obtain.')
+    parser.add_argument('-v', '--version', help="Obtain a specific package version (Default: latest)", dest="package_version",
+                        default='latest')
+    return parser
