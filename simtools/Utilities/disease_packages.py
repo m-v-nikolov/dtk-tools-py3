@@ -161,6 +161,7 @@ class DTKGitHub(object):
     PACKAGE_REPOSITORY = 'dtk-packages'
     DTK_TOOLS_REPOSITORY = 'dtk-tools'
     AUTH_TOKEN_FIELD = 'github_authentication_token'
+    SUPPORT_EMAIL = 'MUST-BE@DEFINED.org'
 
     @classmethod
     def login(cls):
@@ -173,6 +174,11 @@ class DTKGitHub(object):
     def repository(cls):
         if not hasattr(cls, 'repo'):
             cls.login()
+        if not cls.repo:
+            # ck4, change message
+            print "Authorization failure. You do not currently have permission to download disease packages. " \
+                  "Please contact %s for assistance." % cls.SUPPORT_EMAIL
+            exit()
         return cls.repo
 
     @classmethod
@@ -187,7 +193,11 @@ class DTKGitHub(object):
         scopes = ['user', 'repo']
 
         # Authenticate the user and create the token
-        auth = github3.authorize(user, password, scopes, note, note_url)
+        try: # user may not have permissions to use the disease package repo yet
+            auth = github3.authorize(user, password, scopes, note, note_url)
+        except github3.models.GitHubError:
+            print "Bad GitHub credentials."
+            exit()
 
         # Write the info to disk
         # Update the (local) mysql db with the token
