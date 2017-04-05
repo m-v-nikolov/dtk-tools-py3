@@ -7,6 +7,9 @@ import github3
 from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
 
+class AuthorizationError(Exception):
+    pass
+
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
 TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
 
@@ -161,7 +164,7 @@ class DTKGitHub(object):
     PACKAGE_REPOSITORY = 'dtk-packages'
     DTK_TOOLS_REPOSITORY = 'dtk-tools'
     AUTH_TOKEN_FIELD = 'github_authentication_token'
-    SUPPORT_EMAIL = 'MUST-BE@DEFINED.org'
+    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
 
     @classmethod
     def login(cls):
@@ -175,10 +178,9 @@ class DTKGitHub(object):
         if not hasattr(cls, 'repo'):
             cls.login()
         if not cls.repo:
-            # ck4, change message
-            print "Authorization failure. You do not currently have permission to download disease packages. " \
+            print "/!\\ WARNING /!\\ Authorization failure. You do not currently have permission to access disease packages. " \
                   "Please contact %s for assistance." % cls.SUPPORT_EMAIL
-            exit()
+            raise AuthorizationError()
         return cls.repo
 
     @classmethod
@@ -196,8 +198,9 @@ class DTKGitHub(object):
         try: # user may not have permissions to use the disease package repo yet
             auth = github3.authorize(user, password, scopes, note, note_url)
         except github3.models.GitHubError:
-            print "Bad GitHub credentials."
-            exit()
+            print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance."\
+                  % cls.SUPPORT_EMAIL
+            raise AuthorizationError()
 
         # Write the info to disk
         # Update the (local) mysql db with the token
