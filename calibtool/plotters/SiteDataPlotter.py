@@ -183,12 +183,7 @@ class SiteDataPlotter(BasePlotter):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # DJK: RENAME LL everywhere.  It's whatever the analyzer(s) return, e.g. cost per life saved
-        # DJK: That brings up an interesting issue about how to combine analyzers results.  For now, we sum.
-        #      But that might not be sufficiently general - think about this.
-
-        # Deep copy all_results and pnames to not disturb the calibration
-        pnames = copy.deepcopy(self.param_names)
+        # Deep copy all_results ato not disturb the calibration
         all_results = self.all_results.copy(True)
 
         # Index the likelihood-results DataFrame on (iteration, sample) to join with simulation info
