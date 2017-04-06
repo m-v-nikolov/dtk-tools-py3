@@ -1,7 +1,3 @@
-receiving_drugs_event = {
-    "class": "BroadcastEvent",
-    "Broadcast_Event": "Received_Treatment"
-}
 expire_recent_drugs = {"class": "PropertyValueChanger",
                        "Target_Property_Key": "DrugStatus",
                        "Target_Property_Value": "RecentDrug",
@@ -24,7 +20,8 @@ def add_health_seeking(config_builder,
                        drug_ineligibility_duration=0,
                        duration=-1,
                        repetitions=1,
-                       tsteps_btwn_repetitions=365):
+                       tsteps_btwn_repetitions=365,
+                       broadcast_event_name='Received_Treatment'):
 
     """
     Add a `SimpleHealthSeekingBehavior <http://idmod.org/idmdoc/#EMOD/ParameterReference/SimpleHealthSeekingBehav.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____53>`_ .
@@ -49,6 +46,14 @@ def add_health_seeking(config_builder,
     :param tsteps_btwn_repetitions: Timesteps between the repetitions
     :return:
     """
+
+    receiving_drugs_event = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": broadcast_event_name
+    }
+
+    if broadcast_event_name not in config_builder.config["parameters"]['Listed_Events']:
+        config_builder.config["parameters"]['Listed_Events'].append(broadcast_event_name)
 
     expire_recent_drugs['Revert'] = drug_ineligibility_duration
 
@@ -95,8 +100,9 @@ def add_health_seeking(config_builder,
 
 def add_health_seeking_by_chw( config_builder,
                                start_day=0,
-                               targets={'triggers': ['NewClinicalCase', 'NewSevereCase'],
-                                        'coverage': 0.5, 'agemin': 0, 'agemax': 200, 'rate': 0.3},
+                               targets=[{'trigger': 'NewClinicalCase', 'coverage': 0.8, 'agemin': 15, 'agemax': 70,
+                                         'seek': 0.4, 'rate': 0.3},
+                                {'trigger': 'NewSevereCase', 'coverage': 0.8, 'seek': 0.6, 'rate': 0.5}],
                                drug=['Artemether', 'Lumefantrine'],
                                dosing='FullTreatmentNewDetectionTech',
                                nodeIDs=[],
@@ -117,34 +123,37 @@ def add_health_seeking_by_chw( config_builder,
         'Initial_Amount' : 1000,
         'Target_Demographic' : 'Everyone',
         'Target_Residents_Only' : 0,
-        'Demographic_Coverage' : targets['coverage'],
-        'Trigger_Condition_List' : targets['triggers'],
+        'Demographic_Coverage' : 1,
+        'Trigger_Condition_List' : ['CHW_Give_Drugs'],
         'Property_Restrictions_Within_Node' : []}
 
     if chw :
         chw_config.update(chw)
 
-    if drug_ineligibility_duration > 0:
-        chw_config["Property_Restrictions_Within_Node"].append({"DrugStatus": "None"})
+    receiving_drugs_event = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": 'Received_Treatment'
+    }
 
     # NOTE: node property restrictions isn't working yet for CHWEC (3/29/17)
     if node_property_restrictions:
         chw_config['Node_Property_Restrictions'] = node_property_restrictions
 
-    if all([k in targets.keys() for k in ['agemin', 'agemax']]):
-        chw_config.update({
-            "Target_Demographic": "ExplicitAgeRanges",  # Otherwise default is Everyone
-            "Target_Age_Min": targets['agemin'],
-            "Target_Age_Max": targets['agemax']})
+    nodes = {"class": "NodeSetNodeList", "Node_List": nodeIDs} if nodeIDs else {"class": "NodeSetAll"}
+
+    add_health_seeking(config_builder, start_day=start_day, targets=targets, drug=[], nodes=nodes,
+                       node_property_restrictions=node_property_restrictions,
+                       duration=duration, broadcast_event_name='CHW_Give_Drugs')
+
+    if drug_ineligibility_duration > 0:
+        chw_config["Property_Restrictions_Within_Node"].append({"DrugStatus": "None"})
 
     expire_recent_drugs['Revert'] = drug_ineligibility_duration
     drug_config, drugs = get_drug_config(drug, dosing, receiving_drugs_event,
                                          drug_ineligibility_duration, expire_recent_drugs)
-    actual_config = build_actual_treatment_cfg(targets['rate'], drug_config, drugs)
+    actual_config = build_actual_treatment_cfg(0, drug_config, drugs)
 
     chw_config['Intervention_Config'] = actual_config
-
-    nodes = {"class": "NodeSetNodeList", "Node_List": nodeIDs} if nodeIDs else {"class": "NodeSetAll"}
 
     chw_event = {"class": "CampaignEvent",
                  "Start_Day": start_day,
@@ -152,6 +161,7 @@ def add_health_seeking_by_chw( config_builder,
                  "Nodeset_Config": nodes}
 
     config_builder.add_event(chw_event)
+    return
 
 
 def get_drug_config(drug, dosing, receiving_drugs_event, drug_ineligibility_duration, expire_recent_drugs) :
