@@ -1,24 +1,38 @@
 import json
 
+from dtk.tools.climate.BaseInputFile import BaseInputFile
+from dtk.tools.demographics.Node import Node
 
-class DemographicsFile:
+
+class DemographicsFile(BaseInputFile):
+
+    @classmethod
+    def from_file(cls, base_file):
+        content = json.load(open(base_file, 'rb'))
+        nodes = []
+
+        # Load the nodes
+        for node in content["Nodes"]:
+            nodes.append(Node.from_data(node))
+
+        # Load the idref
+        idref = content['Metadata']['IdReference']
+
+        # Create the file
+        return cls(nodes, idref, base_file)
 
     def __init__(self, nodes, idref="Gridded world grump2.5arcmin", base_file=None):
-        self.nodes = nodes
+        super(DemographicsFile, self).__init__(idref)
+        self.nodes = {node.name: node for node in nodes}
         self.idref = idref
-        self.content = {}
+        self.content = None
 
         if base_file:
             self.content = json.load(open(base_file,'rb'))
         else:
+            meta = self.generate_headers()
             self.content = {
-                "Metadata": {
-                    "DateCreated": "7/26",
-                    "Tool": "dtk-tools",
-                    "Author": "braybaud",
-                    "IdReference": self.idref,
-                    "NodeCount": 1
-                },
+                "Metadata": meta,
                 "Defaults": {
                 }
             }
@@ -54,10 +68,10 @@ class DemographicsFile:
     def generate_file(self, name):
         self.content['Nodes'] = []
 
-        for node in self.nodes:
+        for node in self.nodes.values():
             self.content['Nodes'].append({
                 'NodeID': node.id,
-                'NodeAttributes': node.toDict()
+                'NodeAttributes': node.to_dict()
             })
 
         # Update node count
@@ -65,3 +79,13 @@ class DemographicsFile:
         with open(name, 'wb') as output:
             json.dump(self.content, output, indent=3)
 
+    def get_node(self, nodeid):
+        """
+        Return the node idendified by nodeid. Search either name or actual id
+        :param nodeid: 
+        :return: 
+        """
+        if self.nodes.has_key(nodeid): return self.nodes[nodeid]
+        for node in self.nodes.values():
+            if node.name == nodeid: return node
+        raise ValueError("No nodes available with the id: %s. Available nodes (%s)" % (nodeid, ", ".join(self.nodes.keys())))
