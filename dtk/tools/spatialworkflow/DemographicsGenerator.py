@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 
 from dtk.generic.demographics import distribution_types
-from dtk.tools.demographics.node import Node, nodeid_from_lat_lon
+from dtk.tools.demographics.Node import Node, nodeid_from_lat_lon
 
 
 class DemographicsGenerator:
@@ -164,7 +164,7 @@ class DemographicsGenerator:
                 node_id = i + 1
             else:
                 node_id = nodeid_from_lat_lon(float(node.lat), float(node.lon), self.res_in_degrees)
-            node_attributes = node.toDict()
+            node_attributes = node.to_dict()
 
             if self.demographics_type == 'static':
                 birth_rate = (float(node.pop) / (1000 + 0.0)) * 0.06301 # value correpond to a population removal rate of 23: 23/365

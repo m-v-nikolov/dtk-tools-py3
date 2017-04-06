@@ -2,7 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 
-from node import Node, nodes_for_DTK
+from Node import Node, nodes_for_DTK
 from plotting import plot_nodes
 from db import *
 
@@ -34,7 +34,7 @@ def query_DB_for_shape_data(parent_alias, relative_admin_level, shape_set='EMED'
     for row in cursor:
         r = reg(cursor,row)
         n = Node(r.centerlat, r.centerlon, r.totalpop, name=r.hname, area=r.area_len)
-        print(n.toDict())
+        print(n.to_dict())
         nodes.append(n)
     cnxn.close()
 
