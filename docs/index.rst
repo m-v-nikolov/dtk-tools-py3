@@ -10,6 +10,7 @@ Contents:
        intro
        gettingstarted
        dtk
+       cli
        simtools
        calibtool
        cookbook

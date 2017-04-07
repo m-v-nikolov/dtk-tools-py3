@@ -44,7 +44,7 @@ def populate_exterminate_arguments(subparsers, func=None):
     return parser_exterminate
 
 
- # 'dtk delete' options
+# 'dtk delete' options
 def populate_delete_arguments(subparsers, func=None):
     parser_delete = subparsers.add_parser('delete', help='Delete the most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
     parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
@@ -54,7 +54,7 @@ def populate_delete_arguments(subparsers, func=None):
 
 # 'dtk clean' options
 def populate_clean_arguments(subparsers, func=None):
-    parser_clean = subparsers.add_parser('clean', help='Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
+    parser_clean = subparsers.add_parser('clean', help='Hard deletes ALL experiments matched by ID or name.')
     parser_clean.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     return parser_clean
 
@@ -92,7 +92,7 @@ def populate_analyze_arguments(subparsers, func=None):
 
 # 'dtk create_batch' options
 def populate_createbatch_arguments(subparsers, func=None):
-    parser_createbatch = subparsers.add_parser('create_batch',     help='Create a Batch for later use in Analyze.')
+    parser_createbatch = subparsers.add_parser('create_batch', help='Create a Batch for later use in Analyze.')
     parser_createbatch.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
     parser_createbatch.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
     return parser_createbatch
@@ -140,16 +140,19 @@ def populate_log_arguments(subparsers, func=None):
     parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
     return parser_log
 
+
 # 'dtk list_packages' options
 def populate_list_packages_arguments(subparsers, func=None):
     parser = subparsers.add_parser('list_packages', help="List the packages available to get_package command.")
     return parser
+
 
 # 'dtk list_package_versions' options
 def populate_list_package_versions_arguments(subparsers, func=None):
     parser = subparsers.add_parser('list_package_versions', help="List the versions available for this particular package.")
     parser.add_argument('package_name', help='The package to list versions of.')
     return parser
+
 
 # 'dtk get_package' options
 def populate_get_package_arguments(subparsers, func=None):
