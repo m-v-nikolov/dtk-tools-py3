@@ -40,7 +40,7 @@ class SiteDataPlotter(BasePlotter):
         return self.manager.state_for_iteration(iteration).analyzers[site_analyzer]
 
     def visualize(self):
-        iteration_status = self.manager.status
+        iteration_status = self.manager.iteration_state.status
         if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 

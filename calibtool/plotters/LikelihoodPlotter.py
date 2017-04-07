@@ -29,7 +29,7 @@ class LikelihoodPlotter(BasePlotter):
         return self.get_iteration_directory()
 
     def visualize(self):
-        iteration_status = self.manager.status
+        iteration_status = self.manager.iteration_state.status
         if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 

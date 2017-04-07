@@ -73,8 +73,6 @@ class CalibManager(object):
         self.exp_manager = None
         self.calibration_start = None
         self.iteration_start = None
-        self.iter_step = ''
-        self.status = ResumePoint.iteration_start
         self.latest_iteration = 0
 
     @property
@@ -212,7 +210,7 @@ class CalibManager(object):
             return False
 
     def starting_step(self):
-        self.status = ResumePoint.iteration_start
+        self.iteration_state.status = ResumePoint.iteration_start
 
         # Restart the time for each iteration
         self.iteration_start = datetime.now().replace(microsecond=0)
@@ -227,7 +225,7 @@ class CalibManager(object):
             logger.info('-- Resuming Point %d (%s) --' % (
             self.iteration_state.resume_point.value, self.iteration_state.resume_point.name.title()))
 
-        self.status = ResumePoint.commission
+        self.iteration_state.status = ResumePoint.commission
         self.cache_calibration()
 
     def commission_step(self, **kwargs):
@@ -239,7 +237,7 @@ class CalibManager(object):
         self.commission_iteration(next_params, **kwargs)
 
         # Ready for analyzing
-        self.status = ResumePoint.analyze
+        self.iteration_state.status = ResumePoint.analyze
         self.cache_calibration()
 
         # Call the plot for post commission plots
@@ -253,7 +251,7 @@ class CalibManager(object):
         self.analyze_iteration()
 
         # Ready for plotting
-        self.status = ResumePoint.plot
+        self.iteration_state.status = ResumePoint.plot
         self.cache_calibration()
 
     def plotting_step(self):
@@ -261,14 +259,14 @@ class CalibManager(object):
             self.next_point.update_iteration(self.iteration)
 
         # Ready for next point
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
         self.cache_calibration()
 
         # Plot the iteration
         self.plot_iteration()
 
     def next_point_step(self):
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
 
         if self.iteration_state.resume_point == ResumePoint.next_point:
             self.next_point.update_iteration(self.iteration)
@@ -437,7 +435,6 @@ class CalibManager(object):
                  'location': self.location,
                  'suites': self.suites,
                  'iteration': self.iteration,
-                 'status': self.status.name,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
@@ -694,14 +691,14 @@ class CalibManager(object):
         self.iteration_state.results = {}
         self.iteration_state.analyzers = {}
 
-        self.status = ResumePoint.analyze
+        self.iteration_state.status = ResumePoint.analyze
         self.plot_iteration()
 
         # Analyze again!
         self.analyze_iteration()
 
         # Call all plotters
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
         self.plot_iteration()
 
         logger.info("Iteration %s reanalyzed." % iteration)
