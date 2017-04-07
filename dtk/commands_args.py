@@ -94,7 +94,7 @@ def populate_analyze_arguments(subparsers, func=None):
 def populate_createbatch_arguments(subparsers, func=None):
     parser_createbatch = subparsers.add_parser('create_batch',     help='Create a Batch for later use in Analyze.')
     parser_createbatch.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
-    parser_createbatch.add_argument('-id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments)')
+    parser_createbatch.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
     return parser_createbatch
 
 
