@@ -53,7 +53,7 @@ class BaseExperimentManager:
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
-        self.runner_created = False
+        #self.runner_created = False
 
     @abstractmethod
     def commission_simulations(self, states):

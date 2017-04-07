@@ -12,19 +12,14 @@ class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, thread_queue, states, success):
+    def __init__(self, simulation, experiment, states, success):
         super(LocalSimulationRunner, self).__init__(experiment, states, success)
-        self.queue = thread_queue
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
         if self.check_state() == "Waiting":
             self.run()
-        else:
-            self.queue.get()
-            if self.simulation.status in ('Failed', 'Succeeded', 'Cancelled'):
-                return
-
+        elif self.simulation.status not in ('Failed', 'Succeeded', 'Cancelled'):
             self.monitor()
 
     def run(self):
@@ -50,19 +45,14 @@ class LocalSimulationRunner(BaseSimulationRunner):
         except Exception as e:
             print "Error encountered while running the simulation."
             print e
-        finally:
-            # Free up an item in the queue
-            self.queue.get()
 
     def monitor(self):
         # Wait the end of the process
         # We use poll to be able to update the status
-        if self.simulation.pid:
-            pid = int(self.simulation.pid)
-            while psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
-                self.simulation.message = self.last_status_line()
-                self.update_status()
-                time.sleep(5)
+        while self.is_running(self.simulation.pid): #psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
+            self.simulation.message = self.last_status_line()
+            self.update_status()
+            time.sleep(self.MONITOR_SLEEP)
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
@@ -80,6 +70,26 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()
+
+    @classmethod
+    def is_running(cls, pid):
+        '''
+        Determines if the managed simulation is running or not.
+        :return: True/False
+        '''
+#        if not isinstance(pid, int): # ck4, remove
+ #           raise Exception("pid is of type: %s value: %s" % (type(pid), pid))
+
+#        if not pid:
+#            return False
+        if not pid:
+            return False
+        else:
+            pid = int(pid)
+            if psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
+                return True
+            else:
+                return False
 
     def update_status(self):
         self.states.put({'sid':self.simulation.id,

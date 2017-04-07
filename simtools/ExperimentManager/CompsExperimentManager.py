@@ -116,7 +116,7 @@ class CompsExperimentManager(BaseExperimentManager):
         t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,self.success_callback))
         t1.daemon = True
         t1.start()
-        self.runner_created = True
+        #self.runner_created = True
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()

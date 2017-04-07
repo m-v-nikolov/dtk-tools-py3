@@ -63,7 +63,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                     logger.error("The monitor for this experiment failed 5 times to retrieve status. The runner will exit now. Database may need to be synced.")
                     exit()
                 # Wait a little bit
-                time.sleep(5)
+                time.sleep(self.MONITOR_SLEEP)
                 # retry
                 continue
 
@@ -93,4 +93,4 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
                 break
 
-            time.sleep(10)
+            time.sleep(2 * self.MONITOR_SLEEP)

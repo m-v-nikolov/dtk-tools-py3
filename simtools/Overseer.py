@@ -96,17 +96,6 @@ if __name__ == "__main__":
 
         # Check every one of them
         for manager in managers.values():
-
-            # If the runners have not been created -> create them
-            if not manager.runner_created:
-                # Refresh the experiment first
-                manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
-                logger.debug('Commission simulations for experiment id: %s' % manager.experiment.id)
-                manager.commission_simulations(states_queue)
-                logger.debug('Experiment done commissioning ? %s' % manager.runner_created)
-                continue
-
-            # If the manager is done -> analyze
             if manager.finished():
                 logger.debug('Manager for experiment id: %s is done' % manager.experiment.id)
                 # Analyze
@@ -118,6 +107,12 @@ if __name__ == "__main__":
                 # After analysis delete the manager from the list
                 del managers[manager.experiment.id]
                 gc.collect()
+            else:
+                # Refresh the experiment first
+                manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
+                logger.debug('Commission simulations as needed for experiment id: %s' % manager.experiment.id)
+                commissioned_sims = manager.commission_simulations(states_queue)
+                logger.debug('Experiment done (re)commissioning %d simulations' % len(commissioned_sims))
 
         # Cleanup the analyze thread list
         for ap in analysis_threads:

@@ -23,29 +23,37 @@ class LocalExperimentManager(BaseExperimentManager):
     parserClass = SimulationOutputParser
 
     def __init__(self, model_file, experiment, setup=None):
-        self.local_queue = None
         self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def commission_simulations(self, states):
-        if not self.local_queue:
-            from Queue import Queue
-            self.local_queue = Queue()
-        while not self.local_queue.full() and self.simulations_commissioned < len(self.experiment.simulations):
-            simulation = self.experiment.simulations[self.simulations_commissioned]
+        # get the status of all simulations
+        # for all simulations that need to be commissioned, commission them
+        to_commission = self.needs_commissioning()
+        for simulation in to_commission:
+        #    simulation = self.experiment.simulations[self.simulations_commissioned]
             # If the simulation is not waiting, we can go to the next one
             # Useful if the simulation is cancelled before being commission
-            if simulation.status != "Waiting":
-                self.simulations_commissioned += 1
-                continue
-            self.local_queue.put('run 1')
-            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+        #    if simulation.status != "Waiting":
+        #        self.simulations_commissioned += 1
+        #        continue
+            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, states, self.success_callback))
             t1.daemon = True
             t1.start()
-            self.simulations_commissioned += 1
+        return to_commission
+#        if self.simulations_commissioned == len(self.experiment.simulations):
+#            self.runner_created = True
 
-        if self.simulations_commissioned == len(self.experiment.simulations):
-            self.runner_created = True
+    def needs_commissioning(self):
+        '''
+        Determines which simulations need to be (re)started.
+        :return: A list of Simulation objects
+        '''
+        simulations = []
+        for sim in self.experiment.simulations:
+            if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
+                simulations.append(sim)
+        return simulations
 
     def check_input_files(self, input_files):
         """
