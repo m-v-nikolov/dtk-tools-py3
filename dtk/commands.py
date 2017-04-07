@@ -324,6 +324,7 @@ def progress(args, unknownArgs):
 
 def analyze(args, unknownArgs):
     # logger.info('Analyzing results...')
+    args.config_name = args.analyzer # prevents need for underlying refactor
     AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers)
 
 
