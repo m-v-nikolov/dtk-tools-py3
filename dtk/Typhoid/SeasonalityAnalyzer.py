@@ -179,12 +179,10 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
             os.mkdir(figdir)
 
 
-        ''' PUT ME BACK!
         writer = pd.ExcelWriter(os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__))
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
         self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
-        '''
 
         import calendar
         month_to_int_dict = {v: k for k,v in enumerate(calendar.month_name)}

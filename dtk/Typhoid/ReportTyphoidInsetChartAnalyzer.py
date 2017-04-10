@@ -97,13 +97,27 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
         icstart = t2dt(self.header['Report_Start_Year'])
 
         assert(self.header['Simulation_Timestep'] == 1)
+        # Using real date:
+        '''
         pdata = pd.DataFrame(index=pd.date_range(icstart,periods=self.header['Timesteps'],freq='D'))
         pdata.index.name = 'Date'
         pdata.reset_index(inplace=True)
+
         pdata['Month'] = pd.Categorical(pdata['Date'].map(lambda x: x.strftime('%B')).astype('category'), categories=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], ordered=True)
 
         pdata['Year'] = pdata['Date'].map(lambda x: x.strftime('%Y')).astype(int)
         pdata.set_index('Date', inplace=True)
+        '''
+
+        # Using simple day of year:
+        pdata = pd.DataFrame(index=np.arange(self.header['Timesteps']))
+        pdata.index.name = 'SimDay'
+        pdata.reset_index(inplace=True)
+        pdata['DayOfYear'] = pdata['SimDay'] % 365 # TODO: Assuming Start_Day is at beginning of year!
+        pdata['Month'] = pd.cut(pdata['DayOfYear'], [d-1 for d in [0,31,59,90,120,151,181,212,243,273,304,334,365]],labels=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'])
+
+        assert(self.header['Report_Start_Year'] == np.floor(self.header['Report_Start_Year']))
+        pdata['Year'] = np.floor(self.header['Report_Start_Year'] + pdata['SimDay']/365).astype(int)
 
         for ch in raw['Channels']:
             pdata[ch] = raw['Channels'][ch]['Data']
