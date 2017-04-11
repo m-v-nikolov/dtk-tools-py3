@@ -21,6 +21,8 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
                     name,
                     reference_sheet,
 
+                    include_subclinical = True,
+
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -41,12 +43,19 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         self.name = name
         self.reference_sheet = reference_sheet
 
+        self.include_subclinical = include_subclinical
+
         self.cache_data = {}
 
     def set_site(self, site):
-        self.reference = site.reference_data[self.reference_sheet].set_index(['YearBin', 'AgeBin'])
+        years = site.reference_data[self.reference_sheet]['Year'].unique()
+        self.reference = site.reference_data[self.reference_sheet].groupby(['Age']).sum().reset_index()
+        self.reference['Year'] = '[%d, %d)'%(years[0], years[-1]+1)
+        self.reference['AgeBin'] = self.reference['Age'].astype('category', categories=sorted(list(set(self.reference['Age'])), key=self.lower_value), ordered=True)
+        self.reference.drop('Age', axis=1, inplace=True)
+        self.reference = self.reference.set_index('AgeBin').sort_index()
 
-        self.year_bins = self.reference.index.get_level_values('YearBin').unique()
+        self.year_bins = ['[%d, %d)'%(years[0], years[-1]+1)]
         self.age_bins = self.reference.index.get_level_values('AgeBin').unique()
 
         self.cache_data['reference'] = self.reference.reset_index().to_dict(orient='list')
@@ -74,6 +83,7 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         sim_output = pd.DataFrame()
         for year_bin in self.year_bins:
+            print year_bin
             year_edges = [int(s) for s in re.findall(r'\b\d+\b', year_bin)]
             # Select years, assuming sequential
             sim_by_year = sim.query('Year >= @year_edges[0] & Year < @year_edges[1]').set_index('Year')
@@ -90,6 +100,9 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
                 # Undo parent's pop scaling for beta-binomial likelihood
                 simbin['Sim_Cases'] = simbin['Acute (Inc)']
+                if self.include_subclinical:
+                    simbin['Sim_Cases'] += simbin['Sub-Clinical (Inc)']
+
                 simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / pop_scaling # Note: pop_scaling comes from parent
                 simbin.rename(index={'Population':'Sim_Population'}, inplace=True)
                 simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
@@ -145,17 +158,22 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         d = self.data.reset_index()
         self.cache_data['Sim'] = d.where((pd.notnull(d)), None).to_dict(orient='list')
 
-        logger.debug(self.data)
+        self.data.sort_index(level='Sample', inplace=True, sort_remaining=True)
+
+        #logger.debug(self.data)
 
 
     def compare_age(self, sample):
         # Computation takes mean of log across data points
+        LL = 0
+        '''
         LL = LL_calculators.beta_binomial(
-            raw_nobs = sample['Ref_Population'].tolist(),           # raw_nobs
+            raw_nobs = sample['Population'].tolist(),           # raw_nobs
             sim_nobs = sample['Sim_Population_Unscaled'].tolist(),  # sim_nobs
-            raw_data = sample['Ref_Cases'].tolist(),                # raw_data
+            raw_data = sample['Cases'].tolist(),                # raw_data
             sim_data = sample['Sim_Cases_Unscaled'].tolist()        # sim_data
         )
+        '''
 
         return LL
 
@@ -173,14 +191,22 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
     def finalize(self):
         super(CasesByAgeAnalyzer, self).finalize() # Closes the shelve file
 
+        '''
         self.result = self.data.groupby(level='Sample').apply(self.compare)
         #self.result.replace(-np.inf, -1e-6, inplace=True)
         self.cache_data['result'] = self.result.to_dict()
+        '''
 
-        writer = pd.ExcelWriter(os.path.join(self.workdir,'Results.xlsx'))
+        fn = os.path.join(self.workdir,'Results_%s_Acute.xlsx'%self.__class__.__name__)
+        if self.include_subclinical:
+            fn = os.path.join(self.workdir,'Results_%s_AcuteAndSubClinical.xlsx'%self.__class__.__name__)
+
+        writer = pd.ExcelWriter(fn)
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
         self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
+
+        exit()
 
         f, axes = plt.subplots(1, 1, figsize=(12, 8), sharex=False)
         #sns.despine(left=True)
@@ -188,10 +214,10 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         d = self.data.reset_index()
         d_by_sample = self.data.reset_index().set_index('Sample')
         n_samples = len(d_by_sample.index.unique())
-        self.result.name = 'LogLikelihood'
-        merged = pd.merge(d_by_sample, self.result.to_frame(), left_index=True, right_index=True).reset_index()
+        #self.result.name = 'LogLikelihood'
+        #merged = pd.merge(d_by_sample, self.result.to_frame(), left_index=True, right_index=True).reset_index()
 
-        axes.plot( self.reference['Ref_Cases'].values*[1,1], [0,n_samples], 'r-') # , axes=axes[0,0]
+        axes.plot( self.reference['Cases'].values*[1,1], [0,n_samples], 'r-') # , axes=axes[0,0]
 
         sim_cases_range = self.data.reset_index().groupby('Sample')['Sim_Cases'].agg({'Min':np.min, 'Max':np.max})
         for idx,s in sim_cases_range.iterrows():
@@ -201,8 +227,8 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         # TODO: Vectorize
         '''
         for idx,s in d.iterrows():
-            k = s['Ref_Cases']
-            n = s['Ref_Population']
+            k = s['Cases']
+            n = s['Population']
             a = s['Sim_Cases_Unscaled']+1
             b = s['Sim_Population_Unscaled']+1
 
@@ -225,7 +251,7 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         sns.distplot(d['Sim_Cases'], hist=False, rug=True, color="k", ax=axes[1,0]) #axes[0,1]
         yl = axes[1,0].get_ylim()
-        axes[1,0].plot( self.reference['Ref_Cases'].values*[1,1], yl, 'r-')
+        axes[1,0].plot( self.reference['Cases'].values*[1,1], yl, 'r-')
         axes[1,0].set_xlim(xmin=0)
 
         plt.savefig(os.path.join(self.workdir, 'CasesByAge.'+self.fig_format)); plt.close()

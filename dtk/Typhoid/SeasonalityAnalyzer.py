@@ -22,6 +22,8 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
                     name,
                     reference_sheet,
 
+                    include_subclinical = True,
+
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -40,6 +42,8 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
 
         self.name = name
         self.reference_sheet = reference_sheet
+
+        self.include_subclinical = include_subclinical
 
         self.cache_data = {}
 
@@ -69,7 +73,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         if self.verbose:
             print 'Population scaling factor is', pop_scaling
 
-        keep_cols = ['Year', 'Month', 'Statistical Population', 'Number of New Acute Infections']
+        keep_cols = ['Year', 'Month', 'Statistical Population', 'Number of New Acute Infections', 'Number of New Sub-Clinical Infections']
         drop_cols = list( set(sim.columns.values) - set(keep_cols) )
         sim.drop(drop_cols, axis=1, inplace=True)
 
@@ -80,13 +84,16 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
             # Select years, assuming sequential
             sim_year = sim.query('Year >= @year_edges[0] & Year < @year_edges[1]').set_index('Year')
 
-            simbin = sim_year[['Month', 'Number of New Acute Infections', 'Statistical Population']].groupby('Month').sum()
+            simbin = sim_year[['Month', 'Number of New Acute Infections', 'Number of New Sub-Clinical Infections', 'Statistical Population']].groupby('Month').sum()
             simbin['Statistical Population'] /= 365. # Daily timesteps
             #simbin['YearBin'] = year_bin
 
             # Undo parent's pop scaling for beta-binomial likelihood
-            simbin['Sim_Acute'] = simbin['Number of New Acute Infections']
-            simbin['Sim_Acute_Unscaled'] = simbin['Sim_Acute'] / pop_scaling
+            simbin['Sim_Cases'] = simbin['Number of New Acute Infections']
+            if self.include_subclinical:
+                simbin['Sim_Cases'] += simbin['Number of New Sub-Clinical Infections']
+
+            simbin['Sim_Acute_Unscaled'] = simbin['Sim_Cases'] / pop_scaling
             simbin.rename(columns={'Statistical Population':'Sim_Population'}, inplace=True)
             simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
@@ -142,7 +149,6 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         return LL
 
         ''' Work in progress, should be dirichlet multinomial:
-        print 'HI'
         print sample
         exit()
 
@@ -162,7 +168,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         return sum(LL.values)
 
     def make_collection(self, d):
-        return zip(d['MonthInt'], d['Sim_Acute'])
+        return zip(d['MonthInt'], d['Sim_Cases'])
 
 
     def finalize(self):
@@ -178,8 +184,11 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         if not os.path.isdir(figdir):
             os.mkdir(figdir)
 
+        fn = os.path.join(self.workdir,'Results_%s_Acute.xlsx'%self.__class__.__name__)
+        if self.include_subclinical:
+            fn = os.path.join(self.workdir,'Results_%s_AcuteAndSubClinical.xlsx'%self.__class__.__name__)
 
-        writer = pd.ExcelWriter(os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__))
+        writer = pd.ExcelWriter(fn)
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
         self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
