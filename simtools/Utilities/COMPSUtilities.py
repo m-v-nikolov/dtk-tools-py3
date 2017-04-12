@@ -1,3 +1,6 @@
+from simtools.Utilities.General import is_remote_path, init_logging, get_md5
+logger = init_logging('Utils')
+
 import os
 import re
 
@@ -8,10 +11,6 @@ from COMPS.Data import Simulation
 from COMPS.Data import Suite
 from COMPS import Client
 from COMPS.Data.Simulation import SimulationState
-
-from simtools.Utilities.General import is_remote_path, init_logging, get_md5
-
-logger = init_logging('Utils')
 
 path_translations = {}
 def translate_COMPS_path(path, setup=None):

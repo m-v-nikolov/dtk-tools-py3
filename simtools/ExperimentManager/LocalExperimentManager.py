@@ -1,3 +1,6 @@
+from simtools.Utilities.General import init_logging
+logger = init_logging("LocalExperimentManager")
+
 import os
 import re
 import shutil
@@ -9,9 +12,6 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
-from simtools.Utilities.General import init_logging
-
-logger = init_logging("ExperimentManager")
 
 
 class LocalExperimentManager(BaseExperimentManager):
@@ -27,22 +27,19 @@ class LocalExperimentManager(BaseExperimentManager):
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def commission_simulations(self, states):
-        # get the status of all simulations
-        # for all simulations that need to be commissioned, commission them
+        '''
+         Commissions all simulations that need to be commissioned.
+        :param states: a multiprocessing.Queue for simulations to use to update their status.
+        :return: a list of Simulation objects that were commissioned.
+        '''
         to_commission = self.needs_commissioning()
+        logger.debug("Commissioning %d simulation(s)." % len(to_commission))
         for simulation in to_commission:
-        #    simulation = self.experiment.simulations[self.simulations_commissioned]
-            # If the simulation is not waiting, we can go to the next one
-            # Useful if the simulation is cancelled before being commission
-        #    if simulation.status != "Waiting":
-        #        self.simulations_commissioned += 1
-        #        continue
+            logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status))
             t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, states, self.success_callback))
             t1.daemon = True
             t1.start()
         return to_commission
-#        if self.simulations_commissioned == len(self.experiment.simulations):
-#            self.runner_created = True
 
     def needs_commissioning(self):
         '''
@@ -52,6 +49,8 @@ class LocalExperimentManager(BaseExperimentManager):
         simulations = []
         for sim in self.experiment.simulations:
             if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
+                logger.debug("Detected sim in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
+                             (sim.id, sim.status, sim.pid, LocalSimulationRunner.is_running(sim.pid)))
                 simulations.append(sim)
         return simulations
 

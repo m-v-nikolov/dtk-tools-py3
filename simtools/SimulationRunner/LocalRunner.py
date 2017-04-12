@@ -7,6 +7,9 @@ import psutil
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 
+from simtools.Utilities.General import init_logging
+logger = init_logging("LocalRunner")
+
 
 class LocalSimulationRunner(BaseSimulationRunner):
     """
@@ -50,9 +53,12 @@ class LocalSimulationRunner(BaseSimulationRunner):
         # Wait the end of the process
         # We use poll to be able to update the status
         while self.is_running(self.simulation.pid): #psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
+            logger.debug("sim monitor: waiting on pid: %s" % self.simulation.pid)
             self.simulation.message = self.last_status_line()
             self.update_status()
             time.sleep(self.MONITOR_SLEEP)
+        logger.debug("sim_monitor: done waiting on pid: %s" % self.simulation.pid)
+        sim_pid = self.simulation.pid #seems silly, but debug output below shows None if we don't do this
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
@@ -62,11 +68,13 @@ class LocalSimulationRunner(BaseSimulationRunner):
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
-            # If we exited with a Canceled status, dont update to Failed
+            # If we exited with a Canceled status, don't update to Failed
             if not last_state == 'Canceled':
                 self.simulation.status = "Failed"
 
         # Set the final simulation state
+        logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %
+                     (self.simulation.id, sim_pid, self.simulation.status))
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()
@@ -74,22 +82,36 @@ class LocalSimulationRunner(BaseSimulationRunner):
     @classmethod
     def is_running(cls, pid):
         '''
-        Determines if the managed simulation is running or not.
+        Determines if the given pid is running and is running Eradication.exe
         :return: True/False
         '''
-#        if not isinstance(pid, int): # ck4, remove
- #           raise Exception("pid is of type: %s value: %s" % (type(pid), pid))
-
-#        if not pid:
-#            return False
-        if not pid:
-            return False
-        else:
+        # ck4, BaseExperimentManager uses virtually identical logic. Should combine the codes.
+        # ck4, This should be refactored to use a common module containing a dict of Process objects
+        #      This way, we don't need to do the name() checking, just use the method process.is_running(),
+        #      since this method checks for pid number being active AND pid start time.
+        if pid:
             pid = int(pid)
-            if psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
+            try:
+                process = psutil.Process(pid)
+            except psutil.NoSuchProcess:
+                logger.debug("is_running: No such process pid: %d" % pid)
+                is_running = False
+                process_name = None
+                valid_name = False
+            else:
+                is_running = True
+                process_name = process.name()
+                valid_name = "Eradication" in process_name
+
+            logger.debug("is_running: pid %s running? %s valid_name? %s. name: %s" % (pid, is_running, valid_name, process_name))
+            if is_running and valid_name:
+                logger.debug("is_running: pid %s is running and process name is valid." % pid)
                 return True
             else:
                 return False
+        else:
+            logger.debug("is_running: no valid pid provided.")
+            return False
 
     def update_status(self):
         self.states.put({'sid':self.simulation.id,
