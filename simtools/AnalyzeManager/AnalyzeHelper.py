@@ -335,9 +335,9 @@ def clear_batch(batch_id_or_name, ask=False):
         if choice != 'Y':
             logger.warning('No action taken.')
             return
-        else:
-            DataStore.clear_batch(batch)
-            logger.info('The associated experiments have been detached.')
+
+    DataStore.clear_batch(batch)
+    logger.info('The associated experiments have been detached.')
 
 
 def clean_batch(ask=False):
