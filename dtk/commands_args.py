@@ -83,8 +83,8 @@ def populate_progress_arguments(subparsers, func=None):
 # 'dtk analyze' options
 def populate_analyze_arguments(subparsers, func=None):
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')
-    parser_analyze.add_argument('-bn', '--batch_name', dest='batch_name', default=None, nargs='?', help='Use Batch Name for analyze.')
-    parser_analyze.add_argument('-id', '--id', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
+    parser_analyze.add_argument('-bn', '--batch_name', dest='batch_name', default=None, nargs=1, help='Use Batch Name for analyze.')
+    parser_analyze.add_argument('-id', '--id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments)')
     parser_analyze.add_argument('-a', '--analyzer', default=None, help='Python script or builtin analyzer name for custom analysis of simulations (see dtk analyze-list).')
     parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
     return parser_analyze
