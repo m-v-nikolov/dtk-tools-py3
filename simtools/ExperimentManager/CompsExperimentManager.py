@@ -113,12 +113,12 @@ class CompsExperimentManager(BaseExperimentManager):
         self.sims_to_create.append({'name': self.config_builder.get_param('Config_Name'), 'files':files, 'tags':tags})
 
     def commission_simulations(self, states):
-        '''
+        """
         Launches an experiment and its associated simulations in COMPS
         :param states: a multiprocessing.Queue() object for simulations to use for updating their status
         :return: a list of the LENGTH of sims to run, mimicking LocalSimulationRunner behavior for the benefit of
                  the Overseer.
-        '''
+        """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
 

@@ -27,11 +27,11 @@ class LocalExperimentManager(BaseExperimentManager):
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def commission_simulations(self, states):
-        '''
+        """
          Commissions all simulations that need to be commissioned.
         :param states: a multiprocessing.Queue for simulations to use to update their status.
         :return: a list of Simulation objects that were commissioned.
-        '''
+        """
         to_commission = self.needs_commissioning()
         logger.debug("Commissioning %d simulation(s)." % len(to_commission))
         for simulation in to_commission:
@@ -42,10 +42,10 @@ class LocalExperimentManager(BaseExperimentManager):
         return to_commission
 
     def needs_commissioning(self):
-        '''
+        """
         Determines which simulations need to be (re)started.
         :return: A list of Simulation objects
-        '''
+        """
         simulations = []
         for sim in self.experiment.simulations:
             if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):

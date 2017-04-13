@@ -81,10 +81,10 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
     @classmethod
     def is_running(cls, pid):
-        '''
+        """
         Determines if the given pid is running and is running Eradication.exe
         :return: True/False
-        '''
+        """
         # ck4, BaseExperimentManager uses virtually identical logic. Should combine the codes.
         # ck4, This should be refactored to use a common module containing a dict of Process objects
         #      This way, we don't need to do the name() checking, just use the method process.is_running(),
