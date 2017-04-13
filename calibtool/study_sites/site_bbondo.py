@@ -1,41 +1,100 @@
 from site_setup_functions import *
 
-burn_years = 40
+burn_years = 50
 sim_duration = burn_years*365 + 2*365
-itn_dates = [x/12. for x in [96, 36, 24, 12, 6, 3]]
-itn_dates_2012 = [365*(burn_years-date)+165 for date in itn_dates]
+
+msat_day = 165
+msat_offset = 20
+
+itn_dates = [x/12. for x in [96, 36, 24, 12, 6, 3, 0]]
+itn_dates_2012 = [365*(burn_years-date)+msat_day for date in itn_dates]
 itn_fracs_2012 = [0.035, 0.047, 0.033, 0.42, 0.17, 0.29]
 
-itn_dates = [x/12. for x in [12, 6, 3]]
-itn_dates_2013 = [365*(burn_years+1-date)+165 for date in itn_dates]
+itn_dates = [x/12. for x in [12, 6, 3, 4]] # to give duration -1 for last birth-triggered distr
+itn_dates_2013 = [365*(burn_years+1-date)+msat_day for date in itn_dates]
 itn_fracs_2013 = [0.65, 0.2, 0.15]
 
-round_days = [365*burn_years + x*60 +165 for x in range(3)] + [365*(burn_years + 1) + x*60 +165 for x in range(3)]
+days_in_month = [0, 31, 59, 214, 61]
+hs_scale_by_month = [0.6, 0.9, 1, 0.8]
+
+round_days = [365*(burn_years-1) + 355 - msat_offset] + [365*burn_years + x*60 +msat_day - msat_offset for x in range(3)] + [365*(burn_years + 1) + x*60 +msat_day - msat_offset for x in range(3)]
 
 setup_functions = [ config_setup_fn(duration=sim_duration) ,
-                    #larval_habitat_fn(species="arabiensis", habitats=[9e9, 3e9]), # more temp rain, 160224
-                    #larval_habitat_fn(species="arabiensis", habitats=[1.2e9, 5.5e9]), # 'original' calib, 160216
-                    species_param_fn(species='arabiensis', param='Larval_Habitat_Types', value={ "TEMPORARY_RAINFALL": 1e10, "CONSTANT": 2e6 }),
+                    species_param_fn(species='arabiensis', param='Larval_Habitat_Types',
+                                     value={"TEMPORARY_RAINFALL": 1e10,
+                                            "CONSTANT": 2e6
+                                            }),
+                    #species_param_fn(species='arabiensis', param='Larval_Habitat_Types',
+                    #                 value={ "TEMPORARY_RAINFALL": 1e10,
+                    #                         "CONSTANT": 2e6,
+                    #                         "LINEAR_SPLINE": {
+                    #                             "Capacity_Distribution_Per_Year": {
+                    #                                 "Times": [0.0, 30.417, 60.833, 91.25, 121.667, 152.083,
+                    #                                           182.5, 212.917, 243.333, 273.75, 304.167, 334.583],
+                    #                                 "Values": [0.2, 0.1, 0.0, 0.0, 0.0, 0.0,
+                    #                                            0.0, 0.1, 0.1, 0.3, 0.3, 0.3]
+                    #                             },
+                    #                             "Max_Larval_Capacity": 1e10
+                    #                         }
+                    #                         }),
                     species_param_fn(species="arabiensis", param="Indoor_Feeding_Fraction", value=0.5),
-                    #summary_report_fn(start=365*burn_years+165,interval=1,nreports=1,age_bins=[5, 10, 15, 30, 200],description='Daily_Report', nodes={'Node_List' : range(745), "class": "NodeSetNodeList"}),
-                    filtered_report_fn(start=365*burn_years, end=sim_duration, nodes=range(745)),
-                    #filtered_report_fn(start=0, end=sim_duration, nodes=[1001], description='worknode'),
-                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', itn_dates_2012, itn_fracs_2012, 'itn2012cov'),
-                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', itn_dates_2013, itn_fracs_2013, 'itn2013cov'),
-                    add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', start=max([0,(burn_years-5)*365])),
-                    add_drug_campaign_fn('MSAT_AL', [365*burn_years+165], coverage=0.4, repetitions=3, nodes={'Node_List' : range(745), "class": "NodeSetNodeList"}),
-                    add_drug_campaign_fn('MSAT_AL', [365*(burn_years+1)+165], coverage=0.4, repetitions=3, nodes={'Node_List' : range(745), "class": "NodeSetNodeList"}),
-                    #add_outbreak_fn(start_day=0, outbreak_fraction=0.2, tsteps_btwn=365, nodes={'Node_List' : [105, 95, 23, 38, 41, 45, 127], "class": "NodeSetNodeList"}),
-                    #add_migration_fn(1001, start_day=130, coverage=0.5, repetitions=sim_duration/365+1, duration_of_stay=60, target={'agemin' : 15, 'agemax' : 30}),
-                    input_eir_fn([3]*12, nodes={'Node_List' : [1001], "class": "NodeSetNodeList"}),
+                    species_param_fn(species='funestus', param='Larval_Habitat_Types',
+                                     value={ "LINEAR_SPLINE": {
+                                                "Capacity_Distribution_Per_Year": {
+                                                    "Times":  [  0.0,  30.417,  60.833, 91.25, 121.667, 152.083,
+                                                                 182.5, 212.917, 243.333, 273.75, 304.167, 334.583 ],
+                                                    "Values": [  0.2,   0.5,     1.5,     1.0,
+                                                                 1.0,     1.0,     0.5,   0.5,     0.3,     0.2,
+                                                                 0.1, 0.1 ]
+                                                },
+                                                "Max_Larval_Capacity": 3e10
+                                                            },
+                                             "CONSTANT": 2e6,
+                                             "WATER_VEGETATION": 2e6}),
+                    filtered_report_fn(start=365*(burn_years-1), end=sim_duration, nodes=range(745)),
+                    filtered_report_fn(start=365*(burn_years-1), end=sim_duration, nodes=[1001], description='worknode'),
+                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', itn_dates_2012, itn_fracs_2012, 'itn2012cov',
+                                          waning = {'Usage_Config': {"Expected_Discard_Time": 270}}),
+                    add_itn_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', itn_dates_2013, itn_fracs_2013, 'itn2013cov',
+                                          waning={'Usage_Config' : {"Expected_Discard_Time": 270}}),
+                    #add_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json', start=max([0,(burn_years-5)*365])),
+                    add_seasonal_HS_by_node_id_fn('C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_all_hs_itn_cov.json',
+                                                  days_in_month, hs_scale_by_month, start=max([0,(burn_years-5)*365])),
+
+                    add_drug_campaign_fn('MSAT', 'AL',
+                                         [365 * (burn_years + x) + msat_day - msat_offset for x in range(2)],
+                                         repetitions=3, interval=60, coverage=0.6, delay=msat_offset, nodes=[1001]),
+                    add_treatment_fn(start=365 * (burn_years - 5),
+                                     targets=[{'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin': 15, 'agemax': 200,
+                                               'seek': 0.3, 'rate': 0.3},
+                                              {'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin': 0, 'agemax': 15,
+                                               'seek': 0.45, 'rate': 0.3},
+                                              {'trigger': 'NewSevereCase', 'coverage': 1, 'seek': 0.8, 'rate': 0.5}],
+                                     nodes={'Node_List': [1001], "class": "NodeSetNodeList"}),
+
+                    #add_drug_campaign_fn('MDA', 'DP', [0], repetitions=3, interval=20, coverage=1),
+
+
+                    add_drug_campaign_fn('MSAT', 'AL',
+                                         [365 * (burn_years - 1) + 355 - msat_offset],
+                                         repetitions=1, coverage=0.3, delay=msat_offset, nodes=range(745)),
+
+                    add_drug_campaign_fn('MSAT', 'AL', [365*burn_years+msat_day-msat_offset],  delay=msat_offset,
+                                         coverage=0.6, repetitions=3, nodes=range(745)),
+                    add_drug_campaign_fn('MSAT', 'AL', [365*(burn_years+1)+msat_day-msat_offset],  delay=msat_offset,
+                                         coverage=0.6, repetitions=3, nodes=range(745)),
                     lambda cb : cb.update_params( { "Geography": "Household",
                                                     "Listed_Events": [ "VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive', 'Give_Drugs', 
                                                                        'IRS_Blackout', 'Node_Sprayed',  'Spray_IRS', 'Received_Campaign_Drugs', 'Received_Treatment', 
-                                                                       'Received_ITN', 'Received_Test'],
-                                                    "Air_Temperature_Filename":   "Household/Bbondo/Zambia_Bbondo_30arcsec_air_temperature_daily.bin",
-                                                    "Land_Temperature_Filename":  "Household/Bbondo/Zambia_Bbondo_30arcsec_air_temperature_daily.bin",
-                                                    "Rainfall_Filename":          "Household/Bbondo/Zambia_Bbondo_30arcsec_rainfall_daily.bin", 
-                                                    "Relative_Humidity_Filename": "Household/Bbondo/Zambia_Bbondo_30arcsec_relative_humidity_daily.bin",
+                                                                       'Received_ITN', 'Received_Test', 'Received_RCD_Drugs'],
+                                                    "Air_Temperature_Filename":   "Household/Bbondo_filled_climate/const_temp/Bbondo_const_temp_air_temperature_daily.bin",
+                                                    "Land_Temperature_Filename":  "Household/Bbondo_filled_climate/const_temp/Bbondo_const_temp_air_temperature_daily.bin",
+                                                    "Rainfall_Filename":          "Household/Bbondo_filled_climate/const_temp/Bbondo_const_temp_rainfall_daily.bin",
+                                                    "Relative_Humidity_Filename": "Household/Bbondo_filled_climate/const_temp/Bbondo_const_temp_humidity_daily.bin",
+                                                    #"Air_Temperature_Filename": "Household/Bbondo_filled_climate/Bbondo_households_CBfilled_noworkvector_air_temperature_daily.bin",
+                                                    #"Land_Temperature_Filename": "Household/Bbondo_filled_climate/Bbondo_households_CBfilled_noworkvector_air_temperature_daily.bin",
+                                                    #"Rainfall_Filename": "Household/Bbondo_filled_climate/Bbondo_households_CBfilled_noworkvector_rainfall_daily.bin",
+                                                    #"Relative_Humidity_Filename": "Household/Bbondo_filled_climate/Bbondo_households_CBfilled_noworkvector_humidity_daily.bin",
 
                                                     "Local_Migration_Filename": "Household/Bbondo_filled_Local_Migration.bin",
                                                     "Sea_Migration_Filename":     "Household/Bbondo_filled_Work_Migration.bin",
@@ -50,7 +109,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Enable_Demographics_Other": 0,
                                                     "Enable_Demographics_Initial": 1,
                                                     "Enable_Vital_Dynamics" : 1,
-                                                    "Enable_Vector_Migration": 1, 
+                                                    "Enable_Vector_Migration": 1, ##################################################################################################
                                                     "Enable_Vector_Migration_Local": 1, 
                                                     "Enable_Vector_Migration_Regional" : 1,
                                                     "Vector_Migration_Modifier_Equation" : "EXPONENTIAL",
@@ -60,15 +119,26 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Vector_Migration_Food_Modifier" : 0,
                                                     "Vector_Migration_Stay_Put_Modifier" : 10,
                                                     #"Demographics_Filenames": ["Household/Bbondo_households_all_demographics_unif_fixedBR_work.json"],
-                                                    "x_Temporary_Larval_Habitat" : 0.1,
+                                                    #"x_Temporary_Larval_Habitat" : 0.1,
                                                     "Enable_Spatial_Output" : 1,
                                                     "Spatial_Output_Channels" : ["Population", 'New_Diagnostic_Prevalence'],
-                                                    "Vector_Species_Names" : ['arabiensis'],
+                                                    "Enable_Default_Reporting" : 0,
+                                                    "Vector_Species_Names" : ['arabiensis', 'funestus'],
+                                                    "logLevel_SimulationEventContext": "ERROR",
+                                                    "logLevel_VectorHabitat" : "ERROR",
+                                                    "logLevel_NodeVector" : "ERROR",
                                                     "logLevel_JsonConfigurable" : "ERROR",
-                                                    "Enable_Migration_Heterogeneity": 1, 
+                                                    "logLevel_MosquitoRelease" : "ERROR",
+                                                    "logLevel_VectorPopulationIndividual" : "ERROR",
+                                                    "logLevel_LarvalHabitatMultiplier" : "ERROR",
+                                                    "logLevel_StandardEventCoordinator": "ERROR",
+                                                    'logLevel_NodeLevelHealthTriggeredIV' : 'ERROR',
+                                                    'logLevel_NodeEventContext' : 'ERROR',
+                                                    "Enable_Migration_Heterogeneity": 1,
                                                     "Migration_Model": "FIXED_RATE_MIGRATION", 
                                                     #"Migration_Model": "NO_MIGRATION", 
                                                     "Enable_Local_Migration": 1,
+                                                    "Enable_Regional_Migration": 0,
                                                     "Migration_Pattern": "SINGLE_ROUND_TRIPS",
                                                     "Local_Migration_Roundtrip_Duration"       : 3.0,
                                                     "Local_Migration_Roundtrip_Probability"    : 1.0,
@@ -79,10 +149,7 @@ setup_functions = [ config_setup_fn(duration=sim_duration) ,
                                                     "Sea_Migration_Roundtrip_Probability"      : 1.0
                                                     } )]
 
-reference_data = {  "annual_eir" : 
-                    {  "151": 1.0866545131634515, "150": 4.4587026054038681, "153": 19.414441314403557, "152": 1.2813828406871657, "179": 12.583676398847006, "210": 0.079234332265977286, "156": 2.9223413090530164, "195": 2.0289768161402355, "197": 0.28383445479346892, "127": 12.206496062608457, "265": 0.046595072333126056, "214": 0.04161177443366347, "60": 0.087163341443035405, "114": 1.2550219343550411, "258": 3.3135629988207627, "63": 0.055610239092612271, "64": 0.031401687419406563, "53": 0.032567795664141384, "161": 1.0980988248304406, "276": 6.1643497960189473, "69": 0.084483728633979488, "87": 1.6527467127497402, "171": 3.0216767346464288, "259": 0.94486674797494519, "25": 2.4698919544128519, "275": 2.2379582819442616, "22": 0.019454608362406672, "23": 2.7182248052175404, "44": 9.5401609662813467, "45": 10.810937507738169, "43": 0.029034317547617094, "105": 19.922886201461413, "41": 11.204573330255624, "182": 0.49345803859725867, "183": 0.63195461168691114, "206": 7.5730398728597725, "185": 0.032592236166680805, "281": 0.06458672831271231, "188": 0.02236126280513312, "96": 0.093229023848175524, "277": 0.13968719125396467, "147": 1.4099902574537445, "196": 1.254885000954084, "140": 3.3174347281837342, "141": 0.048068107710568769, "149": 6.1692650431856455, "263": 11.866290178976323, "244": 8.3117207820196288, "122": 2.2323968848131166, "240": 1.2032176888216477, "71": 4.5375127861748465, "70": 1.7371653225205359, "227": 5.7197265320266286, "103": 2.7090007271546459, "269": 0.11748244836569285, "224": 0.14282238729528854, "95": 6.2428334735420323, "94": 0.88254685265431809, "221": 2.5256379364402304, "58": 0.12485338397901792, "118": 1.4656664102226309, "270": 0.056018187798943041, "38": 17.931861197663125, "59": 0.0482720567884415, "14": 3.2426593046230674, "283": 1.3429853697496339, "19": 0.16885025192322528, "54": 0.052415188499220416, "247": 0.846035144430625, "35": 1.8069663382053041, "130": 0.93654895885315037, "107": 0.029565726214586613, "116": 0.028175404868100811, "48": 0.078293011415549549, "264": 0.043111606301980819, "110": 0.058122565995944751
-                	},
-	                "risk_by_distance" :
+reference_data = {  "risk_by_distance" :
 	                { "distances" : [0, 0.05, 0.2],
 	                  "prevalence" : 0.09166,
 	                  "risks" : [0.15745, 0.12913, 0.10458]
@@ -92,12 +159,9 @@ reference_data = {  "annual_eir" :
 	                #  "prevalence" : 0.1694,
 	                #  "risks" : [0.22356, 0.28846, 0.14404]
 	                #},
-	                "prevalence_by_node" :
-	                {"151": 0.0, "150": 0.33333333333333331, "153": 0.33333333333333331, "152": 0.22222222222222221, "179": 1.0, "210": 0.0, "156": 0.20000000000000001, "195": 0.14285714285714285, "197": 0.14285714285714285, "127": 0.5, "265": 0.0, "214": 0.0, "60": 0.0, "114": 0.20000000000000001, "258": 0.16666666666666666, "63": 0.0, "64": 0.0, "53": 0.0, "161": 0.18181818181818182, "276": 0.25, "69": 0.0, "87": 0.16666666666666666, "171": 0.16666666666666666, "259": 0.25, "25": 0.14285714285714285, "275": 0.20000000000000001, "22": 0.0, "23": 0.5, "44": 1.0, "45": 0.5, "43": 0.0, "105": 0.83333333333333337, "41": 0.5, "182": 0.0, "183": 0.0, "206": 0.25, "185": 0.0, "281": 0.0, "188": 0.0, "96": 0.0, "277": 0.0, "147": 0.22222222222222221, "196": 0.25, "140": 0.0, "141": 0.0, "149": 0.20000000000000001, "263": 0.33333333333333331, "244": 0.33333333333333331, "122": 0.33333333333333331, "240": 0.0, "71": 0.25, "70": 0.0, "227": 0.33333333333333331, "103": 0.25, "269": 0.0, "224": 0.0, "95": 0.66666666666666663, "94": 0.0, "221": 0.0, "58": 0.0, "118": 0.0, "270": 0.0, "38": 0.5, "59": 0.0, "14": 0.25, "283": 0.16666666666666666, "19": 0.0, "54": 0.0, "247": 0.14285714285714285, "35": 0.14285714285714285, "130": 0.14285714285714285, "107": 0.0, "116": 0.0, "48": 0.0, "264": 0.0, "110": 0.0
-                    },    
 	                "prevalence_by_round" :
-	                { 
-	                  "all" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052],
+	                {
+	                  "all" : [0.0825, 0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052],
 	                  "Test" : [0.092, 0.022, 0.01, 0.035, 0.0077, 0.0052],
 	                },
 	                "prevalence_by_age" :
@@ -122,7 +186,7 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
     'household_prevalence_analyzer' : { 'name' : 'analyze_prevalence_by_node',
                                               'reporter' : 'Spatial Report',
                                               'fields_to_get' : ['New_Diagnostic_Prevalence', 'Population'],
-                                              'testdays' : [365*burn_years+165],
+                                              'testdays' : [365*burn_years+msat_day],
                                               'map_size' : 1.7,
                                               'LL_fn' : 'euclidean_distance'
                                             },
@@ -135,7 +199,7 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
     'prevalence_risk_analyzer' : { 'name' : 'analyze_prevalence_risk',
                                               'reporter' : 'Spatial Report',
                                               'fields_to_get' : ['New_Diagnostic_Prevalence', 'Population'],
-                                              'testdays' : [365*burn_years+165],
+                                              'testdays' : [365*burn_years+msat_day],
                                               'map_size' : 8,
                                               'LL_fn' : 'euclidean_distance',
                                               'worknode' : [1001]
@@ -146,12 +210,12 @@ analyzers = {    'bbondo_eir_analyzer' : { 'name' : 'bbondo_eir_analyzer',
                                               'testdays' : [x - burn_years*365 for x in round_days],
                                               'LL_fn' : 'euclidean_distance'
                                           },
-    'PrevalenceByRoundAnalyzer' : {   'testdays' : [x - burn_years*365 for x in round_days],
+    'PrevalenceByRoundAnalyzer' : {   'testdays' : [x - (burn_years-1)*365 for x in round_days],
                                       'regions' : ['all']
                                           },
     'PositiveFractionByDistanceAnalyzer' : {   "distmat" : "C:/Users/jgerardin/work/households_as_nodes/bbondo_filled_distance_matrix.csv",
                                                "ignore_nodes" : range(296,745) + [1001],
-                                               'testday' : 365*burn_years+165,
+                                               'testday' : 365*burn_years+msat_day-msat_offset,
                                                 }
     }
 

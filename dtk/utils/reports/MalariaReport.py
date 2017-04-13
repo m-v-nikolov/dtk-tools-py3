@@ -100,10 +100,40 @@ class FilteredMalariaReport(BaseReport):
                 "Report_File_Name": 'ReportMalariaFiltered' + self.description + '.json'}
 
 
+class FilteredMalariaSpatialReport(BaseReport):
+    def __init__(self,
+                 channels=['Population'],
+                 start_day=0,
+                 end_day=1000000,
+                 interval=1,
+                 nodes=[],
+                 description='',
+                 type="SpatialReportMalariaFiltered"):
+        BaseReport.__init__(self, type)
+        self.channels = channels
+        self.start_day = start_day
+        self.end_day = end_day
+        self.interval = interval
+        self.nodes = nodes
+        self.description = description
+
+    def to_dict(self):
+        return {"Start_Day": self.start_day,
+                "End_Day": self.end_day,
+                "Spatial_Output_Channels": self.channels,
+                "Reporting_Interval": self.interval,
+                "Node_IDs_Of_Interest": self.nodes,
+                "Report_File_Name": 'SpatialReportMalariaFiltered' + self.description}
+
+
 def add_filtered_report(cb, start=0, end=10000, nodes=[], description=''):
     filtered_report = FilteredMalariaReport(start_day=start, end_day=end, nodes=nodes, description=description)
     cb.add_reports(filtered_report)
 
+def add_filtered_spatial_report(cb, start=0, end=10000, channels=['Population'], interval=1, nodes=[], description=''):
+    spatial_report = FilteredMalariaSpatialReport(channels=channels, start_day=start, end_day=end, interval=interval,
+                                                  nodes=nodes, description=description)
+    cb.add_reports(spatial_report)
 
 def add_event_counter_report(cb, event_trigger_list, start=0, duration=10000, description='',
                              nodes={"class": "NodeSetAll"}):

@@ -1,12 +1,10 @@
 import time
 
-from COMPS.Data import Experiment
-
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-from simtools.Utilities.COMPSUtilities import experiment_needs_commission
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id
 from simtools.Utilities.General import init_logging
 
 logger = init_logging('Runner')
@@ -18,7 +16,8 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         super(COMPSSimulationRunner, self).__init__(experiment, states, success)
 
         # Check if we need to commission
-        e = Experiment.get(id=self.experiment.exp_id)
+        e = get_experiment_by_id(self.experiment.exp_id)
+
         if experiment_needs_commission(e):
             logger.debug('COMPS - Start Commissioning for experiment %s' % self.experiment.id)
             # Commission the experiment
@@ -43,29 +42,17 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         # Create the monitor
         monitor = CompsSimulationMonitor(self.experiment.exp_id, None, self.experiment.endpoint)
 
-        # Errors
-        errors = 0
-
         # Until done, update the status
         while True:
             logger.debug('COMPS - Waiting loop')
             try:
                 states, _ = monitor.query()
-                errors = 0
                 if states == {}:
                     # No states returned... Consider failed
                     states = {sim_id:'Failed' for sim_id in last_states.keys()}
             except Exception as e:
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)
-                errors += 1
-                if errors >= 5:
-                    logger.error("The monitor for this experiment failed 5 times to retrieve status. The runner will exit now. Database may need to be synced.")
-                    exit()
-                # Wait a little bit
-                time.sleep(self.MONITOR_SLEEP)
-                # retry
-                continue
 
             diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key]]
             logger.debug('COMPS - Difflist for experiment %s' % self.experiment.id)

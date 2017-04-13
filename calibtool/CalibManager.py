@@ -73,8 +73,6 @@ class CalibManager(object):
         self.exp_manager = None
         self.calibration_start = None
         self.iteration_start = None
-        self.iter_step = ''
-        self.status = ResumePoint.iteration_start
         self.latest_iteration = 0
 
     @property
@@ -165,34 +163,19 @@ class CalibManager(object):
         self.calibration_start = datetime.now().replace(microsecond=0)
 
         while self.iteration < self.max_iterations:
-
-            self.status = ResumePoint.iteration_start
-
-            # Restart the time for each iteration
-            self.iteration_start = datetime.now().replace(microsecond=0)
-
-            logger.info('---- Starting Iteration %d ----' % self.iteration)
-
-            # Make a backup only in resume case!
-            self.iteration_state.save(backup_existing=(self.iteration_state.resume_point.value > 0))
-
-            # Output verbose resume point
-            if self.iteration_state.resume_point.value > ResumePoint.iteration_start.value:
-                logger.info('-- Resuming Point %d (%s) --' % (self.iteration_state.resume_point.value, self.iteration_state.resume_point.name.title()))
-
-            self.status = ResumePoint.commission
-            self.cache_calibration()
+            # START_STEP
+            self.starting_step()
 
             # COMMISSION STEP
-            if self.iteration_state.resume_point.value <= ResumePoint.commission.value:
-                self.commission_step()
+            if self.iteration_state.commission_check():
+                self.commission_step(**kwargs)
 
             # ANALYZE STEP
-            if self.iteration_state.resume_point.value <= ResumePoint.analyze.value:
+            if self.iteration_state.analyze_check():
                 self.analyze_step()
 
             # PLOTTING STEP
-            if self.iteration_state.resume_point.value <= ResumePoint.plot.value:
+            if self.iteration_state.plotting_check():
                 self.plotting_step()
 
             # Done with calibration? exit the loop
@@ -200,17 +183,9 @@ class CalibManager(object):
                 break
 
             # Start from next iteration
-            if self.iteration_state.resume_point.value <= ResumePoint.next_point.value:
-                self.next_point_step()
-
-                # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
-                if self.iteration + 1 < self.max_iterations:
-                    self.increment_iteration()
-                    # Make sure the following iteration always starts from very beginning as normal iteration!
-                    self.iteration_state.resume_point = ResumePoint.iteration_start
-                else:
-                    # fix bug: next_point is not updated with the latest results for the last iteration!
-                    self.iteration_state.set_next_point(self.next_point)
+            if self.iteration_state.next_point_check():
+                # NEXT STEP
+                if not self.next_step():
                     break
 
         # Print the calibration finish time
@@ -219,6 +194,39 @@ class CalibManager(object):
         logger.info("Calibration done (took %s)" % verbose_timedelta(calibration_time_elapsed))
 
         self.finalize_calibration()
+
+    def next_step(self):
+        self.next_point_step()
+
+        # Fix iteration issue in Calibration.json (reason: above self.finished() always returns False)
+        if self.iteration + 1 < self.max_iterations:
+            self.increment_iteration()
+            # Make sure the following iteration always starts from very beginning as normal iteration!
+            self.iteration_state.resume_point = ResumePoint.iteration_start
+            return True
+        else:
+            # fix bug: next_point is not updated with the latest results for the last iteration!
+            self.iteration_state.set_next_point(self.next_point)
+            return False
+
+    def starting_step(self):
+        self.iteration_state.status = ResumePoint.iteration_start
+
+        # Restart the time for each iteration
+        self.iteration_start = datetime.now().replace(microsecond=0)
+
+        logger.info('---- Starting Iteration %d ----' % self.iteration)
+
+        # Make a backup only in resume case!
+        self.iteration_state.save(backup_existing=(self.iteration_state.resume_point.value > 0))
+
+        # Output verbose resume point
+        if self.iteration_state.resume_point.value > ResumePoint.iteration_start.value:
+            logger.info('-- Resuming Point %d (%s) --' % (
+            self.iteration_state.resume_point.value, self.iteration_state.resume_point.name.title()))
+
+        self.iteration_state.status = ResumePoint.commission
+        self.cache_calibration()
 
     def commission_step(self, **kwargs):
         # Get the params from the next_point
@@ -229,7 +237,7 @@ class CalibManager(object):
         self.commission_iteration(next_params, **kwargs)
 
         # Ready for analyzing
-        self.status = ResumePoint.analyze
+        self.iteration_state.status = ResumePoint.analyze
         self.cache_calibration()
 
         # Call the plot for post commission plots
@@ -243,7 +251,7 @@ class CalibManager(object):
         self.analyze_iteration()
 
         # Ready for plotting
-        self.status = ResumePoint.plot
+        self.iteration_state.status = ResumePoint.plot
         self.cache_calibration()
 
     def plotting_step(self):
@@ -251,14 +259,14 @@ class CalibManager(object):
             self.next_point.update_iteration(self.iteration)
 
         # Ready for next point
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
         self.cache_calibration()
 
         # Plot the iteration
         self.plot_iteration()
 
     def next_point_step(self):
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
 
         if self.iteration_state.resume_point == ResumePoint.next_point:
             self.next_point.update_iteration(self.iteration)
@@ -427,7 +435,6 @@ class CalibManager(object):
                  'location': self.location,
                  'suites': self.suites,
                  'iteration': self.iteration,
-                 'status': self.status.name,
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
@@ -463,231 +470,6 @@ class CalibManager(object):
 
         return data.to_dict(orient='list')
 
-    def restore_results(self, results, iteration):
-        """
-        Restore summary results from serialized state.
-        """
-        if not results:
-            logger.debug('No cached results to reload from CalibManager.')
-            return
-
-        self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-        self.all_results.set_index('sample', inplace=True)
-
-        self.all_results = self.all_results[self.all_results.iteration <= iteration]
-        logger.debug(self.all_results)
-
-    def check_leftover(self):
-        """
-            - Handle the case: process got interrupted but it still runs on remote
-            - Handle location change case: may resume from commission instead
-        """
-        # Step 1: Checking possible location changes
-        try:
-            exp_id = self.iteration_state.experiment_id
-            exp = retrieve_experiment(exp_id)
-        except:
-            exp = None
-            import traceback
-            traceback.print_exc()
-
-        if not exp:
-            var = raw_input("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
-            # force to resume from commission
-            if var.upper() == 'Y':
-                self.iter_step = 'commission'
-            else:
-                logger.info("Answer is '%s'. Exiting...", var.upper())
-                exit()
-
-        # If location has been changed, will double check user for a special case before proceed...
-        if self.location != exp.location and self.iter_step in ['analyze', 'plot', 'next_point']:
-            var = raw_input("Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (exp.location, self.location))
-            if var.upper() == 'Y':
-                self.iter_step = 'commission'
-            else:
-                logger.info("Answer is '%s'. Exiting...", var.upper())
-                exit()
-
-        # Save the selected block the user wants
-        user_selected_block = self.setup.selected_block
-
-        # Step 2: Checking possible leftovers
-        try:
-            # Retrieve the experiment manager. Note: it changed selected_block
-            self.exp_manager = ExperimentManagerFactory.from_experiment(exp)
-        except Exception:
-            logger.info('Proceed without checking the possible leftovers.')
-        finally:
-            # Restore the selected block
-            self.setup.override_block(user_selected_block)
-            if not self.exp_manager: return
-
-        # Don't do the leftover checking for a special case
-        if self.iter_step == 'commission':
-            return
-
-        # Make sure it is finished
-        self.exp_manager.wait_for_finished(verbose=True)
-
-        try:
-            # check the status
-            states = self.exp_manager.get_simulation_status()[0]
-        except:
-            # logger.info(ex)
-            logger.info('Proceed without checking the possible leftovers.')
-            return
-
-        if not states:
-            logger.info('Proceed without checking the possible leftovers.')
-            return
-
-    def prepare_resume_point_for_iteration(self, iteration):
-        """
-        Setup resume point the point to resume the iteration:
-           * commission -- commission a new iteration of simulations based on existing next_params
-           * analyze -- calculate results for an existing iteration of simulations
-           * next_point -- generate next sample points from an existing set of results
-        """
-        # Restore current iteration and next_point
-        self.restore_next_point_for_iteration(iteration)
-
-        # Check leftover (in case lost connection) and also consider possible location change.
-        self.check_leftover()
-
-        # Adjust resuming point based on input options
-        if self.iter_step:
-            self.adjust_resume_point(iteration)
-
-        # transfer the final resume point
-        self.iteration_state.resume_point = self.status
-
-        # Prepare iteration state
-        if self.iteration_state.resume_point == ResumePoint.commission:
-            # need to run simulations
-            self.iteration_state.simulations = {}
-            self.iteration_state.results = {}
-        elif self.iteration_state.resume_point == ResumePoint.analyze:
-            # just need to calculate the results
-            self.iteration_state.results = {}
-        elif self.iteration_state.resume_point == ResumePoint.plot:
-            # just need to do plotting based on the existing results
-            pass
-        elif self.iteration_state.resume_point == ResumePoint.next_point:
-            pass
-        else:
-            pass
-
-        # adjust next_point
-        self.restore_next_point()
-
-    def restore_calibration_for_resume(self, calib_data, iteration):
-        if not calib_data:
-            calib_data = self.read_calib_data()
-
-        self.suites = calib_data.get('suites')
-
-        if self.iteration_state.resume_point.value < ResumePoint.plot.value:
-            # it will combine current results with previous results
-            self.restore_results(calib_data.get('results'), iteration - 1)
-        else:
-            # it will use the current results and resume from next iteration
-            self.restore_results(calib_data.get('results'), iteration)
-
-    def restore_next_point(self):
-        """
-        Restore next_point up to this iteration
-        Note: when come to here:
-                - self.iteration_state has been restored from current self.iteration already!
-                - self.next_point has been restored from current self.iteration already!
-        """
-        # Handel the general cases for resume
-        if self.iteration_state.resume_point == ResumePoint.commission:
-            # Note: later will generate new samples. Need to clean up next_point for resume from commission.
-            if self.iteration == 0:
-                self.next_point.cleanup()
-            elif self.iteration > 0:
-                # Now we need to restore next_point from previous iteration (need to re-generate new samples late)
-                iteration_state = IterationState.restore_state(self.name, self.iteration - 1)
-                self.next_point.set_state(iteration_state.next_point, self.iteration - 1)
-
-            # prepare and ready for new experiment and simulations
-            self.iteration_state.reset_state()
-        elif self.iteration_state.resume_point == ResumePoint.analyze:
-            # Note: self.next_point has been already restored from current iteration, so it has current samples!
-            if self.iteration == 0:
-                self.next_point.cleanup()
-            elif self.iteration > 0:
-                # Now, we need to restore gaussian from previous iteration
-                iteration_state = IterationState.restore_state(self.name, self.iteration - 1)
-                self.next_point.restore(iteration_state)
-        elif self.iteration_state.resume_point == ResumePoint.plot:
-            # Note: self.next_point has been already restored from current iteration, so it has current samples!
-            pass
-        elif self.iteration_state.resume_point == ResumePoint.next_point:
-            # Note: self.next_point has been already restored from current iteration, move on to next iteration!
-            pass
-        else:
-            # in case we have more resuming point in the future
-            pass
-
-    def restore_next_point_for_iteration(self, iteration):
-        """
-        Restore next_point up to this iteration
-        """
-        # Restore IterationState and keep the resume_point
-        resume_point = self.iteration_state.resume_point
-        self.iteration_state = IterationState.restore_state(self.name, iteration)
-        self.iteration_state.resume_point = resume_point
-
-        # Update next point
-        self.next_point.set_state(self.iteration_state.next_point, iteration)
-
-        # Store iteration #:
-        self.iteration_state.iteration = iteration
-
-    def adjust_resume_point(self, iteration):
-        """
-        Consider user's input and determine the resuming point
-        """
-
-        input_resume_point = ResumePoint[self.iter_step]
-
-        if self.latest_iteration == iteration:
-            # user input iter_step may not be valid
-            if input_resume_point.value <= self.status.value:
-                self.status = input_resume_point
-            else:
-                logger.info("The farthest resume point available is '%s', we will resume from it instead of '%s'" \
-                      % (self.status.name, input_resume_point.name))
-                answer = raw_input("Continue ? [Y/N]")
-                if answer != "Y": exit()
-        else:
-            # just take user input iter_step
-            self.status = input_resume_point
-
-    def find_best_iteration_for_resume(self, iteration=None, calib_data=None):
-        """
-        Find the latest good iteration from where we can do resume
-        """
-        # If calib_data is None or Empty, throw exception
-        if calib_data is None or not calib_data:
-            raise Exception('Metadata is empty in %s/CalibManager.json' % self.name)
-
-        # If calib_data has no results, will resume from Iteration 0
-        if not calib_data.get('results', {}):
-            return 0
-
-        # If no iteration passed in, take latest_iteration for resume
-        if iteration is None:
-            iteration = self.latest_iteration
-
-        # Adjust input iteration
-        if self.latest_iteration < iteration:
-            iteration = self.latest_iteration
-
-        return iteration
-
     def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
         """
         It takes several steps:
@@ -699,22 +481,8 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
-        # Make a backup of CalibManager.json
-        self.backup_calibration()
-
-        # Keep iter_step which will be used later to determine the Resuming Point
-        self.iter_step = iter_step.lower() if iter_step is not None else ''
-
-        # Keep the simulation type: LOCAL, HPC, ...
-        self.location = self.setup.get('type')
-
-        calib_data = self.read_calib_data()
-        self.status = ResumePoint[calib_data.get('status', ResumePoint.iteration_start.name)]
-        self.latest_iteration = int(calib_data.get('iteration', 0))
-        iteration = self.find_best_iteration_for_resume(iteration, calib_data)
-
-        self.prepare_resume_point_for_iteration(iteration)
-        self.restore_calibration_for_resume(calib_data, iteration)
+        # prepare resume status
+        self.iteration_state.prepare_resume_state(self, iteration, iter_step)
 
         # enter iteration loop
         self.run_iterations(**kwargs)
@@ -923,14 +691,14 @@ class CalibManager(object):
         self.iteration_state.results = {}
         self.iteration_state.analyzers = {}
 
-        self.status = ResumePoint.analyze
+        self.iteration_state.status = ResumePoint.analyze
         self.plot_iteration()
 
         # Analyze again!
         self.analyze_iteration()
 
         # Call all plotters
-        self.status = ResumePoint.next_point
+        self.iteration_state.status = ResumePoint.next_point
         self.plot_iteration()
 
         logger.info("Iteration %s reanalyzed." % iteration)

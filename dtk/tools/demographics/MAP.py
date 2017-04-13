@@ -1,7 +1,7 @@
 import json
 import time
 
-import node
+import Node
 import raster
 from routes import get_raster_nodes
 from db import *
@@ -26,11 +26,11 @@ def query_PfPR_by_node(node_ids):
 def PfPR_from_file(geotiff_file, node_ids):
     A, transform_fn = raster.read(geotiff_file)
     lon,lat,alt = transform_fn(0,0) # upper-left corner of MAP
-    xpixUL,ypixUL = node.xpix_ypix_from_lat_lon(lat,lon,node.Node.res_in_degrees) #default is 2.5arcmin
+    xpixUL,ypixUL = Node.xpix_ypix_from_lat_lon(lat, lon, Node.Node.res_in_degrees) #default is 2.5arcmin
     
     # utility to map nodeid to raster index
     def raster_idx_from_nodeid(nodeid):
-        xpix,ypix = node.get_xpix_ypix(nodeid) # indexed to ll=(-90,-180)
+        xpix,ypix = Node.get_xpix_ypix(nodeid) # indexed to ll=(-90,-180)
         return ((xpix-xpixUL),(ypixUL-ypix))
 
     rows=[]
@@ -43,7 +43,7 @@ def PfPR_from_file(geotiff_file, node_ids):
 if __name__ == '__main__':
 
     nodes = get_raster_nodes('cache/raster_nodes_Haiti.json', N=-1)
-    nodeids = [node.nodeid_from_lat_lon(n['Latitude'],
+    nodeids = [Node.nodeid_from_lat_lon(n['Latitude'],
                                         n['Longitude'],
                                         res_in_deg=2.5/60) for n in nodes]
 

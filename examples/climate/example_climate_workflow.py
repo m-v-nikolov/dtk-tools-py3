@@ -1,6 +1,5 @@
 # Node 1001: mapped to 27.6, -17.05, 2008 climate
 # All other nodes: temperature as in attached CSV, humidity and rainfall as in 2008 climate at 28.0, -16.5
-# Slim climate is fine.
 import csv
 import json
 import os
@@ -14,7 +13,7 @@ from dtk.tools.climate.BinaryFilesHelpers import extract_data_from_climate_bin_f
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
 from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
-from dtk.tools.demographics.node import Node
+from dtk.tools.demographics.Node import Node
 from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
 from simtools.SetupParser import SetupParser
 

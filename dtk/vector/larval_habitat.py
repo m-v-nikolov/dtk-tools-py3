@@ -3,7 +3,7 @@ import datetime
 import getpass
 from collections import namedtuple
 
-from dtk.tools.demographics.node import lat_lon_from_nodeid
+from dtk.tools.demographics.Node import lat_lon_from_nodeid
 
 # --------------------------------------------------------------
 # Larval habitat parameters

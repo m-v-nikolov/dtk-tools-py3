@@ -12,7 +12,7 @@ from calibtool.utils import ResumePoint
 
 from calibtool.plotters.BasePlotter import BasePlotter
 
-sns.set_style('white')
+sns.set_style('white', {'axes.linewidth': 0.5})
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class SiteDataPlotter(BasePlotter):
         return self.manager.state_for_iteration(iteration).analyzers[site_analyzer]
 
     def visualize(self):
-        iteration_status = self.manager.status
+        iteration_status = self.manager.iteration_state.status
         if iteration_status != ResumePoint.next_point:
             return  # Only plot once results are available
 
@@ -93,6 +93,7 @@ class SiteDataPlotter(BasePlotter):
                 analyzer.plot_comparison(fig, analyzer_data['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
 
                 fig.set_tight_layout(True)
+
                 plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
@@ -182,12 +183,7 @@ class SiteDataPlotter(BasePlotter):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
-        # DJK: RENAME LL everywhere.  It's whatever the analyzer(s) return, e.g. cost per life saved
-        # DJK: That brings up an interesting issue about how to combine analyzers results.  For now, we sum.
-        #      But that might not be sufficiently general - think about this.
-
-        # Deep copy all_results and pnames to not disturb the calibration
-        pnames = copy.deepcopy(self.param_names)
+        # Deep copy all_results ato not disturb the calibration
         all_results = self.all_results.copy(True)
 
         # Index the likelihood-results DataFrame on (iteration, sample) to join with simulation info

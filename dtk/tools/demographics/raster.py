@@ -38,7 +38,7 @@ try:
 except:
     sys.exit('Install required scipy package: https://pypi.python.org/pypi/scikit-image/')
 
-from node import Node
+from Node import Node
 from visualize_nodes import get_country_shape,plot_geojson_shape
 
 
@@ -200,7 +200,7 @@ def make_nodes(sums,centroids,transform_fn,min_pop=100):
 
 def plot_nodes(nodes,countries):
     plt.figure('LatLonNodes')
-    lats,lons,pp=zip(*[x.toTuple() for x in nodes])
+    lats,lons,pp=zip(*[x.to_tuple() for x in nodes])
     plt.scatter(lons, lats, [30*p/1e4 for p in pp], color='navy', linewidth=0.1, alpha=0.5)
     plt.gca().set_aspect('equal')
     for country in countries:
@@ -214,7 +214,7 @@ def write_nodes(nodes,title):
     if not os.path.exists('cache'):
         os.mkdir('cache')
     with open('cache/raster_nodes_%s.json' % title,'w') as fjson:
-        json.dump([n.toDict() for n in nodes], fjson)
+        json.dump([n.to_dict() for n in nodes], fjson)
 
 
 def save_all_figs(dirname='figs'):
