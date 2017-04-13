@@ -115,6 +115,7 @@ def populate_cleanbatch_arguments(subparsers, func=None):
 # 'dtk clear_batch' options
 def populate_clearbatch_arguments(subparsers, func=None):
     parser_clearbatch = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch given id or name.')
+    parser_clearbatch.add_argument(dest='id_or_name', nargs=1, help='Remove all associated experiments from Batch given id or name.')
     return parser_clearbatch
 
 

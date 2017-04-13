@@ -348,16 +348,7 @@ def clean_batch(args, unknownArgs):
 
 
 def clear_batch(args, unknownArgs):
-    if len(unknownArgs) == 0:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Please provide one batch id/name.'
-        exit()
-    elif len(unknownArgs) > 1:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Too many batch id/name are provided: %s' % unknownArgs
-        exit()
-
-    AnalyzeHelper.clear_batch(unknownArgs[0], ask=True)
+    AnalyzeHelper.clear_batch(args.id_or_name[0], ask=True)
 
 
 def analyze_list(args, unknownArgs):
