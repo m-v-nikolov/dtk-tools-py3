@@ -40,6 +40,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
         self.sim_ids = []
         self.count = 0
+        self.num_outstanding = 0
 
         if not os.path.isdir(self.basedir):
             os.makedirs(self.basedir)
@@ -61,6 +62,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
         sim_id = sim_metadata['sim_id']
         self.sim_ids.append(sim_id)
+        self.num_outstanding += 1
 
         if not self.shelve_file:    # Want this in the base class, but don't know exp_id at __init__
             self.shelve_file = os.path.join(self.workdir, '%s.db' % self.__class__.__name__) # USE ID instead?
@@ -68,6 +70,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
         ret = super(ReportTyphoidInsetChartAnalyzer, self).filter(self.shelve_file, sim_metadata)
 
         if not ret and self.verbose:
+            self.num_outstanding -= 1
             print 'Skipping simulation %s because already in shelve' % str(sim_id)
 
         return ret
@@ -126,8 +129,6 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
         sim_pop  = pdata.query('Year >= @self.pop_scaling_year[0] & Year < @self.pop_scaling_year[1]')[['Statistical Population']].sum()/365
 
         pop_scaling = self.pop_scaling_pop / float(sim_pop)
-        if self.verbose:
-            print 'Population scaling is', pop_scaling
         possible_scale_cols = ['Environmental Contagion Population',
                 'Number of New Acute Infections',
                 'Statistical Population',
@@ -140,6 +141,10 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
         scale_cols = [ sc for sc in possible_scale_cols if sc in pdata.columns.values]
         pdata[scale_cols] *= pop_scaling
         #######################################################################
+
+        self.num_outstanding -= 1
+        if self.verbose:
+            print 'Progress: %d of %d (%.1f%%).  Pop scaling is %f'%(len(self.sim_ids)-self.num_outstanding, len(self.sim_ids), 100*(len(self.sim_ids)-self.num_outstanding) / float(len(self.sim_ids)), pop_scaling)
 
         return (pdata, pop_scaling)
 

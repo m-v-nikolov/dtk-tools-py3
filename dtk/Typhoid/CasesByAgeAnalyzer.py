@@ -48,11 +48,12 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         self.cache_data = {}
 
     def set_site(self, site):
+
         years = site.reference_data[self.reference_sheet]['Year'].unique()
-        self.reference = site.reference_data[self.reference_sheet].groupby(['Age']).sum().reset_index()
+        self.reference = site.reference_data[self.reference_sheet].groupby(['AgeBin']).sum().reset_index()
         self.reference['Year'] = '[%d, %d)'%(years[0], years[-1]+1)
-        self.reference['AgeBin'] = self.reference['Age'].astype('category', categories=sorted(list(set(self.reference['Age'])), key=self.lower_value), ordered=True)
-        self.reference.drop('Age', axis=1, inplace=True)
+        self.reference['AgeBin'] = self.reference['AgeBin'].astype('category', categories=sorted(list(set(self.reference['AgeBin'])), key=self.lower_value), ordered=True)
+        #self.reference.drop('Age', axis=1, inplace=True)
         self.reference = self.reference.set_index('AgeBin').sort_index()
 
         self.year_bins = ['[%d, %d)'%(years[0], years[-1]+1)]
@@ -72,8 +73,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         Extract data from output data and accumulate in same bins as reference.
         '''
         (sim, pop_scaling) = super(CasesByAgeAnalyzer, self).apply(parser)
-        if self.verbose:
-            print 'Population scaling factor is', pop_scaling
 
         sim_age_bins = sorted( list(set(sim['Age'].tolist())) )
 
@@ -83,7 +82,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         sim_output = pd.DataFrame()
         for year_bin in self.year_bins:
-            print year_bin
             year_edges = [int(s) for s in re.findall(r'\b\d+\b', year_bin)]
             # Select years, assuming sequential
             sim_by_year = sim.query('Year >= @year_edges[0] & Year < @year_edges[1]').set_index('Year')
@@ -107,12 +105,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
                 simbin.rename(index={'Population':'Sim_Population'}, inplace=True)
                 simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
-                err = simbin['Sim_Population']-self.pop_scaling_pop
-                #if abs(err) > 1e-6:
-                print parser.sim_id, 'RawPop =', simbin['Sim_Population_Unscaled'], 'PopScale =', pop_scaling, 'ScaledSimPop =', simbin['Sim_Population'], 'Err =', err
-
-                #assert( abs(simbin['Sim_Population']-self.pop_scaling_pop)<1e-6 )
-
                 sim_output = pd.concat( [sim_output, simbin], axis=1 )
 
         sim_output = sim_output.transpose().reset_index(drop=True)
@@ -133,8 +125,8 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         }
         self.shelve_apply( parser.sim_id, shelve_data)
 
-        if self.verbose:
-            print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
+        #if self.verbose:
+        #    print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
 
     def combine(self, parsers):
         shelved_data = super(CasesByAgeAnalyzer, self).combine(parsers)

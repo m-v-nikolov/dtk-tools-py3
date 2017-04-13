@@ -22,8 +22,6 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
                     name,
                     reference_sheet,
 
-                    include_subclinical = True,
-
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -42,8 +40,6 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
 
         self.name = name
         self.reference_sheet = reference_sheet
-
-        self.include_subclinical = include_subclinical
 
         self.cache_data = {}
 
@@ -70,8 +66,6 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
 
     def apply(self, parser):
         (sim, pop_scaling) = super(SeasonalityAnalyzer, self).apply(parser)
-        if self.verbose:
-            print 'Population scaling factor is', pop_scaling
 
         keep_cols = ['Year', 'Month', 'Statistical Population', 'Number of New Acute Infections', 'Number of New Sub-Clinical Infections']
         drop_cols = list( set(sim.columns.values) - set(keep_cols) )
@@ -90,10 +84,10 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
 
             # Undo parent's pop scaling for beta-binomial likelihood
             simbin['Sim_Cases'] = simbin['Number of New Acute Infections']
-            if self.include_subclinical:
-                simbin['Sim_Cases'] += simbin['Number of New Sub-Clinical Infections']
+            simbin['Sim_Cases_With_Subclinical'] = simbin['Sim_Cases'] + simbin['Number of New Sub-Clinical Infections']
 
-            simbin['Sim_Acute_Unscaled'] = simbin['Sim_Cases'] / pop_scaling
+            simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / pop_scaling
+            simbin['Sim_Cases_With_Subclinical_Unscaled'] = simbin['Sim_Cases_With_Subclinical'] / pop_scaling
             simbin.rename(columns={'Statistical Population':'Sim_Population'}, inplace=True)
             simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
@@ -110,8 +104,8 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         }
         self.shelve_apply( parser.sim_id, shelve_data)
 
-        if self.verbose:
-            print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
+        #if self.verbose:
+        #    print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
 
     def combine(self, parsers):
         shelved_data = super(SeasonalityAnalyzer, self).combine(parsers)
@@ -170,6 +164,11 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
     def make_collection(self, d):
         return zip(d['MonthInt'], d['Sim_Cases'])
 
+    def make_collection_distribution(self, d):
+        s = sum(d['Sim_Cases_With_Subclinical'])
+        if s > 0:
+            return zip(d['MonthInt'], d['Sim_Cases_With_Subclinical']/sum(d['Sim_Cases_With_Subclinical']))
+        return zip(d['MonthInt'], d['Sim_Cases_With_Subclinical']) # zeros
 
     def finalize(self):
         super(SeasonalityAnalyzer, self).finalize() # Closes the shelve file
@@ -184,9 +183,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         if not os.path.isdir(figdir):
             os.mkdir(figdir)
 
-        fn = os.path.join(self.workdir,'Results_%s_Acute.xlsx'%self.__class__.__name__)
-        if self.include_subclinical:
-            fn = os.path.join(self.workdir,'Results_%s_AcuteAndSubClinical.xlsx'%self.__class__.__name__)
+        fn = os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__)
 
         writer = pd.ExcelWriter(fn)
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
@@ -202,6 +199,22 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         self.data.reset_index(inplace=True)
         self.data['MonthInt'] = self.data['Month'].map(month_to_int_dict)
 
+        # Distribution
+        fig, ax = plt.subplots(1, 1, figsize=(16,10))
+        data_by_sim_id = self.data.groupby('Sim_Id')
+        lc = mc.LineCollection( data_by_sim_id.apply(self.make_collection_distribution), linewidths=0.1, cmap=plt.cm.jet )
+        ax.add_collection(lc)
+
+        ax.plot(self.reference['MonthInt'], self.reference['Cases'] / sum(self.reference['Cases']), 'k.', ms=25)
+
+        ax.autoscale()
+        ax.margins(0.1)
+        ax.set_title('Seasonality Distribution')
+
+        fig.savefig(os.path.join(figdir, 'Seasonality_Distribution.%s'%self.fig_format));
+        plt.close(fig)
+
+        # Number
         fig, ax = plt.subplots(1, 1, figsize=(16,10))
         data_by_sim_id = self.data.groupby('Sim_Id')
         lc = mc.LineCollection( data_by_sim_id.apply(self.make_collection), linewidths=0.1, cmap=plt.cm.jet )

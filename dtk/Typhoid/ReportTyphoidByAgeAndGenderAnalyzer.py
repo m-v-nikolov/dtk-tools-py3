@@ -45,6 +45,8 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         self.sim_ids = []
         self.count = 0
 
+        self.num_outstanding = 0
+
         if not os.path.isdir(self.basedir):
             os.makedirs(self.basedir)
 
@@ -65,6 +67,7 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
         sim_id = sim_metadata['sim_id']
         self.sim_ids.append(sim_id)
+        self.num_outstanding += 1
 
         if not self.shelve_file:    # Want this in the base class, but don't know exp_id at __init__
             self.shelve_file = os.path.join(self.workdir, '%s.db' % self.__class__.__name__) # USE ID instead?
@@ -72,12 +75,14 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         ret = super(ReportTyphoidByAgeAndGenderAnalyzer, self).filter(self.shelve_file, sim_metadata)
 
         if not ret and self.verbose:
+            self.num_outstanding -= 1
             print 'Skipping simulation %s because already in shelve' % str(sim_id)
 
         return ret
 
     def apply(self, parser):
         super(ReportTyphoidByAgeAndGenderAnalyzer, self).apply(parser)
+
 
         # Sum over age and other factors to make the data smaller
         raw = parser.raw_data[self.filenames[0]]
@@ -88,8 +93,7 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         sim_pop = ps.loc[self.pop_scaling_age_min:self.pop_scaling_age_max].sum()
 
         pop_scaling = self.pop_scaling_pop / float(sim_pop)
-        if self.verbose:
-            print 'Population scaling is', pop_scaling
+
         possible_scale_cols = ['Population', 'Infected', 'Newly Infected', 'Chronic (Prev)',
                         'Sub-Clinical (Prev)', 'Acute (Prev)', 'Pre-Patent (Prev)',
                         'Chronic (Inc) ', 'Sub-Clinical (Inc)', 'Acute (Inc)',
@@ -97,6 +101,10 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         scale_cols = [ sc for sc in possible_scale_cols if sc in pdata.columns.values]
         pdata[scale_cols] *= pop_scaling
         #######################################################################
+
+        self.num_outstanding -= 1
+        if self.verbose:
+            print 'Progress: %d of %d (%.1f%%).  Pop scaling is %f'%(len(self.sim_ids)-self.num_outstanding, len(self.sim_ids), 100*(len(self.sim_ids)-self.num_outstanding) / float(len(self.sim_ids)), pop_scaling)
 
         pdata = pdata.reset_index(drop=True).set_index('Gender')
         pdata.rename({0:'Male', 1:'Female'}, inplace=True)
