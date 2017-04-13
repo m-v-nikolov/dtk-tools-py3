@@ -525,7 +525,6 @@ class CalibManager(object):
             self.replot_iteration(i, local_all_results)
 
     def replot_iteration(self, iteration, local_all_results):
-        # replot for each iteration up to latest
         logger.info('Re-plotting for iteration: %d' % iteration)
 
         # restore current iteration state
@@ -535,14 +534,17 @@ class CalibManager(object):
         # restore next point
         self.next_point.set_state(self.iteration_state.next_point, iteration)
 
+        # set status so that plotters know when to plot
+        self.iteration_state.status = ResumePoint.next_point
+
         # restore all_results for current iteration
         self.all_results = local_all_results[local_all_results.iteration <= iteration]
 
         for plotter in self.plotters:
             if isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and iteration != self.latest_iteration:
                 continue
-            plotter.visualize(self)
-            gc.collect() # Have to clean up after matplotlib is done
+            plotter.visualize()
+            gc.collect()  # Have to clean up after matplotlib is done
 
     def load_experiment_from_iteration(self, iteration=None):
         """
