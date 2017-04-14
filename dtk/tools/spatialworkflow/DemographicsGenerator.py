@@ -4,6 +4,8 @@ from datetime import datetime
 from dtk.generic.demographics import distribution_types
 from dtk.tools.demographics.Node import Node, nodeid_from_lat_lon
 
+class InvalidResolution(BaseException):
+    pass
 
 class DemographicsGenerator:
     """
@@ -15,8 +17,18 @@ class DemographicsGenerator:
     *-ed columns are optional
     """
 
-    def __init__(self, cb, nodes, demographics_type='static', res_in_arcsec=30, update_demographics=None,
-                 default_pop=1000):
+    # mapping of requested arcsecond resolution -> demographic metadata arcsecond resolution.
+    # All Hash values must be integers.
+    CUSTOM_RESOLUTION = 'custom'
+    DEFAULT_RESOLUTION = 30
+    VALID_RESOLUTIONS = {
+        30: 30,
+        250: 250,
+        CUSTOM_RESOLUTION: 30
+    }
+
+    def __init__(self, cb, nodes, demographics_type='static', res_in_arcsec=DEFAULT_RESOLUTION,
+                 update_demographics=None, default_pop=1000):
         """
         Initialize the SpatialManager
         :param cb: config builder reference, updated after the demographics file is generated.
@@ -29,8 +41,7 @@ class DemographicsGenerator:
 
         self.cb = cb
         self.demographics_type = demographics_type
-        self.res_in_arcsec = res_in_arcsec
-        self.res_in_degrees = self.arcsec_to_deg(self.res_in_arcsec)
+        self.set_resolution(res_in_arcsec)
         self.update_demographics = update_demographics
 
         # demographics data dictionary (working DTK demographics file when dumped as json)
@@ -42,7 +53,7 @@ class DemographicsGenerator:
         return arcsec / 3600.0
 
     @classmethod
-    def from_file(cls, cb, population_input_file, demographics_type='static', res_in_arcsec=30.0,
+    def from_file(cls, cb, population_input_file, demographics_type='static', res_in_arcsec=DEFAULT_RESOLUTION,
                   update_demographics=None, default_pop=1000):
         nodes_list = list()
         with open(population_input_file, 'r') as pop_csv:
@@ -74,10 +85,25 @@ class DemographicsGenerator:
     def set_update_demographics(self, update_demographics):
         self.update_demographics = update_demographics  # callback function
 
-    def set_res_in_arcsec(self, res_in_arcsec):
-        self.res_in_arcsec = res_in_arcsec
-        self.res_in_degrees = self.arcsec_to_deg(res_in_arcsec)
+    @classmethod
+    def validate_res_in_arcsec(cls, res_in_arcsec):
+        try:
+            cls.VALID_RESOLUTIONS[res_in_arcsec]
+        except KeyError:
+            raise InvalidResolution("%s is not a valid arcsecond resolultion. Must be one of: %s" %
+                                    (res_in_arcsec, cls.VALID_RESOLUTIONS))
 
+    def set_resolution(self, res_in_arcsec):
+        """
+        The cannonical way to set arcsecond/degree resolutions on a DemographicsGenerator object. Verifies everything
+        is set properly.
+        :param res_in_arcsec: The requested resolution. e.g. 30, 250, 'custom'
+        :return: No return value.
+        """
+        self.validate_res_in_arcsec(res_in_arcsec)
+        self.res_in_arcsec = self.VALID_RESOLUTIONS[res_in_arcsec]
+        self.custom_resolution = True if res_in_arcsec == self.CUSTOM_RESOLUTION else False
+        self.res_in_degrees = self.arcsec_to_deg(self.res_in_arcsec)
 
     def generate_defaults(self):
         """
@@ -160,14 +186,16 @@ class DemographicsGenerator:
 
         nodes = []
         for i, node in enumerate(self.nodes):
-            if self.res_in_arcsec == "custom":  # if re_in_degrees is custom assume node_ids are generated for a household-lie setup and not based on lat/lon
+            # if res_in_degrees is custom assume node_ids are generated for a household-like setup and not based on lat/lon
+            if self.custom_resolution:
                 node_id = i + 1
             else:
                 node_id = nodeid_from_lat_lon(float(node.lat), float(node.lon), self.res_in_degrees)
             node_attributes = node.to_dict()
 
             if self.demographics_type == 'static':
-                birth_rate = (float(node.pop) / (1000 + 0.0)) * 0.06301 # value correpond to a population removal rate of 23: 23/365
+                # value correspond to a population removal rate of 23: 23/365
+                birth_rate = (float(node.pop) / (1000 + 0.0)) * 0.06301
                 node_attributes.update({'BirthRate': birth_rate})
             else:
                 # perhaps similarly to the DTK we should have error logging modes and good generic types exception raising/handling
@@ -187,7 +215,7 @@ class DemographicsGenerator:
         metadata = {
             "Author": "idm",
             "Tool": "dtk-tools",
-            "IdReference": "Gridded world grump30arcsec",
+            "IdReference": "Gridded world grump%darcsec" % self.res_in_arcsec,
             "DateCreated": str(datetime.now()),
             "NodeCount": len(self.nodes),
             "Resolution": int(self.res_in_arcsec)
