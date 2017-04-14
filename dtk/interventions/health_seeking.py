@@ -24,7 +24,7 @@ def add_health_seeking(config_builder,
                        broadcast_event_name='Received_Treatment'):
 
     """
-    Add a `SimpleHealthSeekingBehavior <http://idmod.org/idmdoc/#EMOD/ParameterReference/SimpleHealthSeekingBehav.htm%3FTocPath%3DParameter%2520Reference|Intervention%2520Parameter%2520Reference|Intervention%2520Parameter%2520Listing|_____53>`_ .
+    Add a `SimpleHealthSeekingBehavior <https://institutefordiseasemodeling.github.io/EMOD/general/parameter-campaign.html#simplehealthseekingbehavior>`_ .
 
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` containing the campaign configuration
     :param start_day: Day we want to start the intervention
