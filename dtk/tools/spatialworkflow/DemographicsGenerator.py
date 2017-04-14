@@ -4,6 +4,9 @@ from datetime import datetime
 from dtk.generic.demographics import distribution_types
 from dtk.tools.demographics.Node import Node, nodeid_from_lat_lon
 
+from simtools.Utilities.General import init_logging
+logger = init_logging('DemographicsGenerator')
+
 class InvalidResolution(BaseException):
     pass
 
@@ -91,7 +94,7 @@ class DemographicsGenerator:
             cls.VALID_RESOLUTIONS[res_in_arcsec]
         except KeyError:
             raise InvalidResolution("%s is not a valid arcsecond resolultion. Must be one of: %s" %
-                                    (res_in_arcsec, cls.VALID_RESOLUTIONS))
+                                    (res_in_arcsec, cls.VALID_RESOLUTIONS.keys()))
 
     def set_resolution(self, res_in_arcsec):
         """
@@ -104,6 +107,8 @@ class DemographicsGenerator:
         self.res_in_arcsec = self.VALID_RESOLUTIONS[res_in_arcsec]
         self.custom_resolution = True if res_in_arcsec == self.CUSTOM_RESOLUTION else False
         self.res_in_degrees = self.arcsec_to_deg(self.res_in_arcsec)
+        logger.debug("Setting resolution to %s arcseconds (%s deg.) from selection: %s" %
+                     (self.res_in_arcsec, self.res_in_degrees, res_in_arcsec))
 
     def generate_defaults(self):
         """
