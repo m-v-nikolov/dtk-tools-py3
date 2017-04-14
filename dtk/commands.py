@@ -322,9 +322,6 @@ def progress(args, unknownArgs):
 def analyze(args, unknownArgs):
     # logger.info('Analyzing results...')
     args.config_name = args.analyzer # prevents need for underlying refactor
-    # we will only ever have exactly ONE
-    if args.batch_name:
-        args.batch_name = args.batch_name[0]
     AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers)
 
 
@@ -345,7 +342,7 @@ def clean_batch(args, unknownArgs):
 
 
 def clear_batch(args, unknownArgs):
-    AnalyzeHelper.clear_batch(args.id_or_name[0], ask=True)
+    AnalyzeHelper.clear_batch(ask=True)
 
 
 def analyze_list(args, unknownArgs):
