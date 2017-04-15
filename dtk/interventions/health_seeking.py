@@ -17,6 +17,7 @@ def add_health_seeking(config_builder,
                        dosing='FullTreatmentNewDetectionTech',
                        nodes={"class": "NodeSetAll"},
                        node_property_restrictions=[],
+                       ind_property_restrictions=[],
                        drug_ineligibility_duration=0,
                        duration=-1,
                        repetitions=1,
@@ -78,8 +79,15 @@ def add_health_seeking(config_builder,
             }
         }
 
+        if ind_property_restrictions :
+            health_seeking_config['Intervention_Config']["Property_Restrictions_Within_Node"] = ind_property_restrictions
+
         if drug_ineligibility_duration > 0 :
-            health_seeking_config['Intervention_Config']["Property_Restrictions_Within_Node"] = [{"DrugStatus": "None"}]
+            drugstatus = {"DrugStatus": "None"}
+            if ind_property_restrictions :
+                health_seeking_config['Intervention_Config']["Property_Restrictions_Within_Node"] = [dict(drugstatus.items() + x.items()) for x in ind_property_restrictions]
+            else :
+                health_seeking_config['Intervention_Config']["Property_Restrictions_Within_Node"] = [drugstatus]
 
         if node_property_restrictions:
             health_seeking_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
@@ -107,6 +115,7 @@ def add_health_seeking_by_chw( config_builder,
                                dosing='FullTreatmentNewDetectionTech',
                                nodeIDs=[],
                                node_property_restrictions=[],
+                               ind_property_restrictions=[],
                                drug_ineligibility_duration=0,
                                duration=100000,
                                chw={}):
@@ -143,6 +152,7 @@ def add_health_seeking_by_chw( config_builder,
 
     add_health_seeking(config_builder, start_day=start_day, targets=targets, drug=[], nodes=nodes,
                        node_property_restrictions=node_property_restrictions,
+                       ind_property_restrictions=ind_property_restrictions,
                        duration=duration, broadcast_event_name='CHW_Give_Drugs')
 
     if drug_ineligibility_duration > 0:
