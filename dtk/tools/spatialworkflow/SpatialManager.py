@@ -206,8 +206,8 @@ class SpatialManager:
     def set_update_demographics(self, update_demographics):
         self.dg.set_update_demographics(update_demographics)
 
-    def set_res_in_arcsec(self, res_in_arcsec):
-        self.dg.set_res_in_arcsec(res_in_arcsec)
+    def set_resolution(self, res_in_arcsec):
+        self.dg.set_resolution(res_in_arcsec)
 
     def set_climate_project_info(self, project_info):
         self.cg.set_climate_project_info(project_info)
