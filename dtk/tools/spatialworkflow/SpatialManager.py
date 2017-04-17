@@ -8,11 +8,28 @@ from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
+from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 
 
 class SpatialManager:
     """
     Manages the creation of spatial input files.
+
+    Need to make architecture more flexible so that parameters of generators internal to SpatialManager are exposed to the user,
+    e.g. climate generation parameters such as years, region, etc.; migration generation parameters such as graph topology and link rates types, etc.
+    Preferably that shouldn't require the user knowing explicitly about the existence of CliamteGenerator, MigrationGenerator, etc. but only about the
+    existence of their parameter sets
+
+    - the obvious way is to expose these parameters as SpatialManager constructor arguments;
+    that would be the constructor with the most arguments in the world and we might bump into the 256 arguments of c/python in which case we still could transition to kwargs and args...
+
+    - another way could be a set of mutator methods, each corresponding to generator class; e.g. something along the lines of a method
+    setClimateGeneratorParams(**kwargs):
+        for key in attributes: # attributes is a list of climate parameters exposed to the user
+            if key in kwargs:
+                setattr(climate_generator_instance, key, kwargs[key])
+
+    This approach may require generators instantiation in the contructor of SpatialManager.
     """
 
     def __init__(self, location, cb, setup, geography, name, working_dir, input_dir,
@@ -49,7 +66,6 @@ class SpatialManager:
         :param nodes_params_input_file: contains parameter value pairs for each node (e.g. from calibration); see ImmunityOverlaysGenerator for format
         :return:
         """
-        self.setup = setup
         self.name = name
         self.working_dir = working_dir
         self.log = log
@@ -70,7 +86,7 @@ class SpatialManager:
         # todo: need to modularize the local/remote test; used in other parts of the code
         '''
         if self.location == 'HPC':
-            self.sim_data_input = os.path.join(setup.get('input_root'))
+            self.sim_data_input = translate_COMPS_path(setup.get('input_root'))
         elif self.location == 'LOCAL':
             self.sim_data_input = os.path.join(setup.get('input_root'))
         else:
@@ -181,7 +197,6 @@ class SpatialManager:
                 self.demographics_output_file_path,
                 os.path.join(self.log_path, 'climate_wo.json'),
                 os.path.join(self.sim_data_input, self.geography),
-                self.setup
             )
 
     def set_demographics_type(self, demographics_type):
@@ -196,15 +211,6 @@ class SpatialManager:
 
     def set_climate_project_info(self, project_info):
         self.cg.set_climate_project_info(project_info)
-
-    def set_climate_start_year(self, start_year):
-        self.cg.set_climate_start_year(start_year)
-
-    def set_climate_num_years(self, num_years):
-        self.cg.set_climate_num_years(num_years)
-
-    def set_climate_id_ref(self, id_ref):
-        self.cg.set_climate_id_ref(id_ref)
 
     def set_graph_topo_type(self, graph_topo_type):
         self.mg.set_graph_topo_type(graph_topo_type)
@@ -351,14 +357,12 @@ class SpatialManager:
         if self.cg:
             om("generating climate files.", style='bold')
 
-            # set id ref correspondgin to demographics file's id ref
-            self.cg.set_climate_id_ref(demographics["Metadata"]["IdReference"])
-
             climate_file_names = self.cg.generate_climate_files()
 
             rain_file_path = os.path.join(self.geography, climate_file_names['rain'])
             humidity_file_path = os.path.join(self.geography, climate_file_names['humidity'])
             temperature_file_path = os.path.join(self.geography, climate_file_names['temp'])
+
             self.cb.update_params({
                 'Land_Temperature_Filename': temperature_file_path,
                 'Air_Temperature_Filename': temperature_file_path,

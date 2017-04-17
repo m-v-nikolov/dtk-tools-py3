@@ -1,5 +1,5 @@
 from __future__ import print_function
-import dtkFileToolsToo as dtk
+import dtkFileTools as dtk
 
 STATE_ADULT = 1         # implies female, I believe
 STATE_INFECTED = 2
@@ -16,12 +16,11 @@ def zero_infections(source_filename, dest_filename, ignore_nodes=[], keep_indivi
     print('Keeping infections in humans {0}'.format(keep_individuals))
 
     print("Reading file: '{0}'".format(source_filename))
-    source = dtk.DtkFile(source_filename)
+    source = dtk.read(source_filename)
 
     for index in range(0, len(source.nodes)):
-        print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
-        obj = source.nodes[index]
-        node = obj.node
+        print('Reading {0}{1} node'.format(index, _endings[index%10]), end='')
+        node = source.nodes[index]
         print(', externalId = {0}'.format(node.externalId))
         if node.externalId not in ignore_nodes:
             print('Zeroing vector infections')
@@ -29,12 +28,12 @@ def zero_infections(source_filename, dest_filename, ignore_nodes=[], keep_indivi
             print('Zeroing human infections')
             zero_human_infections(node.individualHumans, keep_individuals)
             print('Saving updated node')
-            source.nodes[index] = obj
+            source.nodes[index] = node
         else:
             print('Ignoring node {0}'.format(index))
 
     print("Writing file: '{0}'".format(dest_filename))
-    source.write(dest_filename)
+    dtk.write(source, dest_filename)
 
     return
 
@@ -86,20 +85,19 @@ def zero_human_infections(humans, keep_ids=[]):
 def remove_vectors_by_nodeid(source_filename, dest_filename, removal_nodes):
 
     print("Reading file: '{0}'".format(source_filename))
-    source = dtk.DtkFile(source_filename)
+    source = dtk.read(source_filename)
 
     for index in range(0, len(source.nodes)):
         print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
-        obj = source.nodes[index]
-        node = obj.node
+        node = source.nodes[index]
         if node.externalId in removal_nodes:
             node.m_vectorpopulations = []
-            source.nodes[index] = obj
+            source.nodes[index] = node
         else:
             print('Ignoring node {0}'.format(index))
 
     print("Writing file: '{0}'".format(dest_filename))
-    source.write(dest_filename)
+    dtk.write(source, dest_filename)
 
     return
 
@@ -107,22 +105,21 @@ def remove_vectors_by_nodeid(source_filename, dest_filename, removal_nodes):
 def remove_humans_by_nodeid(source_filename, dest_filename, removal_nodes):
 
     print("Reading file: '{0}'".format(source_filename))
-    source = dtk.DtkFile(source_filename)
+    source = dtk.read(source_filename)
 
     for index in range(0, len(source.nodes)):
         print('Reading {0}{1} node'.format(index, _endings[index%10]), end='\n')
-        obj = source.nodes[index]
-        node = obj.node
+        node = source.nodes[index]
         if node.externalId in removal_nodes:
             for person in node.individualHumans:
-                if person.home_node_id in removal_nodes:
+                if person.home_node_id.id == node.suid.id:
                     node.individualHumans.remove(person)
-            source.nodes[index] = obj
+                    source.nodes[index] = node
         else:
             print('Ignoring node {0}'.format(index))
 
     print("Writing file: '{0}'".format(dest_filename))
-    source.write(dest_filename)
+    dtk.write(source, dest_filename)
 
     return
 

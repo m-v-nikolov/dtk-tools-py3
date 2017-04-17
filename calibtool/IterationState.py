@@ -24,6 +24,7 @@ class IterationState(object):
 
     def __init__(self, **kwargs):
         self.iteration = 0
+        self.status = ResumePoint.iteration_start
         self.resume_point = ResumePoint.iteration_start
         self.iter_step = 'commission'
         self.samples_for_this_iteration = {}
@@ -80,6 +81,7 @@ class IterationState(object):
         it_dict = copy.deepcopy(self.__dict__)
         it_dict.pop('resume_point')
         it_dict.pop('iter_step')
+        it_dict['status'] = it_dict['status'] .name
 
         with open(filepath, 'w') as f:
             json.dump(it_dict, f, indent=4, cls=NumpyEncoder)
@@ -143,8 +145,11 @@ class IterationState(object):
             raise Exception('Metadata is empty in %s/CalibManager.json' % calibManager.name)
 
         calibManager.suites = calib_data.get('suites')
-        calibManager.status = ResumePoint[calib_data.get('status', ResumePoint.iteration_start.name)]
         calibManager.latest_iteration = int(calib_data.get('iteration', 0))
+
+        it = IterationState.restore_state(calibManager.name, self.iteration)
+        self.status = ResumePoint[it.status]
+
         self.find_best_iteration_for_resume(calibManager)
         self.prepare_resume_point_for_iteration(calibManager)
         self.restore_calibration_for_resume(calibManager, calib_data)
@@ -251,7 +256,7 @@ class IterationState(object):
             self.adjust_resume_point(calibManager)
 
         # transfer the final resume point
-        self.resume_point = calibManager.status
+        self.resume_point = self.status
 
         # Prepare iteration state
         if self.resume_point == ResumePoint.commission:
@@ -324,12 +329,11 @@ class IterationState(object):
         # Restore IterationState and keep the resume_point and iter_step
         it = IterationState.restore_state(calibManager.name, self.iteration)
         for attr, value in it.__dict__.items():
-            if attr not in ['iter_step', 'resume_point']:
+            if attr not in ['iter_step', 'resume_point', 'status']:
                 setattr(self, attr, value)
 
         # Update next point
         calibManager.next_point.set_state(self.next_point, self.iteration)
-
 
     def adjust_resume_point(self, calibManager):
         """
@@ -339,17 +343,17 @@ class IterationState(object):
 
         if calibManager.latest_iteration == self.iteration:
             # user input iter_step may not be valid
-            if input_resume_point.value <= calibManager.status.value:
-                calibManager.status = input_resume_point
+            if input_resume_point.value <= self.status.value:
+                self.status = input_resume_point
             else:
                 logger.info("The farthest resume point available is '%s', we will resume from it instead of '%s'" \
-                      % (calibManager.status.name, input_resume_point.name))
+                      % (self.status.name, input_resume_point.name))
                 answer = raw_input("Would you like to continue ? [Y/N]")
                 if answer != "Y":
                     exit()
         else:
             # just take user input iter_step
-            calibManager.status = input_resume_point
+            self.status = input_resume_point
 
     def find_best_iteration_for_resume(self, calibManager):
         """

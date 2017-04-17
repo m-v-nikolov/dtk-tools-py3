@@ -7,6 +7,9 @@ import github3
 from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
 
+class AuthorizationError(Exception):
+    pass
+
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
 TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
 
@@ -135,6 +138,10 @@ def get(package, version, dest):
             containing_dir = os.path.dirname(dest)
             if not os.path.exists(containing_dir):
                 os.makedirs(containing_dir)
+            init_filename = os.path.join(containing_dir, '__init__.py')
+            if not os.path.exists(init_filename):
+                with open(init_filename,'w') as f:
+                    pass # blank init file for python inclusion
             if os.path.exists(dest):
                 rmtree_f(dest)
             os.rename(dir, dest)
@@ -157,6 +164,7 @@ class DTKGitHub(object):
     PACKAGE_REPOSITORY = 'dtk-packages'
     DTK_TOOLS_REPOSITORY = 'dtk-tools'
     AUTH_TOKEN_FIELD = 'github_authentication_token'
+    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
 
     @classmethod
     def login(cls):
@@ -169,6 +177,10 @@ class DTKGitHub(object):
     def repository(cls):
         if not hasattr(cls, 'repo'):
             cls.login()
+        if not cls.repo:
+            print "/!\\ WARNING /!\\ Authorization failure. You do not currently have permission to access disease packages. " \
+                  "Please contact %s for assistance." % cls.SUPPORT_EMAIL
+            raise AuthorizationError()
         return cls.repo
 
     @classmethod
@@ -183,7 +195,12 @@ class DTKGitHub(object):
         scopes = ['user', 'repo']
 
         # Authenticate the user and create the token
-        auth = github3.authorize(user, password, scopes, note, note_url)
+        try: # user may not have permissions to use the disease package repo yet
+            auth = github3.authorize(user, password, scopes, note, note_url)
+        except github3.models.GitHubError:
+            print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance."\
+                  % cls.SUPPORT_EMAIL
+            raise AuthorizationError()
 
         # Write the info to disk
         # Update the (local) mysql db with the token

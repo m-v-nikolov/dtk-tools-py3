@@ -1,11 +1,11 @@
 Documentation available: http://institutefordiseasemodeling.github.io/dtk-tools
 
-The `dtk` package is intended to strengthen and simplify the interaction between researchers and the [DTK model](http://idmod.org/idmdoc/).
+The `dtk` package is intended to strengthen and simplify the interaction between researchers and the [EMOD model](https://institutefordiseasemodeling.github.io/EMOD/).
 
 Modules contained in this package are intended to:
-- Empower the user to configure diverse simulations and arbitrarily complex campaigns built up from a standardized library of configuration fragments and utility functions; 
+- Empower the user to configure diverse simulations and arbitrarily complex campaigns built up from a standardized library of configuration fragments and utility functions;
 - Facilitate transparent switching between local and remote HPC commissioning, job-status queries, and output analysis;
-- Enable the configuration of arbitrary collections of simulations (e.g. parameteric sweeps) through an extensible library of builder classes; 
+- Enable the configuration of arbitrary collections of simulations (e.g. parameteric sweeps) through an extensible library of builder classes;
 - Collect a library of post-processing analysis functionality, e.g. filtering, mapping, averaging, plotting.
 
 #### Installation
@@ -19,7 +19,7 @@ Make sure you have **Python 2.7 x64** installed (available [here](https://www.py
 
 From a command-prompt, run the following from the **dtk-tools** directory:
 ```
-python setup.py 
+python setup.py
 ```
 
 Add the path to `dtk_tools` to your `PYTHONPATH` environment variable.
@@ -111,9 +111,9 @@ The command will display an interface allowing you to:
 
 In this interface, the **default configurations** refers to the configuration blocks accessible everywhere in your environment (by default `LOCAL` and `HPC`).
 The **local configurations** refers to the configurations stored in the `simtools.ini` file in your current working directory (the directory from where you call the `dtk setup` command) and are
-accessible only to commands ran there. 
+accessible only to commands ran there.
 
-Note that it is possible to have a local configuration called `LOCAL` or `HPC` which will overrides the global defaults. 
+Note that it is possible to have a local configuration called `LOCAL` or `HPC` which will overrides the global defaults.
 
 One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
 

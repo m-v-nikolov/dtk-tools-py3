@@ -324,6 +324,10 @@ def progress(args, unknownArgs):
 
 def analyze(args, unknownArgs):
     # logger.info('Analyzing results...')
+    args.config_name = args.analyzer # prevents need for underlying refactor
+    # we will only ever have exactly ONE
+    if args.batch_name:
+        args.batch_name = args.batch_name[0]
     AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers)
 
 
@@ -339,18 +343,12 @@ def delete_batch(args, unknownArgs):
     AnalyzeHelper.delete_batch(args, unknownArgs)
 
 
+def clean_batch(args, unknownArgs):
+    AnalyzeHelper.clean_batch(ask=True)
+
+
 def clear_batch(args, unknownArgs):
-    if len(unknownArgs) > 1:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Too many batch names are provided: %s' % unknownArgs
-        exit()
-
-    if args.batchId and len(unknownArgs) > 0:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Both batchId and batchName are provided. This action cannot take both!\n'
-        exit()
-
-    AnalyzeHelper.clear_batch(args.batchId, True)
+    AnalyzeHelper.clear_batch(args.id_or_name[0], ask=True)
 
 
 def analyze_list(args, unknownArgs):
@@ -519,52 +517,61 @@ def db_list(args, unknownArgs):
         print "No experiments to display."
 
 def list_packages(args, unknownArgs):
-    package_names = sorted(disease_packages.get_available('branch'))
-    if not hasattr(args, 'is_test'):
-        package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
-    if not hasattr(args, 'quiet'):
-        print "\n".join(package_names)
+    try:
+        package_names = sorted(disease_packages.get_available('branch'))
+        if not hasattr(args, 'is_test'):
+            package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
+        if not hasattr(args, 'quiet'):
+            print "\n".join(package_names)
+    except disease_packages.AuthorizationError:
+        package_names = []
     return package_names
 
 def list_package_versions(args, unknownArgs):
-    package_name = args.package_name
-    if disease_packages.package_exists(package_name):
-        versions = sorted(disease_packages.get_versions_for_package(package_name))
-        print "\n".join(versions)
-    else:
+    try:
+        package_name = args.package_name
+        if disease_packages.package_exists(package_name):
+            versions = sorted(disease_packages.get_versions_for_package(package_name))
+            print "\n".join(versions)
+        else:
+            versions = []
+            print "Package %s does not exist." % package_name
+    except disease_packages.AuthorizationError:
         versions = []
-        print "Package %s does not exist." % package_name
     return versions
 
 def get_package(args, unknownArgs):
     # overwrite any existing package by the same name (any version) with the specified version
-    package_name = args.package_name
-    if disease_packages.package_exists(package_name):
-        if args.package_version == 'latest':
-            version = disease_packages.get_latest_version_for_package(package_name) # if no versions exist, returns None
-        elif disease_packages.version_exists_for_package(args.package_version, package_name):
-            version = args.package_version
+    try:
+        package_name = args.package_name
+        if disease_packages.package_exists(package_name):
+            if args.package_version == 'latest':
+                version = disease_packages.get_latest_version_for_package(package_name) # if no versions exist, returns None
+            elif disease_packages.version_exists_for_package(args.package_version, package_name):
+                version = args.package_version
+            else:
+                version = None
+
+            if version == None:
+                print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+                return
+
+            # obtain desired version of desired package, overwriting any existing version
+            # of this package
+            if hasattr(args, 'dest'):
+                packages_dir = args.dest # test code only
+            else:
+                packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
+            package_dir = os.path.join(packages_dir, package_name)
+
+            print 'Obtaining package: %s version: %s .' % (package_name, version)
+            disease_packages.get(package = package_name, version = version, dest = package_dir)
+
+            print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
         else:
-            version = None
-
-        if version == None:
-            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
-            return
-
-        # obtain desired version of desired package, overwriting any existing version
-        # of this package
-        if hasattr(args, 'dest'):
-            packages_dir = args.dest # test code only
-        else:
-            packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
-        package_dir = os.path.join(packages_dir, package_name)
-
-        print 'Obtaining package: %s version: %s .' % (package_name, version)
-        disease_packages.get(package = package_name, version = version, dest = package_dir)
-
-        print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
-    else:
-        print "Package %s does not exist, no changes made." % package_name
+            print "Package %s does not exist, no changes made." % package_name
+    except disease_packages.AuthorizationError:
+        pass
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -659,6 +666,10 @@ def main():
     # 'dtk clear_batch' options
     parser_clearbatch = commands_args.populate_clearbatch_arguments(subparsers)
     parser_clearbatch.set_defaults(func=clear_batch)
+
+    # 'dtk clean_batch' options
+    parser_cleanbatch = commands_args.populate_cleanbatch_arguments(subparsers)
+    parser_cleanbatch.set_defaults(func=clean_batch)
 
     # 'dtk analyze-list' options
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')

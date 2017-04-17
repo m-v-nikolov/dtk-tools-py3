@@ -16,7 +16,9 @@ class BaseReport(object):
             'ReportVectorMigration': 'libvectormigration.dll',
             'ReportHumanMigrationTracking': 'libhumanmigrationtracking.dll',
             'ReportEventCounter': 'libreporteventcounter.dll',
-            'ReportMalariaFiltered': 'libReportMalariaFiltered.dll'}
+            'ReportMalariaFiltered': 'libReportMalariaFiltered.dll',
+            'SpatialReportMalariaFiltered': 'libSpatialReportMalariaFiltered.dll'
+            }
 
     def __init__(self, type=""):
         self.type = type
@@ -34,6 +36,30 @@ class BaseReport(object):
             return 'reporter_plugins', dll
         else:
             raise Exception('No known DLL for report type %s' % self.type)
+
+
+class BaseDemographicsReport(BaseReport):
+
+    dlls = {'ReportNodeDemographics': 'libReportNodeDemographics.dll'}
+
+    def __init__(self,
+                 stratify_by_gender=0,
+                 age_bins=[],
+                 IP_key_to_collect="",
+                 type=""):
+
+        BaseReport.__init__(self, type)
+        self.stratify_by_gender = stratify_by_gender
+        self.age_bins = age_bins
+        self.IP_key_to_collect = IP_key_to_collect
+
+    def to_dict(self):
+        d = super(BaseDemographicsReport, self).to_dict()
+        d.update({"Stratify_By_Gender": self.stratify_by_gender,
+                  "Age_Bins": self.age_bins})
+        if self.IP_key_to_collect:
+            d.update({"IP_Key_To_Collect": self.IP_key_to_collect})
+        return d
 
 
 class BaseEventReport(BaseReport):
@@ -90,3 +116,11 @@ class BaseEventReportIntervalOutput(BaseEventReport):
         d["Max_Number_Reports"] = self.max_number_reports
         d["Reporting_Interval"] = self.reporting_interval
         return d
+
+
+def add_node_demographics_report(cb, stratify_by_gender=0, age_bins=[], IP_key_to_collect=''):
+    node_demographics_report = BaseDemographicsReport(stratify_by_gender=stratify_by_gender,
+                                                      age_bins=age_bins,
+                                                      IP_key_to_collect=IP_key_to_collect,
+                                                      type='ReportNodeDemographics')
+    cb.add_reports(node_demographics_report)

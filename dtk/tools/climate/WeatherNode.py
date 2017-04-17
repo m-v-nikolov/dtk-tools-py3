@@ -1,4 +1,4 @@
-from dtk.tools.demographics.node import Node
+from dtk.tools.demographics.Node import Node
 
 
 class WeatherNode(Node):

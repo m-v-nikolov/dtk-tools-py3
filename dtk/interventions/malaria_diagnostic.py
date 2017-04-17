@@ -6,7 +6,8 @@ positive_broadcast = {
 def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target='Everyone', start_day=0,
                           diagnostic_type='NewDetectionTech', diagnostic_threshold=40,
                           nodes={"class": "NodeSetAll"}, positive_diagnosis_configs=[],
-                          received_test_event='Received_Test', IP_restrictions=[], NP_restrictions=[]):
+                          received_test_event='Received_Test', IP_restrictions=[], NP_restrictions=[],
+                          pos_diag_IP_restrictions=[]):
     """
     Function to add recurring prevalence surveys with configurable diagnostic
 
@@ -43,8 +44,8 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
             "Intervention_List" : positive_diagnosis_configs + [positive_broadcast] ,
             "class" : "MultiInterventionDistributor" 
             }
-        if IP_restrictions :
-            intervention_cfg["Positive_Diagnosis_Config"]["Property_Restrictions_Within_Node"] = IP_restrictions
+        if pos_diag_IP_restrictions :
+            intervention_cfg["Positive_Diagnosis_Config"]["Property_Restrictions_Within_Node"] = pos_diag_IP_restrictions
 
     survey_event = { "class" : "CampaignEvent",
                      "Start_Day": start_day,
@@ -63,8 +64,11 @@ def add_diagnostic_survey(cb, coverage=1, repetitions=1, tsteps_btwn=365, target
                      "Nodeset_Config": nodes
                      }
 
+    if IP_restrictions :
+        survey_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = IP_restrictions
+
     if NP_restrictions:
-        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
+        survey_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({
@@ -83,7 +87,7 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
                          nodes={"class": "NodeSetAll"}, trigger_string='Diagnostic_Survey',
                          event_name='Diagnostic Survey',
                          positive_diagnosis_configs=[], received_test_event='Received_Test',
-                         IP_restrictions=[], NP_restrictions=[]) :
+                         IP_restrictions=[], NP_restrictions=[], pos_diag_IP_restrictions=[]) :
 
     intervention_cfg = {
                     "Diagnostic_Type": diagnostic_type, 
@@ -100,8 +104,8 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
             "Intervention_List" : positive_diagnosis_configs + [positive_broadcast] ,
             "class" : "MultiInterventionDistributor" 
             }
-        if IP_restrictions :
-            intervention_cfg["Positive_Diagnosis_Config"]["Property_Restrictions_Within_Node"] = IP_restrictions
+        if pos_diag_IP_restrictions :
+            intervention_cfg["Positive_Diagnosis_Config"]["Property_Restrictions_Within_Node"] = pos_diag_IP_restrictions
 
     survey_event = {   "Event_Name": event_name, 
                         "class": "CampaignEvent",
@@ -121,8 +125,10 @@ def add_triggered_survey(cb, coverage=1, target='Everyone', start_day=0,
                         },
                         "Nodeset_Config": nodes}
 
+    if IP_restrictions :
+        survey_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = IP_restrictions
     if NP_restrictions:
-        survey_event['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'] = NP_restrictions
+        survey_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = NP_restrictions
 
     if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
         survey_event["Event_Coordinator_Config"].update({
