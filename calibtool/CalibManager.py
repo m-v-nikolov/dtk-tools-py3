@@ -481,6 +481,9 @@ class CalibManager(object):
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
+        if not iteration:
+            iteration = self.latest_iteration
+
         # prepare resume status
         self.iteration_state.prepare_resume_state(self, iteration, iter_step)
 
