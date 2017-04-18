@@ -1,5 +1,7 @@
 
 import os
+
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 import multiprocessing
@@ -19,6 +21,10 @@ class AnalyzeManager:
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
         self.parsers = []
+
+        # If no experiment is specified, retrieve the most recent as a convenience
+        if not exp_list:
+            exp_list = DataStore.get_most_recent_experiment()
 
         # Initial adding of experiments
         exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
