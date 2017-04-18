@@ -65,6 +65,11 @@ class AnalyzeManager:
                 self.parsers.append(parser)
 
     def parser_for_simulation(self, simulation, experiment, manager):
+        # If simulation not done -> return none
+        if simulation.status != "Succeeded":
+            print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status)
+            return None
+
         # Add the simulation_id to the tags
         simulation.tags['sim_id'] = simulation.id
 
