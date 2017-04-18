@@ -64,9 +64,9 @@ Make sure you are in the virtual environment by checking if the prompt displays 
 
     (idm) my-computer:dtk-tools
 
-Install pyCOMPS (wheel available _here:https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0-py2.py3-none-any.whl )::
+Install pyCOMPS (wheel available `here <https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0.1-py2.py3-none-any.whl>`_ )::
 
-    pip install pyCOMPS-1.0-py2.py3-none-any.whl
+    pip install pyCOMPS-1.0.1-py2.py3-none-any.whl
 
 Navigate inside the `dtk-tools` folder and install dtk-tools::
 
