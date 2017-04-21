@@ -1,7 +1,4 @@
 import copy
-import json
-
-import pandas as pd
 
 from calibtool.algo.BaseNextPointAlgorithm import BaseNextPointAlgorithm
 

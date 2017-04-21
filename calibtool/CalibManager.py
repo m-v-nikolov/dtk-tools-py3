@@ -375,6 +375,9 @@ class CalibManager(object):
             for analyzer in site.analyzers:
                 analyzer_list.append(analyzer)
 
+        # Refresh the experiment
+        exp_manager.experiment = DataStore.get_experiment(exp_manager.experiment.exp_id)
+
         analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list, working_dir=self.iteration_directory())
         analyzerManager.analyze()
 
@@ -480,9 +483,6 @@ class CalibManager(object):
         """
         if not os.path.isdir(self.name):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
-
-        if not iteration:
-            iteration = self.latest_iteration
 
         # prepare resume status
         self.iteration_state.prepare_resume_state(self, iteration, iter_step)
