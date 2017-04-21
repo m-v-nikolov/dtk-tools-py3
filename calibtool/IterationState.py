@@ -147,10 +147,10 @@ class IterationState(object):
         calibManager.suites = calib_data.get('suites')
         calibManager.latest_iteration = int(calib_data.get('iteration', 0))
 
+        self.find_best_iteration_for_resume(calibManager)
         it = IterationState.restore_state(calibManager.name, self.iteration)
         self.status = ResumePoint[it.status]
 
-        self.find_best_iteration_for_resume(calibManager)
         self.prepare_resume_point_for_iteration(calibManager)
         self.restore_calibration_for_resume(calibManager, calib_data)
 
