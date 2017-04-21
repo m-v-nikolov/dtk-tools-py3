@@ -15,15 +15,18 @@ class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, states, success):
+    def __init__(self, simulation, experiment, thread_queue, states, success):
         super(LocalSimulationRunner, self).__init__(experiment, states, success)
+        self.queue = thread_queue # used to limit the number of concurrently running simulations
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
         if self.check_state() == "Waiting":
             self.run()
-        elif self.simulation.status not in ('Failed', 'Succeeded', 'Cancelled'):
-            self.monitor()
+        else:
+            self.queue.get()
+            if self.simulation.status not in ('Failed', 'Succeeded', 'Cancelled'):
+                self.monitor()
 
     def run(self):
         try:
@@ -48,6 +51,9 @@ class LocalSimulationRunner(BaseSimulationRunner):
         except Exception as e:
             print "Error encountered while running the simulation."
             print e
+        finally:
+            # Allow another different thread to run now that this one is done.
+            self.queue.get()
 
     def monitor(self):
         # Wait the end of the process

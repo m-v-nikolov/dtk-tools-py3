@@ -19,6 +19,7 @@ class LocalExperimentManager(BaseExperimentManager):
     Manages the creation, submission, status, parsing, and analysis
     of local experiments, i.e. collections of related simulations
     """
+    self.local_queue = None
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
@@ -28,18 +29,25 @@ class LocalExperimentManager(BaseExperimentManager):
 
     def commission_simulations(self, states):
         """
-         Commissions all simulations that need to be commissioned.
+         Commissions all simulations that need to (and can be) commissioned.
         :param states: a multiprocessing.Queue for simulations to use to update their status.
         :return: a list of Simulation objects that were commissioned.
         """
         to_commission = self.needs_commissioning()
+        commissioned = []
         logger.debug("Commissioning %d simulation(s)." % len(to_commission))
         for simulation in to_commission:
-            logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status))
-            t1 = threading.Thread(target=LocalSimulationRunner, args=(simulation, self.experiment, states, self.success_callback))
-            t1.daemon = True
-            t1.start()
-        return to_commission
+            if self.local_queue.full():
+                break
+            else:
+                logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status))
+                t1 = threading.Thread(target=LocalSimulationRunner,
+                                      args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+                t1.daemon = True
+                t1.start()
+                self.local_queue.put('run 1')
+                commissioned.append(simulation)
+        return commissioned
 
     def needs_commissioning(self):
         """
