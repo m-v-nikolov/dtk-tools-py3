@@ -30,11 +30,11 @@ class BatchDataStore:
     def save_batch(cls, batch):
         existing = True if BatchDataStore.get_batch_by_name(batch.name) else False
 
-        batch_before = BatchDataStore.get_batch_list()
+        batch_before = BatchDataStore.get_batch_list_by_id()
         with session_scope() as session:
             session.merge(batch)
 
-        batch_after = BatchDataStore.get_batch_list()
+        batch_after = BatchDataStore.get_batch_list_by_id()
 
         if existing:
             return batch.id
@@ -50,7 +50,7 @@ class BatchDataStore:
                 return None
 
     @classmethod
-    def get_batch_list(cls, batch_id=None):
+    def get_batch_list_by_id(cls, batch_id=None):
         with session_scope() as session:
             if batch_id:
                 batches = session.query(Batch).filter(Batch.id == batch_id).one_or_none()
