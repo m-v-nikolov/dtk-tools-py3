@@ -6,7 +6,7 @@ import random
 from scipy.special import gammaln
 
 from calibtool.CalibManager import CalibManager
-from calibtool.algo.OptimTool import OptimTool
+from calibtool.algorithms.OptimTool import OptimTool
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter

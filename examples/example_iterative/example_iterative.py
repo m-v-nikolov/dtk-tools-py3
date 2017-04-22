@@ -1,10 +1,10 @@
+from calibtool.algorithms.GenericIterativeNextPoint import GenericIterativeNextPoint
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from examples.example_iterative.MyanmarSite import MyanmarCalibSite
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 
 from calibtool.CalibManager import CalibManager
-from examples.example_iterative.GenericIterativeNextPoint import GenericIterativeNextPoint
 from simtools.Utilities.Experiments import retrieve_experiment
 import pandas as pd
 import os

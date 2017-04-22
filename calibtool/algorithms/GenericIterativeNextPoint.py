@@ -1,6 +1,6 @@
 import copy
 
-from calibtool.algo.BaseNextPointAlgorithm import BaseNextPointAlgorithm
+from calibtool.algorithms.BaseNextPointAlgorithm import BaseNextPointAlgorithm
 
 
 class GenericIterativeNextPoint(BaseNextPointAlgorithm):
