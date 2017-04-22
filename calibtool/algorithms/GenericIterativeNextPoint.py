@@ -4,6 +4,33 @@ from calibtool.algorithms.BaseNextPointAlgorithm import BaseNextPointAlgorithm
 
 
 class GenericIterativeNextPoint(BaseNextPointAlgorithm):
+    """
+    Represents a Generic Next Point allowing thew Calibtool to function as a more generic iterative process.
+    Here a dictionary needs to be passed as the state. 
+    For example:
+    ```
+       initial_state = [{
+        'Run_Number': rn
+        } for rn in range(2)]
+        
+    ```
+    
+    Then the results of the analyzers are stored in the self.data associating iteration with results.
+    Both the initial state and the results are stored there allowing to easily refer to it.
+    ```
+        self.data = [
+                        {
+                        'Run_Number': 1
+                        'results':{
+                            'what_comes_from_analyzers':{}
+                        },
+                        ...
+                    ]
+    ```      
+    
+    Note that the results needs to be contained in a Dictionary. 
+    If you want to leverage pandas.DataFrame instead, you should use OptimTool. 
+    """
     def __init__(self, initial_state):
         self.data = [
             {
