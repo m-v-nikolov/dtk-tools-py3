@@ -119,5 +119,9 @@ calib_manager = CalibManager(name=sim_name,
 run_calib_args = {}
 
 if __name__ == "__main__":
+    # The following line would resume from iteration 0 at the step analyze
+    # The available steps are: commission, analyze, next_point
+    # calib_manager.resume_from_iteration(iteration=0, iter_step='analyze')
+    # For now cleanup automatically
     calib_manager.cleanup()
     calib_manager.run_calibration(**run_calib_args)
