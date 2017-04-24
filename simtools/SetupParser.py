@@ -83,7 +83,7 @@ class SetupParser:
         overlay_path = None
         if self.setup_file and os.path.exists(self.setup_file):
             overlay_path = self.setup_file
-        elif not working_directory and os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
+        elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
             overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
         elif working_directory and os.path.exists(os.path.join(working_directory, 'simtools.ini')):
             overlay_path = os.path.join(working_directory, 'simtools.ini')

@@ -21,7 +21,6 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
                     name,
                     reference_sheet,
 
-                    #iteration = 0,
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -41,8 +40,6 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         self.name = name
         self.reference_sheet = reference_sheet
-
-        #self.iteration = iteration
 
         self.cache_data = {}
 
@@ -65,9 +62,7 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         '''
         Extract data from output data and accumulate in same bins as reference.
         '''
-        sim = super(TotalCasesAnalyzer, self).apply(parser)
-        if self.verbose:
-            print 'Population scaling factor is', self.pop_scaling
+        (sim, pop_scaling) = super(TotalCasesAnalyzer, self).apply(parser)
 
         sim_age_bins = sorted( list(set(sim['Age'].tolist())) )
 
@@ -93,13 +88,13 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
                 # Undo parent's pop scaling for beta-binomial likelihood
                 simbin['Sim_Cases'] = simbin['Acute (Inc)']
-                simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / self.pop_scaling # Note: pop_scaling comes from parent
+                simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / pop_scaling # Note: pop_scaling comes from parent
                 simbin.rename(index={'Population':'Sim_Population'}, inplace=True)
-                simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / self.pop_scaling
+                simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
                 err = simbin['Sim_Population']-self.pop_scaling_pop
                 #if abs(err) > 1e-6:
-                print parser.sim_id, 'RawPop =', simbin['Sim_Population_Unscaled'], 'PopScale =', self.pop_scaling, 'ScaledSimPop =', simbin['Sim_Population'], 'Err =', err
+                #print parser.sim_id, 'RawPop =', simbin['Sim_Population_Unscaled'], 'PopScale =', pop_scaling, 'ScaledSimPop =', simbin['Sim_Population'], 'Err =', err
 
                 #assert( abs(simbin['Sim_Population']-self.pop_scaling_pop)<1e-6 )
 
@@ -119,12 +114,12 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             'Sim_Id': parser.sim_id,
             'Sample': parser.sim_data.get('__sample_index__'),
             #'Replicate': parser.sim_data.get('__replicate_index__'),
-            'Pop_Scaling': self.pop_scaling # From base class
+            'Pop_Scaling': pop_scaling # From base class
         }
         self.shelve_apply( parser.sim_id, shelve_data)
 
-        if self.verbose:
-            print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
+        #if self.verbose:
+        #    print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
 
     def combine(self, parsers):
         shelved_data = super(TotalCasesAnalyzer, self).combine(parsers)
@@ -182,7 +177,7 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         writer = pd.ExcelWriter(os.path.join(self.workdir,'Results.xlsx'))
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
-        self.data.to_excel(writer, sheet_name=self.__class__.__name__)
+        self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
 
         f, axes = plt.subplots(1, 1, figsize=(12, 8), sharex=False)

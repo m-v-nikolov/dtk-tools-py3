@@ -148,7 +148,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pop_scaling = self.reference_population / float(sim_pop)
         if self.verbose:
             print 'Population scaling is', pop_scaling
-        scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Received_PrEP'] if sc in pdata.columns]
+        scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Received_PrEP', 'Diagnosed'] if sc in pdata.columns]
 
         pdata[scale_cols] *= pop_scaling
         #######################################################################

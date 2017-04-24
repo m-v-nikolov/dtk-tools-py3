@@ -35,7 +35,7 @@ class LocalExperimentManager(BaseExperimentManager):
             simulation = self.experiment.simulations[self.simulations_commissioned]
             # If the simulation is not waiting, we can go to the next one
             # Useful if the simulation is cancelled before being commission
-            if simulation.status != "Waiting":
+            if simulation.status != "Waiting" and simulation.status != "Running":
                 self.simulations_commissioned += 1
                 continue
             self.local_queue.put('run 1')
