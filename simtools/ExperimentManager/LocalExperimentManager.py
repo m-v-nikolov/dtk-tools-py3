@@ -7,26 +7,35 @@ import shutil
 import signal
 import threading
 from datetime import datetime
-
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 
+from simtools.DataAccess import session_scope
+from simtools.DataAccess.Schema import Simulation
 
 class LocalExperimentManager(BaseExperimentManager):
     """
     Manages the creation, submission, status, parsing, and analysis
     of local experiments, i.e. collections of related simulations
     """
-    self.local_queue = None
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
     def __init__(self, model_file, experiment, setup=None):
+        self.local_queue = None
         self.simulations_commissioned = 0
         BaseExperimentManager.__init__(self, model_file, experiment, setup)
-
+        # update our understanding of which sims need to finish up still (they may/may not be started yet)
+        logger.debug("Setting up unfinished simulation ids...")
+        self.unfinished_simulation_ids = []
+        if experiment:
+            for sim in experiment.simulations:
+                if sim.status not in ['Failed', 'Succeeded', 'Cancelled']:
+                    self.unfinished_simulation_ids.append(sim.id)
+        else:
+            self.unfinished_simulation_ids = [] # none can be checked because none can be queried
     def commission_simulations(self, states):
         """
          Commissions all simulations that need to (and can be) commissioned.
@@ -35,7 +44,7 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         to_commission = self.needs_commissioning()
         commissioned = []
-        logger.debug("Commissioning %d simulation(s)." % len(to_commission))
+        logger.debug("Commissioning up to %d simulation(s) (This many may need commissioning)." % len(to_commission))
         for simulation in to_commission:
             if self.local_queue.full():
                 break
@@ -47,6 +56,7 @@ class LocalExperimentManager(BaseExperimentManager):
                 t1.start()
                 self.local_queue.put('run 1')
                 commissioned.append(simulation)
+        logger.debug("Commissioned %d simulation(s) (Limited by available thread count)." % len(commissioned))
         return commissioned
 
     def needs_commissioning(self):
@@ -55,11 +65,23 @@ class LocalExperimentManager(BaseExperimentManager):
         :return: A list of Simulation objects
         """
         simulations = []
-        for sim in self.experiment.simulations:
-            if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
-                logger.debug("Detected sim in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
-                             (sim.id, sim.status, sim.pid, LocalSimulationRunner.is_running(sim.pid)))
-                simulations.append(sim)
+        # get the latest status information for all potentially unfinished simulations first
+        if not len(self.unfinished_simulation_ids) == 0:
+            with session_scope() as session:
+                logger.debug("There are %d unfinished_simulation_ids to check." % len(self.unfinished_simulation_ids))
+                sims_to_check = session.query(Simulation).filter(Simulation.id.in_(self.unfinished_simulation_ids)).all()
+                logger.debug("Found %d sims to check" % len(sims_to_check))
+                for sim in sims_to_check: # prevent failing, expunged lazy-load of this. Perhaps all sims should preload this in their constructor?
+                    sim.get_path()
+                session.expunge_all()
+
+            for sim in sims_to_check:
+                if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
+                    logger.debug("Detected sim in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
+                                 (sim.id, sim.status, sim.pid, LocalSimulationRunner.is_running(sim.pid)))
+                    simulations.append(sim)
+                elif sim.status in ['Failed', 'Succeeded', 'Cancelled']: # this sim is done
+                    logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
 
     def check_input_files(self, input_files):
