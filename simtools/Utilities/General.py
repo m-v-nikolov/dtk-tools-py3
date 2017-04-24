@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import sys
+import psutil
 
 import time
 
@@ -290,3 +291,38 @@ def rmtree_f_on_error(func, path, exc_info):
         func(path)
     else:
         raise
+
+def is_running(pid, name_part):
+    """
+    Determines if the given pid is running and is running the specified process (name).
+    :param pid: The pid to check.
+    :param name_part: a case-sensitive partial name by which the thread can be properly identified.
+    :return: True/False
+    """
+    # ck4, This should be refactored to use a common module containing a dict of Process objects
+    #      This way, we don't need to do the name() checking, just use the method process.is_running(),
+    #      since this method checks for pid number being active AND pid start time.
+    if pid:
+        pid = int(pid)
+        try:
+            process = psutil.Process(pid)
+        except psutil.NoSuchProcess:
+            logger.debug("is_running: No such process pid: %d" % pid)
+            is_running = False
+            process_name = None
+            valid_name = False
+        else:
+            is_running = True
+            process_name = process.name()
+            valid_name = name_part in process_name
+
+        logger.debug("is_running: pid %s running? %s valid_name (%s)? %s. name: %s" %
+                     (pid, is_running, name_part, valid_name, process_name))
+        if is_running and valid_name:
+            logger.debug("is_running: pid %s is running and process name is valid." % pid)
+            return True
+        else:
+            return False
+    else:
+        logger.debug("is_running: no valid pid provided.")
+        return False

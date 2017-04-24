@@ -15,7 +15,6 @@ from collections import Counter
 
 import dill
 import fasteners
-import psutil
 
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
@@ -24,8 +23,8 @@ from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
+from simtools.Utilities.General import is_running
 current_dir = os.path.dirname(os.path.realpath(__file__))
-
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -115,26 +114,11 @@ class BaseExperimentManager:
         setting = DataStore.get_setting('overseer_pid')
         overseer_pid = int(setting.value) if setting else None
 
-        # determine if the overseer is running
-        if overseer_pid:
-            try:
-                process = psutil.Process(overseer_pid)
-            except psutil.NoSuchProcess:
-                is_running = False
-                valid_name = False
-            else:
-                is_running = True
-                valid_name = 'python' in process.name().lower()
-        else:
-            is_running = False
-            valid_name = False
-
         # Launch the Overseer if needed
-        if is_running and valid_name:
+        if is_running(overseer_pid, name_part='python'):
             logger.debug("A valid Overseer was detected, pid: %d" % overseer_pid)
         else:
-            logger.debug("A valid Overseer was not detected for stored pid %d. Running? %s Valid name? %s" %
-                         (overseer_pid, is_running, valid_name))
+            logger.debug("A valid Overseer was not detected for stored pid %s." % overseer_pid)
             current_dir = os.path.dirname(os.path.realpath(__file__))
             runner_path = os.path.join(current_dir, '..', 'Overseer.py')
             import platform

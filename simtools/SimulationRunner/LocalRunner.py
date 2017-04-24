@@ -3,11 +3,10 @@ import shlex
 import subprocess
 import time
 
-import psutil
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, is_running
 logger = init_logging("LocalRunner")
 
 
@@ -58,7 +57,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
     def monitor(self):
         # Wait the end of the process
         # We use poll to be able to update the status
-        while self.is_running(self.simulation.pid): #psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
+
+        while is_running(self.simulation.pid, name_part='Eradication'):
             logger.debug("sim monitor: waiting on pid: %s" % self.simulation.pid)
             self.simulation.message = self.last_status_line()
             self.update_status()
@@ -85,39 +85,6 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation.pid = None
         self.update_status()
 
-    @classmethod
-    def is_running(cls, pid):
-        """
-        Determines if the given pid is running and is running Eradication.exe
-        :return: True/False
-        """
-        # ck4, BaseExperimentManager uses virtually identical logic. Should combine the codes.
-        # ck4, This should be refactored to use a common module containing a dict of Process objects
-        #      This way, we don't need to do the name() checking, just use the method process.is_running(),
-        #      since this method checks for pid number being active AND pid start time.
-        if pid:
-            pid = int(pid)
-            try:
-                process = psutil.Process(pid)
-            except psutil.NoSuchProcess:
-                logger.debug("is_running: No such process pid: %d" % pid)
-                is_running = False
-                process_name = None
-                valid_name = False
-            else:
-                is_running = True
-                process_name = process.name()
-                valid_name = "Eradication" in process_name
-
-            logger.debug("is_running: pid %s running? %s valid_name? %s. name: %s" % (pid, is_running, valid_name, process_name))
-            if is_running and valid_name:
-                logger.debug("is_running: pid %s is running and process name is valid." % pid)
-                return True
-            else:
-                return False
-        else:
-            logger.debug("is_running: no valid pid provided.")
-            return False
 
     def update_status(self):
         self.states.put({'sid':self.simulation.id,

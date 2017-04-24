@@ -11,6 +11,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
+from simtools.Utilities.General import is_running
 
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Simulation
@@ -77,9 +78,9 @@ class LocalExperimentManager(BaseExperimentManager):
                 session.expunge_all()
 
             for sim in sims_to_check:
-                if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
+                if sim.status == 'Waiting' or (sim.status == 'Running' and not is_running(sim.pid, name_part='Eradication')):
                     logger.debug("Detected sim potentially in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
-                                 (sim.id, sim.status, sim.pid, LocalSimulationRunner.is_running(sim.pid)))
+                                 (sim.id, sim.status, sim.pid, is_running(sim.pid, name_part='Eradication')))
                     simulations.append(sim)
                 elif sim.status in ['Failed', 'Succeeded', 'Cancelled']: # this sim is done
                     self.unfinished_simulation_ids.remove(sim.id)
