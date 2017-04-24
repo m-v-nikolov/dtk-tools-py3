@@ -36,6 +36,7 @@ class LocalExperimentManager(BaseExperimentManager):
                     self.unfinished_simulation_ids.append(sim.id)
         else:
             self.unfinished_simulation_ids = [] # none can be checked because none can be queried
+
     def commission_simulations(self, states):
         """
          Commissions all simulations that need to (and can be) commissioned.
@@ -77,10 +78,11 @@ class LocalExperimentManager(BaseExperimentManager):
 
             for sim in sims_to_check:
                 if sim.status == 'Waiting' or (sim.status == 'Running' and not LocalSimulationRunner.is_running(sim.pid)):
-                    logger.debug("Detected sim in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
+                    logger.debug("Detected sim potentially in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
                                  (sim.id, sim.status, sim.pid, LocalSimulationRunner.is_running(sim.pid)))
                     simulations.append(sim)
                 elif sim.status in ['Failed', 'Succeeded', 'Cancelled']: # this sim is done
+                    self.unfinished_simulation_ids.remove(sim.id)
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
 
