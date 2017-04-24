@@ -20,73 +20,47 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     validate_parameters(args, unknownArgs)
 
     # collect all experiments
-    exp_list = collect_experiments(args)
+    exp_dict = collect_experiments(args)
 
-    # case: args.batchName is provided
-    if args.batchName:
-        batch = DataStore.get_batch_by_name(args.batchName)
-        if batch:
-            exp_ids_from_batch = batch.get_experiment_ids()
-            exp_list_ids = exp_list.keys()
-
-            if not compare_two_ids_list(exp_list_ids, exp_ids_from_batch):
-
-                # confirm only if existing batch contains different experiments
-                logger.info(
-                    "\nBatch with name %s already exists and contains the following experiment(s):\n" % args.batchName)
-                logger.info('\n'.join([' - %s' % exp_id for exp_id in exp_ids_from_batch]))
-
-                if exp_list:
-                    var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
-                    # print "You selected '%s'" % var
-                    if var == 'O':
-                        # clear existing experiments associated with this Batch
-                        DataStore.clear_batch(batch)
-                    elif var == 'M':
-                        # collect 'new' experiments to be added to the existing batch
-                        for exp_id in exp_ids_from_batch:
-                            if not exp_list.has_key(exp_id):
-                                exp_list[exp_id] = retrieve_experiment(exp_id)
-                    elif var == 'C':
-                        exit()
-                    else:
-                        logger.error("Option '%s' is invalid..." % var)
-                        exit()
-            else:
-                pass
+    # consider batch existing case
+    exp_dict = exp_dict = consolidate_experiments_with_options(args, exp_dict)
 
     # check status for each experiment
     if not args.force:
-        check_status(exp_list.values())
+        check_status(exp_dict.values())
 
     # collect all analyzers
     analyzers = collect_analyzers(args, builtinAnalyzers)
 
-    if not exp_list:
+    if not exp_dict:
         # No experiment specified -> using latest
         latest = DataStore.get_most_recent_experiment()
-        exp_list[latest.exp_id] = latest
+        exp_dict[latest.exp_id] = latest
 
     # create instance of AnalyzeManager
-    analyzeManager = AnalyzeManager(exp_list.values(), analyzers)
+    analyzeManager = AnalyzeManager(exp_dict.values(), analyzers)
 
+    # if batch name exists, always save experiments
+    if args.batch_name:
+        # save/create batch
+        save_batch(args, exp_dict.values())
     # Only create a batch if we pass more than one experiment
-    if len(exp_list) != 1:
+    elif len(exp_dict) != 1:
         # check if there is any existing batch containing the same experiments
-        batch_existing = check_existing_batch(exp_list)
+        batch_existing = check_existing_batch(exp_dict)
 
-        if batch_existing is None or args.batchName:
+        if batch_existing is None:
             # save/create batch
-            save_batch(args, exp_list.values())
+            save_batch(args, exp_dict.values())
         else:
-            # display the exisng batch
+            # display the existing batch
             logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
 
     # start to analyze
     analyzeManager.analyze()
 
-    # remove empty batches if there is any
-    clear_batch()
+    # remove empty batches
+    clean_batch()
 
 
 def validate_parameters(args, unknownArgs):
@@ -97,7 +71,7 @@ def validate_parameters(args, unknownArgs):
 
 def check_existing_batch(exp_list):
     exp_list_ids = exp_list.keys()
-    batch_list = DataStore.get_batch_list()
+    batch_list = DataStore.get_batch_list_by_id()
 
     for batch in batch_list:
         batch_list_ids = batch.get_experiment_ids()
@@ -117,7 +91,7 @@ def save_batch(args, final_exp_list=None):
         logger.info('Please provide some experiment(s) to analyze.')
         exit()
 
-    batch = DataStore.get_batch_by_name(args.batchName)
+    batch = DataStore.get_batch_by_name(args.batch_name)
     existing = True if batch else False
 
     # create a new Batch if not exists
@@ -133,8 +107,8 @@ def save_batch(args, final_exp_list=None):
     batch_id = DataStore.save_batch(batch)
 
     # update batch name with new id if no name is provided
-    batch_name = 'batch_%s' % batch_id if not args.batchName else args.batchName
-    if not args.batchName or not existing:
+    batch_name = 'batch_%s' % batch_id if not args.batch_name else args.batch_name
+    if not args.batch_name or not existing:
         new_batch = DataStore.get_batch_by_id(batch_id)
         new_batch.name = batch_name
         DataStore.save_batch(new_batch)
@@ -146,13 +120,53 @@ def save_batch(args, final_exp_list=None):
 
 def create_batch(args, unknownArgs):
     """
-     - create or use existing batch
+        create or use existing batch
     """
     # collect all experiments
-    exps = collect_experiments(args)
+    exp_dict = collect_experiments(args)
+
+    # consider batch existing case
+    exp_dict = consolidate_experiments_with_options(args, exp_dict)
 
     # save/create batch
-    save_batch(args, exps)
+    save_batch(args, exp_dict.values())
+
+
+def consolidate_experiments_with_options(args, exp_dict):
+    # if batch name exists, always save experiments
+    if args.batch_name is None:
+        return exp_dict
+
+    batch = DataStore.get_batch_by_name(args.batch_name)
+    if batch:
+        batch_list_ids = batch.get_experiment_ids()
+
+        if not compare_two_ids_list(exp_dict.values(), batch_list_ids):
+
+            # confirm only if existing batch contains different experiments
+            logger.info(
+                "\nBatch with name %s already exists and contains the following experiment(s):\n" % args.batch_name)
+            logger.info('\n'.join([' - %s' % exp_id for exp_id in batch_list_ids]))
+
+            if exp_dict:
+                var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
+                # print "You selected '%s'" % var
+                if var == 'O':
+                    # clear existing experiments associated with this Batch
+                    DataStore.clear_batch(batch)
+                    return exp_dict
+                elif var == 'M':
+                    # collect 'new' experiments to be added to the existing batch
+                    for exp_id in batch_list_ids:
+                        if not exp_dict.has_key(exp_id):
+                            exp_dict[exp_id] = retrieve_experiment(exp_id)
+
+                    return exp_dict
+                elif var == 'C':
+                    exit()
+                else:
+                    logger.error("Option '%s' is invalid..." % var)
+                    exit()
 
 
 def collect_analyzers(args, builtinAnalyzers):
@@ -235,24 +249,22 @@ def load_config_module(config_name):
 
 def list_batch(args, unknownArgs):
     """
-    List experiments from local database
+        List experiments from local database
     """
-    if len(unknownArgs) > 1:
-        logger.warning("/!\\ BATCH WARNING /!\\")
-        logger.warning('Too many batch names are provided: %s' % unknownArgs)
-        exit()
-
     batches = None
-    if args.batchId and len(unknownArgs) > 0:
+    if args.id_or_name and len(unknownArgs) > 0:
         logger.warning("/!\\ BATCH WARNING /!\\")
-        logger.warning('Both batchId and batchName are provided. We will ignore both and list all batches in DB!\n')
-        batches = DataStore.get_batch_list()
-    elif args.batchId:
-        batches = DataStore.get_batch_list(args.batchId)
-    elif len(unknownArgs) > 0:
-        batches = DataStore.get_batch_list_by_name(unknownArgs[0])
+        logger.warning('More than one Batch Id/Name are provided. We will ignore both and list all batches in DB!\n')
+        batches = DataStore.get_batch_list_by_id()
+    elif args.id_or_name:
+        # consider id case first
+        batches = DataStore.get_batch_list_by_id(args.id_or_name)
+        # consider name case
+        if batches is None:
+            batches = DataStore.get_batch_list_by_name(args.id_or_name)
     else:
-        batches = DataStore.get_batch_list()
+        # query all batches in DB
+        batches = DataStore.get_batch_list_by_id(None)
 
     display_batch(batches)
 
@@ -277,20 +289,16 @@ def display_batch(batches):
 
 def delete_batch(args, unknownArgs):
     """
-    Delete a particular batch or all batches in DB
+        Delete a particular batch or all batches in DB
     """
-    if len(unknownArgs) > 1:
-        logger.error('Too many parameters are provided: %s' % unknownArgs)
-        exit()
-
-    if args.batchId and len(unknownArgs) > 0:
+    if args.batch_id and len(unknownArgs) > 0:
         logger.warning("/!\\ BATCH WARNING /!\\")
-        logger.warning('Both batchId and batchName are provided. This action cannot take both!\n')
+        logger.warning('It takes only 1 batch_id but more are provided.\n')
         exit()
 
     msg = ''
-    if args.batchId:
-        msg = 'Are you sure you want to delete the Batch %s (Y/n)? ' % args.batchId
+    if args.batch_id:
+        msg = 'Are you sure you want to delete the Batch %s (Y/n)? ' % args.batch_id
     else:
         msg = 'Are you sure you want to delete all Batches (Y/n)? '
 
@@ -300,44 +308,47 @@ def delete_batch(args, unknownArgs):
         logger.warning('No action taken.')
         return
     else:
-        DataStore.delete_batch(args.batchId)
+        DataStore.delete_batch(args.batch_id)
         logger.info('The Batch(s) have been deleted.')
 
 
-def clear_batch(batchId=None, ask=False):
+def clear_batch(args, unknownArgs, ask=False):
     """
-    - de-attach all associated experiments from the given batch
-      or
-    - remove all empty batches
+        de-attach all associated experiments from the given batch
     """
+    batch = DataStore.get_batch_by_id(args.id_or_name)
 
-    if batchId:
-        msg = 'Are you sure you want to detach all associated experiments (Y/n)? '
-    else:
-        msg = 'Are you sure you want to remove all empty Batches (Y/n)? '
+    if batch is None:
+        batch = DataStore.get_batch_by_name(args.id_or_name)
+
+    if batch is None:
+        logger.info("The Batch given by '%s' doesn't exist! ." % args.id_or_name)
+        exit()
 
     if ask:
+        msg = 'Are you sure you want to detach all associated experiments (Y/n)? '
         choice = raw_input(msg)
 
         if choice != 'Y':
             logger.warning('No action taken.')
             return
-        else:
-            if batchId:
-                batch = DataStore.get_batch_by_id(batchId)
-                if batch:
-                    DataStore.clear_batch(batch)
-            else:
-                cnt = DataStore.remove_empty_batch()
-                if cnt > 0:
-                    logger.info('The Total %s empty Batch(s) have been removed.' % cnt)
-    else:
-        if batchId:
-            batch = DataStore.get_batch_by_id(batchId)
-            if batch:
-                DataStore.clear_batch(batch)
-                logger.info('The associated experiments have been detached.')
-        else:
-            cnt = DataStore.remove_empty_batch()
-            if cnt > 0:
-                logger.info('The Total %s empty Batch(s) have been removed.' % cnt)
+
+    DataStore.clear_batch(batch)
+    logger.info('The associated experiments have been detached.')
+
+
+def clean_batch(ask=False):
+    """
+        remove all empty batches
+    """
+    if ask:
+        msg = 'Are you sure you want to remove all empty Batches (Y/n)? '
+        choice = raw_input(msg)
+
+        if choice != 'Y':
+            logger.warning('No action taken.')
+            return
+
+    cnt = DataStore.remove_empty_batch()
+    if cnt > 0:
+        logger.info('The Total %s empty Batch(s) have been removed.' % cnt)

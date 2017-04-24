@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from calibtool.algo.BaseNextPointAlgorithm import BaseNextPointAlgorithm
+from calibtool.algorithms.BaseNextPointAlgorithm import BaseNextPointAlgorithm
 
 logger = logging.getLogger(__name__)
 

@@ -1,14 +1,14 @@
 from dtk.interventions.malaria_drugs import drug_configs_from_code
 from dtk.interventions.malaria_diagnostic import add_diagnostic_survey, add_triggered_survey
 from dtk.interventions.intervention_states import *
-from copy import deepcopy
+from copy import deepcopy, copy
 
 
 def add_drug_campaign(cb, campaign_type, drug_code, start_days, coverage=1.0, repetitions=3, interval=60,
                       diagnostic_threshold=40, fmda_radius='hh', node_selection_type='DISTANCE_ONLY',
                       trigger_coverage=1.0, snowballs=0, delay=0, nodes=[],
                       target_group='Everyone', dosing='', drug_ineligibility_duration=0,
-                      node_property_restrictions=[]):
+                      node_property_restrictions=[], ind_property_restrictions=[]):
     """
     Add a drug campaign defined by the parameters to the config builder.
 
@@ -83,26 +83,27 @@ def add_drug_campaign(cb, campaign_type, drug_code, start_days, coverage=1.0, re
     # set up drug campaign
     if campaign_type == 'MDA' or campaign_type == 'SMC ': # standard drug campaign: MDA, no event triggering
         add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repetitions, interval, node_cfg,
-                expire_recent_drugs, node_property_restrictions, target_group=target_group)
+                expire_recent_drugs, node_property_restrictions, ind_property_restrictions, target_group=target_group)
 
     elif campaign_type == 'MSAT' : # standard drug campaign: MSAT, no event triggering
         add_MSAT(cb, start_days, coverage, drug_configs, receiving_drugs_event, repetitions, interval,
-                 delay, diagnostic_threshold, node_cfg, expire_recent_drugs, node_property_restrictions, target_group)
+                 delay, diagnostic_threshold, node_cfg, expire_recent_drugs, node_property_restrictions,
+                 ind_property_restrictions, target_group)
 
     elif campaign_type == 'fMDA' :
         add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving_drugs_event, repetitions, interval,
                  delay, diagnostic_threshold, fmda_radius, node_selection_type, node_cfg, expire_recent_drugs,
-                 node_property_restrictions, target_group)
+                 node_property_restrictions, ind_property_restrictions, target_group)
 
     elif campaign_type == 'rfMSAT' :
         add_rfMSAT(cb, start_days[0], coverage, drug_configs, receiving_drugs_event, interval, delay,
                    trigger_coverage, diagnostic_threshold, fmda_radius, node_selection_type, snowballs, node_cfg,
-                   expire_recent_drugs, node_property_restrictions)
+                   expire_recent_drugs, node_property_restrictions, ind_property_restrictions)
 
     elif campaign_type == 'rfMDA' :
         add_rfMDA(cb, start_days[0], coverage, drug_configs, receiving_drugs_event, interval, delay,
                   trigger_coverage, fmda_radius, node_selection_type, node_cfg, expire_recent_drugs,
-                  node_property_restrictions)
+                  node_property_restrictions, ind_property_restrictions)
 
     elif campaign_type in ['borderscreen'] :
         # PROBABLY DOES NOT WORK --- WANT ONLY PEOPLE COMING IN FROM WORK NODE,
@@ -122,7 +123,7 @@ def add_drug_campaign(cb, campaign_type, drug_code, start_days, coverage=1.0, re
 
 
 def add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repetitions, interval,
-            nodes, expire_recent_drugs, node_property_restrictions, target_group) :
+            nodes, expire_recent_drugs, node_property_restrictions, ind_property_restrictions, target_group) :
 
     for start_day in start_days:
         drug_event = {
@@ -142,8 +143,15 @@ def add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repet
             "Nodeset_Config": nodes
             }
 
+        if ind_property_restrictions :
+            drug_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = ind_property_restrictions
+
         if expire_recent_drugs :
-            drug_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = [{"DrugStatus": "None"}]
+            drugstatus = {"DrugStatus": "None"}
+            if ind_property_restrictions :
+                drug_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = [dict(drugstatus.items() + x.items()) for x in ind_property_restrictions]
+            else :
+                drug_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = [drugstatus]
             drug_event['Event_Coordinator_Config']["Intervention_Config"]["Intervention_List"].append(expire_recent_drugs)
 
         if target_group != 'Everyone':
@@ -158,7 +166,8 @@ def add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repet
 
 
 def add_MSAT(cb, start_days, coverage, drug_configs, receiving_drugs_event, repetitions, interval,
-             delay, diagnostic_threshold, nodes, expire_recent_drugs, node_property_restrictions, target_group) :
+             delay, diagnostic_threshold, nodes, expire_recent_drugs, node_property_restrictions,
+             ind_property_restrictions, target_group) :
 
     event_config = drug_configs + [receiving_drugs_event]
     IP_restrictions = []
@@ -181,12 +190,13 @@ def add_MSAT(cb, start_days, coverage, drug_configs, receiving_drugs_event, repe
                               target=target_group, start_day=start_day,
                               diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
                               nodes=nodes, positive_diagnosis_configs=msat_cfg,
-                              IP_restrictions=IP_restrictions, NP_restrictions=node_property_restrictions)
+                              IP_restrictions=ind_property_restrictions, NP_restrictions=node_property_restrictions,
+                              pos_diag_IP_restrictions=IP_restrictions)
 
 
 def add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving_drugs_event, repetitions, interval,
              delay, diagnostic_threshold, fmda_radius, node_selection_type, nodes, expire_recent_drugs,
-             node_property_restrictions, target_group):
+             node_property_restrictions, ind_property_restrictions, target_group):
 
     fmda_setup = [fmda_cfg(fmda_radius, node_selection_type)]
 
@@ -209,7 +219,7 @@ def add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving
                                   target=target_group, start_day=start_day + interval*rep,
                                   diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold,
                                   nodes=nodes, positive_diagnosis_configs=fmda_setup,
-                                  IP_restrictions=[], NP_restrictions=node_property_restrictions)
+                                  IP_restrictions=ind_property_restrictions, NP_restrictions=node_property_restrictions)
             fmda_distribute_drugs = {"Event_Name": "Distribute fMDA",
                                      "class": "CampaignEvent",
                                      "Start_Day": start_day + interval*rep + delay,
@@ -240,7 +250,7 @@ def add_fMDA(cb, start_days, trigger_coverage, coverage, drug_configs, receiving
 
 def add_rfMSAT(cb, start_day, coverage, drug_configs, receiving_drugs_event, interval, delay,
                trigger_coverage, diagnostic_threshold, fmda_radius, node_selection_type, snowballs, nodes,
-               expire_recent_drugs, node_property_restrictions) :
+               expire_recent_drugs, node_property_restrictions, ind_property_restrictions) :
 
     fmda_setup = fmda_cfg(fmda_radius, node_selection_type)
     snowball_setup = [deepcopy(fmda_setup) for x in range(snowballs + 1)]
@@ -280,7 +290,8 @@ def add_rfMSAT(cb, start_day, coverage, drug_configs, receiving_drugs_event, int
                          diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes,
                          trigger_string=snowball_setup[0]['Event_Trigger'], event_name='Reactive MSAT level 0',
                          positive_diagnosis_configs=event_config,
-                         IP_restrictions=IP_restrictions, NP_restrictions=node_property_restrictions)
+                         IP_restrictions=ind_property_restrictions, NP_restrictions=node_property_restrictions,
+                         pos_diag_IP_restrictions=IP_restrictions)
 
     if snowballs > 0 :
         for snowball in range(snowballs + 1):
@@ -294,12 +305,13 @@ def add_rfMSAT(cb, start_day, coverage, drug_configs, receiving_drugs_event, int
                                  diagnostic_type='Other', diagnostic_threshold=diagnostic_threshold, nodes=nodes,
                                  trigger_string=curr_trigger, event_name='Snowball level ' + str(snowball),
                                  positive_diagnosis_configs=event_config,
-                                 IP_restrictions=IP_restrictions, NP_restrictions=node_property_restrictions)
+                                 IP_restrictions=ind_property_restrictions, NP_restrictions=node_property_restrictions,
+                                 pos_diag_IP_restrictions=IP_restrictions)
 
 
 def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, interval, delay,
               trigger_coverage, fmda_radius, node_selection_type, nodes, expire_recent_drugs,
-              node_property_restrictions) :
+              node_property_restrictions, ind_property_restrictions) :
 
     fmda_setup = fmda_cfg(fmda_radius, node_selection_type)
 
@@ -355,6 +367,8 @@ def add_rfMDA(cb, start_day, coverage, drug_configs, receiving_drugs_event, inte
                     },
                     "Nodeset_Config": nodes}
 
+    if ind_property_restrictions:
+        rcd_event['Event_Coordinator_Config']["Property_Restrictions_Within_Node"] = ind_property_restrictions
     if node_property_restrictions:
         rcd_event['Event_Coordinator_Config']['Node_Property_Restrictions'] = node_property_restrictions
 

@@ -87,6 +87,7 @@ class LocalExperimentManager(BaseExperimentManager):
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
 
+
     def check_input_files(self, input_files):
         """
         Check file exist and return the missing files as dict

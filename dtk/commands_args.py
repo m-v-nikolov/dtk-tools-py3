@@ -83,40 +83,45 @@ def populate_progress_arguments(subparsers, func=None):
 # 'dtk analyze' options
 def populate_analyze_arguments(subparsers, func=None):
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')
-    parser_analyze.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name for analyze.')
-    parser_analyze.add_argument('-id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments)')
-    parser_analyze.add_argument('-a', '--analyzer', default=None,  help='Python script or builtin analyzer name for custom analysis of simulations (see dtk analyze-list).')
+    parser_analyze.add_argument('-bn', '--batch_name', dest='batch_name', default=None, help='Use Batch Name for analyze.')
+    parser_analyze.add_argument('-id', '--id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments)')
+    parser_analyze.add_argument('-a', '--analyzer', default=None, help='Python script or builtin analyzer name for custom analysis of simulations (see dtk analyze-list).')
     parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
     return parser_analyze
 
 
 # 'dtk create_batch' options
 def populate_createbatch_arguments(subparsers, func=None):
-    parser_createbatch = subparsers.add_parser('create_batch',     help='Create a Batch for later use in Analyze.')
-    parser_createbatch.add_argument('-bn', '--batchName', dest='batchName', default=None, nargs='?', help='Use Batch Name.')
-    parser_createbatch.add_argument('-i', '--ids', dest='itemids', default=None, nargs='*', help='IDs of the items to analyze (can be suites, batches, experiments)')
+    parser_createbatch = subparsers.add_parser('create_batch', help='Create a Batch for later use in Analyze.')
+    parser_createbatch.add_argument('-bn', '--batch_name', dest='batch_name', default=None, help='Use Batch Name.')
+    parser_createbatch.add_argument('-id', '--id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments)')
     return parser_createbatch
 
 
 # 'dtk list_batch' options
 def populate_listbatch_arguments(subparsers, func=None):
     parser_listbatch=subparsers.add_parser('list_batch', help='Report recent 20 list of batches in Batch.')
-    parser_listbatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
-    parser_listbatch.add_argument('-n', '--number', dest='limit', help='Get given number recent batch list')
+    parser_listbatch.add_argument('-id', dest='id_or_name', help='Batch id or name.')
     return parser_listbatch
+
+
+# 'dtk clean_batch' options
+def populate_cleanbatch_arguments(subparsers, func=None):
+    parser_cleanbatch = subparsers.add_parser('clean_batch', help='Remove all Batches with empty experiments.')
+    return parser_cleanbatch
 
 
 # 'dtk clear_batch' options
 def populate_clearbatch_arguments(subparsers, func=None):
-    parser_clearbatch = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch or remove all Batches with empty experiments.')
-    parser_clearbatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_clearbatch = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch given id or name.')
+    parser_clearbatch.add_argument('-id', dest='id_or_name', required=True, help='Batch id or name.')
     return parser_clearbatch
 
 
 # 'dtk delete_batch' options
 def populate_deletebatch_arguments(subparsers, func=None):
     parser_deletebatch = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID.')
-    parser_deletebatch.add_argument('-bid', dest='batchId', default=None, nargs='?', help='Batch ID.')
+    parser_deletebatch.add_argument('-id', '--batch_id', dest='batch_id', help='Batch ID.')
     return parser_deletebatch
 
 

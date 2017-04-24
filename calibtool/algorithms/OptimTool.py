@@ -24,7 +24,7 @@ class OptimTool(NextPointAlgorithm):
     The basic idea of OptimTool is
     '''
 
-    def __init__(self, params, constrain_sample_fn,
+    def __init__(self, params, constrain_sample_fn= lambda s: s,
                 mu_r = 0.1,
                 sigma_r = 0.02,
                 center_repeats = 2,

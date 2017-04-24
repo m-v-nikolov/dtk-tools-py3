@@ -147,12 +147,19 @@ class IterationState(object):
         calibManager.suites = calib_data.get('suites')
         calibManager.latest_iteration = int(calib_data.get('iteration', 0))
 
+        self.find_best_iteration_for_resume(calibManager)
         it = IterationState.restore_state(calibManager.name, self.iteration)
         self.status = ResumePoint[it.status]
 
-        self.find_best_iteration_for_resume(calibManager)
         self.prepare_resume_point_for_iteration(calibManager)
-        self.restore_calibration_for_resume(calibManager, calib_data)
+
+        # Restore the results
+        if self.resume_point.value < ResumePoint.plot.value:
+            # it will combine current results with previous results
+            self.restore_results(calibManager, calib_data.get('results'), self.iteration - 1)
+        else:
+            # it will use the current results and resume from next iteration
+            self.restore_results(calibManager, calib_data.get('results'), self.iteration)
 
         # Make a backup of CalibManager.json
         calibManager.backup_calibration()
@@ -165,10 +172,15 @@ class IterationState(object):
             logger.debug('No cached results to reload from CalibManager.')
             return
 
-        calibManager.all_results = pd.DataFrame.from_dict(results, orient='columns')
-        calibManager.all_results.set_index('sample', inplace=True)
+        # Depending on the type of results (lists or dicts), handle differently how we treat the results
+        # This should be refactor to take care of both cases at once
+        if isinstance(results, dict):
+            calibManager.all_results = pd.DataFrame.from_dict(results, orient='columns')
+            calibManager.all_results.set_index('sample', inplace=True)
+            calibManager.all_results = calibManager.all_results[calibManager.all_results.iteration <= iteration]
+        elif isinstance(results, list):
+            calibManager.all_results = results[iteration]
 
-        calibManager.all_results = calibManager.all_results[calibManager.all_results.iteration <= iteration]
         logger.debug(calibManager.all_results)
 
     def check_leftover(self, calibManager):
@@ -276,14 +288,6 @@ class IterationState(object):
 
         # adjust next_point
         self.restore_next_point(calibManager)
-
-    def restore_calibration_for_resume(self, calibManager, calib_data):
-        if self.resume_point.value < ResumePoint.plot.value:
-            # it will combine current results with previous results
-            self.restore_results(calibManager, calib_data.get('results'), self.iteration - 1)
-        else:
-            # it will use the current results and resume from next iteration
-            self.restore_results(calibManager, calib_data.get('results'), self.iteration)
 
     def restore_next_point(self, calibManager):
         """

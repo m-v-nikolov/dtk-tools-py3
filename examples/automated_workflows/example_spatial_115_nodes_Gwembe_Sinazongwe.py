@@ -128,7 +128,7 @@ spatial_manager = SpatialManager(
 
 # set demographics parameters
 spatial_manager.set_demographics_type("static")
-spatial_manager.set_res_in_arcsec(30)
+spatial_manager.set_resolution(30)
 spatial_manager.set_update_demographics(fun.partial(apply_pop_scale_larval_habitats, os.path.join(input_path, nodes_params_input_file)))
 
 # set climate generation parameters

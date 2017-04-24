@@ -16,6 +16,7 @@ from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
 from dtk.utils.setupui.SetupApplication import SetupApplication
+from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
@@ -300,12 +301,8 @@ def stdout(args, unknownArgs):
     if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
 
-    exp_manager.add_analyzer(StdoutAnalyzer(args.simIds, args.error))
-
-    if args.comps:
-        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
-
-    exp_manager.analyze_experiment()
+    am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error))
+    am.analyze()
 
 
 def progress(args, unknownArgs):
@@ -340,18 +337,12 @@ def delete_batch(args, unknownArgs):
     AnalyzeHelper.delete_batch(args, unknownArgs)
 
 
+def clean_batch(args, unknownArgs):
+    AnalyzeHelper.clean_batch(ask=True)
+
+
 def clear_batch(args, unknownArgs):
-    if len(unknownArgs) > 1:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Too many batch names are provided: %s' % unknownArgs
-        exit()
-
-    if args.batchId and len(unknownArgs) > 0:
-        print "/!\\ BATCH WARNING /!\\"
-        print 'Both batchId and batchName are provided. This action cannot take both!\n'
-        exit()
-
-    AnalyzeHelper.clear_batch(args.batchId, True)
+    AnalyzeHelper.clear_batch(ask=True)
 
 
 def analyze_list(args, unknownArgs):
@@ -647,8 +638,9 @@ def main():
     parser_stdout.set_defaults(func=stdout)
 
     # 'dtk progress' options
-    parser_progress = commands_args.populate_progress_arguments(subparsers)
-    parser_progress.set_defaults(func=progress)
+    # Deactivated for now as it is impossible to read status.txt on COMPS
+    # parser_progress = commands_args.populate_progress_arguments(subparsers)
+    # parser_progress.set_defaults(func=progress)
 
     # 'dtk analyze' options
     parser_analyze = commands_args.populate_analyze_arguments(subparsers)
@@ -669,6 +661,10 @@ def main():
     # 'dtk clear_batch' options
     parser_clearbatch = commands_args.populate_clearbatch_arguments(subparsers)
     parser_clearbatch.set_defaults(func=clear_batch)
+
+    # 'dtk clean_batch' options
+    parser_cleanbatch = commands_args.populate_cleanbatch_arguments(subparsers)
+    parser_cleanbatch.set_defaults(func=clean_batch)
 
     # 'dtk analyze-list' options
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')

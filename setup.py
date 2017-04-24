@@ -9,6 +9,7 @@ from collections import OrderedDict
 from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
+from argparse import ArgumentParser, Namespace
 
 from simtools.Utilities.General import get_os, nostdout
 
@@ -381,7 +382,8 @@ def install_packages(my_os, reqs):
                      'Milen Nikolov,'
                      'Aaron Roney,'
                      'Zhaowei Du,'
-                     'Prashanth Selvaraj',
+                     'Prashanth Selvaraj'
+                     'Clark Kirkman IV',
               author_email='ewenger@intven.com,'
                            'braybaud@intven.com,'
                            'dklein@idmod.org,'
@@ -389,7 +391,8 @@ def install_packages(my_os, reqs):
                            'mnikolov@intven.com,'
                            'aroney@intven.com,'
                            'zdu@intven.com,'
-                           'pselvaraj@intven.com',
+                           'pselvaraj@intven.com'
+                           'ckirkman@intven.com',
               packages=find_packages(),
               install_requires=[],
               entry_points={
@@ -497,6 +500,15 @@ def verify_matplotlibrc(my_os):
 
 
 def main():
+    # if we add any more options, do this in a separate method
+    parser = ArgumentParser()
+    parser.add_argument('--nopackages', action='store_false', dest='get_packages',
+                        help='Do not automatically obtain disease packages (Default: obtain them).')
+    args = parser.parse_args()
+    # silly, but prevents conflict with install_packages method
+    if '--nopackages' in sys.argv:
+        sys.argv.remove('--nopackages')
+
     # Check OS
     my_os = get_os()
     print ('os: %s' % my_os)
@@ -517,15 +529,15 @@ def main():
     verify_matplotlibrc(my_os)
 
     # Obtain the most recent disease input packages
-    from argparse import Namespace
-    import dtk.commands
-    namespace = Namespace()
-    setattr(namespace, 'quiet', True)
-    package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
-    for package_name in package_names:
-        setattr(namespace, 'package_name', package_name)
-        setattr(namespace, 'package_version', 'latest')
-        dtk.commands.get_package(args=namespace, unknownArgs=None)
+    if args.get_packages:
+        import dtk.commands
+        namespace = Namespace()
+        setattr(namespace, 'quiet', True)
+        package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
+        for package_name in package_names:
+            setattr(namespace, 'package_name', package_name)
+            setattr(namespace, 'package_version', 'latest')
+            dtk.commands.get_package(args=namespace, unknownArgs=None)
 
     # Success !
     print ("\n=======================================================")
