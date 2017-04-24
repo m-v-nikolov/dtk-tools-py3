@@ -117,8 +117,8 @@ if __name__ == "__main__":
                 # Refresh the experiment first
                 manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
                 logger.debug('Commission simulations as needed for experiment id: %s' % manager.experiment.id)
-                commissioned_sims = manager.commission_simulations(states_queue)
-                logger.debug('Experiment done (re)commissioning %d simulation(s)' % len(commissioned_sims))
+                n_commissioned_sims = manager.commission_simulations(states_queue)
+                logger.debug('Experiment done (re)commissioning %d simulation(s)' % n_commissioned_sims)
 
         # Cleanup the analyze thread list
         for ap in analysis_threads:

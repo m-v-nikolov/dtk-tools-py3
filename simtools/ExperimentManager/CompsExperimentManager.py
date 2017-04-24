@@ -116,22 +116,22 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         Launches an experiment and its associated simulations in COMPS
         :param states: a multiprocessing.Queue() object for simulations to use for updating their status
-        :return: a list of the LENGTH of sims to run, mimicking LocalSimulationRunner behavior for the benefit of
-                 the Overseer.
+        :return: The number of simulations commissioned.
         """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
 
         if self.runner_created:
-            to_commission = [] # no sims commissioned
+            n_commissioned = 0 # no sims commissioned
         else:
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
             t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
             t1.daemon = True
             t1.start()
             self.runner_created = True
-            to_commission = ["" for sim in self.experiment.simulations]
-        return to_commission
+            COMPS_login(self.endpoint)
+            n_commissioned = len(Experiment.get(self.experiment.exp_id).get_simulations())
+        return n_commissioned
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
