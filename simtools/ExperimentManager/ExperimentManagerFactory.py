@@ -1,3 +1,4 @@
+import os
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging, override_HPC_settings
 
@@ -17,7 +18,7 @@ class ExperimentManagerFactory(object):
 
     @classmethod
     def from_experiment(cls, experiment):
-        logger.debug("Factory - Reloading ExperimentManager from experiment %s" % experiment.id)
+        logger.debug("Factory - Creating ExperimentManager for experiment %s pid: %d location: %s" % (experiment.id, os.getpid(), experiment.location))
         return cls.factory(type=experiment.location)('', experiment)
 
     @classmethod

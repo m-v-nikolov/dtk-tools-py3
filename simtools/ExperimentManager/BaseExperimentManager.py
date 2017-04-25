@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+from simtools.Utilities.General import init_logging, get_tools_revision, get_os
+logger = init_logging('ExperimentManager')
+
 import copy
 import json
 import multiprocessing
@@ -12,7 +15,6 @@ from collections import Counter
 
 import dill
 import fasteners
-import psutil
 
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
@@ -21,11 +23,8 @@ from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
-from simtools.Utilities.General import init_logging, get_tools_revision, get_os
-
-logger = init_logging('ExperimentManager')
+from simtools.Utilities.General import is_running
 current_dir = os.path.dirname(os.path.realpath(__file__))
-
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -53,7 +52,6 @@ class BaseExperimentManager:
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
-        self.runner_created = False
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -112,15 +110,15 @@ class BaseExperimentManager:
         The thread pid is retrieved from the settings and then we test if it corresponds to a python thread.
         If not, just start it.
         """
+        logger.debug("Checking Overseer state")
         setting = DataStore.get_setting('overseer_pid')
+        overseer_pid = int(setting.value) if setting else None
 
-        if setting:
-            overseer_pid = int(setting.value)
+        # Launch the Overseer if needed
+        if is_running(overseer_pid, name_part='python'):
+            logger.debug("A valid Overseer was detected, pid: %d" % overseer_pid)
         else:
-            overseer_pid = None
-
-        if not overseer_pid or not psutil.pid_exists(overseer_pid) or 'python' not in psutil.Process(overseer_pid).name().lower():
-            # Run the runner
+            logger.debug("A valid Overseer was not detected for stored pid %s." % overseer_pid)
             current_dir = os.path.dirname(os.path.realpath(__file__))
             runner_path = os.path.join(current_dir, '..', 'Overseer.py')
             import platform
@@ -149,7 +147,6 @@ class BaseExperimentManager:
         Query the status of simulations in the currently managed experiment.
         For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
         """
-        logger.debug("get_simulation_status for %s" % self.experiment.id)
         self.check_overseer()
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
@@ -176,7 +173,6 @@ class BaseExperimentManager:
 
         self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not self.quiet)
-
         self.check_overseer()
 
         if self.blocking:

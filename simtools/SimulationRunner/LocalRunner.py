@@ -3,9 +3,11 @@ import shlex
 import subprocess
 import time
 
-import psutil
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
+
+from simtools.Utilities.General import init_logging, is_running
+logger = init_logging("LocalRunner")
 
 
 class LocalSimulationRunner(BaseSimulationRunner):
@@ -14,7 +16,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
     """
     def __init__(self, simulation, experiment, thread_queue, states, success):
         super(LocalSimulationRunner, self).__init__(experiment, states, success)
-        self.queue = thread_queue
+        self.queue = thread_queue # used to limit the number of concurrently running simulations
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
@@ -22,10 +24,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
             self.run()
         else:
             self.queue.get()
-            if self.simulation.status in ('Failed', 'Succeeded', 'Cancelled'):
-                return
-
-            self.monitor()
+            if self.simulation.status not in ('Failed', 'Succeeded', 'Cancelled'):
+                self.monitor()
 
     def run(self):
         try:
@@ -51,18 +51,20 @@ class LocalSimulationRunner(BaseSimulationRunner):
             print "Error encountered while running the simulation."
             print e
         finally:
-            # Free up an item in the queue
+            # Allow another different thread to run now that this one is done.
             self.queue.get()
 
     def monitor(self):
         # Wait the end of the process
         # We use poll to be able to update the status
-        if self.simulation.pid:
-            pid = int(self.simulation.pid)
-            while psutil.pid_exists(pid) and "Eradication" in psutil.Process(pid).name():
-                self.simulation.message = self.last_status_line()
-                self.update_status()
-                time.sleep(5)
+
+        while is_running(self.simulation.pid, name_part='Eradication'):
+            logger.debug("sim monitor: waiting on pid: %s" % self.simulation.pid)
+            self.simulation.message = self.last_status_line()
+            self.update_status()
+            time.sleep(self.MONITOR_SLEEP)
+        logger.debug("sim_monitor: done waiting on pid: %s" % self.simulation.pid)
+        sim_pid = self.simulation.pid #seems silly, but debug output below shows None if we don't do this
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
@@ -72,14 +74,17 @@ class LocalSimulationRunner(BaseSimulationRunner):
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
-            # If we exited with a Canceled status, dont update to Failed
+            # If we exited with a Canceled status, don't update to Failed
             if not last_state == 'Canceled':
                 self.simulation.status = "Failed"
 
         # Set the final simulation state
+        logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %
+                     (self.simulation.id, sim_pid, self.simulation.status))
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()
+
 
     def update_status(self):
         self.states.put({'sid':self.simulation.id,

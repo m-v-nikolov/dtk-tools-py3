@@ -80,4 +80,4 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
                 break
 
-            time.sleep(8)
+            time.sleep(2 * self.MONITOR_SLEEP)

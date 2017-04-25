@@ -10,7 +10,8 @@ from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
 from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, \
     translate_COMPS_path
-
+from simtools.Utilities.General import init_logging
+logger = init_logging("COMPSExperimentManager")
 
 class CompsExperimentManager(BaseExperimentManager):
     """
@@ -30,6 +31,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.compress_assets = self.setup.getboolean('compress_assets')
         COMPS_login(self.endpoint)
         self.creator_semaphore = None
+        self.runner_created = False # once this is True, the experiment/sims have been sent to COMPSland
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         # Creator semaphore limits the number of thread accessing the database at the same time
@@ -111,12 +113,25 @@ class CompsExperimentManager(BaseExperimentManager):
         self.sims_to_create.append({'name': self.config_builder.get_param('Config_Name'), 'files':files, 'tags':tags})
 
     def commission_simulations(self, states):
+        """
+        Launches an experiment and its associated simulations in COMPS
+        :param states: a multiprocessing.Queue() object for simulations to use for updating their status
+        :return: The number of simulations commissioned.
+        """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-        t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states,self.success_callback))
-        t1.daemon = True
-        t1.start()
-        self.runner_created = True
+
+        if self.runner_created:
+            n_commissioned = 0 # no sims commissioned
+        else:
+            logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
+            t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            t1.daemon = True
+            t1.start()
+            self.runner_created = True
+            COMPS_login(self.endpoint)
+            n_commissioned = len(Experiment.get(self.experiment.exp_id).get_simulations())
+        return n_commissioned
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
