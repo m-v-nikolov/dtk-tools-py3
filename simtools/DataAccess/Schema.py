@@ -15,7 +15,6 @@ from sqlalchemy.orm import relationship
 from simtools.DataAccess import Base, engine
 from COMPS.Data.Simulation import SimulationState
 
-
 class Analyzer(Base):
     __tablename__ = "analyzers"
 
@@ -25,18 +24,16 @@ class Analyzer(Base):
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     experiment = relationship("Experiment", back_populates="analyzers")
 
-
 class Settings(Base):
     __tablename__ = "settings"
     key = Column(String, primary_key=True)
     value = Column(String)
 
-
 class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(SimulationState, default=SimulationState.CommissionRequested) # ck4, make sure this still works
+    status = Column(Integer, default=SimulationState.CommissionRequested.value)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -60,7 +57,6 @@ class Simulation(Base):
                 return map[self.id]
 
             return CompsDTKOutputParser.sim_dir_map[self.id]
-
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -102,7 +98,7 @@ class Experiment(Base):
 
     def is_done(self):
         for sim in self.simulations:
-            if sim.status not in (SimulationState.Succeeded, SimulationState.Failed,SimulationState.Canceled):
+            if sim.status not in (SimulationState.Succeeded.value, SimulationState.Failed.value,SimulationState.Canceled.value):
                 return False
         return True
 
@@ -136,7 +132,6 @@ class Experiment(Base):
 
         return ret
 
-
 class Batch(Base):
     __tablename__ = "batches"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -154,7 +149,6 @@ class Batch(Base):
         exp_ids = [exp.exp_id for exp in self.experiments]
         return exp_ids
 
-
 class BatchExperiment(Base):
     __tablename__ = "batch_experiment"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
@@ -163,6 +157,5 @@ class BatchExperiment(Base):
 
     def __repr__(self):
         return "batch_experiment"
-
 
 Base.metadata.create_all(engine)

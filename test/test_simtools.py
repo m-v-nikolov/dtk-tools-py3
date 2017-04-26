@@ -234,7 +234,7 @@ class TestLocalExperimentManager(unittest.TestCase):
 
         local_manager = ExperimentManagerFactory.from_experiment(experiment=DataStore.get_experiment(experiment.exp_id))
         states, msgs = local_manager.get_simulation_status()
-        self.assertListEqual(states.values(), [SimulationState.CommissionRequested] * self.nsims)
+        self.assertListEqual(states.values(), [SimulationState.CommissionRequested.value] * self.nsims)
 
         local_manager.hard_delete()
         import time

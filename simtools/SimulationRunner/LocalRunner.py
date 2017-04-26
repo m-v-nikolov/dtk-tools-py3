@@ -19,11 +19,11 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
-        if self.check_state() == SimulationState.CommissionRequested:
+        if self.check_state() == SimulationState.CommissionRequested.value:
             self.run()
         else:
             self.queue.get()
-            if self.simulation.status not in (SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled):
+            if self.simulation.status not in (SimulationState.Failed.value, SimulationState.Succeeded.value, SimulationState.Canceled.value):
                 self.monitor()
 
     def run(self):
@@ -42,7 +42,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
                 # We are now running
                 self.simulation.pid = p.pid
-                self.simulation.status = SimulationState.Running
+                self.simulation.status = SimulationState.Running.value
                 self.update_status()
 
             self.monitor()
@@ -69,13 +69,13 @@ class LocalSimulationRunner(BaseSimulationRunner):
         last_message = self.last_status_line()
         last_state = self.check_state()
         if "Done" in last_message:
-            self.simulation.status = SimulationState.Succeeded
+            self.simulation.status = SimulationState.Succeeded.value
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
             # If we exited with a Canceled status, don't update to Failed
-            if not last_state == SimulationState.Canceled:
-                self.simulation.status = SimulationState.Failed
+            if not last_state == SimulationState.Canceled.value:
+                self.simulation.status = SimulationState.Failed.value
 
         # Set the final simulation state
         logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %

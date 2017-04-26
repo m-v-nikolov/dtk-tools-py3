@@ -294,9 +294,9 @@ def stdout(args, unknownArgs):
     states, msgs = exp_manager.get_simulation_status()
 
     if args.succeeded:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Succeeded][:1]
+        args.simIds = [k for k in states if states.get(k) is SimulationState.Succeeded.value][:1]
     elif args.failed:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Failed][:1]
+        args.simIds = [k for k in states if states.get(k) is SimulationState.Failed.value][:1]
     else:
         args.simIds = [states.keys()[0]]
 

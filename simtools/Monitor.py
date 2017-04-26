@@ -26,7 +26,7 @@ class SimulationMonitor(object):
             return states,msgs
 
         for sim in experiment.simulations:
-            states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested
+            states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested.value
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
         logger.debug(dict(Counter(states.values())))
