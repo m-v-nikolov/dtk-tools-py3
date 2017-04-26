@@ -319,6 +319,10 @@ class BaseExperimentManager:
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if display != -1: logger.info("... and %s more" % (total_sims + display))
 
+    def refresh_experiment(self):
+        # Refresh the experiment
+        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
@@ -378,6 +382,9 @@ class BaseExperimentManager:
 
         if verbose:
             self.print_status(states, msgs)
+
+        # Refresh the experiment
+        self.refresh_experiment()
 
     def analyze_experiment(self):
         """

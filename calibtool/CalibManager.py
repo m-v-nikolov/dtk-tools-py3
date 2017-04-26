@@ -376,9 +376,6 @@ class CalibManager(object):
                 analyzer.result = []
                 analyzer_list.append(analyzer)
 
-        # Refresh the experiment
-        exp_manager.experiment = DataStore.get_experiment(exp_manager.experiment.exp_id)
-
         analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list, working_dir=self.iteration_directory())
         analyzerManager.analyze()
 
