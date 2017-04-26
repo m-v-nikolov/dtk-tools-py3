@@ -8,8 +8,8 @@ from sqlalchemy import not_
 from sqlalchemy import update
 
 from simtools.Utilities.General import init_logging
-
 logger = init_logging('DataAccess')
+from COMPS.Data.Simulation import SimulationState
 
 class SimulationDataStore:
 
@@ -32,7 +32,7 @@ class SimulationDataStore:
         if len(simulation_batch) == 0: return
 
         with session_scope() as session:
-            stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"), not_(Simulation.status in ('Succeeded','Failed','Canceled'))))\
+            stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"), not_(Simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled))))\
                 .values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
     @classmethod

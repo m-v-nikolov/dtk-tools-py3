@@ -4,8 +4,8 @@ from collections import Counter
 from simtools.DataAccess.DataStore import DataStore
 from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id, COMPS_login
 from simtools.Utilities.General import init_logging, retry_function
-
 logger = init_logging('Monitor')
+from COMPS.Data.Simulation import SimulationState
 
 
 class SimulationMonitor(object):
@@ -26,7 +26,7 @@ class SimulationMonitor(object):
             return states,msgs
 
         for sim in experiment.simulations:
-            states[sim.id] = sim.status if sim.status else "Waiting"
+            states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
         logger.debug(dict(Counter(states.values())))

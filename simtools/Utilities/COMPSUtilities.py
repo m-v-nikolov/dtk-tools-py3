@@ -119,8 +119,8 @@ def sims_from_experiment(e):
     return e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs'))
 
 
-def experiment_needs_commission(e):
-    return e.get_simulations(QueryCriteria().select(['id']).where("state=Created"))
+def experiment_needs_commission(e): # ck4, make sure this still works
+    return e.get_simulations(QueryCriteria().select(['id']).where("state=%d" % SimulationState.Created))
 
 
 def sims_from_experiment_id(exp_id):

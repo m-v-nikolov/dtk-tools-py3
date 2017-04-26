@@ -25,6 +25,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
 from simtools.Utilities.General import is_running
 current_dir = os.path.dirname(os.path.realpath(__file__))
+from COMPS.Data.Simulation import SimulationState
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -97,9 +98,8 @@ class BaseExperimentManager:
     def done_commissioning(self):
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
         for sim in self.experiment.simulations:
-            if sim.status == 'Waiting' or not sim.status or sim.status == "Created":
+            if not sim.status or sim.status in [SimulationState.CommissionRequested, SimulationState.Created]:
                 return False
-
         return True
 
     @staticmethod
@@ -145,7 +145,7 @@ class BaseExperimentManager:
     def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
-        For example: 'Running', 'Succeeded', 'Failed', 'Canceled', 'Unknown'
+        For example: SimulationState.Running,  .Succeeded, .Failed, .Canceled
         """
         self.check_overseer()
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
@@ -319,10 +319,11 @@ class BaseExperimentManager:
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if display != -1: logger.info("... and %s more" % (total_sims + display))
 
+    # ck4, verify this method still works properly now
     def print_status(self,states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
-            if 'Running' in state:
+            if state is SimulationState.Running:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
@@ -418,40 +419,40 @@ class BaseExperimentManager:
             if simulation is None:
                 continue
 
-            if simulation.status not in ['Succeeded', 'Failed', 'Canceled', 'Waiting', 'Unknown']:
+            if simulation.status not in [SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled, SimulationState.CommissionRequested]:
                 self.kill_simulation(simulation)
 
             # Add to the batch
-            sim_batch.append({'sid':simulation.id, 'status':'Canceled','message':None, 'pid':None})
+            sim_batch.append({'sid':simulation.id, 'status':SimulationState.Canceled,'message':None, 'pid':None})
 
         # Batch update the statuses
         DataStore.batch_simulations_update(sim_batch)
 
     @staticmethod
     def status_succeeded(states):
-        return all(v in ['Succeeded'] for v in states.itervalues())
+        return all(v in [SimulationState.Succeeded] for v in states.itervalues())
 
     def succeeded(self):
         return self.status_succeeded(self.get_simulation_status()[0])
 
     @staticmethod
     def status_failed(states):
-        return all(v in ['Failed'] for v in states.itervalues())
+        return all(v in [SimulationState.Failed] for v in states.itervalues())
 
     @staticmethod
     def any_failed(states):
-        return any(v in ['Failed'] for v in states.itervalues())
+        return any(v in [SimulationState.Failed] for v in states.itervalues())
 
     @staticmethod
     def any_canceled(states):
-        return any(v in ['Canceled'] for v in states.itervalues())
+        return any(v in [SimulationState.Canceled] for v in states.itervalues())
 
     def failed(self):
         return self.status_failed(self.get_simulation_status()[0])
 
     @staticmethod
     def status_finished(states):
-        return all(v in ['Succeeded', 'Failed', 'Canceled'] for v in states.itervalues())
+        return all(v in [SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled] for v in states.itervalues())
 
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])

@@ -5,10 +5,9 @@ import time
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-
 from simtools.Utilities.General import init_logging, is_running
 logger = init_logging("LocalRunner")
-
+from COMPS.Data.Simulation import SimulationState
 
 class LocalSimulationRunner(BaseSimulationRunner):
     """
@@ -20,11 +19,11 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
-        if self.check_state() == "Waiting":
+        if self.check_state() == SimulationState.CommissionRequested:
             self.run()
         else:
             self.queue.get()
-            if self.simulation.status not in ('Failed', 'Succeeded', 'Cancelled'):
+            if self.simulation.status not in (SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled):
                 self.monitor()
 
     def run(self):
@@ -43,7 +42,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
                 # We are now running
                 self.simulation.pid = p.pid
-                self.simulation.status = "Running"
+                self.simulation.status = SimulationState.Running
                 self.update_status()
 
             self.monitor()
@@ -70,13 +69,13 @@ class LocalSimulationRunner(BaseSimulationRunner):
         last_message = self.last_status_line()
         last_state = self.check_state()
         if "Done" in last_message:
-            self.simulation.status = "Succeeded"
+            self.simulation.status = SimulationState.Succeeded
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
             # If we exited with a Canceled status, don't update to Failed
-            if not last_state == 'Canceled':
-                self.simulation.status = "Failed"
+            if not last_state == SimulationState.Canceled:
+                self.simulation.status = SimulationState.Failed
 
         # Set the final simulation state
         logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %

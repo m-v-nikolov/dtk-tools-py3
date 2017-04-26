@@ -26,9 +26,10 @@ from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date,
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging, rmtree_f
-import simtools.Utilities.disease_packages as disease_packages
-
 logger = init_logging('Commands')
+import simtools.Utilities.disease_packages as disease_packages
+from COMPS.Data.Simulation import SimulationState
+
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -285,6 +286,7 @@ def clean(args, unknownArgs):
         exp_manager.hard_delete()
 
 
+# ck4, make sure this method still works properly
 def stdout(args, unknownArgs):
     logger.info('Getting stdout...')
 
@@ -292,9 +294,9 @@ def stdout(args, unknownArgs):
     states, msgs = exp_manager.get_simulation_status()
 
     if args.succeeded:
-        args.simIds = [k for k in states if states.get(k) in ['Succeeded']][:1]
+        args.simIds = [k for k in states if states.get(k) is SimulationState.Succeeded][:1]
     elif args.failed:
-        args.simIds = [k for k in states if states.get(k) in ['Failed']][:1]
+        args.simIds = [k for k in states if states.get(k) is SimulationState.Failed][:1]
     else:
         args.simIds = [states.keys()[0]]
 

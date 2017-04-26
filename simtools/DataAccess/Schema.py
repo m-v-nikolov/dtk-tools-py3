@@ -13,6 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from simtools.DataAccess import Base, engine
+from COMPS.Data.Simulation import SimulationState
 
 
 class Analyzer(Base):
@@ -35,8 +36,7 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
-                         "Retry", "CommissionRequested", "Provisioning", "Created"), default='Waiting')
+    status = Column(SimulationState, default=SimulationState.CommissionRequested) # ck4, make sure this still works
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -102,7 +102,7 @@ class Experiment(Base):
 
     def is_done(self):
         for sim in self.simulations:
-            if sim.status not in ('Succeeded', 'Failed','Canceled'):
+            if sim.status not in (SimulationState.Succeeded, SimulationState.Failed,SimulationState.Canceled):
                 return False
         return True
 

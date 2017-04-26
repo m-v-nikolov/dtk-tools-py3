@@ -8,6 +8,7 @@ from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSw
 from simtools.SetupParser import SetupParser
 from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
 from simtools.Utilities.General import get_md5, CommandlineGenerator
+from COMPS.Data.Simulation import SimulationState
 
 
 class TestConfigBuilder(unittest.TestCase):
@@ -233,7 +234,7 @@ class TestLocalExperimentManager(unittest.TestCase):
 
         local_manager = ExperimentManagerFactory.from_experiment(experiment=DataStore.get_experiment(experiment.exp_id))
         states, msgs = local_manager.get_simulation_status()
-        self.assertListEqual(states.values(), ['Waiting'] * self.nsims)
+        self.assertListEqual(states.values(), [SimulationState.CommissionRequested] * self.nsims)
 
         local_manager.hard_delete()
         import time
