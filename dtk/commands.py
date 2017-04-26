@@ -301,7 +301,7 @@ def stdout(args, unknownArgs):
     if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
 
-    am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error))
+    am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error), force_analyze=True)
     am.analyze()
 
 
