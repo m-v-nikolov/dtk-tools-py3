@@ -43,9 +43,12 @@ class GenericIterativeNextPoint(BaseNextPointAlgorithm):
         pass
 
     def set_state(self, state, iteration):
-        pass
+        self.data = state
 
     def cleanup(self):
+        pass
+
+    def update_iteration(self, iteration):
         pass
 
     def get_param_names(self):
@@ -62,9 +65,9 @@ class GenericIterativeNextPoint(BaseNextPointAlgorithm):
 
     def set_results_for_iteration(self, iteration, results):
         resultsdict = results.to_dict(orient='list').values()[0]
+        for idx,sample in enumerate(self.data[iteration]['samples']): sample.update(resultsdict[idx])
         new_iter = copy.deepcopy(self.data[iteration])
-        new_iter['iteration'] = iteration+1
-        for idx,sample in enumerate(new_iter['samples']): sample.update(resultsdict[idx])
+        new_iter['iteration'] = iteration + 1
         self.data.append(new_iter)
 
     def end_condition(self):

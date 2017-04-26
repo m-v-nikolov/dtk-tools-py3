@@ -373,6 +373,7 @@ class CalibManager(object):
         analyzer_list = []
         for site in self.sites:
             for analyzer in site.analyzers:
+                analyzer.result = []
                 analyzer_list.append(analyzer)
 
         # Refresh the experiment
