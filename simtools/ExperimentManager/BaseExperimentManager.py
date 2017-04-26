@@ -319,14 +319,13 @@ class BaseExperimentManager:
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if display != -1: logger.info("... and %s more" % (total_sims + display))
 
-    # ck4, verify this method still works properly now
     def print_status(self, states, msgs, verbose=True):
         long_states = copy.deepcopy(states)
         for jobid, state in states.items():
+            long_states[jobid] = SimulationState(long_states[jobid]).name
             if state is SimulationState.Running.value:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 # convert the state value to a human-readable value
-                long_states[jobid] = SimulationState(long_states[jobid]).name
                 if len(steps_complete) == 2:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
@@ -335,7 +334,7 @@ class BaseExperimentManager:
             # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
         # Display the counter no matter the number of simulations
-        logger.info(dict(Counter(states.values())))
+        logger.info(dict(Counter( [SimulationState(st).name for st in states.values()] ))) # states.values()
 
     def delete_experiment(self, hard=False):
         """

@@ -95,7 +95,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
     for sim in sims:
         # Create the simulation
         simulation = DataStore.create_simulation(id=str(sim.id),
-                                                 status=sim.state.name,
+                                                 status=sim.state.value,
                                                  tags=sim.tags,
                                                  date_created=utc_to_local(sim.date_created).replace(tzinfo=None))
         # Add to the experiment
