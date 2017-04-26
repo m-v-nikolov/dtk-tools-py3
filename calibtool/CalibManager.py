@@ -353,8 +353,11 @@ class CalibManager(object):
         iteration_time_elapsed = current_time - self.iteration_start
         logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
 
+        # Refresh the experiment
+        self.exp_manager.refresh_experiment()
+
         # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(1)
+        time.sleep(0.5)
 
     def analyze_iteration(self):
         """
@@ -375,9 +378,6 @@ class CalibManager(object):
             for analyzer in site.analyzers:
                 analyzer.result = []
                 analyzer_list.append(analyzer)
-
-        # Refresh the experiment
-        exp_manager.experiment = DataStore.get_experiment(exp_manager.experiment.exp_id)
 
         analyzerManager = AnalyzeManager(exp_manager.experiment, analyzer_list, working_dir=self.iteration_directory())
         analyzerManager.analyze()
