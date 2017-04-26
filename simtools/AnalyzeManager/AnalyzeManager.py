@@ -13,7 +13,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None):
+    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None, force_analyze=False):
         if not setup:
             setup = SetupParser()
         self.experiments = []
@@ -21,6 +21,7 @@ class AnalyzeManager:
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
         self.parsers = []
+        self.force_analyze = force_analyze
 
         # If no experiment is specified, retrieve the most recent as a convenience
         if not exp_list:
@@ -66,7 +67,7 @@ class AnalyzeManager:
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
-        if simulation.status != "Succeeded":
+        if not self.force_analyze and simulation.status != "Succeeded":
             print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status)
             return None
 
