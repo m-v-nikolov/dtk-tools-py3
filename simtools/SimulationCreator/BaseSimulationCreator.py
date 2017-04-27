@@ -49,7 +49,7 @@ class BaseSimulationCreator(Process):
 
             # modify next simulation according to experiment builder
             # also retrieve the returned metadata
-            tags = self.initial_tags if self.initial_tags else {}
+            tags = copy.deepcopy(self.initial_tags) if self.initial_tags else {}
             for func in mod_fn_list:
                 md = func(cb)
                 tags.update(md)
