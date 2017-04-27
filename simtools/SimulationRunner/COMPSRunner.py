@@ -6,8 +6,8 @@ from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
 from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id
 from simtools.Utilities.General import init_logging
-
 logger = init_logging('Runner')
+from COMPS.Data.Simulation import SimulationState
 
 
 class COMPSSimulationRunner(BaseSimulationRunner):
@@ -49,7 +49,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 states, _ = monitor.query()
                 if states == {}:
                     # No states returned... Consider failed
-                    states = {sim_id:'Failed' for sim_id in last_states.keys()}
+                    states = {sim_id:SimulationState.Failed for sim_id in last_states.keys()}
             except Exception as e:
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)
@@ -65,7 +65,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
 
                     # loop again to take care of success if needed
                     for key in diff_list:
-                        if states[key] == "Succeeded":
+                        if states[key] == SimulationState.Succeeded:
                             logger.debug("Simulation %s has succeeded, calling ths success callback" % key)
                             simulation = DataStore.get_simulation(key)
                             self.success(simulation)

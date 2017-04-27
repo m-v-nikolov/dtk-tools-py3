@@ -7,8 +7,8 @@ from simtools.DataAccess.Schema import Experiment, Simulation
 from sqlalchemy.orm import joinedload
 
 from simtools.Utilities.General import init_logging, remove_null_values
-
 logger = init_logging('DataAccess')
+from COMPS.Data.Simulation import SimulationState
 
 class ExperimentDataStore:
     @classmethod
@@ -72,13 +72,12 @@ class ExperimentDataStore:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
                 .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
-                .filter(~Simulation.status.in_(('Succeeded', 'Failed', 'Canceled')))
+                .filter(~Simulation.status_i.in_((SimulationState.Succeeded.value, SimulationState.Failed.value, SimulationState.Canceled.value)))
             if location:
                 experiments = experiments.filter(Experiment.location == location)
 
             experiments = experiments.all()
             session.expunge_all()
-
         return experiments
 
     @classmethod

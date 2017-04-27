@@ -6,10 +6,10 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 import multiprocessing
 from simtools.Utilities.General import get_os, init_logging, nostdout
-
 logger = init_logging('AnalyzeManager')
-current_dir = os.path.dirname(os.path.realpath(__file__))
+from COMPS.Data.Simulation import SimulationState
 
+current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
@@ -67,8 +67,8 @@ class AnalyzeManager:
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
-        if not self.force_analyze and simulation.status != "Succeeded":
-            print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status)
+        if not self.force_analyze and simulation.status != SimulationState.Succeeded:
+            print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
             return None
 
         # Add the simulation_id to the tags

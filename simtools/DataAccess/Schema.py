@@ -13,7 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from simtools.DataAccess import Base, engine
-
+from COMPS.Data.Simulation import SimulationState
 
 class Analyzer(Base):
     __tablename__ = "analyzers"
@@ -24,19 +24,16 @@ class Analyzer(Base):
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     experiment = relationship("Experiment", back_populates="analyzers")
 
-
 class Settings(Base):
     __tablename__ = "settings"
     key = Column(String, primary_key=True)
     value = Column(String)
 
-
 class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(Enum('Waiting', 'Commissioned', 'Running', 'Succeeded', 'Failed',  'Canceled', 'CancelRequested',
-                         "Retry", "CommissionRequested", "Provisioning", "Created"), default='Waiting')
+    status_i = Column(Integer, default=SimulationState.CommissionRequested.value)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -44,8 +41,25 @@ class Simulation(Base):
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
 
+
+    # A pair of accessors to support SumulationState-only status comparison external to DB access.
+    @property
+    def status(self):
+        """
+        Allows us to compare status values uniformly in the code with SimulationState objects.
+        :return: SimulationState object corresponding to the DB int status
+        """
+        return SimulationState(self.status_i)
+
+    @status.setter
+    def status(self, st):
+        if isinstance(st, SimulationState):
+            self.status_i = st.value
+        else:
+            raise Exception("Invalid status type: %s" % type(st))
+
     def __repr__(self):
-        return "Simulation %s (%s - %s)" % (self.id, self.status, self.message)
+        return "Simulation %s (%s - %s)" % (self.id, self.status.name, self.message)
 
     def toJSON(self):
         return {self.id: self.tags}
@@ -60,7 +74,6 @@ class Simulation(Base):
                 return map[self.id]
 
             return CompsDTKOutputParser.sim_dir_map[self.id]
-
 
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -102,7 +115,7 @@ class Experiment(Base):
 
     def is_done(self):
         for sim in self.simulations:
-            if sim.status not in ('Succeeded', 'Failed','Canceled'):
+            if sim.status not in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
                 return False
         return True
 
@@ -136,7 +149,6 @@ class Experiment(Base):
 
         return ret
 
-
 class Batch(Base):
     __tablename__ = "batches"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -154,7 +166,6 @@ class Batch(Base):
         exp_ids = [exp.exp_id for exp in self.experiments]
         return exp_ids
 
-
 class BatchExperiment(Base):
     __tablename__ = "batch_experiment"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
@@ -163,6 +174,5 @@ class BatchExperiment(Base):
 
     def __repr__(self):
         return "batch_experiment"
-
 
 Base.metadata.create_all(engine)

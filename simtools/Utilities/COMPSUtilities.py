@@ -120,7 +120,7 @@ def sims_from_experiment(e):
 
 
 def experiment_needs_commission(e):
-    return e.get_simulations(QueryCriteria().select(['id']).where("state=Created"))
+    return e.get_simulations(QueryCriteria().select(['id']).where("state=%d" % SimulationState.Created.value))
 
 
 def sims_from_experiment_id(exp_id):
@@ -143,7 +143,8 @@ def exps_for_suite_id(suite_id):
 
 def experiment_is_running(e):
     for sim in e.get_simulations():
-        if not sim.state in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled, SimulationState.Created, SimulationState.CancelRequested):
+        if not sim.state in (SimulationState.Succeeded, SimulationState.Failed,
+                             SimulationState.Canceled, SimulationState.Created, SimulationState.CancelRequested):
             return True
     return False
 
