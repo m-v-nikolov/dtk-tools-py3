@@ -33,7 +33,7 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status = Column(Integer, default=SimulationState.CommissionRequested.value)
+    status_i = Column(Integer, default=SimulationState.CommissionRequested.value)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -41,8 +41,25 @@ class Simulation(Base):
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
 
+
+    # A pair of accessors to support SumulationState-only status comparison external to DB access.
+    @property
+    def status(self):
+        """
+        Allows us to compare status values uniformly in the code with SimulationState objects.
+        :return: SimulationState object corresponding to the DB int status
+        """
+        return SimulationState(self.status_i)
+
+    @status.setter
+    def status(self, st):
+        if isinstance(st, SimulationState):
+            self.status_i = st.value
+        else:
+            raise Exception("Invalid status type: %s" % type(st))
+
     def __repr__(self):
-        return "Simulation %s (%s - %s)" % (self.id, self.status, self.message)
+        return "Simulation %s (%s - %s)" % (self.id, self.status.name, self.message)
 
     def toJSON(self):
         return {self.id: self.tags}
@@ -98,7 +115,7 @@ class Experiment(Base):
 
     def is_done(self):
         for sim in self.simulations:
-            if sim.status not in (SimulationState.Succeeded.value, SimulationState.Failed.value,SimulationState.Canceled.value):
+            if sim.status not in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
                 return False
         return True
 

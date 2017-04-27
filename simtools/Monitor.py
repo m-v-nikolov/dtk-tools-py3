@@ -7,7 +7,6 @@ from simtools.Utilities.General import init_logging, retry_function
 logger = init_logging('Monitor')
 from COMPS.Data.Simulation import SimulationState
 
-
 class SimulationMonitor(object):
     """
     A class to monitor the status of simulations in the local DB.
@@ -26,12 +25,11 @@ class SimulationMonitor(object):
             return states,msgs
 
         for sim in experiment.simulations:
-            states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested.value
+            states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
         logger.debug(dict(Counter(states.values())))
         return states, msgs
-
 
 class CompsSimulationMonitor(SimulationMonitor):
     """
@@ -62,8 +60,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         states, msgs = {}, {}
         for sim in sims:
             id_string = str(sim.id)
-            state_string = sim.state.value
-            states[id_string] = state_string
+            states[id_string] = sim.state # this is already a SimulationState object
             msgs[id_string] = ''
 
         logger.debug("States returned")
