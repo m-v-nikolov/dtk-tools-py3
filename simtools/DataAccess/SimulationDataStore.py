@@ -31,16 +31,19 @@ class SimulationDataStore:
         logger.debug("Batch simulations update")
         if len(simulation_batch) == 0: return
 
+        for h in simulation_batch:
+            h["status"] = str(h["status"].value) # SimulationState -> int
+
         with session_scope() as session:
             stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"),
                                                  not_(Simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled))))\
-                .values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
+                .values(status_i=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
+
     @classmethod
     def bulk_insert_simulations(cls,simulations):
         with session_scope() as session:
             session.bulk_save_objects(simulations)
-
 
     @classmethod
     def get_simulation_states(cls, simids):

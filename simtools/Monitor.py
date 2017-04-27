@@ -64,6 +64,6 @@ class CompsSimulationMonitor(SimulationMonitor):
             msgs[id_string] = ''
 
         logger.debug("States returned")
-        logger.debug(json.dumps(dict(Counter(states.values())), indent=3))
+        logger.debug(json.dumps(dict(Counter( [st.name for st in states.values()] )), indent=3))
 
         return states, msgs
