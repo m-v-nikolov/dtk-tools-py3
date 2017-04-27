@@ -34,7 +34,7 @@ class LocalExperimentManager(BaseExperimentManager):
         self.unfinished_simulation_ids = []
         if experiment:
             for sim in experiment.simulations:
-                if sim.status not in [SimulationState.Failed.value, SimulationState.Succeeded.value, SimulationState.Canceled.value]:
+                if sim.status not in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
                     self.unfinished_simulation_ids.append(sim.id)
         else:
             self.unfinished_simulation_ids = [] # none can be checked because none can be queried
@@ -52,7 +52,7 @@ class LocalExperimentManager(BaseExperimentManager):
             if self.local_queue.full():
                 break
             else:
-                logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, SimulationState(simulation.status).name))
+                logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status.name))
                 t1 = threading.Thread(target=LocalSimulationRunner,
                                       args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
                 t1.daemon = True
@@ -79,12 +79,12 @@ class LocalExperimentManager(BaseExperimentManager):
                 session.expunge_all()
 
             for sim in sims_to_check:
-                if sim.status == SimulationState.CommissionRequested.value or\
-                        (sim.status == SimulationState.Running.value and not is_running(sim.pid, name_part='Eradication')):
+                if sim.status == SimulationState.CommissionRequested or\
+                        (sim.status == SimulationState.Running and not is_running(sim.pid, name_part='Eradication')):
                     logger.debug("Detected sim potentially in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
                                  (sim.id, sim.status, sim.pid, is_running(sim.pid, name_part='Eradication')))
                     simulations.append(sim)
-                elif sim.status in [SimulationState.Failed.value, SimulationState.Succeeded.value, SimulationState.Canceled.value]:
+                elif sim.status in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
                     self.unfinished_simulation_ids.remove(sim.id)
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
@@ -126,12 +126,12 @@ class LocalExperimentManager(BaseExperimentManager):
 
     def cancel_experiment(self):
         super(LocalExperimentManager, self).cancel_experiment()
-        sim_list = [sim for sim in self.experiment.simulations if sim.status in [SimulationState.CommissionRequested.value, SimulationState.Running.value]]
+        sim_list = [sim for sim in self.experiment.simulations if sim.status in [SimulationState.CommissionRequested, SimulationState.Running]]
         self.cancel_simulations(sim_list)
 
     def kill_simulation(self, simulation):
         # No need of trying to kill simulation already done
-        if simulation.status in (SimulationState.Succeeded.value, SimulationState.Failed.value, SimulationState.Canceled.value):
+        if simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
             return
 
         # It was running -> Kill it if pid is there

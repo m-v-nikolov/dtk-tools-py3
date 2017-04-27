@@ -33,7 +33,7 @@ class SimulationDataStore:
 
         with session_scope() as session:
             stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"),
-                                                 not_(Simulation.status in (SimulationState.Succeeded.value, SimulationState.Failed.value, SimulationState.Canceled.value))))\
+                                                 not_(Simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled))))\
                 .values(status=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
     @classmethod

@@ -19,11 +19,11 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
-        if self.check_state() == SimulationState.CommissionRequested.value:
+        if self.check_state() == SimulationState.CommissionRequested:
             self.run()
         else:
             self.queue.get()
-            if self.simulation.status not in (SimulationState.Failed.value, SimulationState.Succeeded.value, SimulationState.Canceled.value):
+            if self.simulation.status not in (SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled):
                 self.monitor()
 
     def run(self):
@@ -42,7 +42,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
                 # We are now running
                 self.simulation.pid = p.pid
-                self.simulation.status = SimulationState.Running.value
+                self.simulation.status = SimulationState.Running
                 self.update_status()
 
             self.monitor()
@@ -69,17 +69,17 @@ class LocalSimulationRunner(BaseSimulationRunner):
         last_message = self.last_status_line()
         last_state = self.check_state()
         if "Done" in last_message:
-            self.simulation.status = SimulationState.Succeeded.value
+            self.simulation.status = SimulationState.Succeeded
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
             # If we exited with a Canceled status, don't update to Failed
-            if not last_state == SimulationState.Canceled.value:
-                self.simulation.status = SimulationState.Failed.value
+            if not last_state == SimulationState.Canceled:
+                self.simulation.status = SimulationState.Failed
 
         # Set the final simulation state
         logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %
-                     (self.simulation.id, sim_pid, SimulationState(self.simulation.status).name))
+                     (self.simulation.id, sim_pid, self.simulation.status.name))
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()

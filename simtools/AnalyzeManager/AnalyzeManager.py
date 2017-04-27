@@ -67,8 +67,8 @@ class AnalyzeManager:
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
-        if not self.force_analyze and simulation.status != SimulationState.Succeeded.value:
-            print "Simulation %s skipped (status is %s)" % (simulation.id, SimulationState(simulation.status).name)
+        if not self.force_analyze and simulation.status != SimulationState.Succeeded:
+            print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
             return None
 
         # Add the simulation_id to the tags
