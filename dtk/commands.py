@@ -286,7 +286,6 @@ def clean(args, unknownArgs):
         exp_manager.hard_delete()
 
 
-# ck4, make sure this method still works properly
 def stdout(args, unknownArgs):
     logger.info('Getting stdout...')
 
