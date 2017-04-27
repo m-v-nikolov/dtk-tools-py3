@@ -52,7 +52,7 @@ class LocalExperimentManager(BaseExperimentManager):
             if self.local_queue.full():
                 break
             else:
-                logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status))
+                logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, SimulationState(simulation.status).name))
                 t1 = threading.Thread(target=LocalSimulationRunner,
                                       args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
                 t1.daemon = True

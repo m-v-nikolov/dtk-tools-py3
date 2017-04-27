@@ -79,7 +79,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
         # Set the final simulation state
         logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %
-                     (self.simulation.id, sim_pid, self.simulation.status))
+                     (self.simulation.id, sim_pid, SimulationState(self.simulation.status).name))
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()

@@ -62,7 +62,7 @@ class CompsSimulationMonitor(SimulationMonitor):
         states, msgs = {}, {}
         for sim in sims:
             id_string = str(sim.id)
-            state_string = sim.state.name
+            state_string = sim.state.value
             states[id_string] = state_string
             msgs[id_string] = ''
 
