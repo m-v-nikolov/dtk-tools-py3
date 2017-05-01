@@ -185,9 +185,10 @@ class DTKGitHub(object):
 
     @classmethod
     def create_token(cls):
+        import getpass
         # Asks user for username/password
         user = raw_input("Please enter your GitHub username: ")
-        password = raw_input("Please enter your GitHub password: ")
+        password = getpass.getpass(prompt="Please enter your GitHub password: ")
 
         # Info for the GitHub token
         note = 'dtk-tools-%s' % str(uuid.uuid4())[:4]
