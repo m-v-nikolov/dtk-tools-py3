@@ -21,8 +21,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
                     name,
                     reference_sheet,
 
-                    include_subclinical = True,
-
                     basedir = 'Work',
 
                     max_sims_to_process = -1,
@@ -42,8 +40,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
         self.name = name
         self.reference_sheet = reference_sheet
-
-        self.include_subclinical = include_subclinical
 
         self.cache_data = {}
 
@@ -98,10 +94,10 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
 
                 # Undo parent's pop scaling for beta-binomial likelihood
                 simbin['Sim_Cases'] = simbin['Acute (Inc)']
-                if self.include_subclinical:
-                    simbin['Sim_Cases'] += simbin['Sub-Clinical (Inc)']
+                simbin['Sim_Cases_With_Subclinical'] = simbin['Sim_Cases'] + simbin['Sub-Clinical (Inc)']
 
                 simbin['Sim_Cases_Unscaled'] = simbin['Sim_Cases'] / pop_scaling # Note: pop_scaling comes from parent
+                simbin['Sim_Cases_With_Subclinical_Unscaled'] = simbin['Sim_Cases_With_Subclinical'] / pop_scaling
                 simbin.rename(index={'Population':'Sim_Population'}, inplace=True)
                 simbin['Sim_Population_Unscaled'] = simbin['Sim_Population'] / pop_scaling
 
@@ -135,6 +131,16 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             # Get data from shelve
             self.data = shelved_data['Data']
         else:
+
+            # Not all sim_ids work, perhaps due to a failed job
+            failed_sids = [sid for sid in self.sim_ids if str(sid) not in self.shelve]
+            if failed_sids:
+                print 'WARNING ' * 5
+                print 'The following (%d) sim ids were not in the shelve, perhaps the jobs failed?'%len(failed_sids)
+                print '\n'.join(failed_sids)
+                print '-(%d)'%len(failed_sids),'-'*75
+            self.sim_ids = [sid for sid in self.sim_ids if str(sid) in self.shelve]
+
 
             # Not in shelve, need to combine and store in shelve
             selected = [ self.shelve[str(sim_id)]['Data'] for sim_id in self.sim_ids ]
@@ -189,17 +195,14 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         self.cache_data['result'] = self.result.to_dict()
         '''
 
-        fn = os.path.join(self.workdir,'Results_%s_Acute.xlsx'%self.__class__.__name__)
-        if self.include_subclinical:
-            fn = os.path.join(self.workdir,'Results_%s_AcuteAndSubClinical.xlsx'%self.__class__.__name__)
+        fn = os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__)
 
         writer = pd.ExcelWriter(fn)
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
         self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()
 
-        exit()
-
+        '''
         f, axes = plt.subplots(1, 1, figsize=(12, 8), sharex=False)
         #sns.despine(left=True)
 
@@ -216,19 +219,6 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             axes.plot( [s['Min'], s['Max']], [idx,idx], 'b-', linewidth=0.5 )
         axes.scatter(d['Sim_Cases'], d['Sample'], c='k', marker='|', alpha=1, linewidths=1)
 
-        # TODO: Vectorize
-        '''
-        for idx,s in d.iterrows():
-            k = s['Cases']
-            n = s['Population']
-            a = s['Sim_Cases_Unscaled']+1
-            b = s['Sim_Population_Unscaled']+1
-
-            mean = n*a / (a+b)
-            var = n*a*b*(a+b+n) / ((a+b)**2 * (a+b+1))
-
-            axes[0].errorbar(s['Sim_Cases'], int(float(s['Sample'])), xerr=2*np.sqrt(var), marker='|', markersize=20, ecolor='k', mew=1)
-        '''
         plt.autoscale()
         #axes.set_xlim(xmin=-1)
         axes.set_ylim(ymin=0, ymax=n_samples)
@@ -247,28 +237,11 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         axes[1,0].set_xlim(xmin=0)
 
         plt.savefig(os.path.join(self.workdir, 'CasesByAge.'+self.fig_format)); plt.close()
-
-        '''
-        writer = pd.ExcelWriter('TotalCases.xlsx')
-        self.data.to_excel(writer,'Data')
-        self.result.to_frame(name='Result').to_excel(writer,'Result')
-        writer.save()
-
-        from Map import Map
-
-        calib_manager = Map()
-        calib_manager.iteration = self.iteration
-        calib_manager.iteration_state = Map()
-        calib_manager.iteration_state['analyzers'] = {}
-        calib_manager.iteration_state.analyzers['Santiago_TotalCases'] = self.cache()
-
-        p = TotalCasesPlotter(combine_sites=True)
-        p.visualize(calib_manager)
         '''
 
 
     def plot(self):
-        super(TotalCasesAnalyzer, self).plot() # plt.show()
+        super(CasesByAgeAnalyzer, self).plot() # plt.show()
 
     def cache(self):
         return self.cache_data
