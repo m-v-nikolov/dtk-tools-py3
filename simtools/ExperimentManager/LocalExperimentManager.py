@@ -89,7 +89,6 @@ class LocalExperimentManager(BaseExperimentManager):
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
 
-
     def check_input_files(self, input_files):
         """
         Check file exist and return the missing files as dict
@@ -97,11 +96,13 @@ class LocalExperimentManager(BaseExperimentManager):
         input_root = self.setup.get('input_root')
         return input_root, self.find_missing_files(input_files, input_root)
 
-    def create_experiment(self, experiment_name, experiment_id=re.sub('[ :.-]', '_', str(datetime.now())),suite_id=None):
+    def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
+        # Create a unique id
+        experiment_id = re.sub('[ :.-]', '_', str(datetime.now()))
         logger.info("Creating exp_id = " + experiment_id)
 
         # Create the experiment in the base class
-        super(LocalExperimentManager,self).create_experiment(experiment_name, experiment_id, suite_id)
+        super(LocalExperimentManager, self).create_experiment(experiment_name, experiment_id, suite_id)
 
         # Get the path and create it if needed
         experiment_path = self.experiment.get_path()
