@@ -1,13 +1,12 @@
 # Execute directly: 'python example_calibration.py'
 # or via the calibtool.py script: 'calibtool run example_full_calibration.py --hpc'
-
+from calibtool.algorithms.IMIS import IMIS
 from simtools.SetupParser import SetupParser
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
-from calibtool.algo.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 
