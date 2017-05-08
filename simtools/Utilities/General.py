@@ -5,7 +5,6 @@ import logging
 import os
 import platform
 import sys
-import psutil
 
 import time
 
@@ -299,6 +298,7 @@ def is_running(pid, name_part):
     :param name_part: a case-sensitive partial name by which the thread can be properly identified.
     :return: True/False
     """
+    import psutil
     # ck4, This should be refactored to use a common module containing a dict of Process objects
     #      This way, we don't need to do the name() checking, just use the method process.is_running(),
     #      since this method checks for pid number being active AND pid start time.
