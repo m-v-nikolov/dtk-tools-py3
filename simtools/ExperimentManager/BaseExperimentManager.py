@@ -314,10 +314,12 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
+        sims_to_display = 2
+        display = -sims_to_display if total_sims > sims_to_display else -total_sims
         logger.info(" ")
         display = -1 if total_sims == 1 else -2
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
-        if display != -1: logger.info("... and %s more" % (total_sims + display))
+        if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
     def refresh_experiment(self):
         # Refresh the experiment

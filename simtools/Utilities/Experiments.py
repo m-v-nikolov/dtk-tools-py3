@@ -17,7 +17,7 @@ def validate_exp_name(exp_name):
     else:
         return True
 
-def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False):
+def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_update=False):
     """
     Retrieve an experiment in the local database based on its id.
     Can call a sync if missing if the flag is true.
@@ -26,8 +26,14 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False):
     :return: The experiment found
     """
     if not exp_id: raise Exception("Trying to retrieve an experiment without providing an experiment ID")
+    # If we dont force the update -> look first in the DB
     exp = DataStore.get_experiment(exp_id)
-    if exp: return exp
+    if exp:
+        # If we have an experiment and we want to force the update -> delete it
+        if not force_update:
+            return exp
+        else:
+            DataStore.delete_experiment(exp)
 
     if not sync_if_missing:
         raise Exception('Experiment %s not found in the local database and sync disabled.' % exp_id)
