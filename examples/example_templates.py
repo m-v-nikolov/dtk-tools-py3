@@ -116,6 +116,7 @@ run_sim_args =  {'config_builder': config_builder,
 
 if __name__ == "__main__":
     exp_manager = ExperimentManagerFactory.from_setup(SetupParser())
+    exp_manager.bypass_missing = True
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 

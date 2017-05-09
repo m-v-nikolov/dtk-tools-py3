@@ -113,6 +113,9 @@ class Experiment(Base):
                 return True
         return False
 
+    def get_simulations_with_tag(self, tag, value):
+        return [sim for sim in self.simulations if sim.tags.has_key(tag) and sim.tags[tag] == value]
+
     def is_done(self):
         for sim in self.simulations:
             if sim.status not in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
