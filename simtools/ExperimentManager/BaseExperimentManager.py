@@ -255,7 +255,7 @@ class BaseExperimentManager:
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
         # Create the experiment if not present already
-        if not self.experiment:
+        if not self.experiment or self.experiment.exp_name != exp_name:
             self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
         else:
             # Refresh the experiment
