@@ -317,7 +317,6 @@ class BaseExperimentManager:
         sims_to_display = 2
         display = -sims_to_display if total_sims > sims_to_display else -total_sims
         logger.info(" ")
-        display = -1 if total_sims == 1 else -2
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
