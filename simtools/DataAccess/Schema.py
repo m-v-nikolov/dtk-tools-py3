@@ -33,14 +33,13 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status_i = Column(Integer, default=SimulationState.CommissionRequested.value)
+    status_i = Column(Integer, default=SimulationState.Created.value)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     tags = Column(PickleType())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
-
 
     # A pair of accessors to support SumulationState-only status comparison external to DB access.
     @property
