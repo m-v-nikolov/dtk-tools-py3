@@ -13,8 +13,6 @@ from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCre
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 from simtools.Utilities.General import is_running
 
-from simtools.DataAccess import session_scope
-from simtools.DataAccess.Schema import Simulation
 from COMPS.Data.Simulation import SimulationState
 
 class LocalExperimentManager(BaseExperimentManager):
@@ -24,7 +22,6 @@ class LocalExperimentManager(BaseExperimentManager):
     """
     location = 'LOCAL'
     parserClass = SimulationOutputParser
-
 
     @property
     def experiment(self):
@@ -39,19 +36,17 @@ class LocalExperimentManager(BaseExperimentManager):
         if experiment:
             for sim in experiment.simulations:
                 if sim.status not in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
-                    if sim.id not in self.unfinished_simulation_ids: self.unfinished_simulation_ids.append(sim.id)
+                    if sim.id not in self.unfinished_simulations:
+                        self.unfinished_simulations[sim.id] = sim
 
     def __init__(self, model_file, experiment, setup=None):
         self.local_queue = None
         self.simulations_commissioned = 0
-        self.unfinished_simulation_ids = []
-
-        BaseExperimentManager.__init__(self, model_file, experiment, setup)
-        # update our understanding of which sims need to finish up still (they may/may not be started yet)
-        logger.debug("Setting up unfinished simulation ids...")
-
+        self.unfinished_simulations = {}
         self._experiment = None
         self.experiment = experiment
+
+        BaseExperimentManager.__init__(self, model_file, experiment, setup)
 
     def commission_simulations(self, states):
         """
@@ -83,23 +78,16 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         simulations = []
         # get the latest status information for all potentially unfinished simulations first
-        if not len(self.unfinished_simulation_ids) == 0:
-            with session_scope() as session:
-                logger.debug("There are %d unfinished_simulation_ids to check." % len(self.unfinished_simulation_ids))
-                sims_to_check = session.query(Simulation).filter(Simulation.id.in_(self.unfinished_simulation_ids)).all()
-                logger.debug("Found %d sims to check" % len(sims_to_check))
-                for sim in sims_to_check: # prevent failing, expunged lazy-load of this. Perhaps all sims should preload this in their constructor?
-                    sim.get_path()
-                session.expunge_all()
-
-            for sim in sims_to_check:
-                if sim.status == SimulationState.CommissionRequested or\
+        if not len(self.unfinished_simulations) == 0:
+            logger.debug("There are %d unfinished_simulation_ids to check." % len(self.unfinished_simulations))
+            for sim in self.unfinished_simulations.values():
+                if sim.status == SimulationState.Created or\
                         (sim.status == SimulationState.Running and not is_running(sim.pid, name_part='Eradication')):
                     logger.debug("Detected sim potentially in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
                                  (sim.id, sim.status, sim.pid, is_running(sim.pid, name_part='Eradication')))
                     simulations.append(sim)
                 elif sim.status in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
-                    self.unfinished_simulation_ids.remove(sim.id)
+                    del self.unfinished_simulations[sim.id]
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
 

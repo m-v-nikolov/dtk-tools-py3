@@ -19,7 +19,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
 
-        if self.check_state() == SimulationState.CommissionRequested:
+        if self.check_state() == SimulationState.Created:
             self.run()
         else:
             self.queue.get()
