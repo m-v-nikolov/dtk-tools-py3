@@ -25,19 +25,33 @@ class LocalExperimentManager(BaseExperimentManager):
     location = 'LOCAL'
     parserClass = SimulationOutputParser
 
-    def __init__(self, model_file, experiment, setup=None):
-        self.local_queue = None
-        self.simulations_commissioned = 0
-        BaseExperimentManager.__init__(self, model_file, experiment, setup)
-        # update our understanding of which sims need to finish up still (they may/may not be started yet)
-        logger.debug("Setting up unfinished simulation ids...")
-        self.unfinished_simulation_ids = []
+
+    @property
+    def experiment(self):
+        return self._experiment
+
+    @experiment.setter
+    def experiment(self, experiment):
+        """
+        The experiment is a setter so we can refresh the unfinished simulations ids if new simulations are added
+        """
+        self._experiment = experiment
         if experiment:
             for sim in experiment.simulations:
                 if sim.status not in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
-                    self.unfinished_simulation_ids.append(sim.id)
-        else:
-            self.unfinished_simulation_ids = [] # none can be checked because none can be queried
+                    if sim.id not in self.unfinished_simulation_ids: self.unfinished_simulation_ids.append(sim.id)
+
+    def __init__(self, model_file, experiment, setup=None):
+        self.local_queue = None
+        self.simulations_commissioned = 0
+        self.unfinished_simulation_ids = []
+
+        BaseExperimentManager.__init__(self, model_file, experiment, setup)
+        # update our understanding of which sims need to finish up still (they may/may not be started yet)
+        logger.debug("Setting up unfinished simulation ids...")
+
+        self._experiment = None
+        self.experiment = experiment
 
     def commission_simulations(self, states):
         """

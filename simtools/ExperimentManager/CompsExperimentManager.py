@@ -13,6 +13,7 @@ from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_i
 from simtools.Utilities.General import init_logging
 logger = init_logging("COMPSExperimentManager")
 
+
 class CompsExperimentManager(BaseExperimentManager):
     """
     Extends the LocalExperimentManager to manage DTK simulations through COMPSAccess wrappers
@@ -120,18 +121,15 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-
-        if self.runner_created:
-            n_commissioned = 0 # no sims commissioned
-        else:
+        if not self.runner_created:
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
             t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
             t1.daemon = True
             t1.start()
             self.runner_created = True
-            COMPS_login(self.endpoint)
-            n_commissioned = len(Experiment.get(self.experiment.exp_id).get_simulations())
-        return n_commissioned
+            return len(self.experiment.simulations)
+        else:
+            return 0
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()

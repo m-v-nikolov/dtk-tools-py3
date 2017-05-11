@@ -4,10 +4,10 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id, get_simulation_by_id
+from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.General import init_logging
 logger = init_logging('Runner')
-from COMPS.Data.Simulation import SimulationState
 
 
 class COMPSSimulationRunner(BaseSimulationRunner):
@@ -54,7 +54,11 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)
 
-            diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key]]
+            # Create the diff list
+            # This list holds the ids of simulations that changed since last loop
+            # Also include eventual created simulations since last time
+            diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key] or states[key] == SimulationState.Created]
+
             logger.debug('COMPS - Difflist for experiment %s' % self.experiment.id)
             logger.debug(diff_list)
 
@@ -70,6 +74,13 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                             simulation = DataStore.get_simulation(key)
                             self.success(simulation)
                             logger.debug("Callback done for %s" % key)
+                        if states[key] == SimulationState.Created:
+                            # If we find a simulation created but not commissioned -> run it!
+                            # This case can happen when simulations are added at a later time
+                            logger.debug("Found a simulation not commissioned: %s. Run it!" % key)
+                            sim = get_simulation_by_id(key)
+                            sim.commission()
+
                 except Exception as e:
                     logger.error("Error in the COMPSRunner Monitor")
                     logger.error(e)

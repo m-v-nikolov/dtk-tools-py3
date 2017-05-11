@@ -33,7 +33,6 @@ class BaseExperimentManager:
     location = None
 
     def __init__(self, model_file, experiment, setup=None):
-        self.model_file = model_file
         self.experiment = experiment
 
         # If no setup is passed -> create it
@@ -44,6 +43,7 @@ class BaseExperimentManager:
         else:
             self.setup = setup
 
+        self.model_file = model_file or self.setup.get('exe_path')
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
@@ -53,6 +53,7 @@ class BaseExperimentManager:
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
+        self.bypass_missing = False
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -207,8 +208,8 @@ class BaseExperimentManager:
         Check input files and make sure there exist
         Note: we by pass the 'Campaign_Filename'
         """
-        # By-pass input file checking if using assets_service
-        if self.assets_service:
+        # By-pass input file checking if using assets_service or we want to bypass
+        if self.assets_service or self.bypass_missing:
             return True
         # If the config builder has no file paths -> bypass
         if not hasattr(config_builder, 'get_input_file_paths'):
@@ -254,7 +255,7 @@ class BaseExperimentManager:
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
         # Create the experiment if not present already
-        if not self.experiment:
+        if not self.experiment or self.experiment.exp_name != exp_name:
             self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
         else:
             # Refresh the experiment
@@ -317,7 +318,6 @@ class BaseExperimentManager:
         sims_to_display = 2
         display = -sims_to_display if total_sims > sims_to_display else -total_sims
         logger.info(" ")
-        display = -1 if total_sims == 1 else -2
         logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
         if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 

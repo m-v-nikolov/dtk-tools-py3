@@ -105,6 +105,9 @@ def COMPS_login(endpoint):
 def get_experiment_by_id(exp_id):
     return Experiment.get(exp_id)
 
+@retry_function
+def get_simulation_by_id(sim_id):
+    return Simulation.get(id=sim_id)
 
 def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
