@@ -86,7 +86,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         scenario = sim_metadata['Scenario']
 
         # SELECT BY SCENARIO ##################################################
-        if self.intervention_subset is not None:
+        if self.intervention_subset is not None and self.intervention_subset:
             if '_' in scenario:
                 tok = scenario.split('_')
                 intervention = '_'.join(tok[1:])
