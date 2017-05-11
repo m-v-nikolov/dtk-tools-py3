@@ -221,7 +221,8 @@ def check_status(exp_list):
         if not exp_manager.status_succeeded(states):
             logger.warning('Not all jobs have finished successfully yet...')
             logger.info('Job states:')
-            logger.info(json.dumps(states, sort_keys=True, indent=4))
+            from simtools.Utilities.Encoding import GeneralEncoder
+            logger.info(json.dumps(states, sort_keys=True, indent=4, cls=GeneralEncoder))
             exit()
 
 
