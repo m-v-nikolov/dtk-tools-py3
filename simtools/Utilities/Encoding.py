@@ -3,6 +3,7 @@ import json
 
 import numpy as np
 
+   
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -26,6 +27,15 @@ class NumpyEncoder(json.JSONEncoder):
                         shape=obj.shape)
         # Let the base class default method raise the TypeError
         return json.JSONEncoder(self, obj)
+
+
+class GeneralEncoder(NumpyEncoder):
+    def default(self, obj):
+        from COMPS.Data.Simulation import SimulationState
+        if isinstance(obj, SimulationState):
+            return obj.name
+        return super(GeneralEncoder, self).default(obj)
+
 
 def json_numpy_obj_hook(dct):
     """Decodes a previously encoded numpy ndarray with proper shape and dtype.
