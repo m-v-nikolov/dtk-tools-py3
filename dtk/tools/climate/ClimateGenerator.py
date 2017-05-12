@@ -72,7 +72,7 @@ class ClimateGenerator:
         while (wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]):
             om('Waiting for climate generation to complete (current state: ' + str(wi.state) + ')',
                style='flushed')
-            time.sleep(0.1)
+            time.sleep(5)
             wi.refresh()
 
         om("Climate files SUCCESSFULLY generated")
