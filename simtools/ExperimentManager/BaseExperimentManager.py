@@ -152,12 +152,8 @@ class BaseExperimentManager:
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
-    def get_output_parser(self, sim_path, sim_id, sim_tags, filtered_analyses, semaphore):
-        return self.parserClass(sim_path,
-                                sim_id,
-                                sim_tags,
-                                filtered_analyses,
-                                semaphore)
+    def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
+        return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
     def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, analyzers=[]):
         """

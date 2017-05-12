@@ -1,38 +1,39 @@
-import os  # mkdir, path, etc.
+import cStringIO
+import gc  # for garbage collection
 import json  # to read JSON output files
-import numpy as np  # for reading spatial output data by node and timestep
+import logging
+import os  # mkdir, path, etc.
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
-import pandas as pd  # for reading csv files
-import gc # for garbage collection
 
-import logging
-from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id
+import numpy as np  # for reading spatial output data by node and timestep
+import pandas as pd  # for reading csv files
+
+from simtools.DataAccess.LoggingDataStore import LoggingDataStore
+from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
 
 
 class SimulationOutputParser(threading.Thread):
-    def __init__(self, sim_dir, sim_id, sim_data, analyzers, semaphore=None):
+    def __init__(self, simulation, analyzers, semaphore=None, parse=True):
         threading.Thread.__init__(self)
-        self.sim_dir = sim_dir
-        self.sim_id = sim_id
-        self.sim_data = sim_data
+        self.sim_id = simulation.id
+        self.sim_path = simulation.get_path()
+        self.sim_data = simulation.tags
+
         self.analyzers = analyzers
         self.raw_data = {}
         self.selected_data = {}
         self.semaphore = semaphore
-
-        # If all the analyzers present call for deactivating the parsing -> do it
-        self.parse = any([a.parse for a in analyzers if hasattr(a,'parse')])
+        self.parse = parse
 
     def run(self):
         try:
             # list of output files needed by any analysis
             filenames = set()
-            for a in self.analyzers:
-                filenames.update(a.filenames)
+            map(lambda a: filenames.update(a.filenames), self.analyzers)
             filenames = list(filenames)
 
             # parse output files for analysis
@@ -43,7 +44,8 @@ class SimulationOutputParser(threading.Thread):
                 self.selected_data[id(analyzer)] = analyzer.apply(self)
 
             del self.raw_data
-            gc.collect()    # clean up after apply()
+            gc.collect()  # clean up after apply()
+
         finally:
             if self.semaphore:
                 self.semaphore.release()
@@ -62,72 +64,70 @@ class SimulationOutputParser(threading.Thread):
             return file.read()
 
     def load_all_files(self, filenames):
-        for filename in filenames:
-            self.load_single_file(filename)
+        map(self.load_single_file, filenames)
 
-    def load_single_file(self, filename, *args):
+    def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
+        if content and file_extension != 'bin':
+            content = cStringIO.StringIO(content).getvalue()
+
+        if not content:
+            mode = 'rb' if file_extension in ('bin', 'json') else 'r'
+            with open(self.get_path(filename), mode) as output_file:
+                content = output_file.read()
+
         if not self.parse:
-            self.load_raw_file(filename, *args)
+            self.load_raw_file(filename, content)
         elif file_extension == 'json':
             logging.debug('reading JSON')
-            self.load_json_file(filename, *args)
+            self.load_json_file(filename, content)
         elif file_extension == 'csv':
             logging.debug('reading CSV')
-            self.load_csv_file(filename, *args)
+            self.load_csv_file(filename, content)
         elif file_extension == 'xlsx':
             logging.debug('reading XLSX')
-            self.load_xlsx_file(filename, *args)
+            self.load_xlsx_file(filename, content)
         elif file_extension == 'txt':
             logging.debug('reading txt')
-            self.load_txt_file(filename, *args)
+            self.load_txt_file(filename, content)
         elif file_extension == 'bin' and 'SpatialReport' in filename:
-            self.load_bin_file(filename, *args)
+            self.load_bin_file(filename, content)
         else:
             print(filename + ' is of an unknown type.  Skipping...')
-            return
 
-    def load_json_file(self, filename, *args):
-        with open(self.get_path(filename)) as json_file:
-            self.raw_data[filename] = json.loads(json_file.read())
+    def load_json_file(self, filename, content):
+        self.raw_data[filename] = json.loads(content)
 
-    def load_raw_file(self, filename, *args):
-        with open(self.get_path(filename)) as raw_file:
-            self.raw_data[filename] = raw_file.read()
+    def load_raw_file(self, filename, content):
+        self.raw_data[filename] = content
 
-    def load_csv_file(self, filename, *args):
-        with open(self.get_path(filename)) as csv_file:
-            csv_read = pd.read_csv(csv_file, skipinitialspace=True)
-            # For headers, take everything up to the first space
-            csv_read.columns = [s.split(' ')[0] for s in csv_read.columns]
-            self.raw_data[filename] = csv_read
+    def load_csv_file(self, filename, content):
+        csv_read = pd.read_csv(content, skipinitialspace=True)
+        # For headers, take everything up to the first space
+        csv_read.columns = [s.split(' ')[0] for s in csv_read.columns]
+        self.raw_data[filename] = csv_read
 
-    def load_xlsx_file(self, filename, *args):
-        excel_file = pd.ExcelFile(self.get_path(filename))
+    def load_xlsx_file(self, filename, content):
+        excel_file = pd.ExcelFile(content)
         self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name)
                                    for sheet_name in excel_file.sheet_names}
 
-    def load_txt_file(self, filename, *args):
-        try:
-            self.raw_data[filename] = self.get_last_megabyte(filename)
-        except:
-            self.raw_data[filename] = 'Error reading file.'
+    def load_txt_file(self, filename, content):
+        self.raw_data[filename] = content
 
-    def load_bin_file(self, filename, *args):
-        with open(self.get_path(filename), 'rb') as bin_file:
-            data = bin_file.read(8)
-            n_nodes, = struct.unpack('i', data[0:4])
-            n_tstep, = struct.unpack('i', data[4:8])
-            # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
+    def load_bin_file(self, filename, content):
+        n_nodes, = struct.unpack('i', content[0:4])
+        n_tstep, = struct.unpack('i', content[4:8])
+        # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
 
-            nodeids_dtype = np.dtype([('ids', '<u4', (1, n_nodes))])
-            nodeids = np.fromfile(bin_file, dtype=nodeids_dtype, count=1)
-            nodeids = nodeids['ids'][:, :, :].ravel()
-            # print( "node IDs: " + str(nodeids) )
+        nodeids = struct.unpack(str(n_nodes) + 'I', content[8:8 + n_nodes * 4])
+        nodeids = np.asarray(nodeids)
+        # print( "node IDs: " + str(nodeids) )
 
-            channel_dtype = np.dtype([('data', '<f4', (1, n_nodes))])
-            channel_data = np.fromfile(bin_file, dtype=channel_dtype)
-            channel_data = channel_data['data'].reshape(n_tstep, n_nodes)
+        channel_data = struct.unpack(str(n_nodes * n_tstep) + 'f',
+                                     content[8 + n_nodes * 4:8 + n_nodes * 4 + n_nodes * n_tstep * 4])
+        channel_data = np.asarray(channel_data)
+        channel_data = channel_data.reshape(n_tstep, n_nodes)
 
         self.raw_data[filename] = {'n_nodes': n_nodes,
                                    'n_tstep': n_tstep,
@@ -135,13 +135,17 @@ class SimulationOutputParser(threading.Thread):
                                    'data': channel_data}
 
     def get_sim_dir(self):
-        return self.sim_dir
+        return self.sim_path
 
 
 class CompsDTKOutputParser(SimulationOutputParser):
     sim_dir_map = None
     use_compression = False
     asset_service = False
+
+    def __init__(self, simulation, analyzers, semaphore=None, parse=True):
+        super(CompsDTKOutputParser, self).__init__(simulation, analyzers, semaphore, parse)
+        self.COMPS_simulation = get_simulation_by_id(self.sim_id)
 
     @classmethod
     def enableCompression(cls):
@@ -152,11 +156,11 @@ class CompsDTKOutputParser(SimulationOutputParser):
         cls.asset_service = True
 
     @classmethod
-    def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True):
+    def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True, comps_experiment=None):
         if suite_id:
             sim_map = workdirs_from_suite_id(suite_id)
         elif exp_id:
-            sim_map = workdirs_from_experiment_id(exp_id)
+            sim_map = workdirs_from_experiment_id(exp_id, comps_experiment)
         else:
             raise Exception('Unable to map COMPS simulations to output directories without Suite or Experiment ID.')
 
@@ -167,7 +171,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         return sim_map
 
     def load_all_files(self, filenames):
-        from COMPS.Data import Simulation, AssetType
+        from COMPS.Data import AssetType
 
         if not self.asset_service:
             #  we can just open files locally...
@@ -175,74 +179,14 @@ class CompsDTKOutputParser(SimulationOutputParser):
             return
 
         # can't open files locally... we have to go through the COMPS asset service
-        paths =[filename.replace('\\', '/') for filename in filenames]
+        paths = [filename.replace('\\', '/') for filename in filenames]
 
-        # Get the simulation
-        sim = Simulation.get(self.sim_id)
-        asset_byte_arrays = sim.retrieve_assets(asset_type=AssetType.Output,
-                                                paths=paths,
-                                                use_compression=self.use_compression)
+        asset_byte_arrays = self.COMPS_simulation.retrieve_assets(asset_type=AssetType.Output,
+                                                                  paths=paths,
+                                                                  use_compression=self.use_compression)
 
         for filename, byte_array in zip(filenames, asset_byte_arrays):
             self.load_single_file(filename, byte_array)
-
-    def load_json_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_json_file(filename)
-        else:
-            self.raw_data[filename] = json.loads(str(args[0]))
-
-    def load_csv_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_csv_file(filename)
-        else:
-            from StringIO import StringIO
-            csvstr = StringIO(args[0])
-            self.raw_data[filename] = pd.read_csv(csvstr, skipinitialspace=True)
-
-    def load_xlsx_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_xlsx_file(filename)
-        else:
-            excel_file = pd.ExcelFile( self.get_path(filename) )
-            self.raw_data[filename] = {sheet_name: excel_file.parse(sheet_name) 
-              for sheet_name in excel_file.sheet_names}
-
-    def load_txt_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_txt_file(filename)
-        else:
-            self.raw_data[filename] = str(args[0])
-
-    def load_raw_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_raw_file(filename)
-        else:
-            self.raw_data[filename] = args[0]
-
-    def load_bin_file(self, filename, *args):
-        if not self.asset_service:
-            super(CompsDTKOutputParser, self).load_bin_file(filename)
-        else:
-            arr = args[0]
-
-            n_nodes, = struct.unpack('i', arr[0:4])
-            n_tstep, = struct.unpack('i', arr[4:8])
-            # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
-
-            nodeids = struct.unpack(str(n_nodes) + 'I', arr[8:8 + n_nodes * 4])
-            nodeids = np.asarray(nodeids)
-            # print( "node IDs: " + str(nodeids) )
-
-            channel_data = struct.unpack(str(n_nodes * n_tstep) + 'f',
-                                         arr[8 + n_nodes * 4:8 + n_nodes * 4 + n_nodes * n_tstep * 4])
-            channel_data = np.asarray(channel_data)
-            channel_data = channel_data.reshape(n_tstep, n_nodes)
-
-            self.raw_data[filename] = {'n_nodes': n_nodes,
-                                       'n_tstep': n_tstep,
-                                       'nodeids': nodeids,
-                                       'data': channel_data}
 
     def get_sim_dir(self):
         return self.sim_dir_map[self.sim_id]

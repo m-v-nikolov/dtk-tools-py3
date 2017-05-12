@@ -34,6 +34,9 @@ class CompsExperimentManager(BaseExperimentManager):
         self.creator_semaphore = None
         self.runner_created = False # once this is True, the experiment/sims have been sent to COMPSland
 
+        # If we pass an experiment, retrieve it from COMPS
+        self.comps_experiment = get_experiment_by_id(self.experiment.exp_id)
+
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         # Creator semaphore limits the number of thread accessing the database at the same time
         if not self.creator_semaphore:
@@ -134,9 +137,8 @@ class CompsExperimentManager(BaseExperimentManager):
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
         COMPS_login(self.endpoint)
-        e = get_experiment_by_id(self.experiment.exp_id)
-        if e and experiment_is_running(e):
-            e.cancel()
+        if self.comps_experiment and experiment_is_running(self.comps_experiment):
+            self.comps_experiment.cancel()
 
     def hard_delete(self):
         """
@@ -147,8 +149,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Mark experiment for deletion in COMPS.
         COMPS_login(self.endpoint)
-        e = Experiment.get(self.experiment.exp_id)
-        e.delete()
+        self.comps_experiment.delete()
 
     def kill_simulation(self, simulation):
         COMPS_login(self.endpoint)
