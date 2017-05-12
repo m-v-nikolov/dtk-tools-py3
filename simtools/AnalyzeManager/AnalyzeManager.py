@@ -73,7 +73,10 @@ class AnalyzeManager:
 
         p.close()
         p.join()
-        self.parsers = [r.get() for r in res]
+
+        for r in res:
+            parser = r.get()
+            if parser: self.parsers.append(parser)
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
