@@ -1,19 +1,23 @@
 
+import multiprocessing
 import os
+from multiprocessing.pool import ThreadPool
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-import multiprocessing
-from simtools.Utilities.General import get_os, init_logging, nostdout
-logger = init_logging('AnalyzeManager')
+from simtools.Utilities.General import get_os, init_logging
 from COMPS.Data.Simulation import SimulationState
+
+logger = init_logging('AnalyzeManager')
+
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 class AnalyzeManager:
 
-    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None, force_analyze=False):
+    def __init__(self, exp_list=None, analyzers=None, setup=None, working_dir=None, force_analyze=False):
         if not setup:
             setup = SetupParser()
         self.experiments = []
@@ -29,11 +33,11 @@ class AnalyzeManager:
 
         # Initial adding of experiments
         exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
-        for exp in exp_list: self.add_experiment(exp)
+        map(self.add_experiment, exp_list)
 
         # Initial adding of the analyzers
         analyzers = analyzers if isinstance(analyzers, list) else [analyzers]
-        for analyzer in analyzers: self.add_analyzer(analyzer)
+        map(self.add_analyzer, analyzers)
 
     def add_experiment(self, experiment):
         self.experiments.append(experiment)
@@ -50,7 +54,9 @@ class AnalyzeManager:
 
         if exp_manager.location == 'HPC':
             # Get the sim map no matter what
-            exp_manager.parserClass.createSimDirectoryMap(exp_manager.experiment.exp_id, exp_manager.experiment.suite_id)
+            exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
+                                                          suite_id=exp_manager.experiment.suite_id,
+                                                          save=True, comps_experiment=exp_manager.comps_experiment)
 
             # Enable asset service if needed
             if exp_manager.assets_service:
@@ -60,16 +66,20 @@ class AnalyzeManager:
             if exp_manager.compress_assets:
                 exp_manager.parserClass.enableCompression()
 
+        p = ThreadPool()
+        res = []
         for simulation in exp_manager.experiment.simulations:
-            parser = self.parser_for_simulation(simulation, experiment, exp_manager)
-            if parser:
-                self.parsers.append(parser)
+            res.append(p.apply_async(self.parser_for_simulation, args=(simulation, experiment, exp_manager)))
+
+        p.close()
+        p.join()
+        self.parsers = [r.get() for r in res]
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
         if not self.force_analyze and simulation.status != SimulationState.Succeeded:
             print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
-            return None
+            return
 
         # Add the simulation_id to the tags
         simulation.tags['sim_id'] = simulation.id
@@ -87,9 +97,11 @@ class AnalyzeManager:
             logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
             return
 
-        parser = manager.get_output_parser(simulation.get_path(), simulation.id, simulation.tags, filtered_analyses, self.maxThreadSemaphore)
+        # If all the analyzers present call for deactivating the parsing -> do it
+        parse = any([a.parse for a in self.analyzers if hasattr(a,'parse')])
 
-        return parser
+        # Create the parser
+        return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, parse)
 
     def analyze(self):
         # If no analyzers -> quit
@@ -97,16 +109,14 @@ class AnalyzeManager:
             return
 
         # Create the parsers for the experiments
-        for exp in self.experiments:
-            self.create_parsers_for_experiment(exp)
+        map(self.create_parsers_for_experiment, self.experiments)
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()
             parser.start()
 
         # We are all done, finish analyzing
-        for p in self.parsers:
-            p.join()
+        map(lambda p: p.join(), self.parsers)
 
         plotting_processes = []
         from multiprocessing import Process
@@ -128,8 +138,7 @@ class AnalyzeManager:
                 logger.error("Experiments list %s" % self.experiments)
                 logger.error(e)
 
-        for p in plotting_processes:
-            p.join()
+        map(lambda p: p.join(), plotting_processes)
 
         import matplotlib.pyplot as plt
         plt.show()

@@ -1,6 +1,7 @@
 import os
 
-from sqlalchemy import Column
+import datetime
+from sqlalchemy import Column, Float
 from sqlalchemy import DateTime
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -28,5 +29,14 @@ class LogRecord(Base_logs):
 
     def __repr__(self):
         return "%s [%s] [%s] %s" % (self.created.strftime("%m/%d %H:%M:%S"), self.log_level_name, self.module, self.message)
+
+class Timing(Base_logs):
+    __tablename__="Timings"
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime(timezone=True), default=datetime.datetime.now())
+    label = Column(String, index=True)
+    timing_id = Column(String, index=True)
+    elapsed_time = Column(Float)
+    extra_info = Column(String)
 
 Base_logs.metadata.create_all(engine_logs)

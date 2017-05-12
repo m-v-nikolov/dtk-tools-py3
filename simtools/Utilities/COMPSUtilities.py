@@ -156,8 +156,8 @@ def workdirs_from_simulations(sims):
     return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims}
 
 
-def workdirs_from_experiment_id(exp_id):
-    e = Experiment.get(exp_id)
+def workdirs_from_experiment_id(exp_id, experiment=None):
+    e = experiment or Experiment.get(exp_id)
     sims = sims_from_experiment(e)
     return workdirs_from_simulations(sims)
 
