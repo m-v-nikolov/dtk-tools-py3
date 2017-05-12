@@ -35,7 +35,8 @@ class CompsExperimentManager(BaseExperimentManager):
         self.runner_created = False # once this is True, the experiment/sims have been sent to COMPSland
 
         # If we pass an experiment, retrieve it from COMPS
-        self.comps_experiment = get_experiment_by_id(self.experiment.exp_id)
+        if self.experiment:
+            self.comps_experiment = get_experiment_by_id(self.experiment.exp_id)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         # Creator semaphore limits the number of thread accessing the database at the same time
