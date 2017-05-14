@@ -52,12 +52,6 @@ requirements = OrderedDict([
         'test': '>=',
         'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
-    ('numpy', {
-        'platform': ['win', 'lin', 'mac'],
-        'version': '1.12.0+mkl',
-        'test': '>=',
-        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
-    }),
     ('psutil', {
         'platform': ['win', 'lin', 'mac'],
         'version': '4.3.1',
@@ -121,6 +115,12 @@ requirements = OrderedDict([
         'platform': ['win', 'lin', 'mac'],
         'version': '0.9.6',
         'test': '>='
+    }),
+    ('numpy', {
+        'platform': ['win', 'lin', 'mac'],
+        'version': '1.12.0+mkl',
+        'test': '>=',
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
 ])
 

@@ -53,7 +53,7 @@ class CalibManager(object):
     """
 
     def __init__(self, setup, config_builder, map_sample_to_model_input_fn,
-                 sites, next_point, name='calib_test', iteration_state=IterationState(),
+                 sites, next_point, name='calib_test', iteration_state=None,
                  sim_runs_per_param_set=1, max_iterations=5, plotters=list()):
 
         self.name = name
@@ -62,7 +62,7 @@ class CalibManager(object):
         self.map_sample_to_model_input_fn = SampleIndexWrapper(map_sample_to_model_input_fn)
         self.sites = sites
         self.next_point = next_point
-        self.iteration_state = iteration_state
+        self.iteration_state = iteration_state or IterationState()
         self.iteration_state.working_directory = self.name
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.max_iterations = max_iterations
@@ -70,6 +70,7 @@ class CalibManager(object):
         self.plotters = [plotter.set_manager(self) for plotter in plotters]
         self.suites = []
         self.all_results = None
+        self.summary_table = None
         self.exp_manager = None
         self.calibration_start = None
         self.iteration_start = None
@@ -132,11 +133,12 @@ class CalibManager(object):
                 self.replot(iteration=None)
                 exit()     # avoid calling self.run_iterations(**kwargs)
 
-    @staticmethod
-    def retrieve_iteration_state(iter_directory):
+    def retrieve_iteration_state(self, iteration):
         """
-        Retrieve IterationState from a given directory
+        Retrieve IterationState from a given iteration
         """
+        iter_directory = os.path.join(self.name, 'iter%d' % iteration)
+
         if not os.path.isdir(iter_directory):
             raise Exception('Unable to find calibration iteration in directory: %s' % iter_directory)
 
@@ -402,7 +404,8 @@ class CalibManager(object):
         # Update the summary table and all the results
         all_results, summary_table = self.next_point.update_summary_table(self.iteration_state, self.all_results)
         self.all_results = all_results
-        logger.info(summary_table)
+        self.summary_table = summary_table
+        logger.info(self.summary_table)
 
         # Cache
         self.cache_calibration()
@@ -532,8 +535,7 @@ class CalibManager(object):
         logger.info('Re-plotting for iteration: %d' % iteration)
 
         # restore current iteration state
-        iter_directory = os.path.join(self.name, 'iter%d' % iteration)
-        self.iteration_state = self.retrieve_iteration_state(iter_directory)
+        self.iteration_state = self.retrieve_iteration_state(iteration)
 
         # restore next point
         self.next_point.set_state(self.iteration_state.next_point, iteration)
@@ -684,11 +686,9 @@ class CalibManager(object):
 
     def reanalyze_iteration(self, iteration):
         logger.info("\nReanalyze Iteration %s" % iteration)
-        # Create the path for the iteration dir
-        iter_directory = os.path.join(self.name, 'iter%d' % iteration)
 
         # Create the state for the current iteration
-        self.iteration_state = self.retrieve_iteration_state(iter_directory)
+        self.iteration_state = self.retrieve_iteration_state(iteration)
         self.next_point.set_state(self.iteration_state.next_point, iteration)
 
         self.iteration_state.iteration = iteration
