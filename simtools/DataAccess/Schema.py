@@ -33,7 +33,7 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status_i = Column(Integer, default=SimulationState.Created.value)
+    status_s = Column(String, default=SimulationState.Created.name)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
@@ -48,12 +48,12 @@ class Simulation(Base):
         Allows us to compare status values uniformly in the code with SimulationState objects.
         :return: SimulationState object corresponding to the DB int status
         """
-        return SimulationState(self.status_i)
+        return SimulationState[self.status_s]
 
     @status.setter
     def status(self, st):
         if isinstance(st, SimulationState):
-            self.status_i = st.value
+            self.status_s = st.name
         else:
             raise Exception("Invalid status type: %s" % type(st))
 

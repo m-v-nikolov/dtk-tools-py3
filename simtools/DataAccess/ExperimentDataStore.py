@@ -72,7 +72,7 @@ class ExperimentDataStore:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
                 .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
-                .filter(~Simulation.status_i.in_((SimulationState.Succeeded.value, SimulationState.Failed.value, SimulationState.Canceled.value)))
+                .filter(~Simulation.status_s.in_((SimulationState.Succeeded.name, SimulationState.Failed.name, SimulationState.Canceled.name)))
             if location:
                 experiments = experiments.filter(Experiment.location == location)
 
