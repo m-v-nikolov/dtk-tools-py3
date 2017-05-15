@@ -32,12 +32,12 @@ class SimulationDataStore:
         if len(simulation_batch) == 0: return
 
         for h in simulation_batch:
-            h["status"] = str(h["status"].value) # SimulationState -> int
+            h["status"] = h["status"].name # SimulationState -> name
 
         with session_scope() as session:
             stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"),
                                                  not_(Simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled))))\
-                .values(status_i=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
+                .values(status_s=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
             session.execute(stmt, simulation_batch)
 
     @classmethod
