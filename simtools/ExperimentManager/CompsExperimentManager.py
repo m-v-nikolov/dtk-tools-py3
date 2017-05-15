@@ -32,7 +32,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.compress_assets = self.setup.getboolean('compress_assets')
         COMPS_login(self.endpoint)
         self.creator_semaphore = None
-        self.runner_created = False # once this is True, the experiment/sims have been sent to COMPSland
+        self.runner_thread = None
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
@@ -125,12 +125,11 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-        if not self.runner_created:
+        if not self.runner_thread or not self.runner_thread.is_alive():
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
-            t1.daemon = True
-            t1.start()
-            self.runner_created = True
+            self.runner_thread = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            self.runner_thread.daemon = True
+            self.runner_thread.start()
             return len(self.experiment.simulations)
         else:
             return 0

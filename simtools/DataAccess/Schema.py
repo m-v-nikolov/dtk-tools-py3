@@ -68,7 +68,7 @@ class Simulation(Base):
             return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
         else:
             from simtools.OutputParser import CompsDTKOutputParser
-            if not CompsDTKOutputParser.sim_dir_map or not self.id in CompsDTKOutputParser.sim_dir_map:
+            if not CompsDTKOutputParser.sim_dir_map or self.id not in CompsDTKOutputParser.sim_dir_map:
                 map = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, save=save_map)
                 return map[self.id]
 

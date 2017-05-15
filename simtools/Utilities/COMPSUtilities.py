@@ -153,7 +153,7 @@ def experiment_is_running(e):
 
 
 def workdirs_from_simulations(sims):
-    return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims}
+    return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims if sim.hpc_jobs}
 
 
 def workdirs_from_experiment_id(exp_id, experiment=None):
