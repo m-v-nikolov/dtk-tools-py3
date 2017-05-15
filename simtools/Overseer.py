@@ -29,7 +29,7 @@ def SimulationStateUpdater(states):
                 logger.error("Exception in the status updater")
                 logger.error(e)
 
-        time.sleep(5)
+        time.sleep(3)
 
 
 def LogCleaner():
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                 gc.collect()
             else:
                 # Refresh the experiment first
-                manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
+                manager.refresh_experiment()
                 logger.debug('Commission simulations as needed for experiment id: %s' % manager.experiment.id)
                 n_commissioned_sims = manager.commission_simulations(states_queue)
                 logger.debug('Experiment done (re)commissioning %d simulation(s)' % n_commissioned_sims)
