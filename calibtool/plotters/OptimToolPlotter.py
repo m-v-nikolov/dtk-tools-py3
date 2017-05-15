@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 sns.set_style('white')
 
+
 class OptimToolPlotter(BasePlotter):
     def __init__(self):
-        print 'OptimToolPlotter: INIT'
         super(OptimToolPlotter, self).__init__( False )
 
     def cleanup(self):
