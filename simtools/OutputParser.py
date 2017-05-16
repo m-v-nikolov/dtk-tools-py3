@@ -156,7 +156,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
         cls.asset_service = True
 
     @classmethod
-    def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True, comps_experiment=None):
+    def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True, comps_experiment=None, verbose=True):
         if suite_id:
             sim_map = workdirs_from_suite_id(suite_id)
         elif exp_id:
@@ -164,10 +164,12 @@ class CompsDTKOutputParser(SimulationOutputParser):
         else:
             raise Exception('Unable to map COMPS simulations to output directories without Suite or Experiment ID.')
 
-        print('Populated map of %d simulation IDs to output directories' % len(sim_map))
+        if verbose: print('Populated map of %d simulation IDs to output directories' % len(sim_map))
+
         if save:
             cls.sim_dir_map = cls.sim_dir_map or {}
             cls.sim_dir_map.update(sim_map)
+
         return sim_map
 
     def load_all_files(self, filenames):

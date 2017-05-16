@@ -17,10 +17,11 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None, force_analyze=False):
+    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None, force_analyze=False, verbose=True):
         if not setup:
             setup = SetupParser()
         self.experiments = []
+        self.verbose = verbose
         self.analyzers = []
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
@@ -56,7 +57,8 @@ class AnalyzeManager:
             # Get the sim map no matter what
             exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
                                                           suite_id=exp_manager.experiment.suite_id,
-                                                          save=True, comps_experiment=exp_manager.comps_experiment)
+                                                          save=True, comps_experiment=exp_manager.comps_experiment,
+                                                          verbose=self.verbose)
 
             # Enable asset service if needed
             if exp_manager.assets_service:
@@ -81,7 +83,7 @@ class AnalyzeManager:
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
         if not self.force_analyze and simulation.status != SimulationState.Succeeded:
-            print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
+            if self.verbose: print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
             return
 
         # Add the simulation_id to the tags
@@ -97,7 +99,7 @@ class AnalyzeManager:
                 filtered_analyses.append(a)
 
         if not filtered_analyses:
-            print 'Simulation %s did not pass filter on any analyzer.' % simulation.id
+            if self.verbose: print 'Simulation %s did not pass filter on any analyzer.' % simulation.id
             return
 
         # If all the analyzers present call for deactivating the parsing -> do it
