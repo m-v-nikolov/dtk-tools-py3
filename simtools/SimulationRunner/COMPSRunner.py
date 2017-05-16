@@ -57,7 +57,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
             # Create the diff list
             # This list holds the ids of simulations that changed since last loop
             # Also include eventual created simulations since last time
-            diff_list = [key for key in set(last_states).intersection(states) if last_states[key] != states[key] or states[key] == SimulationState.Created]
+            diff_list = [key for key in states if (key in last_states and last_states[key] != states[key]) or states[key] == SimulationState.Created]
 
             logger.debug('COMPS - Difflist for experiment %s' % self.experiment.id)
             logger.debug(diff_list)
