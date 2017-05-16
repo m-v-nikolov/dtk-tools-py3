@@ -97,7 +97,7 @@ class AnalyzeManager:
                 filtered_analyses.append(a)
 
         if not filtered_analyses:
-            logger.debug('Simulation %s did not pass filter on any analyzer.' % simulation.id)
+            print 'Simulation %s did not pass filter on any analyzer.' % simulation.id
             return
 
         # If all the analyzers present call for deactivating the parsing -> do it
