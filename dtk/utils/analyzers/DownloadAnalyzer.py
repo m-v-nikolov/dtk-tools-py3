@@ -42,9 +42,17 @@ class DownloadAnalyzer(BaseAnalyzer):
         if not os.path.exists(self.output_path):
             os.mkdir(self.output_path)
 
+    def get_sim_folder(self, parser):
+        """
+        Concatenate the specified top-level output folder with the simulation ID
+        :param parser: A simulation output parsing thread
+        :return: The name of the folder to download this simulation's output to
+        """
+        return os.path.join(self.output_path, parser.sim_id)
+
     def apply(self, parser):
         # Create a folder for the current simulation
-        sim_folder = os.path.join(self.output_path, parser.sim_id)
+        sim_folder = self.get_sim_folder(parser)
         if not os.path.exists(sim_folder):
             os.mkdir(sim_folder)
 

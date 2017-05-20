@@ -36,8 +36,9 @@ def get_converted_paths_for_geography(geography):
     :return: parameters with the correct path
 
     """
-    params = geographies.get(geography).copy()
-    if not params:
+    try:
+        params = geographies.get(geography).copy()
+    except AttributeError:
         raise Exception('%s geography not yet implemented' % geography)
 
     convert_filepaths(params)
