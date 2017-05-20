@@ -289,16 +289,17 @@ class BaseExperimentManager:
         for fn_batch in fn_batches:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
-                                            callback=lambda: print('.', end=""),
+                                            callback=lambda: print('.' if verbose else '', end=""),
                                             return_list=return_list)
             creator_processes.append(c)
 
         # Display some info
-        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
-        logger.info(" | Creator processes: %s (max: %s)"% (len(creator_processes),max_creator_processes+1))
-        logger.info(" | Simulations per batch: %s"% sim_per_batch)
-        logger.info(" | Simulations Count: %s" % total_sims)
-        logger.info(" | Max simulations per threads: %s"% nbatches)
+        if verbose:
+            logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
+            logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes+1))
+            logger.info(" | Simulations per batch: %s" % sim_per_batch)
+            logger.info(" | Simulations Count: %s" % total_sims)
+            logger.info(" | Max simulations per threads: %s" % nbatches)
 
         # Wait for all to finish
         map(lambda c: c.start(), creator_processes)
@@ -311,11 +312,12 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
-        sims_to_display = 2
-        display = -sims_to_display if total_sims > sims_to_display else -total_sims
-        logger.info(" ")
-        logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
-        if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
+        if verbose:
+            sims_to_display = 2
+            display = -sims_to_display if total_sims > sims_to_display else -total_sims
+            logger.info(" ")
+            logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
+            if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
     def refresh_experiment(self):
         # Refresh the experiment

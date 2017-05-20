@@ -1,9 +1,10 @@
 from collections import deque
 from dtk.generic.geography import set_geography
+from dtk.vector.study_sites import geography_from_site
 from dtk.interventions.input_EIR import add_InputEIR
 
 # Study-site EIR by month of year
-study_site_monthly_EIRs = { 
+study_site_monthly_EIRs = {
     'Dapelogo':     [1, 1, 1, 1, 1, 3, 27, 70, 130, 57, 29, 1],                                                 # EIR = 322
     "Namawala":     [43.8, 68.5, 27.4, 46.6, 49.4, 24.7, 13.7, 11, 11, 2.74, 13.7, 16.5] ,                      # EIR = 329
     "Dielmo":       [10.4, 13, 6, 2.6, 4, 6, 35, 21, 28, 15, 10.4, 8.4],                                        # EIR = 160
@@ -30,7 +31,7 @@ def mAb_vs_EIR(EIR):
 
 
 # Configuration of study-site input EIR
-def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True, set_site_geography=True):
+def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True, set_site_geography=True, **geo_kwargs):
 
     if site not in study_site_monthly_EIRs.keys():
         raise Exception("Don't know how to configure site: %s " % site)
@@ -45,9 +46,10 @@ def configure_site_EIR(cb, site, habitat=1, circular_shift=0, birth_cohort=True,
 
     if birth_cohort:
         set_geography(cb, "Birth_Cohort")
-    elif set_site_geography :
-        set_geography(cb,site)
-    cb.update_params({ 'Config_Name': site, 
+    elif set_site_geography:
+        geo = geography_from_site(site)
+        set_geography(cb, geo, **geo_kwargs)
+    cb.update_params({ 'Config_Name': site,
                        'Vector_Species_Names': [], # no mosquitoes
                        'Maternal_Antibodies_Type': 'CONSTANT_INITIAL_IMMUNITY',
                        'Maternal_Antibody_Protection': mAb
