@@ -105,6 +105,9 @@ def COMPS_login(endpoint):
 def get_experiment_by_id(exp_id):
     return Experiment.get(exp_id)
 
+@retry_function
+def get_simulation_by_id(sim_id):
+    return Simulation.get(id=sim_id)
 
 def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
@@ -150,11 +153,11 @@ def experiment_is_running(e):
 
 
 def workdirs_from_simulations(sims):
-    return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims}
+    return {str(sim.id): sim.hpc_jobs[-1].working_directory for sim in sims if sim.hpc_jobs}
 
 
-def workdirs_from_experiment_id(exp_id):
-    e = Experiment.get(exp_id)
+def workdirs_from_experiment_id(exp_id, experiment=None):
+    e = experiment or Experiment.get(exp_id)
     sims = sims_from_experiment(e)
     return workdirs_from_simulations(sims)
 

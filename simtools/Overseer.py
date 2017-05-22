@@ -29,7 +29,7 @@ def SimulationStateUpdater(states):
                 logger.error("Exception in the status updater")
                 logger.error(e)
 
-        time.sleep(5)
+        time.sleep(3)
 
 
 def LogCleaner():
@@ -100,10 +100,10 @@ if __name__ == "__main__":
 
         # Check every one of them
         logger.debug("Checking experiment managers. There are %d of them. pid: %d" % (len(managers), os.getpid()))
-        for manager in managers.values():
-            logger.debug("Checking manager %s" % manager.experiment.id)
+        for exp_id, manager in managers.items():
+            logger.debug("Checking manager %s" % exp_id)
             if manager.finished():
-                logger.debug('Manager for experiment id: %s is done' % manager.experiment.id)
+                logger.debug('Manager for experiment id: %s is done' % exp_id)
                 # Analyze
                 # For now commented out - Will be reinstated when run_and_analyze comes back
                 # athread = multiprocessing.Thread(target=manager.analyze_experiment)
@@ -111,12 +111,12 @@ if __name__ == "__main__":
                 # analysis_threads.append(athread)
 
                 # After analysis delete the manager from the list
-                del managers[manager.experiment.id]
+                del managers[exp_id]
                 gc.collect()
             else:
                 # Refresh the experiment first
-                manager.experiment = DataStore.get_experiment(manager.experiment.exp_id)
-                logger.debug('Commission simulations as needed for experiment id: %s' % manager.experiment.id)
+                manager.refresh_experiment()
+                logger.debug('Commission simulations as needed for experiment id: %s' % exp_id)
                 n_commissioned_sims = manager.commission_simulations(states_queue)
                 logger.debug('Experiment done (re)commissioning %d simulation(s)' % n_commissioned_sims)
 

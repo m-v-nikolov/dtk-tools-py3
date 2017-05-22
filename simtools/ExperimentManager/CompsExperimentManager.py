@@ -13,6 +13,7 @@ from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_i
 from simtools.Utilities.General import init_logging
 logger = init_logging("COMPSExperimentManager")
 
+
 class CompsExperimentManager(BaseExperimentManager):
     """
     Extends the LocalExperimentManager to manage DTK simulations through COMPSAccess wrappers
@@ -31,7 +32,11 @@ class CompsExperimentManager(BaseExperimentManager):
         self.compress_assets = self.setup.getboolean('compress_assets')
         COMPS_login(self.endpoint)
         self.creator_semaphore = None
-        self.runner_created = False # once this is True, the experiment/sims have been sent to COMPSland
+        self.runner_thread = None
+
+        # If we pass an experiment, retrieve it from COMPS
+        if self.experiment:
+            self.comps_experiment = get_experiment_by_id(self.experiment.exp_id)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         # Creator semaphore limits the number of thread accessing the database at the same time
@@ -120,25 +125,20 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-
-        if self.runner_created:
-            n_commissioned = 0 # no sims commissioned
-        else:
+        if not self.runner_thread or not self.runner_thread.is_alive():
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            t1 = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
-            t1.daemon = True
-            t1.start()
-            self.runner_created = True
-            COMPS_login(self.endpoint)
-            n_commissioned = len(Experiment.get(self.experiment.exp_id).get_simulations())
-        return n_commissioned
+            self.runner_thread = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            self.runner_thread.daemon = True
+            self.runner_thread.start()
+            return len(self.experiment.simulations)
+        else:
+            return 0
 
     def cancel_experiment(self):
         super(CompsExperimentManager, self).cancel_experiment()
         COMPS_login(self.endpoint)
-        e = get_experiment_by_id(self.experiment.exp_id)
-        if e and experiment_is_running(e):
-            e.cancel()
+        if self.comps_experiment and experiment_is_running(self.comps_experiment):
+            self.comps_experiment.cancel()
 
     def hard_delete(self):
         """
@@ -149,8 +149,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Mark experiment for deletion in COMPS.
         COMPS_login(self.endpoint)
-        e = Experiment.get(self.experiment.exp_id)
-        e.delete()
+        self.comps_experiment.delete()
 
     def kill_simulation(self, simulation):
         COMPS_login(self.endpoint)

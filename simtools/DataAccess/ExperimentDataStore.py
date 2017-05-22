@@ -19,9 +19,9 @@ class ExperimentDataStore:
         return Experiment(**kwargs)
 
     @classmethod
-    def get_experiment(cls, exp_id):
+    def get_experiment(cls, exp_id, current_session=None):
         logger.debug("Get Experiment")
-        with session_scope() as session:
+        with session_scope(current_session) as session:
             # Get the experiment
             # Also load the associated simulations eagerly
             experiment = session.query(Experiment).options(
@@ -72,7 +72,7 @@ class ExperimentDataStore:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
                 .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
-                .filter(~Simulation.status_i.in_((SimulationState.Succeeded.value, SimulationState.Failed.value, SimulationState.Canceled.value)))
+                .filter(~Simulation.status_s.in_((SimulationState.Succeeded.name, SimulationState.Failed.name, SimulationState.Canceled.name)))
             if location:
                 experiments = experiments.filter(Experiment.location == location)
 
@@ -138,7 +138,9 @@ class ExperimentDataStore:
         """
         exp_list = None
         with session_scope() as session:
-            exp_list = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids)).all()
+            exp_ids = session.query(Experiment.exp_id).filter(Experiment.suite_id.in_(suite_ids)).all()
+            # Retrieve the individual experiments
+            exp_list = [cls.get_experiment(exp[0], session) for exp in exp_ids]
             session.expunge_all()
 
         return exp_list

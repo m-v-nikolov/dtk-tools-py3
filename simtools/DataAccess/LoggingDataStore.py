@@ -1,10 +1,12 @@
+import threading
+import timeit
 from datetime import date,timedelta
 
 from sqlalchemy import and_
 from sqlalchemy import distinct
 
 from simtools.DataAccess import  session_scope, Session_logs, engine_logs
-from simtools.DBLogging.Schema import LogRecord
+from simtools.DBLogging.Schema import LogRecord, Timing
 
 
 class LoggingDataStore:
@@ -54,3 +56,19 @@ class LoggingDataStore:
             session.expunge_all()
 
         return all_records
+
+    start_times = {}
+    timing_id = "Timing"
+    @classmethod
+    def start_timer(cls, label):
+        start_time = timeit.default_timer()
+        current_thread = str(threading.current_thread().ident)
+        cls.start_times[current_thread+label] = start_time
+
+    @classmethod
+    def record_time(cls, label, extra_info=None):
+        current_thread = str(threading.current_thread().ident)
+        elapsed = timeit.default_timer() - cls.start_times[current_thread+label]
+        with session_scope(Session_logs()) as session:
+            session.add(Timing(elapsed_time=elapsed, label=label, timing_id=cls.timing_id, extra_info=extra_info))
+        return elapsed

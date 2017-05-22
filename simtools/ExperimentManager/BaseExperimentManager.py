@@ -33,7 +33,6 @@ class BaseExperimentManager:
     location = None
 
     def __init__(self, model_file, experiment, setup=None):
-        self.model_file = model_file
         self.experiment = experiment
 
         # If no setup is passed -> create it
@@ -44,6 +43,7 @@ class BaseExperimentManager:
         else:
             self.setup = setup
 
+        self.model_file = model_file or self.setup.get('exe_path')
         self.quiet = self.setup.has_option('quiet')
         self.blocking = self.setup.has_option('blocking')
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
@@ -53,6 +53,7 @@ class BaseExperimentManager:
         self.staged_bin_path = None
         self.config_builder = None
         self.commandline = None
+        self.bypass_missing = False
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -151,12 +152,8 @@ class BaseExperimentManager:
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
-    def get_output_parser(self, sim_path, sim_id, sim_tags, filtered_analyses, semaphore):
-        return self.parserClass(sim_path,
-                                sim_id,
-                                sim_tags,
-                                filtered_analyses,
-                                semaphore)
+    def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
+        return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
     def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, analyzers=[]):
         """
@@ -207,8 +204,8 @@ class BaseExperimentManager:
         Check input files and make sure there exist
         Note: we by pass the 'Campaign_Filename'
         """
-        # By-pass input file checking if using assets_service
-        if self.assets_service:
+        # By-pass input file checking if using assets_service or we want to bypass
+        if self.assets_service or self.bypass_missing:
             return True
         # If the config builder has no file paths -> bypass
         if not hasattr(config_builder, 'get_input_file_paths'):
@@ -254,7 +251,7 @@ class BaseExperimentManager:
         self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
 
         # Create the experiment if not present already
-        if not self.experiment:
+        if not self.experiment or self.experiment.exp_name != exp_name:
             self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
         else:
             # Refresh the experiment
@@ -292,16 +289,17 @@ class BaseExperimentManager:
         for fn_batch in fn_batches:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
-                                            callback=lambda: print('.', end=""),
+                                            callback=lambda: print('.' if verbose else '', end=""),
                                             return_list=return_list)
             creator_processes.append(c)
 
         # Display some info
-        logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
-        logger.info(" | Creator processes: %s (max: %s)"% (len(creator_processes),max_creator_processes+1))
-        logger.info(" | Simulations per batch: %s"% sim_per_batch)
-        logger.info(" | Simulations Count: %s" % total_sims)
-        logger.info(" | Max simulations per threads: %s"% nbatches)
+        if verbose:
+            logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
+            logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes+1))
+            logger.info(" | Simulations per batch: %s" % sim_per_batch)
+            logger.info(" | Simulations Count: %s" % total_sims)
+            logger.info(" | Max simulations per threads: %s" % nbatches)
 
         # Wait for all to finish
         map(lambda c: c.start(), creator_processes)
@@ -314,10 +312,12 @@ class BaseExperimentManager:
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
         # Display sims
-        logger.info(" ")
-        display = -1 if total_sims == 1 else -2
-        logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
-        if display != -1: logger.info("... and %s more" % (total_sims + display))
+        if verbose:
+            sims_to_display = 2
+            display = -sims_to_display if total_sims > sims_to_display else -total_sims
+            logger.info(" ")
+            logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
+            if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
     def refresh_experiment(self):
         # Refresh the experiment

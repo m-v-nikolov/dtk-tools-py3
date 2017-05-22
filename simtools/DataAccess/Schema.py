@@ -33,14 +33,13 @@ class Simulation(Base):
     __tablename__ = "simulations"
 
     id = Column(String, primary_key=True)
-    status_i = Column(Integer, default=SimulationState.CommissionRequested.value)
+    status_s = Column(String, default=SimulationState.Created.name)
     message = Column(String)
     experiment = relationship("Experiment", back_populates="simulations")
     experiment_id = Column(String, ForeignKey('experiments.exp_id'))
     tags = Column(PickleType())
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     pid = Column(String)
-
 
     # A pair of accessors to support SumulationState-only status comparison external to DB access.
     @property
@@ -49,12 +48,12 @@ class Simulation(Base):
         Allows us to compare status values uniformly in the code with SimulationState objects.
         :return: SimulationState object corresponding to the DB int status
         """
-        return SimulationState(self.status_i)
+        return SimulationState[self.status_s]
 
     @status.setter
     def status(self, st):
         if isinstance(st, SimulationState):
-            self.status_i = st.value
+            self.status_s = st.name
         else:
             raise Exception("Invalid status type: %s" % type(st))
 
@@ -69,7 +68,7 @@ class Simulation(Base):
             return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
         else:
             from simtools.OutputParser import CompsDTKOutputParser
-            if not CompsDTKOutputParser.sim_dir_map or not self.id in CompsDTKOutputParser.sim_dir_map:
+            if not CompsDTKOutputParser.sim_dir_map or self.id not in CompsDTKOutputParser.sim_dir_map:
                 map = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, save=save_map)
                 return map[self.id]
 
@@ -112,6 +111,14 @@ class Experiment(Base):
             if sim.id == simid:
                 return True
         return False
+
+    def get_simulations_with_tag(self, tag, value):
+        return [sim for sim in self.simulations if sim.tags.has_key(tag) and sim.tags[tag] == value]
+
+    def get_simulation_by_id(self, sim_id):
+        for sim in self.simulations:
+            if sim.id == sim_id:
+                return sim
 
     def is_done(self):
         for sim in self.simulations:

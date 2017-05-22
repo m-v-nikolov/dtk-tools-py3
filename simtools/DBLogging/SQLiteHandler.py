@@ -16,18 +16,21 @@ class SQLiteHandler(logging.Handler):
         record.dbtime = datetime.datetime.now()
 
     def emit(self, record):
+        record_info = record.__dict__
+
+        # Pass if module is built-in
+        if record_info['module'] in ('init', '__init__', 'pep425tags', 'SerializableEntity', 'Client', 'connectionpool', 'AssetManager'): return
+
         # Use default formatting:
         self.format(record)
+
         # Set the database time up:
         self.formatDBTime(record)
+
         if record.exc_info:
             record.exc_text = logging._defaultFormatter.formatException(record.exc_info)
         else:
             record.exc_text = ""
-        record_info = record.__dict__
-
-        # Pass if module is built-in
-        if record_info['module'] in ['init', '__init__', 'pep425tags', 'SerializableEntity']: return
 
         # Insert log record
         record = LoggingDataStore.create_record(

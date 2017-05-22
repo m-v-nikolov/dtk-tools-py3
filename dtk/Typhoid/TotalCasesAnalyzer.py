@@ -129,8 +129,17 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             self.data = shelved_data['Data']
         else:
 
+            # Not all sim_ids work, perhaps due to a failed job
+            failed_sids = [sid for sid in self.sim_ids if str(sid) not in self.shelve]
+            if failed_sids:
+                print 'WARNING ' * 5
+                print 'The following (%d) sim ids were not in the shelve, perhaps the jobs failed?'%len(failed_sids)
+                print '\n'.join(failed_sids)
+                print '-'*80
+            self.sim_ids = [sid for sid in self.sim_ids if str(sid) in self.shelve]
+
             # Not in shelve, need to combine and store in shelve
-            selected = [ self.shelve[str(sim_id)]['Data'] for sim_id in self.sim_ids ]
+            selected = [ self.shelve[str(sim_id)]['Data'] for sim_id in self.sim_ids]
             keys = [ (self.shelve[str(sim_id)]['Sample'], self.shelve[str(sim_id)]['Sim_Id'])
                 for sim_id in self.sim_ids ]
 
@@ -175,7 +184,8 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         #self.result.replace(-np.inf, -1e-6, inplace=True)
         self.cache_data['result'] = self.result.to_dict()
 
-        writer = pd.ExcelWriter(os.path.join(self.workdir,'Results.xlsx'))
+        fn = os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__)
+        writer = pd.ExcelWriter(fn)
         #self.result.to_frame().sort_index().to_excel(writer, sheet_name='Result')
         self.data.to_excel(writer, sheet_name=self.__class__.__name__, merge_cells=False)
         writer.save()

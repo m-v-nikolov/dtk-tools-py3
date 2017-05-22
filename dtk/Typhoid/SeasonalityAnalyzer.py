@@ -115,6 +115,16 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
             self.data = shelved_data['Data']
         else:
 
+            # Not all sim_ids work, perhaps due to a failed job
+            failed_sids = [sid for sid in self.sim_ids if str(sid) not in self.shelve]
+            if failed_sids:
+                print 'WARNING ' * 5
+                print 'The following (%d) sim ids were not in the shelve, perhaps the jobs failed?'%len(failed_sids)
+                print '\n'.join(failed_sids)
+                print '-(%d)'%len(failed_sids),'-'*75
+            self.sim_ids = [sid for sid in self.sim_ids if str(sid) in self.shelve]
+
+
             # Not in shelve, need to combine and store in shelve
             selected = [ self.shelve[str(sim_id)]['Data'] for sim_id in self.sim_ids ]
             keys = [ (self.shelve[str(sim_id)]['Sample'], self.shelve[str(sim_id)]['Sim_Id'])
@@ -173,6 +183,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
     def finalize(self):
         super(SeasonalityAnalyzer, self).finalize() # Closes the shelve file
 
+        '''
         if '_iter' in self.exp_name:
             toks = self.exp_name.split('_iter')
             self.basedir = toks[0]
@@ -182,6 +193,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
             figdir = os.path.join(self.working_dir, self.basedir, self.exp_id, self.name)
         if not os.path.isdir(figdir):
             os.mkdir(figdir)
+        '''
 
         fn = os.path.join(self.workdir,'Results_%s.xlsx'%self.__class__.__name__)
 
@@ -211,7 +223,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         ax.margins(0.1)
         ax.set_title('Seasonality Distribution')
 
-        fig.savefig(os.path.join(figdir, 'Seasonality_Distribution.%s'%self.fig_format));
+        fig.savefig(os.path.join(self.workdir, 'Seasonality_Distribution.%s'%self.fig_format));
         plt.close(fig)
 
         # Number
@@ -226,7 +238,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         ax.margins(0.1)
         ax.set_title('Seasonality')
 
-        fig.savefig(os.path.join(figdir, 'Seasonality.%s'%self.fig_format));
+        fig.savefig(os.path.join(self.workdir, 'Seasonality.%s'%self.fig_format));
         plt.close(fig)
 
         '''
