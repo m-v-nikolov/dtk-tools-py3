@@ -1,13 +1,14 @@
-
 import multiprocessing
 import os
 from multiprocessing.pool import ThreadPool
 
+from COMPS.Data.Simulation import SimulationState
+
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.General import get_os, init_logging
-from COMPS.Data.Simulation import SimulationState
+from simtools.Utilities.General import init_logging
+from simtools.Utilities.LocalOS import LocalOS
 
 logger = init_logging('AnalyzeManager')
 
@@ -17,13 +18,11 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 class AnalyzeManager:
 
-    def __init__(self, exp_list=[], analyzers=[], setup=None, working_dir=None, force_analyze=False, verbose=True):
-        if not setup:
-            setup = SetupParser()
+    def __init__(self, exp_list=[], analyzers=[], working_dir=None, force_analyze=False, verbose=True):
         self.experiments = []
         self.verbose = verbose
         self.analyzers = []
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(setup.get('max_threads', 16)))
+        self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
         self.parsers = []
         self.force_analyze = force_analyze
@@ -131,7 +130,7 @@ class AnalyzeManager:
             # Plot in another process
             try:
                 # If on mac just plot and continue
-                if get_os() == 'mac':
+                if LocalOS.name == LocalOS.MAC:
                     a.plot()
                     continue
                 plotting_process = Process(target=a.plot)

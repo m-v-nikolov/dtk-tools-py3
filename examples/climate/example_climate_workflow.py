@@ -27,7 +27,7 @@ if not os.path.exists(internediate_dir): os.makedirs(internediate_dir)
 if not os.path.exists(output_path): os.makedirs(output_path)
 
 # Get a setup
-sp = SetupParser('HPC')
+SetupParser.init('HPC')
 
 # Create the 2 nodes we need to pull weather for
 nodes = [
@@ -45,7 +45,7 @@ wo = WorkOrderGenerator(demographics_file_path='climate_demog.json', wo_output_p
 # Get the weather from COMPS
 workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
 
-wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, sp.get('environment'))
+wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, SetupParser.get('environment'))
 wi.set_tags({'dtk-tools':None, 'WorkItem type':'InputDataWorker dtk-tools'})
 wi.add_work_order(data=json.dumps(wo.wo_2_dict()))
 wi.add_file(WorkItemFile('climate_demog.json', 'Demographics', ''), data=json.dumps(dg.content))

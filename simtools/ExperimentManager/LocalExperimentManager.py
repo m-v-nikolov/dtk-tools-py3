@@ -1,3 +1,4 @@
+from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
@@ -7,6 +8,7 @@ import shutil
 import signal
 import threading
 from datetime import datetime
+from simtools.SetupParser import SetupParser
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
@@ -39,14 +41,14 @@ class LocalExperimentManager(BaseExperimentManager):
                     if sim.id not in self.unfinished_simulations:
                         self.unfinished_simulations[sim.id] = sim
 
-    def __init__(self, model_file, experiment, setup=None):
+    def __init__(self, model_file, experiment):
         self.local_queue = None
         self.simulations_commissioned = 0
         self.unfinished_simulations = {}
         self._experiment = None
         self.experiment = experiment
 
-        BaseExperimentManager.__init__(self, model_file, experiment, setup)
+        BaseExperimentManager.__init__(self, model_file, experiment)
 
     def commission_simulations(self, states):
         """
@@ -95,7 +97,7 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         Check file exist and return the missing files as dict
         """
-        input_root = self.setup.get('input_root')
+        input_root = SetupParser.get('input_root')
         return input_root, self.find_missing_files(input_files, input_root)
 
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
@@ -150,6 +152,5 @@ class LocalExperimentManager(BaseExperimentManager):
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
-                                      setup=self.setup,
                                       callback=callback,
                                       return_list=return_list)

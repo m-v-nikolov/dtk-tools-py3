@@ -23,8 +23,8 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.SetupParser import SetupParser
 
-# For example only -- Force the selected block to be EXAMPLE
-SetupParser("EXAMPLE")
+# This block will be used unless overridden on the command-line
+SetupParser.default_block = 'EXAMPLE'
 
 # The following directory holds the plugin files for this example.
 plugin_files_dir = 'Templates'
@@ -110,13 +110,15 @@ experiment_builder = ModBuilder.from_combos(
     [ModFn(DTKConfigBuilder.set_param, 'Run_Number', rn) for rn in range(2,4)]
 )
 
-run_sim_args =  {'config_builder': config_builder,
-                 'exp_builder': experiment_builder,
-                 'exp_name': 'TemplateDemo'}
+run_sim_args = {
+    'config_builder': config_builder,
+    'exp_builder': experiment_builder,
+    'exp_name': 'TemplateDemo'
+}
 
 if __name__ == "__main__":
-    exp_manager = ExperimentManagerFactory.from_setup(SetupParser())
-    exp_manager.bypass_missing = True
+    SetupParser.init(selected_block=SetupParser.default_block)
+    exp_manager = ExperimentManagerFactory.from_setup()
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 

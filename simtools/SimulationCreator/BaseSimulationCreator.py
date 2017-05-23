@@ -4,6 +4,7 @@ import copy
 from abc import abstractmethod, ABCMeta
 from multiprocessing import Process
 
+from simtools.SetupParser import SetupParser
 from simtools.DataAccess.DataStore import DataStore
 from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 
@@ -15,7 +16,7 @@ class BaseSimulationCreator(Process):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
@@ -24,14 +25,15 @@ class BaseSimulationCreator(Process):
         self.max_sims_per_batch = max_sims_per_batch
         self.return_list=return_list
         # Extract the path we want from the setup
-        # Cannot use self.setup because the selected_block selection is lost during forking
-        self.lib_staging_root = translate_COMPS_path(setup.get('lib_staging_root'))
-        self.asset_service = setup.getboolean('use_comps_asset_svc',False)
-        self.dll_path = setup.get('dll_path')
+        self.lib_staging_root = translate_COMPS_path(SetupParser.get('lib_staging_root'))
+        self.asset_service = SetupParser.getboolean('use_comps_asset_svc', default=False)
+        self.dll_path = SetupParser.get('dll_path')
         self.callback = callback
         self.created_simulations = []
+        self.setup_parser_singleton = SetupParser.singleton
 
     def run(self):
+        SetupParser.init(singleton=self.setup_parser_singleton)
         try:
             self.process()
         except Exception as e:

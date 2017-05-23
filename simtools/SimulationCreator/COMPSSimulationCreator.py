@@ -1,17 +1,18 @@
 from COMPS.Data import Simulation
 from COMPS.Data import SimulationFile
+from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.General import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, setup, callback, return_list, save_semaphore):
-        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, setup, callback, return_list)
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list, save_semaphore):
+        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list)
 
         # Store the environment and endpoint
-        self.environment = setup.get('environment')
-        self.server_endpoint = setup.get('server_endpoint')
+        self.environment = SetupParser.get('environment')
+        self.server_endpoint = SetupParser.get('server_endpoint')
         self.save_semaphore = save_semaphore
 
     def create_simulation(self, cb):

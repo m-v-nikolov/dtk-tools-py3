@@ -12,11 +12,13 @@ import os
 from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
 
 
+SetupParser.init('HPC')
+
 # Find experiment from whose config/campaigns we want to use (also get sweep params)
 comparison_exp_id =  "9945ae69-3106-e711-9400-f0921c16849c"
 sim_name = 'Rerun_Rampup_MDA_Better_Diagnostic'
 expt = retrieve_experiment(comparison_exp_id)
-sp = SetupParser('HPC')
+
 
 df = pd.DataFrame([x.tags for x in expt.simulations])
 df['outpath'] = pd.Series([sim.get_path() for sim in expt.simulations])
@@ -107,7 +109,6 @@ def sample_point_fn(cb, sample_dimension_values):
 
 # sp.override_block('LOCAL')
 calib_manager = CalibManager(name=sim_name,
-                             setup=sp,
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
@@ -124,4 +125,4 @@ if __name__ == "__main__":
     # calib_manager.resume_from_iteration(iteration=0, iter_step='analyze')
     # For now cleanup automatically
     calib_manager.cleanup()
-    calib_manager.run_calibration(**run_calib_args)
+    calib_manager.run_calibration()

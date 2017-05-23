@@ -15,6 +15,7 @@ from IterationState import IterationState
 from calibtool.plotters import SiteDataPlotter
 from calibtool.utils import ResumePoint
 from core.utils.time import verbose_timedelta
+from simtools.SetupParser import SetupParser
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
@@ -52,12 +53,11 @@ class CalibManager(object):
     or HPC simulations for a set of random seeds, sample points, and site configurations.
     """
 
-    def __init__(self, setup, config_builder, map_sample_to_model_input_fn,
+    def __init__(self,  config_builder, map_sample_to_model_input_fn,
                  sites, next_point, name='calib_test', iteration_state=None,
                  sim_runs_per_param_set=1, max_iterations=5, plotters=list()):
 
         self.name = name
-        self.setup = setup
         self.config_builder = config_builder
         self.map_sample_to_model_input_fn = SampleIndexWrapper(map_sample_to_model_input_fn)
         self.sites = sites
@@ -66,7 +66,6 @@ class CalibManager(object):
         self.iteration_state.working_directory = self.name
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.max_iterations = max_iterations
-        self.location = self.setup.get('type')
         self.plotters = [plotter.set_manager(self) for plotter in plotters]
         self.suites = []
         self.all_results = None
@@ -75,6 +74,15 @@ class CalibManager(object):
         self.calibration_start = None
         self.iteration_start = None
         self.latest_iteration = 0
+        self._location = None
+
+    @property
+    def location(self):
+        return SetupParser.get('type') if self._location is None else self._location
+
+    @location.setter
+    def location(self, value):
+        self._location = value
 
     @property
     def suite_id(self):
@@ -86,7 +94,7 @@ class CalibManager(object):
 
         return self.suites[-1]['id']
 
-    def run_calibration(self, **kwargs):
+    def run_calibration(self):
         """
         Create and run a complete multi-iteration calibration suite.
         """
@@ -94,14 +102,12 @@ class CalibManager(object):
         if not validate_exp_name(self.name):
             exit()
 
-        self.location = self.setup.get('type')
-        if 'location' in kwargs:
-            kwargs.pop('location')
+        self.location = SetupParser.get('type')
 
-        self.create_calibration(self.location, **kwargs)
-        self.run_iterations(**kwargs)
+        self.create_calibration(self.location)
+        self.run_iterations()
 
-    def create_calibration(self, location, **kwargs):
+    def create_calibration(self, location):
         """
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
@@ -127,7 +133,7 @@ class CalibManager(object):
                 self.cleanup()
                 self.create_calibration(location)
             elif var == "R":
-                self.resume_from_iteration(location=location, **kwargs)
+                self.resume_from_iteration(location=location)
                 exit()     # avoid calling self.run_iterations(**kwargs)
             elif var == "P":
                 self.replot(iteration=None)
@@ -148,7 +154,7 @@ class CalibManager(object):
         except IOError:
             raise Exception('Unable to find metadata in %s/IterationState.json' % iter_directory)
 
-    def run_iterations(self, **kwargs):
+    def run_iterations(self):
         """
         Run the iteration loop consisting of the following steps:
            * getting parameters to sample from next-point algorithm
@@ -170,7 +176,7 @@ class CalibManager(object):
 
             # COMMISSION STEP
             if self.iteration_state.commission_check():
-                self.commission_step(**kwargs)
+                self.commission_step()
 
             # ANALYZE STEP
             if self.iteration_state.analyze_check():
@@ -230,13 +236,13 @@ class CalibManager(object):
         self.iteration_state.status = ResumePoint.commission
         self.cache_calibration()
 
-    def commission_step(self, **kwargs):
+    def commission_step(self):
         # Get the params from the next_point
         next_params = self.next_point.get_samples_for_iteration(self.iteration)
         self.iteration_state.set_samples_for_iteration(self.iteration, next_params, self.next_point)
 
         # Then commission
-        self.commission_iteration(next_params, **kwargs)
+        self.commission_iteration(next_params)
 
         # Ready for analyzing
         self.iteration_state.status = ResumePoint.analyze
@@ -273,7 +279,7 @@ class CalibManager(object):
         if self.iteration_state.resume_point == ResumePoint.next_point:
             self.next_point.update_iteration(self.iteration)
 
-    def commission_iteration(self, next_params, **kwargs):
+    def commission_iteration(self, next_params):
         # DJK: This needs to be encapsulated so we can commission other models or even deterministic functions
         """
         Commission an experiment of simulations constructed from a list of combinations of
@@ -285,10 +291,7 @@ class CalibManager(object):
             logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration_state.iteration)
             self.exp_manager = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(self.iteration_state.experiment_id))
         else:
-            if 'location' in kwargs:
-                kwargs.pop('location')
-
-            self.exp_manager = ExperimentManagerFactory.from_setup(self.setup, **kwargs)
+            self.exp_manager = ExperimentManagerFactory.from_setup()
 
             exp_builder = ModBuilder.from_combos(
                 [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
@@ -445,8 +448,8 @@ class CalibManager(object):
                  'param_names': self.param_names(),
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
-                 'setup_overlay_file':self.setup.setup_file,
-                 'selected_block': self.setup.selected_block}
+                 'setup_overlay_file':SetupParser.setup_file,
+                 'selected_block': SetupParser.selected_block}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
@@ -477,7 +480,7 @@ class CalibManager(object):
 
         return data.to_dict(orient='list')
 
-    def resume_from_iteration(self, iteration=None, iter_step=None, **kwargs):
+    def resume_from_iteration(self, iteration=None, iter_step=None):
         """
         It takes several steps:
           * First we need to find the latest 'best' iteration
@@ -489,10 +492,12 @@ class CalibManager(object):
             raise Exception('Unable to find existing calibration in directory: %s' % self.name)
 
         # prepare resume status
+        # env is prior iteration (e.g. HPC)
         self.iteration_state.prepare_resume_state(self, iteration, iter_step)
 
         # enter iteration loop
-        self.run_iterations(**kwargs)
+        # env is NEW value (e.g. LOCAL)
+        self.run_iterations()
 
         # remove any leftover experiments
         self.cleanup_orphan_experiments()
@@ -595,7 +600,7 @@ class CalibManager(object):
         - If LOCAL -> also delete the simulations
         """
         # Save the selected block the user wants
-        user_selected_block = self.setup.selected_block
+        user_selected_block = SetupParser.selected_block
 
         try:
             calib_data = self.read_calib_data()
@@ -609,7 +614,7 @@ class CalibManager(object):
             iter_count = calib_data.get('iteration')
 
             # Also retrieve the selected block
-            self.setup.override_block(calib_data['selected_block'])
+            SetupParser.override_block(calib_data['selected_block'])
 
             # Kill
             self.kill()
@@ -636,7 +641,7 @@ class CalibManager(object):
             for suite in suites:
                 if suite['type'] == "HPC":
                     logger.info('Delete COMPS suite %s' % suite['id'])
-                    COMPS_login(self.setup.get('server_endpoint'))
+                    COMPS_login(SetupParser.get('server_endpoint'))
                     from simtools.Utilities.COMPSUtilities import delete_suite
                     delete_suite(suite['id'])
 
@@ -650,7 +655,7 @@ class CalibManager(object):
                 logger.error("Try deleting the folder manually before retrying the calibration.")
 
         # Restore the selected block
-        self.setup.override_block(user_selected_block)
+        SetupParser.override_block(user_selected_block)
 
     def reanalyze(self):
         """
@@ -659,11 +664,11 @@ class CalibManager(object):
         calib_data = self.read_calib_data()
 
         # Override our setup with what is in the file
-        self.setup.override_block(calib_data['selected_block'])
-        self.location = self.setup.get('type')
+        SetupParser.override_block(calib_data['selected_block'])
+        self.location = SetupParser.get('type')
 
         if calib_data['location'] == 'HPC':
-            COMPS_login(self.setup.get('server_endpoint'))
+            COMPS_login(SetupParser.get('server_endpoint'))
 
         # Cleanup the LL_all.csv
         if os.path.exists(os.path.join(self.name, 'LL_all.csv')):

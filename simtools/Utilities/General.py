@@ -3,7 +3,6 @@ import contextlib
 import functools
 import logging
 import os
-import platform
 import sys
 
 import time
@@ -61,20 +60,12 @@ def get_os():
     """
     Retrieve OS
     """
-    sy = platform.system()
+    msg = "simtools.Utilities.General.get_os() is deprecated. Use simtools.Utilities.General.LocalOS.name"
+    logger.warning(msg)
+    print msg
 
-    # OS: windows
-    if sy == 'Windows':
-        my_os = 'win'
-    # OS: Linux
-    elif sy == 'Linux':
-        my_os = 'lin'
-    # OS: Mac
-    else:
-        my_os = 'mac'
-
-    return my_os
-
+    from simtools.Utilities.LocalOS import LocalOS
+    return LocalOS.name
 
 def utc_to_local(utc_dt):
     import pytz
@@ -210,24 +201,6 @@ def get_md5(filename):
 
 def is_remote_path(path):
     return path.startswith('\\\\')
-
-
-
-def override_HPC_settings(setup, **kwargs):
-    overrides_by_variable = dict(priority=['Lowest', 'BelowNormal', 'Normal', 'AboveNormal', 'Highest'],
-                                 node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab',
-                                             'emod_cd', 'emod_abcd'],
-                                 use_comps_asset_svc=['0', '1'])
-
-    for variable, allowed_overrides in overrides_by_variable.items():
-        value = kwargs.get(variable)
-        if value:
-            if value in allowed_overrides:
-                logger.info('Overriding HPC %s: %s', variable, value)
-                setup.set(variable, value)
-            else:
-                logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
-
 
 class CommandlineGenerator(object):
     """

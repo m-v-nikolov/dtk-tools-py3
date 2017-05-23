@@ -96,9 +96,9 @@ def get_available(id_type):
         :raises: Exception if id_type is not recognized.
     """
     if id_type == 'branch':
-        results = [b.name for b in DTKGitHub.repository().iter_branches()]
+        results = [b.name for b in DTKGitHub.repository().branches()]
     elif id_type == 'tag':
-        results = [t.name for t in DTKGitHub.repository().iter_tags()]
+        results = [t.name for t in DTKGitHub.repository().tags()]
     else:
         raise Exception('No such git type: %s . Must be branch or tag.' % id_type)
     if id_type == 'branch':
@@ -130,7 +130,7 @@ def get(package, version, dest):
         zip_ref = zipfile.ZipFile(zip_file, 'r')
 
         # Get the name of the root dir (only one)
-        dir = [x for x in zip_ref.namelist() if x.endswith('/') and x.count('/')==1][0]
+        dir = [x for x in zip_ref.namelist() if x.endswith('/') and x.count('/') == 1][0]
 
         try:
             # Extract and move package to desired location
@@ -156,7 +156,7 @@ def get(package, version, dest):
             os.remove(zip_file)
 
     # Update the (local) sqlite DB with the version being used
-    db_key = db_key = construct_package_version_db_key(package)
+    db_key = construct_package_version_db_key(package)
     DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
 
 class DTKGitHub(object):
@@ -183,6 +183,9 @@ class DTKGitHub(object):
             raise AuthorizationError()
         return cls.repo
 
+    class BadCredentials(Exception):
+        pass
+    
     @classmethod
     def create_token(cls):
         import getpass
@@ -197,8 +200,10 @@ class DTKGitHub(object):
 
         # Authenticate the user and create the token
         try: # user may not have permissions to use the disease package repo yet
+            if len(user) == 0 or len(password) == 0:
+                raise cls.BadCredentials()
             auth = github3.authorize(user, password, scopes, note, note_url)
-        except github3.models.GitHubError:
+        except (github3.models.GitHubError, cls.BadCredentials):
             print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance."\
                   % cls.SUPPORT_EMAIL
             raise AuthorizationError()

@@ -1,20 +1,22 @@
 # Execute directly: 'python example_calibration.py'
 # or via the calibtool.py script: 'calibtool run example_full_calibration.py --hpc'
-from calibtool.algorithms.IMIS import IMIS
-from simtools.SetupParser import SetupParser
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
+from calibtool.algorithms.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from simtools.SetupParser import SetupParser
 
 from calibtool.study_sites import \
     NdiopCalibSite, DielmoCalibSite, \
     NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
     LayeCalibSite, DapelogoCalibSite, MatsariAgeSeasonCalibSite, RafinMarkeAgeSeasonCalibSite, \
     SugungumAgeSeasonCalibSite
+
+SetupParser.default_block = 'EXAMPLE'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
@@ -80,7 +82,6 @@ next_point_kwargs = dict(initial_samples=4,
                          n_resamples=100)
 
 calib_manager = CalibManager(name='FullCalibrationExample',
-                             setup=SetupParser('HPC'),
                              config_builder=cb,
                              map_sample_to_model_input_fn=sample_point_fn,
                              sites=sites,
@@ -92,5 +93,6 @@ calib_manager = CalibManager(name='FullCalibrationExample',
 run_calib_args = {}
 
 if __name__ == "__main__":
+    SetupParser.init(selected_block=SetupParser.default_block)
     calib_manager.cleanup()
-    calib_manager.run_calibration(**run_calib_args)
+    calib_manager.run_calibration()

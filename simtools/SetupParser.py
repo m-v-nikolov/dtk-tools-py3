@@ -1,127 +1,198 @@
 import json
 import os
-import sys
+import fasteners
 from ConfigParser import ConfigParser
+from simtools.Utilities.LocalOS import LocalOS
+from simtools.Utilities.General import init_logging
 
-from dtk.utils.ioformat.OutputMessage import OutputMessage
+current_dir = os.path.dirname(os.path.realpath(__file__))
+logger = init_logging("SetupParser")
 
-class SetupParser:
+
+class SetupParserMeta(type):
+    # The center of the SetupParser universe, the singleton.
+    singleton = None
+    initialized = False
+
+    # redirect all attribute calls to the singleton once initialized
+    def __getattr__(cls, item):
+        if cls.initialized:
+            return getattr(cls.singleton, item)
+        else:
+            if item == '__test__':  # fix for nosetests...
+                return None
+            raise SetupParser.NotInitialized("Missing attribute: %s" % item)
+
+    @classmethod
+    @fasteners.interprocess_locked(os.path.join(current_dir, '.setup_parser_init_lock'))
+    def init(cls, selected_block=None, **kwargs):
+        """
+        Initialize the SetupParser singleton
+        :param selected_block:
+        :param kwargs: See __init__ for parameter list
+        :return: Nothing.
+        """
+        if SetupParser.initialized:  # do not allow re-initialization
+            raise SetupParser.AlreadyInitialized("Cannot re-initialize the SetupParser class")
+        if kwargs.get('singleton', None):
+            cls.singleton = kwargs.get('singleton')
+        else:
+            if not kwargs.get('old_style_instantiation', None):
+                kwargs['old_style_instantiation'] = False
+            cls.singleton = SetupParser(selected_block=selected_block, **kwargs)
+        cls.initialized = True
+
+    @classmethod
+    @fasteners.interprocess_locked(os.path.join(current_dir, '.setup_parser_init_lock'))  # shared with .init()
+    def _uninit(cls):
+        """
+        This is for testing only. Please, please, please don't ever use it! It is the inverse
+        method of init().
+        :return:
+        """
+        cls.singleton = None
+        cls.initialized = False
+
+
+class SetupParser(object):
     """
     Parse user settings and directory locations
     from setup configuration file: simtools.ini
+
+    SetupParser is a singleton whose values can only be set once. It should be accessed directly as a class and never
+    instantiated. This is to provide a homogeneous, unchanging view of its configuration.
     """
-    selected_block = None
-    setup_file = None
-    default_ini = os.path.join(os.path.dirname(__file__), 'simtools.ini')
 
-    def __init__(self, selected_block=None, setup_file=None, force=False, fallback='LOCAL', quiet=False, working_directory=None):
+    __metaclass__ = SetupParserMeta
+
+    class MissingIniFile(Exception):
+        pass
+
+    class MissingIniBlock(Exception):
+        pass
+
+    class AlreadyInitialized(Exception):
+        pass
+
+    class NotInitialized(Exception):
+        DEFAULT_MSG = "SetupParser must first be called with .init() ."
+
+        def __init__(self, msg=None):
+            self.msg = msg if msg else self.DEFAULT_MSG
+
+        def __str__(self):
+            return self.msg
+
+    ini_filename = 'simtools.ini'
+    default_file = os.path.join(os.path.dirname(__file__), ini_filename)
+    default_block = 'LOCAL'
+
+    def __init__(self, selected_block=None, setup_file=None, commissioning_directory=None, overrides={},
+                 is_testing=False, old_style_instantiation=None):
         """
-        Build a SetupParser.
-        The selected_block and setup_file will be stored in class variables and will only be replaced in subsequent
-        instances if the force parameter is True.
+        This should only be used to initialize the SetupParser singleton.
+        Provides access to the selected_block of the resultant ini config overlay. Overlays are performed by merging
+        the selected overlay ini file onto the default ini file.
 
-        If no setup_file is specified, the SetupParser will look in the current working directory for a simtools.ini
-        file. If a file is specified, then this file is used and simtools.ini in the working directory is ignored.
+        Overlay file selection priority:
+        1. setup_file, if provided
+        2. current/local working directory ini file, if it exists
+        3. ini in commissioning_directory, if provided
+        4. No overlay (defaults only)
 
-        The global defaults (simtools/simtools.ini) are always loaded first before any overlay is applied.
-
-        If the current selected_block cannot be found in the global default or overlay, then the fallback block is used.
+        If the selected_block cannot be found in the resultant ini overlay, an exception will be thrown.
 
         :param selected_block: The current block we want to use
-        :param setup_file: The current overlay file we want to use
-        :param force: Force the replacement of selected_block and setup_file in the class variable
-        :param fallback: Fallback block if the selected_block cannot be found
+        :param setup_file: If provided, this ini file will overlay the default UNLESS commissioning_directory was
+                           also provided.
+        :param commissioning_directory: If provided, the ini file within it will always overlay the default ini file.
+        :overrides: The values in this dict supersede those returned by the ConfigParser object in .get()
+        :is_testing: Allows bypassing of interactive login to COMPS if True. No login attempt is made in this case.
         """
-        # print selected_block
-        # from simtools import utils
-        # print utils.caller_name()
+        if old_style_instantiation is None:
+            msg = "SetupParser(arguments) is deprecated. Please update your code to use SetupParser.init(arguments) " + \
+                  "exactly once. You may then use familiar SetupParser methods on the class, " + \
+                  "e.g. SetupParser.get('some_item')"
+            logger.warning(msg)
+            print msg
 
-        # Test if the default ini exist
-        if not os.path.exists(self.default_ini):
-            OutputMessage("The default simtools.ini file does not exist in %s. Please run 'python setup.py' again!" % self.default_ini,'warning')
-            exit()
+            if not selected_block:
+                raise Exception("Use of deprecated initializer of SetupParser too generic. Please specify which block"
+                                "to select via argument 'block', e.g. SetupParser(block='LOCAL')")
 
-        # Store the selected_block in the class only if passed
-        if selected_block and (not SetupParser.selected_block or force):
-            SetupParser.selected_block = selected_block
-        elif not SetupParser.selected_block and not selected_block:
-            # There's no block stored and none passed -> assume the fallback
-            SetupParser.selected_block = fallback
-
-        if setup_file and (not SetupParser.setup_file or force):
-            # Only add the file if it exists
-            if os.path.exists(setup_file):
-                SetupParser.setup_file = setup_file
+            if SetupParser.initialized:
+                if selected_block != SetupParser.selected_block:
+                    SetupParser.override_block(block=selected_block)
             else:
-                if not quiet:
-                    OutputMessage('The setup file (%s) do not exist anymore, ignoring...' % setup_file, 'warning')
+                kwargs = {'selected_block': selected_block,
+                          'setup_file': setup_file,
+                          'commissioning_directory': commissioning_directory,
+                          'overrides': overrides,
+                          'is_testing': is_testing,
+                          'old_style_instantiation': True
+                          }
+                SetupParser.init(**kwargs)
 
-        # First, always load the defaults
+        self.selected_block = selected_block or self.default_block
+        self.setup_file = setup_file
+        self.commissioning_directory = commissioning_directory
+        self.commissioning_file = os.path.join(commissioning_directory, self.ini_filename) if commissioning_directory else None
+
+        local_file = os.path.join(os.getcwd(), self.ini_filename)
+        self.local_file = local_file if os.path.exists(local_file) else None
+        self.overrides = overrides
+
+        # Identify which ini file will overlay the default ini, if any, and verify the selected file's existence
+        if not os.path.exists(self.default_file):
+            raise self.MissingIniFile("Default ini file does not exist: %s . Please run 'python setup.py' again." % self.default_file)
+
+        overlay_path = self._select_and_verify_overlay(local_file=self.local_file, provided_file=self.setup_file,
+                                                       commissioning_file=self.commissioning_file)
+
+        # Load the default and overlay it onto itself to explicitly resolve the type=LOCAL/HPC tags to key/values
+        # from the literal LOCAL/HPC blocks.
         self.setup = ConfigParser()
-        self.setup.read(self.default_ini)
+        self.setup.read(self.default_file)
 
-        # Only care for HPC/LOCAL -> all the other sections will be added when overlaying the default file
         for sec in self.setup.sections():
             if sec not in ('HPC', 'LOCAL'):
                 self.setup.remove_section(sec)
 
-        # Add the user to the default
-        if sys.platform == 'win32':
-            user = os.environ['USERNAME']
-        else:
-            import pwd
-            user = pwd.getpwuid(os.geteuid())[0]
-        self.setup.set('DEFAULT', 'user', user)
-
-        # Overlay the default file to itself to ensure all blocks outside of HPC/LOCAL have all their params set
         cp = ConfigParser()
-        cp.read(self.default_ini)
-        cp.set('DEFAULT','user',user)
-        self.overlay_setup(cp)
+        cp.read(self.default_file)
+        self._overlay_setup(cp)
 
-        # Then overlays the eventual setup_file passed or simtools.ini in working dir
-        overlay_path = None
-        if self.setup_file and os.path.exists(self.setup_file):
-            overlay_path = self.setup_file
-        elif os.path.exists(os.path.join(os.getcwd(), 'simtools.ini')):
-            overlay_path = os.path.join(os.getcwd(), 'simtools.ini')
-        elif working_directory and os.path.exists(os.path.join(working_directory, 'simtools.ini')):
-            overlay_path = os.path.join(working_directory, 'simtools.ini')
-
-        # If we found an overlay applies it
+        # Apply the overlay if one was found
         if overlay_path:
             overlay = ConfigParser()
             overlay.read(overlay_path)
+            self._overlay_setup(overlay)
 
-            # Add the user just in case if not specified already
-            if not overlay.has_option('DEFAULT','user'):
-                overlay.set('DEFAULT','user',user)
+        # Add the user just in case it wasn't specified already
+        self.setup.set('DEFAULT', 'user', LocalOS.username)
 
-            # Overlay
-            self.overlay_setup(overlay)
-
-        # Test if we now have the block we want
+        # Verify that we have the requested block in our overlain result
         if not self.setup.has_section(self.selected_block):
-            setup_file_path = overlay_path if overlay_path else os.path.join(os.path.dirname(__file__), 'simtools.ini')
-            if not quiet:
-                OutputMessage("Selected setup block %s not present in the file (%s).\n Reverting to %s instead!" % (selected_block, setup_file_path, fallback), 'warning')
-            # The current block was not found... revert to the fallback
-            return self.override_block(fallback)
+            raise self.MissingIniBlock("Selected block: %s does not exist in ini file overlay." % self.selected_block)
 
         # If the selected block is type=HPC, take care of HPC initialization
-        if self.get('type') == "HPC":
+        if self.setup.get(self.selected_block, 'type') == "HPC" and not is_testing:
             from simtools.Utilities.COMPSUtilities import COMPS_login
-            COMPS_login(self.get('server_endpoint'))
+            COMPS_login(self.setup.get(self.selected_block, 'server_endpoint'))
 
-    def override_block(self,block):
+    @classmethod
+    def override_block(cls, block):
         """
-        Overrides the selected block.
-        Basically call the constructor with force=True
+        Overrides the selected block. Use with care, and definitely not in a multi-threaded situation.
         :param block: New block we want to use
         """
-        self.__init__(selected_block=block, force=True)
+        logger.warning("SetupParser.override_block is deprecated.")
+        if cls.singleton.setup.has_section(block):
+            cls.singleton.selected_block = block
+        else:
+            raise cls.MissingIniBlock("Override setup block '%s' does not exist in the setup overlay.")
 
-    def overlay_setup(self,cp):
+    def _overlay_setup(self, cp):
         """
         Overlays a ConfigParser on the current self.setup ConfigParser.
         Overlays all the blocks found there.
@@ -163,7 +234,7 @@ class SetupParser:
         """
         # Overlay the LOCAL/HPC to the default ones
         for section in cp.sections():
-            if section in ('HPC','LOCAL'):
+            if section in ('HPC', 'LOCAL'):
                 for item in cp.items(section):
                     self.setup.set(section, item[0], item[1])
 
@@ -185,36 +256,91 @@ class SetupParser:
             for item in cp.items(section):
                 self.setup.set(section, item[0], item[1])
 
-    def get(self, parameter, default=None):
-        if not self.has_option(parameter):
-            if default: return default
-            else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
-        return self.setup.get(self.selected_block,parameter)
+    @classmethod
+    def get(cls, parameter, default=None, block=None):
+        return cls._get_guts(parameter, 'get', default, block)
 
-    def has_option(self,option):
-        return self.setup.has_option(self.selected_block,option)
+    @classmethod
+    def getboolean(cls, parameter, default=None, block=None):
+        return cls._get_guts(parameter, 'getboolean', default, block)
 
-    def set(self, parameter, value):
-        self.setup.set(self.selected_block, parameter, value)
+    @classmethod
+    def _get_guts(cls, parameter, get_method, default=None, block=None):
+        """
+        An in-common access method for get() and getboolean()
+        :param parameter: The parameter value to get
+        :param get_method: The method on cls.instance.setup to call ('get' or 'getboolean')
+        :param default: If parameter not present and this is not None, return default.
+        :param block: The block name to get parameter from. Default is the current selected block.
+        :return: The value of parameter in selected block (or default, if provided and parameter not in block)
+        """
+        if not cls.initialized:
+            raise cls.NotInitialized()
 
-    def items(self):
-        return self.setup.items(self.selected_block)
+        # Get the block, either passed to the function or the default
+        block = block or cls.singleton.selected_block
 
-    def getboolean(self, parameter, default=None):
-        if not self.has_option(parameter):
-            if default != None: return default
-            else: raise ValueError("%s block does not have the option %s!" % (self.selected_block, parameter))
-        return self.setup.getboolean(self.selected_block, parameter)
+        override = cls.singleton.overrides.get(parameter)
+        if override:
+            value = override
+        else:
+            if not cls.singleton.has_option(parameter):
+                if default is not None:
+                    return default
+                else:
+                    raise ValueError("%s block does not have the option %s" % (block, parameter))
+            value = getattr(cls.singleton.setup, get_method)(block, parameter)
+        return value
 
-    def lookup_param(self, section, parameter):
-        # Save the current block
-        previous_selected_block = self.selected_block
-        sp = SetupParser(selected_block=section, force=True)
-        result = sp.get(parameter, None)
-        SetupParser.selected_block = previous_selected_block
-        return result
+    @classmethod
+    def has_option(cls, option, block=None):
+        if not cls.initialized:
+            raise cls.NotInitialized()
 
-    def load_schema(self):
+        block = cls.singleton.selected_block if block is None else block  # set the default
+        return cls.singleton.setup.has_option(block, option)
+
+    @classmethod
+    def items(cls, block=None):
+        if not cls.initialized:
+            raise cls.NotInitialized()
+
+        block = cls.singleton.selected_block if block is None else block  # set the default
+        return cls.singleton.setup.items(block)
+
+    @classmethod
+    def _select_and_verify_overlay(cls, **kwargs):
+        """
+        Wrapper to _select_overlay() that checks existence of the selected overlay file and raises if it is missing.
+        :param kwargs: identical to those of _select_overlay()
+        :return: The path of the selected overlay file.
+        """
+        overlay_file = cls._select_overlay(**kwargs)
+        if overlay_file and not os.path.exists(overlay_file):
+            cls.MissingIniFile("Selected overlay ini file does not exist: %s" % overlay_file)
+        return overlay_file
+
+    @classmethod
+    def _select_overlay(cls, local_file=None, provided_file=None, commissioning_file=None):
+        """
+        Determines which of the up to 3 specified ini files should be used for overlaying on the defaults.
+        :param local_file: a current working dir ini file
+        :param provided_file: a ini file provided to SetupParser
+        :param commissioning_file: the ini file in the directory this experiment was commissioned from
+        :return: The path of the selected overlay file.
+        """
+        if provided_file:
+            overlay_file = provided_file
+        elif local_file:
+            overlay_file = local_file
+        elif commissioning_file:
+            overlay_file = commissioning_file
+        else:
+            overlay_file = None
+        return overlay_file
+
+    @classmethod
+    def load_schema(cls):
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
-        self.schema = json_schema
+        cls.singleton.schema = json_schema
         return json_schema
