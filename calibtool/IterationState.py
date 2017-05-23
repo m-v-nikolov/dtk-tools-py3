@@ -217,6 +217,21 @@ class IterationState(object):
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
 
+        # Save the selected block the user wants
+        user_selected_block = SetupParser.selected_block
+
+        # Step 2: Checking possible leftovers
+        try:
+            # Retrieve the experiment manager. Note: it changed selected_block
+            calibManager.exp_manager = ExperimentManagerFactory.from_experiment(exp)
+        except Exception:
+            logger.info('Proceed without checking the possible leftovers.')
+        finally:
+            # Restore the selected block
+            SetupParser.override_block(user_selected_block)
+
+        if not calibManager.exp_manager: return
+
         # Don't do the leftover checking for a special case
         if self.iter_step == 'commission':
             return
