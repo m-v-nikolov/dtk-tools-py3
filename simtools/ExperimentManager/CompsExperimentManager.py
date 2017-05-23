@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from COMPS.Data import Experiment, Configuration,Priority, Suite
+from simtools.SetupParser import SetupParser
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
@@ -22,14 +23,14 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, experiment, exp_data, setup=None):
-        BaseExperimentManager.__init__(self, experiment, exp_data, setup)
-        self.comps_sims_to_batch = int(self.get_property('sims_per_thread'))
+    def __init__(self, experiment, exp_data):
+        BaseExperimentManager.__init__(self, experiment, exp_data)
+        self.comps_sims_to_batch = int(SetupParser.get('sims_per_thread'))
         self.sims_to_create = []
         self.commissioners = []
-        self.assets_service = self.setup.getboolean('use_comps_asset_svc')
-        self.endpoint = self.setup.get('server_endpoint')
-        self.compress_assets = self.setup.getboolean('compress_assets')
+        self.assets_service = SetupParser.getboolean('use_comps_asset_svc')
+        self.endpoint = SetupParser.get('server_endpoint')
+        self.compress_assets = SetupParser.getboolean('compress_assets')
         COMPS_login(self.endpoint)
         self.creator_semaphore = None
         self.runner_thread = None
@@ -48,7 +49,6 @@ class CompsExperimentManager(BaseExperimentManager):
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
-                                      setup=self.setup,
                                       callback=callback,
                                       return_list=return_list,
                                       save_semaphore=self.creator_semaphore)
@@ -57,7 +57,7 @@ class CompsExperimentManager(BaseExperimentManager):
         """
         Check file exist and return the missing files as dict
         """
-        input_root = self.setup.get('input_root')
+        input_root = SetupParser.get('input_root')
         input_root_real = translate_COMPS_path(input_root)
         return input_root_real, self.find_missing_files(input_files, input_root_real)
 
@@ -80,16 +80,16 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
-        COMPS_login(self.setup.get('server_endpoint'))
+        COMPS_login(SetupParser.get('server_endpoint'))
 
         config = Configuration(
-            environment_name=self.setup.get('environment'),
+            environment_name=SetupParser.get('environment'),
             simulation_input_args=self.commandline.Options,
-            working_directory_root=os.path.join(self.setup.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
+            working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
             executable_path=self.staged_bin_path,
-            node_group_name=self.setup.get('node_group'),
-            maximum_number_of_retries=int(self.setup.get('num_retries')),
-            priority=Priority[self.setup.get('priority')],
+            node_group_name=SetupParser.get('node_group'), # ck4 THIS might be overridden... Overseer needs to know about the overrides to set this properly
+            maximum_number_of_retries=int(SetupParser.get('num_retries')),
+            priority=Priority[SetupParser.get('priority')],
             min_cores=self.config_builder.get_param('Num_Cores', 1),
             max_cores=self.config_builder.get_param('Num_Cores', 1),
             exclusive=self.config_builder.get_param('Exclusive', False)
@@ -111,7 +111,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Create the tags and append the environment to the tag
         tags = self.exp_builder.metadata
-        tags['environment'] = self.setup.get('environment')
+        tags['environment'] = SetupParser.get('environment')
         tags.update(self.exp_builder.tags if hasattr(self.exp_builder, 'tags') else {})
 
         # Add the simulation to the batch

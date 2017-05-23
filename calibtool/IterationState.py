@@ -5,6 +5,7 @@ import pandas as pd
 import re
 from calibtool.utils import ResumePoint
 from datetime import datetime
+from simtools.SetupParser import SetupParser
 from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
 from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -208,28 +209,13 @@ class IterationState(object):
 
         # If location has been changed, will double check user for a special case before proceed...
         if calibManager.location != exp.location and self.iter_step in ['analyze', 'plot', 'next_point']:
-            location = calibManager.setup.get('type')
+            location = SetupParser.get('type')
             var = raw_input("Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (exp.location, location))
             if var.upper() == 'Y':
                 self.iter_step = 'commission'
             else:
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
-
-        # Save the selected block the user wants
-        user_selected_block = calibManager.setup.selected_block
-
-        # Step 2: Checking possible leftovers
-        try:
-            # Retrieve the experiment manager. Note: it changed selected_block
-            calibManager.exp_manager = ExperimentManagerFactory.from_experiment(exp)
-        except Exception:
-            logger.info('Proceed without checking the possible leftovers.')
-        finally:
-            # Restore the selected block
-            calibManager.setup.override_block(user_selected_block)
-            if not calibManager.exp_manager:
-                return
 
         # Don't do the leftover checking for a special case
         if self.iter_step == 'commission':

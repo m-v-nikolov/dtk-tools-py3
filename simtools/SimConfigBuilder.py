@@ -54,8 +54,8 @@ class SimConfigBuilder(object):
             raise Exception('No parameter named %s' % param)
         return True
 
-    def stage_executable(self, exe_path, paths):
-        staged_bin = stage_file(exe_path, paths['bin_staging_root'])
+    def stage_executable(self, exe_path, bin_staging_root):
+        staged_bin = stage_file(exe_path, bin_staging_root)
         self.set_param('bin_path', staged_bin)
         return staged_bin
 

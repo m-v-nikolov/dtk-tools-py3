@@ -11,7 +11,8 @@ from distutils.version import LooseVersion
 from urlparse import urlparse
 from argparse import ArgumentParser, Namespace
 
-from simtools.Utilities.General import get_os, nostdout
+from simtools.Utilities.General import nostdout
+from simtools.Utilities.LocalOS import LocalOS
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
@@ -23,101 +24,101 @@ installed_packages = dict()
 dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
 requirements = OrderedDict([
     ('curses', {
-        'platform': ['win'],
+        'platform': [LocalOS.WINDOWS],
         'version': '2.2',
         'test': '==',
         'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('pyCOMPS', {
-        'platform': ['win','lin','mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.0.1',
         'test': '==',
         'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.5.3',
         'test': '>=',
         'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('scipy', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.19.0',
         'test': '>=',
         'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('pandas', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.19.2',
         'test': '>=',
         'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '4.3.1',
         'test': '==',
         'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('python-snappy', {
-        'platform': ['win', 'lin'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
         'version': '0.5',
         'test': '==',
         'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('seaborn', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.7.1',
         'test': '==',
         'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('statsmodels', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.8.0',
         'test': '==',
         'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('SQLAlchemy', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.1.5',
         'test': '=='
     }),
     ('npyscreen', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '4.10.5',
         'test': '=='
     }),
     ('fasteners', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.14.1',
         'test': '=='
     }),
     ('decorator', {
-        'platform': ['mac'],
+        'platform': [LocalOS.MAC],
         'version': '4.0.10',
         'test': '=='
     }),
     ('validators', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
     ('networkx', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
     ('patsy', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
     ('dill', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
     ('enum34', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
     ('github3.py', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.9.6',
         'test': '>='
     }),
     ('numpy', {
-        'platform': ['win', 'lin', 'mac'],
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.12.0+mkl',
         'test': '>=',
         'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
@@ -270,7 +271,7 @@ def build_package_str(my_os, name, val):
     """
     package_str = None
 
-    if my_os in ['win']:
+    if my_os in [LocalOS.WINDOWS]:
         if val.get('wheel', None):
             package_str = val['wheel']
         elif val.get('version', None):
@@ -280,7 +281,7 @@ def build_package_str(my_os, name, val):
             package_str = "%s%s%s" % (name, op, val['version'])
         else:
             package_str = name
-    elif my_os in ['mac', 'lin']:
+    elif my_os in [LocalOS.MAC, LocalOS.LINUX]:
         if val.get('test', None) and val.get('version', None):
             package_str = "%s%s%s" % (name, val['test'], val['version'])
         else:
@@ -296,13 +297,13 @@ def get_requirements_by_os(my_os):
     reqs = OrderedDict([(name, val) for (name, val) in requirements.iteritems() if my_os in val['platform']])
 
     # OS: Mac or Linux. No wheel needed
-    if my_os in ['mac', 'lin']:
+    if my_os in [LocalOS.MAC, LocalOS.LINUX]:
         for (name, val) in reqs.iteritems():
             if 'wheel' in val:
                 val.pop('wheel')
 
     # OS: Linux. No version for some packages
-    if my_os in ['lin']:
+    if my_os in [LocalOS.LINUX]:
         for name in ['numpy', 'scipy']:
             if 'version' in reqs[name]:
                 reqs[name].pop('version')
@@ -353,7 +354,7 @@ def install_packages(my_os, reqs):
     """
     Install required packages
     """
-    if my_os in ['lin']:
+    if my_os in [LocalOS.LINUX]:
         # Doing the apt-get install pre-requisites
         install_linux_pre_requisites()
 
@@ -455,9 +456,9 @@ def upgrade_pip(my_os):
     """
     import subprocess
 
-    if my_os in ['mac', 'lin']:
+    if my_os in [LocalOS.MAC, LocalOS.LINUX]:
         subprocess.call("pip install -U pip", shell=True)
-    elif my_os in ['win']:
+    elif my_os in [LocalOS.WINDOWS]:
         subprocess.call("python -m pip install --upgrade pip", shell=True)
 
 
@@ -466,7 +467,7 @@ def verify_matplotlibrc(my_os):
     on MAC: make sure file matplotlibrc has content
     backend: Agg
     """
-    if my_os not in ['mac']:
+    if my_os not in [LocalOS.MAC]:
         return
 
     import matplotlib as mpl
@@ -510,7 +511,7 @@ def main():
         sys.argv.remove('--nopackages')
 
     # Check OS
-    my_os = get_os()
+    my_os = LocalOS.name
     print ('os: %s' % my_os)
 
     # Upgrade pip before install other packages

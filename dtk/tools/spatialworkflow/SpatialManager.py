@@ -32,7 +32,7 @@ class SpatialManager:
     This approach may require generators instantiation in the contructor of SpatialManager.
     """
 
-    def __init__(self, location, cb, setup, geography, name, working_dir, input_dir,
+    def __init__(self, location, cb, geography, name, working_dir, input_dir,
                  population_input_file=None,
                  output_dir='output',
                  sim_data_input_root='input',
@@ -155,7 +155,7 @@ class SpatialManager:
         self.demographics_output_file_path = os.path.join(self.sim_data_input, self.demographics_output_file)
 
         # demographics generator instance
-        self.dg = DemographicsGenerator(
+        self.dg = DemographicsGenerator.from_file(
             self.cb,
             self.population_input_file_path,
             # demographics_type = 'static',

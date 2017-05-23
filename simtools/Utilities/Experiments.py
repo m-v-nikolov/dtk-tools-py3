@@ -39,7 +39,7 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
         raise Exception('Experiment %s not found in the local database and sync disabled.' % exp_id)
 
     logger.info('Experiment with id %s not found in local database, trying sync.' % exp_id)
-    endpoint = SetupParser().lookup_param('HPC', 'server_endpoint')
+    endpoint = SetupParser.get(block='HPC', parameter='server_endpoint')
     exp = COMPS_experiment_to_local_db(exp_id, endpoint, verbose)
 
     if exp: return exp

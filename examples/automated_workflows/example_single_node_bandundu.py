@@ -1,22 +1,17 @@
 import os
-import json
-import functools as fun
-
 
 from dtk.generic.migration import single_roundtrip_params
-from dtk.vector.study_sites import configure_site
-from simtools.SetupParser import SetupParser
-from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.tools.spatialworkflow.SpatialManager import SpatialManager
 from dtk.utils.builders.sweep import GenericSweepBuilder
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
+from simtools.SetupParser import SetupParser
 
-
-setup = SetupParser()
-location = 'HPC' #'LOCAL' 
+location = 'HPC' #'LOCAL'
+setup = SetupParser.init(location)
 geography = 'DRC/Bandundu'
 sites = ['Bandundu']
 
-dll_root = setup.get('BINARIES', 'dll_path')
+dll_root = SetupParser.get('dll_path')
 
 
 builder   = GenericSweepBuilder.from_dict({'_site_':sites, # study sites
@@ -79,8 +74,7 @@ nodes_params_input_file = 'nodes_params.json' # see format in dtk.tools.spatialw
 # Create the spatial_manager
 spatial_manager = SpatialManager(
                                      location,
-                                     cb, 
-                                     setup, 
+                                     cb,
                                      geography, 
                                      exp_name, 
                                      working_dir, 

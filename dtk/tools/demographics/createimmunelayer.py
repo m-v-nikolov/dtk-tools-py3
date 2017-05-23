@@ -1,9 +1,7 @@
 import json
 import os
-import scipy # for calculating means
 
-from simtools.SetupParser import SetupParser
-input_path = SetupParser().get('input_root')
+import scipy  # for calculating means
 
 br_channel_titles = ["MSP", "Non-Specific", "PfEMP1"]
 output_channel_titles = ["MSP", "nonspec", "PfEMP1"]
@@ -86,7 +84,7 @@ def mean_and_std_from_binned_report(br_json, antibody_type_idx):
     return (Ab_mean_results, Ab_std_results)
 '''
 def immune_init_overlays_from_burnin_sweep(metadata):
-
+    input_path = SetupParser.get('input_root')
     config_names = set([])
     output_path = metadata['sim_root']
     expId = metadata['expId']

@@ -1,8 +1,7 @@
-from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
-from dtk.utils.builders.sweep import GenericSweepBuilder
-from dtk.generic.demographics import set_static_demographics
 from dtk.interventions.outbreakindividual import recurring_outbreak
-from dtk.utils.reports.MalariaReport import add_summary_report,add_immunity_report
+from dtk.utils.builders.sweep import GenericSweepBuilder
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
+from dtk.utils.reports.MalariaReport import add_summary_report, add_immunity_report
 
 exp_name  = 'burnin'
 builder = GenericSweepBuilder.from_dict({

@@ -2,7 +2,6 @@
 def populate_run_arguments(subparsers, func=None):
     parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_run.add_argument('-b', '--blocking', action='store_true', help='Block the thread until the simulations are done.')

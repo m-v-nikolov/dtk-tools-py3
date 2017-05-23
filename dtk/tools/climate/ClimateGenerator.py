@@ -1,19 +1,16 @@
 import glob
 import os
 import time
-from collections import namedtuple
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
-from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.SetupParser import SetupParser
 
 
 class ClimateGenerator:
-    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path, setup,
+    def __init__(self, demographics_file_path, work_order_path, climate_files_output_path,
                  climate_project="IDM-Zambia"):
 
-        self.setup = setup
         self.work_order_path = work_order_path
         self.demographics_file_path = demographics_file_path
         self.climate_files_output_path = climate_files_output_path
@@ -47,11 +44,10 @@ class ClimateGenerator:
         from COMPS.Data import WorkItem, WorkItemFile
 
         # COMPS_login(self.setup.get('server_endpoint'))
-        sp = SetupParser('HPC', force=True)
         om("Login success!")
 
         workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
-        wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, sp.get('environment'))
+        wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, SetupParser.get('environment'))
         wi.set_tags({'dtk-tools': None, 'WorkItem type': 'InputDataWorker dtk-tools'})
 
         with open(self.work_order_path, 'r') as workorder_file:
