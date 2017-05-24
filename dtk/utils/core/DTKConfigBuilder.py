@@ -433,6 +433,13 @@ class DTKConfigBuilder(SimConfigBuilder):
             # Add the dll to the emodules_map
             self.emodules_map[dll_type].append(staged_dll)
 
+    def get_dll_paths_for_asset_manager(self):
+        """
+        Generates relative path filenames for the requested dll files, relative to the root dll directory.
+        :return:
+        """
+        return [os.path.join(dll_type, dll_name) for dll_type, dll_name in self.dlls]
+
     def check_custom_events(self):
         # Return difference between config and campaign
 
