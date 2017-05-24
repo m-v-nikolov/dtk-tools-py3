@@ -54,42 +54,43 @@ class LocalSimulationRunner(BaseSimulationRunner):
             self.queue.get()
 
     def monitor(self):
-        # Wait the end of the process
-        # We use poll to be able to update the status
+        """
+        Monitors the simulation process and update its status.
+        """
+        sim_pid = self.simulation.pid
 
-        while is_running(self.simulation.pid, name_part='Eradication'):
-            logger.debug("sim monitor: waiting on pid: %s" % self.simulation.pid)
+        while is_running(sim_pid, name_part='Eradication'):
+            logger.debug("monitor: waiting on pid: %s" % sim_pid)
             self.simulation.message = self.last_status_line()
             self.update_status()
             time.sleep(self.MONITOR_SLEEP)
-        logger.debug("sim_monitor: done waiting on pid: %s" % self.simulation.pid)
-        sim_pid = self.simulation.pid #seems silly, but debug output below shows None if we don't do this
+
+        logger.debug("monitor: done waiting on pid: %s" % sim_pid)
 
         # When poll returns None, the process is done, test if succeeded or failed
         last_message = self.last_status_line()
         last_state = self.check_state()
+
         if "Done" in last_message:
             self.simulation.status = SimulationState.Succeeded
             # Wise to wait a little bit to make sure files are written
             self.success(self.simulation)
         else:
             # If we exited with a Canceled status, don't update to Failed
-            if not last_state == SimulationState.Canceled:
+            if last_state != SimulationState.Canceled:
                 self.simulation.status = SimulationState.Failed
 
         # Set the final simulation state
-        logger.debug("sim_monitor: Updating sim: %s with pid: %s to status: %s" %
-                     (self.simulation.id, sim_pid, self.simulation.status.name))
+        logger.debug("monitor: Updating sim: %s with pid: %s to status: %s" % (self.simulation.id, sim_pid, self.simulation.status.name))
         self.simulation.message = last_message
         self.simulation.pid = None
         self.update_status()
 
-
     def update_status(self):
-        self.states.put({'sid':self.simulation.id,
-                         'status':self.simulation.status,
-                         'message':self.simulation.message,
-                         'pid':self.simulation.pid})
+        self.states.put({'sid':     self.simulation.id,
+                         'status':  self.simulation.status,
+                         'message': self.simulation.message,
+                         'pid':     self.simulation.pid})
 
     def last_status_line(self):
         """
