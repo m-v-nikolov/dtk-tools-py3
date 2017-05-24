@@ -482,7 +482,7 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         for name, content in self.demog_overlays.items():
             self.append_overlay('%s.json' % name)
-            write_fn(name, dump(content))
+            write_fn('%s.json' % name, dump(content))
 
         for name, content in self.input_files.items():
             write_fn(name, dump(content))
