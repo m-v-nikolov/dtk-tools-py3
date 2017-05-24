@@ -4,7 +4,7 @@ import json
 class WorkOrderGenerator:
     def __init__(self, demographics_file_path, wo_output_path, project_info="IDM-Democratic_Republic_of_the_Congo",
                  include_non_pop=True, shape_id="", resolution="30", parameters=['tmean', 'humid', 'rain'],
-                 start_year='2009', num_years="4", nan_check=True, idRef='Gridded world grump2.5arcmin', project_root=''):
+                 start_year='2009', num_years="4", nan_check=True, idRef='Gridded world grump2.5arcmin', project_root='v2016'):
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
         self.work_item_type = "InputDataWorker"
@@ -36,11 +36,9 @@ class WorkOrderGenerator:
               'NaNCheck': self.nan_check,
               'Migration': self.migration,
               'IdReference': self.id_reference,
-              'Mode': 'upload'
+              'Mode': 'upload',
+              'ProjectRoot':self.project_root
               }
-
-        if self.project_root:
-            wo['ProjectRoot'] = self.project_root
 
         # add nodes from demographics file
         with open(self.demographics_file_path, 'r') as demo_f:
