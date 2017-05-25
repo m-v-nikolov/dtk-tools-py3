@@ -14,7 +14,7 @@ from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
 from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
 from dtk.tools.demographics.Node import Node
-from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
+from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser
 
 # Set up the paths
@@ -40,7 +40,10 @@ dg = DemographicsFile(nodes)
 dg.generate_file('climate_demog.json')
 
 # Create the workorder
-wo = WorkOrderGenerator(demographics_file_path='climate_demog.json', wo_output_path='output',  project_info='IDM-Zambia', start_year='2008', num_years='1', resolution='0')
+wo = InputDataWorker(demographics_file_path='climate_demog.json',
+                     wo_output_path='output',
+                     project_info='IDM-Zambia',
+                     start_year='2008', num_years='1', resolution='0')
 
 # Get the weather from COMPS
 workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
@@ -52,9 +55,10 @@ wi.add_file(WorkItemFile('climate_demog.json', 'Demographics', ''), data=json.du
 wi.save()
 wi.commission()
 
+# Wait for the workorder to be finished
 while wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]:
     print "Waiting for work order to finish... (Current state = %s)" % wi.state
-    time.sleep(3)
+    time.sleep(5)
     wi.refresh()
 
 print "Successfully generated"
@@ -63,6 +67,7 @@ print "Successfully generated"
 wi.refresh(QueryCriteria().select_children('files'))
 wifilenames = [wif.file_name for wif in wi.files if wif.file_type == 'Output']
 
+# Download the files to the local machine
 if len(wifilenames) > 0:
     print 'Found output files: ' + str('\n'.join(wifilenames))
     print 'Downloading now'
@@ -76,7 +81,7 @@ if len(wifilenames) > 0:
 
 # We now have the intermediate weather -> Create the list of nodes
 # Extract the nodes from the demog
-# Load or base climate nodes
+# Load the base climate nodes
 demog = json.load(open('climate_demog.json', 'rb'))
 climate_nodes = {}
 for node in demog['Nodes']:
