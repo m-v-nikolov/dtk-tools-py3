@@ -1,4 +1,3 @@
-from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
