@@ -34,7 +34,7 @@ class BaseExperimentManager:
     parserClass=SimulationOutputParser
     location = None
 
-    def __init__(self, model_file, experiment):
+    def __init__(self, experiment=None, model_file=None):
         self.experiment = experiment
         self.model_file = model_file or SetupParser.get('exe_path')
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))

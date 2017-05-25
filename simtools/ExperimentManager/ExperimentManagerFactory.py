@@ -24,11 +24,11 @@ class ExperimentManagerFactory(object):
             try:
                 orig_block = SetupParser.selected_block
                 SetupParser.override_block(manager_class.location) # manager class constructor MAY access SetupParser
-                manager = manager_class('', experiment)
+                manager = manager_class(experiment)
             finally:
                 SetupParser.override_block(orig_block)
         else:
-            manager = manager_class('', experiment)
+            manager = manager_class(experiment)
         return manager
 
     @classmethod
@@ -40,4 +40,4 @@ class ExperimentManagerFactory(object):
     def from_setup(cls):
         location = SetupParser.get('type')
         logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
-        return cls.factory(location)(SetupParser.get('exe_path'), None)
+        return cls.factory(location)(None,SetupParser.get('exe_path'))
