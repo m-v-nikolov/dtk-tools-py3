@@ -49,6 +49,9 @@ class AnalyzeManager:
         self.analyzers.append(analyzer)
 
     def create_parsers_for_experiment(self, experiment):
+        # Overrides the SetupParser block with the one in the experiment
+        SetupParser.override_block(experiment.selected_block)
+
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
