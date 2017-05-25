@@ -90,9 +90,8 @@ class SimulationAssets(object):
         :param collection_type: one of cls.COLLECTION_TYPES
         :return: A FileList objecr
         """
-        sp = SetupParser('AM')  # ck4 remove this and convert below code to use new SetupParser after merging in from master
         if collection_type == cls.EXE:
-            exe_path = sp.get('exe_path')
+            exe_path = SetupParser.get('exe_path')
             file_list = FileList(root=os.path.dirname(exe_path), files_in_root=[os.path.basename(exe_path)])
         elif collection_type == cls.DLL:
             # returns a Hash with some items that need filtering through
@@ -116,10 +115,10 @@ class SimulationAssets(object):
                 if extension == '.bin':
                     input_files.append(file + '.json')
             input_files = list(set(input_files)) # just in case we somehow have duplicates
-            file_list = FileList(root=sp.get('input_root'), files_in_root=input_files)
+            file_list = FileList(root=SetupParser.get('input_root'), files_in_root=input_files)
         elif collection_type == cls.INPUT:
             dll_relative_paths = config_builder.get_dll_paths_for_asset_manager()
-            file_list = FileList(root=sp.get('dll_root'), files_in_root=dll_relative_paths)
+            file_list = FileList(root=SetupParser.get('dll_root'), files_in_root=dll_relative_paths)
         else:
             raise Exception("Unknown asset classification: %s" % collection_type)
         return file_list

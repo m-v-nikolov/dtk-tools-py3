@@ -14,14 +14,8 @@ def COMPS_login(endpoint):
     except:
         Client.login(endpoint)
 
-sp = SetupParser('AM')
-#COMPS_login(sp.get('server_endpoint'))
-
-#items = sp.items()
-#print "sp has items: %s" % items # "\n".join(" : ".join(items))
-
-#print "base_collection_id_dll : *%s* type: %s len: %d" % (sp.get('base_collection_id_dll'), type(sp.get('base_collection_id_dll')), len(sp.get('base_collection_id_dll')))
-#exit()
+SetupParser.init('AM')
+COMPS_login(SetupParser.get('server_endpoint'))
 
 # from example_sim.py
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
@@ -35,11 +29,11 @@ base_collection_id = {}
 use_local_files = {}
 for collection_type in SimulationAssets.COLLECTION_TYPES:
     # Each is either None (no existing collection starting point) or an asset collection id
-    base_collection_id[collection_type] = sp.get('base_collection_id'+'_'+collection_type)
+    base_collection_id[collection_type] = SetupParser.get('base_collection_id'+'_'+collection_type)
     if len(base_collection_id[collection_type]) == 0:
         base_collection_id[collection_type] = None
     # True/False, overlay locally-discovered files on top of any provided asset collection id?
-    use_local_files[collection_type] = sp.getboolean('use_local' + '_' + collection_type)
+    use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
 
 print "Using base_collection_id: %s" % base_collection_id
 print "Using local_files: %s" % use_local_files
