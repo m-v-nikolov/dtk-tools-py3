@@ -43,11 +43,12 @@ def LogCleaner():
 
 if __name__ == "__main__":
     logger.debug('Start Overseer pid: %d' % os.getpid())
-
-    # Retrieve the threads number
-    sp = SetupParser()
-    max_local_sims = int(sp.get('max_local_sims'))
-    max_analysis_threads = int(sp.get('max_threads'))
+    
+    # we technically don't care about full consistency of SetupParser with the original dtk command, as experiments
+    # have all been created. We can grab 'generic' max_local_sims / max_threads
+    SetupParser.init() # default block
+    max_local_sims = int(SetupParser.get('max_local_sims'))
+    max_analysis_threads = int(SetupParser.get('max_threads'))
 
     # Create the queues and semaphore
     local_queue = multiprocessing.Queue(max_local_sims)
@@ -84,7 +85,7 @@ if __name__ == "__main__":
                 logger.debug('Creating manager for experiment id: %s' % experiment.id)
                 try:
                     sys.path.append(experiment.working_directory)
-                    manager = ExperimentManagerFactory.from_experiment(experiment)
+                    manager = ExperimentManagerFactory.from_experiment(experiment, generic=True)
                 except Exception as e:
                     logger.error('Exception in creation manager for experiment %s' % experiment.id)
                     logger.error(e)

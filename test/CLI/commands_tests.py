@@ -39,9 +39,6 @@ class CommandsArgsTest(unittest.TestCase):
     def run_add_priority(self, target_pri="Normal"):
         self.flags += ['--priority',target_pri]
 
-    def run_add_ini(self, ini_filename):
-        self.flags += ['--ini',ini_filename]
-
     def run_add_quiet(self, short_version=False):
         flag = '-q' if short_version else '--quiet'
         self.flags += [flag]
@@ -100,31 +97,25 @@ class CommandsArgsTest(unittest.TestCase):
         self.assertIsNone(args.analyzer)
 
     def test_run_quiet(self):
-        ini_file = "my_cfg.ini"
         config_file = "cornycornfig.json"
         self.run_flag()
-        self.run_add_ini(ini_file)
         self.run_add_quiet(short_version=False)
         self.run_add_config(config_file)
 
         args = self.getArgs()
 
         self.assertTrue(args.quiet, "--quiet should turn on quiet")
-        self.assertEqual(args.ini, ini_file)
         self.assertEqual(args.config_name, config_file)
 
     def test_run_q_short(self):
-        ini_file = "my_cfg.ini"
         config_file = "cornycornfig.json"
         self.run_flag()
-        self.run_add_ini(ini_file)
         self.run_add_quiet(short_version=True)
         self.run_add_config(config_file)
 
         args = self.getArgs()
 
         self.assertTrue(args.quiet, "--quiet should turn on quiet")
-        self.assertEqual(args.ini, ini_file)
         self.assertEqual(args.config_name, config_file)
 
     def test_run_no_config(self):
@@ -229,13 +220,14 @@ class CommandsArgsTest(unittest.TestCase):
         self.assertFalse(args.repeat)
         self.assertFalse(args.active)
 
-    def test_status_expid_required(self):
-        self.status_flag()
-
-        with self.assertRaises(ValueError) as cm:
-            self.getArgs()
-
-        self.assertIn("too few arguments", cm.exception)
+# This test is deprecated until 'dtk status' requires an experiment id again, if ever
+#    def test_status_expid_required(self):
+#        self.status_flag()
+#
+#        with self.assertRaises(ValueError) as cm:
+#            self.getArgs()
+#
+#        self.assertIn("too few arguments", cm.exception)
 
     def test_status_a_r_shorts(self):
         experiment_id = 'Great SIR experiment'
@@ -264,7 +256,5 @@ class CommandsArgsTest(unittest.TestCase):
         self.assertTrue(args.repeat)
     # endregion
 
-
-
-
-
+if __name__ == '__main__':
+    unittest.main()

@@ -3,7 +3,6 @@ import contextlib
 import functools
 import logging
 import os
-import platform
 import sys
 
 import time
@@ -57,23 +56,17 @@ def retrieve_item(itemid):
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
 
+
 def get_os():
     """
     Retrieve OS
     """
-    sy = platform.system()
+    msg = "simtools.Utilities.General.get_os() is deprecated. Use simtools.Utilities.General.LocalOS.name"
+    logger.warning(msg)
+    print msg
 
-    # OS: windows
-    if sy == 'Windows':
-        my_os = 'win'
-    # OS: Linux
-    elif sy == 'Linux':
-        my_os = 'lin'
-    # OS: Mac
-    else:
-        my_os = 'mac'
-
-    return my_os
+    from simtools.Utilities.LocalOS import LocalOS
+    return LocalOS.name
 
 
 def utc_to_local(utc_dt):
@@ -83,6 +76,7 @@ def utc_to_local(utc_dt):
     local_tz = timezone('US/Pacific')
     local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
     return local_tz.normalize(local_dt) # .normalize might be unnecessary
+
 
 @contextlib.contextmanager
 def nostdout(stdout = False, stderr=False):
@@ -145,6 +139,7 @@ def retry_function(func, wait=1, max_retries=5):
         raise retExc
     return wrapper
 
+
 def caller_name(skip=2):
     """
     Get a name of a caller in the format module.class.method
@@ -175,6 +170,7 @@ def caller_name(skip=2):
     del parentframe
     return ".".join(name)
 
+
 def remove_null_values(null_dict):
     ret = {}
     for key, value in null_dict.iteritems():
@@ -194,6 +190,7 @@ def get_tools_revision():
 
     return revision
 
+
 def get_md5(filename):
     from matplotlib.finance import md5
     logger.info('Getting md5 for ' + filename)
@@ -210,23 +207,6 @@ def get_md5(filename):
 
 def is_remote_path(path):
     return path.startswith('\\\\')
-
-
-
-def override_HPC_settings(setup, **kwargs):
-    overrides_by_variable = dict(priority=['Lowest', 'BelowNormal', 'Normal', 'AboveNormal', 'Highest'],
-                                 node_group=['emod_32cores', 'emod_a', 'emod_b', 'emod_c', 'emod_d', 'emod_ab',
-                                             'emod_cd', 'emod_abcd'],
-                                 use_comps_asset_svc=['0', '1'])
-
-    for variable, allowed_overrides in overrides_by_variable.items():
-        value = kwargs.get(variable)
-        if value:
-            if value in allowed_overrides:
-                logger.info('Overriding HPC %s: %s', variable, value)
-                setup.set(variable, value)
-            else:
-                logger.warning('Trying to override HPC setting with unknown %s: %s', variable, value)
 
 
 class CommandlineGenerator(object):
@@ -265,13 +245,12 @@ class CommandlineGenerator(object):
         return ' '.join(filter(None, [self.Executable, self.Options, self.Params]))  # join ignores empty strings
 
 
-
 def rmtree_f(dir):
     import shutil
     if os.path.exists(dir):
         shutil.rmtree(dir, onerror=rmtree_f_on_error)
 
-# handler for rmtree_ to deal with files with no write (delete) permissions
+
 def rmtree_f_on_error(func, path, exc_info):
     """
     Error handler for ``shutil.rmtree``.
@@ -291,6 +270,7 @@ def rmtree_f_on_error(func, path, exc_info):
     else:
         raise
 
+
 def is_running(pid, name_part):
     """
     Determines if the given pid is running and is running the specified process (name).
@@ -302,27 +282,27 @@ def is_running(pid, name_part):
     # ck4, This should be refactored to use a common module containing a dict of Process objects
     #      This way, we don't need to do the name() checking, just use the method process.is_running(),
     #      since this method checks for pid number being active AND pid start time.
-    if pid:
-        pid = int(pid)
-        try:
-            process = psutil.Process(pid)
-        except psutil.NoSuchProcess:
-            logger.debug("is_running: No such process pid: %d" % pid)
-            is_running = False
-            process_name = None
-            valid_name = False
-        else:
-            is_running = True
-            process_name = process.name()
-            valid_name = name_part in process_name
-
-        logger.debug("is_running: pid %s running? %s valid_name (%s)? %s. name: %s" %
-                     (pid, is_running, name_part, valid_name, process_name))
-        if is_running and valid_name:
-            logger.debug("is_running: pid %s is running and process name is valid." % pid)
-            return True
-        else:
-            return False
-    else:
+    if not pid:
         logger.debug("is_running: no valid pid provided.")
         return False
+
+    pid = int(pid)
+
+    try:
+        process = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        logger.debug("is_running: No such process with pid: %d" % pid)
+        return False
+
+    running = process.is_running()
+    process_name = process.name()
+    valid_name = name_part in process_name
+
+    logger.debug("is_running: pid %s running? %s valid_name (%s)? %s. name: %s" %
+                 (pid, running, name_part, valid_name, process_name))
+
+    if is_running and valid_name:
+        logger.debug("is_running: pid %s is running and process name is valid." % pid)
+        return True
+
+    return False

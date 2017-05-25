@@ -15,6 +15,8 @@ from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
+SetupParser.default_block = 'HPC'
+
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [DielmoCalibSite(), NdiopCalibSite()]
@@ -125,7 +127,6 @@ optimtool = OptimTool(params,
 )
 
 calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
-                             setup = SetupParser('HPC'),
                              config_builder = cb,
                              map_sample_to_model_input_fn = map_sample_to_model_input,
                              sites = sites,
@@ -134,9 +135,8 @@ calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customi
                              max_iterations = 3,         # <-- Iterations
                              plotters = plotters)
 
-#run_calib_args = {'selected_block': "EXAMPLE"}
 run_calib_args = {}
 
 if __name__ == "__main__":
-    run_calib_args.update(dict(location='HPC'))
-    calib_manager.run_calibration(**run_calib_args)
+    SetupParser.init()
+    calib_manager.run_calibration()

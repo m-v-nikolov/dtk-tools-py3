@@ -40,10 +40,10 @@ def apply_pop_scale_larval_habitats(nodes_params_input_file_path, demographics =
     
 
 
-location = 'SPATIALWFLOW' #'LOCAL'
+location = 'HPC' #'LOCAL'
 geography = 'Zambia/Gwembe_Sinazongwe_115_nodes'
 sites = ['Gwembe_Sinazongwe_115_nodes']
-setup = SetupParser(location)
+SetupParser.init(location)
 
 builder   = GenericSweepBuilder.from_dict({'_site_':sites, # study sites
                                            'x_Local_Migration':[1e-2],
@@ -106,8 +106,7 @@ nodes_params_input_file = 'nodes_params.json' # see format in dtk.tools.spatialw
 # Create the spatial_manager
 spatial_manager = SpatialManager(
                                      'HPC',
-                                     cb, 
-                                     setup, 
+                                     cb,
                                      geography, 
                                      exp_name, 
                                      working_dir, 

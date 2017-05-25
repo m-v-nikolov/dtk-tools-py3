@@ -94,22 +94,6 @@
     "Nodes": [
         {
             "NodeAttributes": {
-                "BirthRate": 0.00073974,
-                "InitialPopulation": 6,
-                "InitialVectorsPerSpecies": { "arabiensis": 10},
-                "LarvalHabitatMultiplier": {
-                    "ALL_HABITATS": 0.1
-                },
-                "Latitude": -16.500518,
-                "Longitude": 27.958743,
-                "PrevalenceDistribution1": 0.0,
-                "PrevalenceDistribution2": 0.0,
-                "PrevalenceDistributionFlag": 1
-            },
-            "NodeID": 0
-        },
-        {
-            "NodeAttributes": {
                 "BirthRate": 0.00086303,
                 "InitialPopulation": 7,
                 "InitialVectorsPerSpecies": { "arabiensis": 10},

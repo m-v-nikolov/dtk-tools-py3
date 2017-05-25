@@ -1,117 +1,60 @@
 import argparse
-from importlib import import_module
 import os
-import sys
 
 from simtools.SetupParser import SetupParser
+import simtools.Utilities.Initialization as init
 
+def get_calib_manager(args, unknownArgs, force_metadata=False):
+    manager = args.loaded_module.calib_manager
 
-def load_config_module(config_name):
-    config_name = config_name.replace('\\', '/')
-    if '/' in config_name:
-        splitted = config_name.split('/')[:-1]
-        sys.path.append(os.path.join(os.getcwd(), *splitted))
-    else:
-        sys.path.append(os.getcwd())
-
-    module_name = os.path.splitext(os.path.basename(config_name))[0]
-    return import_module(module_name)
-
-
-def get_calib_manager_args(args, unknownArgs, force_metadata=False):
-    mod = load_config_module(args.config_name)
-    manager = mod.calib_manager
-    calib_args = mod.run_calib_args
-
-    # force_metadata == True for resume case
-    exp = manager.get_experiment_from_iteration(args.iteration if force_metadata else None, force_metadata)
-
-    # update selected_block
-    if ('selected_block' not in calib_args or not calib_args['selected_block']) or force_metadata:
-        if exp:
-            calib_args['selected_block'] = exp.selected_block
-
-    # update ini
-    manager_data = manager.read_calib_data(True)
-    calib_args['ini'] = manager_data['setup_overlay_file'] if manager_data else None
-    update_calib_args(args, unknownArgs, calib_args)
-
-    return manager, calib_args
-
-
-def update_calib_args(args, unknownArgs, calib_args):
-    if hasattr(args,'priority') and args.priority:
-        calib_args['priority'] = args.priority
-    if hasattr(args,'node_group') and args.node_group:
-        calib_args['node_group'] = args.node_group
-
-    # Get the proper configuration block.
-    if len(unknownArgs) == 0:
-        selected_block = calib_args['selected_block'] if ('selected_block' in calib_args and calib_args['selected_block']) else None
-    elif len(unknownArgs) == 1:
-        selected_block = unknownArgs[0][2:].upper()
-    else:
-        raise Exception('Too many unknown arguments: please see help.')
-
-    # Update the setupparser if we have to
-    if selected_block:
-        SetupParser(selected_block=selected_block, setup_file=args.ini if hasattr(args,'ini') and args.ini else calib_args['ini'], force=True)
-
+    # Update the SetupParser to match the existing experiment environment/block if force_metadata == True
+    if force_metadata:
+        exp = manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
+        SetupParser.override_block(exp.selected_block)
+    return manager
 
 def run(args, unknownArgs):
-    manager, calib_args = get_calib_manager_args(args, unknownArgs)
-    manager.run_calibration(**calib_args)
-
+    manager = get_calib_manager(args, unknownArgs)
+    manager.run_calibration()
 
 def resume(args, unknownArgs):
     if args.iter_step:
         if args.iter_step not in ['commission', 'analyze', 'plot', 'next_point']:
             print "Invalid iter_step '%s', ignored.", args.iter_step
             exit()
-
-    manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)
-    manager.resume_from_iteration(args.iteration,
-                                  iter_step=args.iter_step,
-                                  **calib_args)
-
+    manager = get_calib_manager(args, unknownArgs, force_metadata=True)
+    manager.resume_from_iteration(args.iteration, iter_step=args.iter_step)
 
 def reanalyze(args, unknownArgs):
-    manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)
+    manager = get_calib_manager(args, unknownArgs, force_metadata=True)
     if args.iteration is not None:
         manager.reanalyze_iteration(args.iteration)
     else:
         manager.reanalyze()
 
 def cleanup(args, unknownArgs):
-    mod = load_config_module(args.config_name)
-    manager = mod.calib_manager
+    manager = args.loaded_module.calib_manager
     # If no result present -> just exit
     if not os.path.exists(os.path.join(os.getcwd(), manager.name)):
         print 'No calibration to delete. Exiting...'
         exit()
     manager.cleanup()
 
-
 def kill(args, unknownArgs):
-    mod = load_config_module(args.config_name)
-    manager = mod.calib_manager
+    manager = args.loaded_module.calib_manager
     manager.kill()
 
-
 def replot(args, unknownArgs):
-    manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)
+    manager = get_calib_manager(args, unknownArgs, force_metadata=True)
     manager.replot(args.iteration)
 
-
 def main():
-
     parser = argparse.ArgumentParser(prog='calibtool')
     subparsers = parser.add_subparsers()
 
     # 'calibtool run' options
     parser_run = subparsers.add_parser('run', help='Run a calibration configured by run-options')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_run.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_run.set_defaults(func=run)
@@ -121,7 +64,6 @@ def main():
     parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
     parser_resume.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')
     parser_resume.add_argument('--iter_step', default=None, help="Resume calibration on specified iteration step ['commission', 'analyze', 'plot', 'next_point'].")
-    parser_resume.add_argument('--ini', default=None, help='Specify an overlay configuration file (*.ini).')
     parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_resume.set_defaults(func=resume)
@@ -152,6 +94,8 @@ def main():
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
+    # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
+    init.initialize_SetupParser_from_args(args, unknownArgs)
     args.func(args, unknownArgs)
 
 if __name__ == '__main__':

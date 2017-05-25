@@ -1,9 +1,10 @@
 import copy
 import datetime
-import getpass
 from collections import namedtuple
 
 from dtk.tools.demographics.Node import lat_lon_from_nodeid
+
+from simtools.Utilities.LocalOS import LocalOS
 
 # --------------------------------------------------------------
 # Larval habitat parameters
@@ -55,7 +56,7 @@ def set_habitat_multipliers(cb, demog_name,
                     return name
         raise Exception('No support for resolution other than 30 and 150 arcsec.')
 
-    metadata = {'Author': getpass.getuser(),
+    metadata = {'Author': LocalOS.username,
                 'IdReference': 'Gridded world grump' + resolution_name(),
                 'NodeCount': sum([len(nm.nodes) for nm in NodesMultipliers_list]),
                 'DateCreated': datetime.datetime.now().strftime('%a %b %d %X %Y')}

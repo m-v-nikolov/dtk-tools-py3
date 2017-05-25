@@ -6,11 +6,10 @@ from simtools.Utilities.General import CommandlineGenerator
 
 
 class Builder:
-    def __init__(self, name, description="", static_parameters={}, dynamic_parameters={}, setup=SetupParser('HPC'),
+    def __init__(self, name, description="", static_parameters={}, dynamic_parameters={},
                  suite_id=None, experiment_tags={}, simulations_tags={}, simulations_name=None,
                  simulations_description=None):
         # Store general info
-        self.setup = setup
         self.name = name
         self.description = description
         self.experiment_tags = experiment_tags
@@ -30,10 +29,10 @@ class Builder:
             self.suite_id = suite_id
 
         # Create the command line
-        exe_options = {'--config': 'config.json', '--input-path': setup.get('input_root')}
-        if self.setup.get('python_path') != '':
-            exe_options['--python-script-path'] = setup.get('python_path')
-        self.cmd = CommandlineGenerator(setup.get('bin_staging_root'), exe_options, [])
+        exe_options = {'--config': 'config.json', '--input-path': SetupParser.get('input_root')}
+        if SetupParser.get('python_path') != '':
+            exe_options['--python-script-path'] = SetupParser.get('python_path')
+        self.cmd = CommandlineGenerator(SetupParser.get('bin_staging_root'), exe_options, [])
 
         # Flow control
         self.SimulationCreationLimit = -1
@@ -47,12 +46,12 @@ class Builder:
     def experiment_configuration(self):
         return {
             "Configuration": {
-                "NodeGroupName": self.setup.get('node_group'),
+                "NodeGroupName": SetupParser.get('node_group'),
                 "SimulationInputArgs": self.cmd.Options,
-                "WorkingDirectoryRoot": self.setup.get('sim_root'),
+                "WorkingDirectoryRoot": SetupParser.get('sim_root'),
                 "ExecutablePath": self.cmd.Executable,
                 "MaximumNumberOfRetries": 1,
-                "Priority": self.setup.get('priority'),
+                "Priority": SetupParser.get('priority'),
                 "MinCores": 1,
                 "MaxCores": 1,
                 "Exclusive": 0
@@ -95,7 +94,7 @@ class Builder:
     def wo(self):
         return {
             "WorkItem_Type": "Builder",
-            "InputDirectoryRoot": self.setup.get('input_root'),
+            "InputDirectoryRoot": SetupParser.get('input_root'),
             "EntityMetadata":
                 {
                     "Experiment": self.experiment_configuration,

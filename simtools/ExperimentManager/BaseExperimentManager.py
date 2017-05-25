@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from simtools.Utilities.General import init_logging, get_tools_revision, get_os
+from simtools.Utilities.General import init_logging, get_tools_revision
 logger = init_logging('ExperimentManager')
 
 import copy
@@ -24,6 +24,8 @@ from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
 from simtools.Utilities.General import is_running
+from simtools.Utilities.LocalOS import LocalOS
+
 current_dir = os.path.dirname(os.path.realpath(__file__))
 from COMPS.Data.Simulation import SimulationState
 
@@ -32,21 +34,10 @@ class BaseExperimentManager:
     parserClass=SimulationOutputParser
     location = None
 
-    def __init__(self, model_file, experiment, setup=None):
+    def __init__(self, model_file, experiment):
         self.experiment = experiment
-
-        # If no setup is passed -> create it
-        if setup is None:
-            selected_block = experiment.selected_block if experiment.selected_block else 'LOCAL'
-            setup_file = experiment.setup_overlay_file
-            self.setup = SetupParser(selected_block=selected_block, setup_file=setup_file, fallback='LOCAL', force=True, working_directory = experiment.working_directory)
-        else:
-            self.setup = setup
-
-        self.model_file = model_file or self.setup.get('exe_path')
-        self.quiet = self.setup.has_option('quiet')
-        self.blocking = self.setup.has_option('blocking')
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(self.setup.get('max_threads')))
+        self.model_file = model_file or SetupParser.get('exe_path')
+        self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
         self.assets_service = None
         self.exp_builder = None
@@ -84,15 +75,15 @@ class BaseExperimentManager:
         self.experiment = DataStore.create_experiment(
             exp_id=experiment_id,
             suite_id=suite_id,
-            sim_root=self.setup.get('sim_root'),
+            sim_root=SetupParser.get('sim_root'),
             exe_name=self.commandline.Executable,
             exp_name=experiment_name,
             location=self.location,
             analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=get_tools_revision(),
-            selected_block=self.setup.selected_block,
-            setup_overlay_file=self.setup.setup_file,
+            selected_block=SetupParser.selected_block,
+            setup_overlay_file=SetupParser.setup_file,
             working_directory = os.getcwd(),
             command_line=self.commandline.Commandline)
 
@@ -122,8 +113,7 @@ class BaseExperimentManager:
             logger.debug("A valid Overseer was not detected for stored pid %s." % overseer_pid)
             current_dir = os.path.dirname(os.path.realpath(__file__))
             runner_path = os.path.join(current_dir, '..', 'Overseer.py')
-            import platform
-            if platform.system() in ['Windows','darwin']:
+            if LocalOS.name in [LocalOS.WINDOWS, LocalOS.MAC]:
                 p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
             else:
                 p = subprocess.Popen([sys.executable, runner_path], shell=False)
@@ -137,12 +127,6 @@ class BaseExperimentManager:
         """
         pass
 
-    def get_property(self, prop):
-        return self.setup.get(prop)
-
-    def get_setup(self):
-        return dict(self.setup.items())
-
     def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
@@ -155,11 +139,13 @@ class BaseExperimentManager:
     def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
         return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
-    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, analyzers=[]):
+    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
+                        analyzers=[], blocking = False, quiet = False):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
         """
+
         # Check experiment name as early as possible
         if not validate_exp_name(exp_name):
             exit()
@@ -169,11 +155,11 @@ class BaseExperimentManager:
             exit()
 
         self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
-                                analyzers=analyzers, suite_id=suite_id, verbose=not self.quiet)
+                                analyzers=analyzers, suite_id=suite_id, verbose=not quiet)
         self.check_overseer()
 
-        if self.blocking:
-            self.wait_for_finished(verbose=not self.quiet)
+        if blocking:
+            self.wait_for_finished(verbose=not quiet)
 
     def find_missing_files(self, input_files, input_root):
         """
@@ -218,8 +204,8 @@ class BaseExperimentManager:
         if 'Campaign_Filename' in missing_files:
             logger.info("By-passing file '%s'..." % missing_files['Campaign_Filename'])
             missing_files.pop('Campaign_Filename')
-
         if len(missing_files) > 0:
+
             print('Missing files list:')
             print('input_root: %s' % input_root)
             print(json.dumps(missing_files, indent=2))
@@ -243,12 +229,13 @@ class BaseExperimentManager:
         # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
         # If not, use the normal staging process
         if self.assets_service:
-            self.staged_bin_path = self.setup.get('bin_staging_root')
+            self.staged_bin_path = SetupParser.get('bin_staging_root')
         else:
-            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, self.get_setup())
+            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, SetupParser.get('bin_staging_root'))
 
         # Create the command line
-        self.commandline = self.config_builder.get_commandline(self.staged_bin_path, self.get_setup())
+        item_dict = dict(SetupParser.items())
+        self.commandline = self.config_builder.get_commandline(self.staged_bin_path, paths=item_dict)
 
         # Create the experiment if not present already
         if not self.experiment or self.experiment.exp_name != exp_name:
@@ -268,8 +255,8 @@ class BaseExperimentManager:
         DataStore.save_experiment(self.experiment, verbose=verbose)
 
         # Separate the experiment builder generator into batches
-        sim_per_batch = int(self.setup.get('sims_per_thread',50))
-        max_creator_processes = max(min(int(self.setup.get('max_threads')), multiprocessing.cpu_count()-1),1)
+        sim_per_batch = int(SetupParser.get('sims_per_thread', default=50))
+        max_creator_processes = max(min(int(SetupParser.get('max_threads')), multiprocessing.cpu_count()-1),1)
         work_list = list(self.exp_builder.mod_generator)
         total_sims = len(work_list)
 
