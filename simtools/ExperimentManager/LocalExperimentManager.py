@@ -40,14 +40,14 @@ class LocalExperimentManager(BaseExperimentManager):
                     if sim.id not in self.unfinished_simulations:
                         self.unfinished_simulations[sim.id] = sim
 
-    def __init__(self, model_file, experiment):
+    def __init__(self, experiment, model_file):
         self.local_queue = None
         self.simulations_commissioned = 0
         self.unfinished_simulations = {}
         self._experiment = None
         self.experiment = experiment
 
-        BaseExperimentManager.__init__(self, model_file, experiment)
+        BaseExperimentManager.__init__(self, experiment,model_file)
 
     def commission_simulations(self, states):
         """

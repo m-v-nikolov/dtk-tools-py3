@@ -40,4 +40,4 @@ class ExperimentManagerFactory(object):
     def from_setup(cls):
         location = SetupParser.get('type')
         logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
-        return cls.factory(location)(None,SetupParser.get('exe_path'))
+        return cls.factory(location)(None, SetupParser.get('exe_path'))
