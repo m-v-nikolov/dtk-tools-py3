@@ -344,3 +344,15 @@ class SetupParser(object):
         json_schema = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config_schema.json")))
         cls.singleton.schema = json_schema
         return json_schema
+
+    # used for running a bit of code with a different selected block and ensuring a return to the original selected block
+    class TemporaryBlock(object):
+        def __init__(self, temporary_block):
+            self.temporary_block = temporary_block
+
+        def __enter__(self):
+            self.original_block = SetupParser.selected_block
+            SetupParser.override_block(self.temporary_block)
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            SetupParser.override_block(self.original_block)
