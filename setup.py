@@ -114,7 +114,7 @@ requirements = OrderedDict([
     }),
     ('github3.py', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.9.6',
+        'version': '1.0.0a4',
         'test': '>='
     }),
     ('numpy', {
@@ -499,6 +499,26 @@ def verify_matplotlibrc(my_os):
         with open(rc_file, "wb") as f:
             f.write('backend : TkAgg')
 
+def cleanup_locks():
+    """
+    Deletes the lock files if they exist
+    :return:
+    """
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    setupparser_lock = os.path.join(current_dir, 'simtools','.setup_parser_init_lock')
+    overseer_lock = os.path.join(current_dir, 'simtools','ExperimentManager','.overseer_check_lock')
+    if os.path.exists(setupparser_lock):
+        try:
+            os.remove(setupparser_lock)
+        except:
+            print("Could not delete file: %s" % setupparser_lock)
+
+    if os.path.exists(overseer_lock):
+        try:
+            os.remove(overseer_lock)
+        except:
+            print("Could not delete file: %s" % overseer_lock)
+
 
 def main():
     # if we add any more options, do this in a separate method
@@ -539,6 +559,8 @@ def main():
             setattr(namespace, 'package_name', package_name)
             setattr(namespace, 'package_version', 'latest')
             dtk.commands.get_package(args=namespace, unknownArgs=None)
+
+    cleanup_locks()
 
     # Success !
     print ("\n=======================================================")

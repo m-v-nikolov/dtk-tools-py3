@@ -3,7 +3,7 @@ import os
 import time
 
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
-from simtools.COMPSAccess.WorkOrderGenerator import WorkOrderGenerator
+from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser
 
 
@@ -16,9 +16,9 @@ class ClimateGenerator:
         self.climate_files_output_path = climate_files_output_path
         self.climate_project = climate_project
 
-        # see WorkOrderGenerator for other work options
-        self.wo = WorkOrderGenerator(self.demographics_file_path, self.work_order_path, self.climate_project,
-                                     idRef='Gridded world grump30arcsec')
+        # see InputDataWorker for other work options
+        self.wo = InputDataWorker(self.demographics_file_path, self.work_order_path, self.climate_project,
+                                  idRef='Gridded world grump30arcsec')
 
     def set_climate_project_info(self, climate_project):
         self.wo.set_project_info(climate_project)
