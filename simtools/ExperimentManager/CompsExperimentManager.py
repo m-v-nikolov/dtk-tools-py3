@@ -23,20 +23,21 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, experiment, exp_data):
+    def __init__(self, experiment, model_file=None):
         # Ensure we use the SetupParser environment of the experiment if it already exists
-        temp_block = exp_data.selected_block if exp_data else SetupParser.selected_block
+        temp_block = experiment.selected_block if experiment else SetupParser.selected_block
         with SetupParser.TemporaryBlock(temporary_block=temp_block):
-            BaseExperimentManager.__init__(self, experiment, exp_data)
+            BaseExperimentManager.__init__(self, experiment, model_file)
             self.comps_sims_to_batch = int(SetupParser.get(parameter='sims_per_thread'))
-            self.sims_to_create = []
-            self.commissioners = []
             self.assets_service = SetupParser.getboolean(parameter='use_comps_asset_svc')
             self.endpoint = SetupParser.get(parameter='server_endpoint')
             self.compress_assets = SetupParser.getboolean(parameter='compress_assets')
             COMPS_login(self.endpoint)
-            self.creator_semaphore = None
-            self.runner_thread = None
+
+        self.creator_semaphore = None
+        self.runner_thread = None
+        self.sims_to_create = []
+        self.commissioners = []
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
