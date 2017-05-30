@@ -152,7 +152,7 @@ class ResumeIterationState(IterationState):
                 self.next_point_algo.cleanup()
             elif self.iteration > 0:
                 # Now we need to restore next_point from previous iteration (need to re-generate new samples late)
-                iteration_state = IterationState.restore_state(self.working_directory, self.iteration - 1)
+                iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
                 self.next_point_algo.set_state(iteration_state.next_point, self.iteration - 1)
 
             # prepare and ready for new experiment and simulations
@@ -163,7 +163,7 @@ class ResumeIterationState(IterationState):
                 self.next_point_algo.cleanup()
             elif self.iteration > 0:
                 # Now, we need to restore gaussian from previous iteration
-                iteration_state = IterationState.restore_state(self.working_directory, self.iteration - 1)
+                iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
                 self.next_point_algo.restore(iteration_state)
         elif self.resume_point == StatusPoint.plot:
             # Note: self.next_point has been already restored from current iteration, so it has current samples!
@@ -183,7 +183,7 @@ class ResumeIterationState(IterationState):
         if self.iteration > 0:
             self.next_point_algo.set_state(self.next_point, self.iteration - 1)
 
-            iteration_state = IterationState.restore_state(self.working_directory, self.iteration - 1)
+            iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
             self.next_point_algo.restore(iteration_state)
 
             self.restore_results(self.iteration)
