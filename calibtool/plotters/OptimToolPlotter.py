@@ -1,12 +1,16 @@
 import logging
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+
 from calibtool.plotters.BasePlotter import BasePlotter
-from calibtool.utils import StatusPoint
+from calibtool.utils import ResumePoint
 
 logger = logging.getLogger(__name__)
 
@@ -36,37 +40,35 @@ class OptimToolPlotter(BasePlotter):
         plt.margins(0.05)
         plt.autoscale(tight=False)
 
-    def visualize(self, iteration_state):
-        self.iteration_state = iteration_state
-        self.site_analyzer_names = iteration_state.site_analyzer_names
-        iteration_status = self.iteration_state.status
+    def visualize(self):
+        calib_manager = self.manager
+        iteration_status = calib_manager.iteration_state.status
+        self.directory = calib_manager.iteration_directory()
+        self.param_names = calib_manager.param_names()
+        self.site_analyzer_names = calib_manager.site_analyzer_names()
 
-        self.directory = self.iteration_state.iteration_directory
-        self.param_names = self.iteration_state.param_names
-        self.site_analyzer_names = self.iteration_state.site_analyzer_names
-
-        self.npt = self.iteration_state.next_point
+        self.npt = calib_manager.iteration_state.next_point
         self.data = pd.DataFrame.from_dict(self.npt['data'])
         self.state = pd.DataFrame.from_dict(self.npt['state'])
         self.regression = pd.DataFrame.from_dict(self.npt['regression'])
 
-        if iteration_status == StatusPoint.analyze:
-            if self.iteration_state.iteration > 0:
-                self.visualize_optimtool_diagnoistics()
-        elif iteration_status == StatusPoint.plot:
-            self.visualize_results()
+        if iteration_status == ResumePoint.analyze:
+            if calib_manager.iteration > 0:
+                self.visualize_optimtool_diagnoistics(calib_manager)
+        elif iteration_status == ResumePoint.next_point:
+            self.visualize_results(calib_manager)
         else:
             raise Exception('Unknown stage %s' % iteration_status.name)
 
         ###gc.collect()
 
 
-    def visualize_results(self):
+    def visualize_results(self, calib_manager):
 
-        data_this_iter = self.data.set_index('Iteration').loc[self.iteration_state.iteration]
+        data_this_iter = self.data.set_index('Iteration').loc[calib_manager.iteration]
 
         X_center_all = self.state.pivot('Iteration', 'Parameter', 'Center')[self.param_names].values
-        X_center = X_center_all[self.iteration_state.iteration]
+        X_center = X_center_all[calib_manager.iteration]
         X_min = self.state.pivot('Iteration', 'Parameter', 'Min')[self.param_names].values
         X_max = self.state.pivot('Iteration', 'Parameter', 'Max')[self.param_names].values
         Dynamic = self.state.pivot('Iteration', 'Parameter', 'Dynamic')[self.param_names].values
@@ -75,7 +77,7 @@ class OptimToolPlotter(BasePlotter):
         latest_fitted = data_this_iter['Fitted'].values  # Sort by sample?
 
         ### VIOLIN PLOTS BY ITERATION ###
-        all_results = self.all_results.copy().reset_index(drop=True)#.set_index(['iteration', 'sample'])
+        all_results = calib_manager.all_results.copy().reset_index(drop=True)#.set_index(['iteration', 'sample'])
         fig, ax = plt.subplots()
         g = sns.violinplot(x='iteration', y='total', data=all_results, ax = ax)
 #, hue=None, data=res, order=None, hue_order=None, bw='scott', cut=2, scale='area', scale_hue=True, gridsize=100, width=0.8, inner='box', split=False, dodge=True, orient=None, linewidth=None, color=None, palette=None, saturation=0.75, ax=None, **kwargs))
@@ -86,14 +88,14 @@ class OptimToolPlotter(BasePlotter):
         del g, ax, fig
 
 
-    def visualize_optimtool_diagnoistics(self):
+    def visualize_optimtool_diagnoistics(self, calib_manager):
 
-        prev_iter = self.iteration_state.iteration-1
+        prev_iter = calib_manager.iteration-1
         data_prev_iter = self.data.set_index('Iteration').loc[prev_iter]
         prev_results = data_prev_iter['Results'].values  # Sort by sample?
         prev_fitted = data_prev_iter['Fitted'].values  # Sort by sample?
 
-        data_this_iter = self.data.set_index('Iteration').loc[self.iteration_state.iteration]
+        data_this_iter = self.data.set_index('Iteration').loc[calib_manager.iteration]
         #latest_samples = data_this_iter[self.param_names].values
         #D = latest_samples.shape[1]
         D = len(self.param_names)
