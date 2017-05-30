@@ -31,7 +31,7 @@ class IterationState(object):
 
     def __init__(self, **kwargs):
         self.iteration = 0
-        self.working_directory = None
+        self.calibration_name = None
         self.suite_id = {}
         self.samples_for_this_iteration = {}
         self.next_point = {}
@@ -162,7 +162,7 @@ class IterationState(object):
 
             self.exp_manager.run_simulations(
                 config_builder=self.config_builder,
-                exp_name='%s_iter%d' % (self.working_directory, self.iteration),
+                exp_name='%s_iter%d' % (self.calibration_name, self.iteration),
                 exp_builder=exp_builder,
                 suite_id=self.suite_id)
 
@@ -231,7 +231,7 @@ class IterationState(object):
             iteration_time_elapsed = current_time - self.iteration_start
             calibration_time_elapsed = current_time - self.calibration_start
 
-            logger.info('\n\nCalibration: %s' % self.working_directory)
+            logger.info('\n\nCalibration: %s' % self.calibration_name)
             logger.info('Calibration started: %s' % self.calibration_start)
             logger.info('Current iteration: Iteration %s' % self.iteration)
             logger.info('Current Iteration Started: %s' % self.iteration_start)
@@ -243,7 +243,7 @@ class IterationState(object):
                 states, msgs = self.exp_manager.get_simulation_status()
             except Exception as ex:
                 # logger.info(ex)
-                logger.error('Cannot get simulation status. Calibration cannot continue. Exiting...' % SetupParser.get('type'))
+                logger.error('Cannot get simulation status. Calibration cannot continue. Exiting...')
                 logger.error(ex)
                 exit()
 
@@ -289,7 +289,7 @@ class IterationState(object):
 
     @property
     def iteration_directory(self):
-        return os.path.join(self.working_directory, 'iter%d' % self.iteration)
+        return os.path.join(self.calibration_name, 'iter%d' % self.iteration)
 
     @property
     def param_names(self):
@@ -335,7 +335,7 @@ class IterationState(object):
                  'analyzers': self.analyzers,
                  'iteration': self.iteration,
                  'results': self.results,
-                 'working_directory': self.working_directory,
+                 'working_directory': self.calibration_name,
                  'experiment_id': self.experiment_id,
                  'simulations': self.simulations,
                  'next_point': self.next_point,
