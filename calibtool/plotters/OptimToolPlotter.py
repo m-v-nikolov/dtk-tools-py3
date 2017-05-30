@@ -50,7 +50,7 @@ class OptimToolPlotter(BasePlotter):
         self.state = pd.DataFrame.from_dict(self.npt['state'])
         self.regression = pd.DataFrame.from_dict(self.npt['regression'])
 
-        if iteration_status == StatusPoint.commission:
+        if iteration_status == StatusPoint.analyze:
             if self.iteration_state.iteration > 0:
                 self.visualize_optimtool_diagnoistics()
         elif iteration_status == StatusPoint.plot:
