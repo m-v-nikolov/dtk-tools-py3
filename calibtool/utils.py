@@ -1,6 +1,6 @@
 from enum import Enum
 
-class ResumePoint(Enum):
+class StatusPoint(Enum):
     iteration_start = 0
     commission = 1
     analyze = 2
