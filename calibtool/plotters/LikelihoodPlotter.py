@@ -1,10 +1,8 @@
 import logging
 import os
-
 import matplotlib.pyplot as plt
 import seaborn as sns
-from calibtool.utils import ResumePoint
-
+from calibtool.utils import StatusPoint
 from calibtool.plotters.BasePlotter import BasePlotter
 
 sns.set_style('white')
@@ -18,19 +16,21 @@ class LikelihoodPlotter(BasePlotter):
 
     @property
     def param_names(self):
-        return self.manager.param_names()
+        return self.iteration_state.param_names
 
     @property
     def prior_fn(self):
-        return self.manager.next_point.prior_fn
+        return self.iteration_state.next_point.prior_fn
 
     @property
     def directory(self):
         return self.get_iteration_directory()
 
-    def visualize(self):
-        iteration_status = self.manager.iteration_state.status
-        if iteration_status != ResumePoint.next_point:
+    def visualize(self, iteration_state):
+        self.iteration_state = iteration_state
+        self.site_analyzer_names = iteration_state.site_analyzer_names
+        iteration_status = self.iteration_state.status
+        if iteration_status != StatusPoint.plot:
             return  # Only plot once results are available
 
         if self.combine_sites:
@@ -74,7 +74,6 @@ class LikelihoodPlotter(BasePlotter):
 
     @staticmethod
     def plot1d_by_iteration(results, param, total, **kwargs):
-
         iterations = results.groupby('iteration', sort=True)
         n_iterations = len(iterations)
 

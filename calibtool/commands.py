@@ -23,14 +23,11 @@ def resume(args, unknownArgs):
             print "Invalid iter_step '%s', ignored.", args.iter_step
             exit()
     manager = get_calib_manager(args, unknownArgs, force_metadata=True)
-    manager.resume_from_iteration(args.iteration, iter_step=args.iter_step)
+    manager.resume_calibration(args.iteration, iter_step=args.iter_step)
 
 def reanalyze(args, unknownArgs):
     manager = get_calib_manager(args, unknownArgs, force_metadata=True)
-    if args.iteration is not None:
-        manager.reanalyze_iteration(args.iteration)
-    else:
-        manager.reanalyze()
+    manager.reanalyze_calibration(args.iteration)
 
 def cleanup(args, unknownArgs):
     manager = args.loaded_module.calib_manager
@@ -46,7 +43,7 @@ def kill(args, unknownArgs):
 
 def replot(args, unknownArgs):
     manager = get_calib_manager(args, unknownArgs, force_metadata=True)
-    manager.replot(args.iteration)
+    manager.replot_calibration(args.iteration)
 
 def main():
     parser = argparse.ArgumentParser(prog='calibtool')
