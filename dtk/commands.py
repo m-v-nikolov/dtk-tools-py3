@@ -552,7 +552,10 @@ def reload_experiment(args=None, try_sync=True):
         exit()
 
     # make sure the SetupParser is configured properly for this experiment
-    SetupParser.override_block(block=exp.selected_block)
+    try:
+        SetupParser.override_block(block=exp.selected_block)
+    except:
+        SetupParser.override_block(block=exp.location)
 
     return ExperimentManagerFactory.from_experiment(exp)
 

@@ -190,7 +190,7 @@ class SetupParser(object):
         if cls.singleton.setup.has_section(block):
             cls.singleton.selected_block = block
         else:
-            raise cls.MissingIniBlock("Override setup block '%s' does not exist in the setup overlay.")
+            raise cls.MissingIniBlock("Override setup block '%s' does not exist in the setup overlay." % block)
 
     def _overlay_setup(self, cp):
         """
