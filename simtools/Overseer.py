@@ -15,6 +15,7 @@ from simtools.Utilities.General import init_logging
 
 logger = init_logging('Overseer')
 
+
 def SimulationStateUpdater(states):
     while True:
         logger.debug("Simulation update function")
@@ -39,7 +40,7 @@ def LogCleaner():
         # Do the cleanup
         from simtools.DataAccess.LoggingDataStore import LoggingDataStore
         LoggingDataStore.log_cleanup()
-        DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup',value=datetime.today()))
+        DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup', value=datetime.today()))
 
 if __name__ == "__main__":
     logger.debug('Start Overseer pid: %d' % os.getpid())
@@ -69,6 +70,7 @@ if __name__ == "__main__":
     # will hold the analyze threads
     analysis_threads = []
     count = 0
+
     while True:
         # Retrieve the active LOCAL experiments
         active_experiments = DataStore.get_active_experiments()
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         # Create all the managers
         for experiment in active_experiments:
             logger.debug("Looking for manager for experiment %s" % experiment.id)
-            if not managers.has_key(experiment.id):
+            if experiment.id not in managers:
                 logger.debug('Creating manager for experiment id: %s' % experiment.id)
                 try:
                     sys.path.append(experiment.working_directory)
@@ -101,6 +103,7 @@ if __name__ == "__main__":
 
         # Check every one of them
         logger.debug("Checking experiment managers. There are %d of them. pid: %d" % (len(managers), os.getpid()))
+        managers_to_delete = []
         for exp_id, manager in managers.items():
             logger.debug("Checking manager %s" % exp_id)
             if manager.finished():
@@ -112,14 +115,19 @@ if __name__ == "__main__":
                 # analysis_threads.append(athread)
 
                 # After analysis delete the manager from the list
-                del managers[exp_id]
-                gc.collect()
+                # Do it after the loop to not change the dict while iterating over it
+                managers_to_delete.append(exp_id)
             else:
                 # Refresh the experiment first
                 manager.refresh_experiment()
                 logger.debug('Commission simulations as needed for experiment id: %s' % exp_id)
                 n_commissioned_sims = manager.commission_simulations(states_queue)
                 logger.debug('Experiment done (re)commissioning %d simulation(s)' % n_commissioned_sims)
+
+        # Delete the managers that needs to be deleted
+        for exp_id in managers_to_delete:
+            del managers[exp_id]
+        gc.collect()
 
         # Cleanup the analyze thread list
         for ap in analysis_threads:
