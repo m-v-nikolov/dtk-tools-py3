@@ -160,6 +160,7 @@ class SetupParser(object):
 
         cp = ConfigParser()
         cp.read(self.default_file)
+        cp.set('DEFAULT', 'user', LocalOS.username)
         self._overlay_setup(cp)
 
         # Apply the overlay if one was found

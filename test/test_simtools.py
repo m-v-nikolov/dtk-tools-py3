@@ -201,8 +201,8 @@ class TestSetupParser(unittest.TestCase):
     def test_items(self):
         filename = os.path.join(self.input_path, SetupParser.ini_filename)
         SetupParser.init(selected_block='TEST', setup_file=filename, is_testing=True)
-        self.assertEqual(len(SetupParser.items()), 23)
-        self.assertEqual(len(SetupParser.items(block='HPC')), 19)
+        self.assertEqual(len(SetupParser.items()), 24)
+        self.assertEqual(len(SetupParser.items(block='HPC')), 20)
 
     def test_get(self):
         filename = os.path.join(self.input_path, SetupParser.ini_filename)
