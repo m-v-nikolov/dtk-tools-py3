@@ -240,10 +240,6 @@ class NextPointAlgorithm(BaseNextPointAlgorithm):
         #for c in params_df.columns:  # Argh
         #    params_df[c] = params_df[c].astype(iteration_state.samples_for_this_iteration_dtypes[c])
 
-        sims_df = pd.DataFrame.from_dict(iteration_state.simulations, orient='index')
-        grouped = sims_df.groupby('__sample_index__', sort=True)
-        simIds = tuple(group.index.values for sample, group in grouped)
-
         df = pd.concat((results_df, params_df), axis=1)
         df['iteration'] = iteration_state.iteration
 
