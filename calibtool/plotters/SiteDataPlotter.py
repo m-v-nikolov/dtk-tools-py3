@@ -45,7 +45,7 @@ class SiteDataPlotter(BasePlotter):
 
     def get_analyzer_data(self, iteration, site_name, analyzer_name):
         site_analyzer = '%s_%s' % (site_name, analyzer_name)
-        return IterationState.restore_state(self.iteration_state.working_directory, iteration).analyzers[site_analyzer]
+        return IterationState.restore_state(self.iteration_state.calibration_name, iteration).analyzers[site_analyzer]
 
     def visualize(self, iteration_state):
         self.iteration_state = iteration_state
