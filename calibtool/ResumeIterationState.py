@@ -14,21 +14,13 @@ logger = init_logging("Calibration")
 
 
 class ResumeIterationState(IterationState):
-<<<<<<< HEAD
-    '''
-=======
     """
->>>>>>> origin/master
     Holds the settings, parameters, simulation state, analysis results, etc.
     for one calibtool iteration.
 
     Allows for the resumption or extension of existing CalibManager instances
     from an arbitrary point in the iterative process.
-<<<<<<< HEAD
-    '''
-=======
     """
->>>>>>> origin/master
 
     def __init__(self, **kwargs):
         super(ResumeIterationState, self).__init__(**kwargs)
@@ -210,11 +202,10 @@ class ResumeIterationState(IterationState):
 
         # update status
         self.status = StatusPoint.next_point
-<<<<<<< HEAD
-        self.cache_states()
-=======
+
+        # Save
         self.save()
->>>>>>> origin/master
+
 
     ###################################################
     # Re-plot

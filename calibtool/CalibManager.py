@@ -1,25 +1,25 @@
 import glob
 import json
-import logging
 import os
 import pprint
 import re
 import shutil
-import time
 from datetime import datetime
-from calibtool.utils import StatusPoint
+
 import pandas as pd
-from simtools.ModBuilder import ModBuilder, ModFn
-from core.utils.time import verbose_timedelta
-from simtools.DataAccess.DataStore import DataStore
-from simtools.SetupParser import SetupParser
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.Utilities.COMPSUtilities import COMPS_login
-from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
-from simtools.Utilities.General import init_logging
+
 from IterationState import IterationState
 from ResumeIterationState import ResumeIterationState
-from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
+from calibtool.utils import StatusPoint
+from core.utils.time import verbose_timedelta
+from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.ModBuilder import ModBuilder, ModFn
+from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import COMPS_login
+from simtools.Utilities.Encoding import NumpyEncoder
+from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
+from simtools.Utilities.General import init_logging
 
 logger = init_logging("Calibration")
 
@@ -29,17 +29,15 @@ class SampleIndexWrapper(object):
     Wrapper for a SimConfigBuilder-modifying function to add metadata
     on sample-point index when called in a iteration over sample points
     """
+    __name__ = "SampleIndex"
 
     def __init__(self, map_sample_to_model_input_fn):
         self.map_sample_to_model_input_fn = map_sample_to_model_input_fn
 
-    def __call__(self, idx):
-        def func(cb, *args, **kwargs):
-            params_dict = self.map_sample_to_model_input_fn(cb, *args, **kwargs)
-            params_dict.update(cb.set_param('__sample_index__', idx))
-            return params_dict
-
-        return func
+    def __call__(self, cb, idx, *args, **kwargs):
+        params_dict = self.map_sample_to_model_input_fn(cb, *args, **kwargs)
+        params_dict.update(cb.set_param('__sample_index__', idx))
+        return params_dict
 
 
 class CalibManager(object):
@@ -60,10 +58,10 @@ class CalibManager(object):
         self.next_point = next_point
         self.sim_runs_per_param_set = sim_runs_per_param_set
         self.max_iterations = max_iterations
-        self.plotters = plotters  # [plotter.set_manager(self) for plotter in plotters]
+        self.plotters = plotters
         self.suites = []
         self.all_results = None
-        self.summary_table = None       # [TODO]: not used any where right now
+        self.summary_table = None
         self.calibration_start = None
         self.latest_iteration = 0
         self.current_iteration = None
@@ -130,23 +128,20 @@ class CalibManager(object):
         self.finalize_calibration()
 
     def post_iteration(self):
-        # [TODO]: 1. summary_table is not used. 2. we may put self.all_results = self.current_iteration.all_results in cache_calibration()
         self.all_results = self.current_iteration.all_results
-        self.summary_table = self.current_iteration.summary_table           # ZD [TODO]: it is not used any where right now!
+        self.summary_table = self.current_iteration.summary_table
         self.cache_calibration()
 
     def exp_builder_func(self, next_params):
         return ModBuilder.from_combos(
-                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in
-                 range(self.sim_runs_per_param_set)],
+                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
                 [ModFn(site.setup_fn) for site in self.sites],
-                [ModFn(self.map_sample_to_model_input_fn(index), samples) for index, samples in
-                 enumerate(next_params)]
+                [ModFn(self.map_sample_to_model_input_fn, index, samples) for index, samples in  enumerate(next_params)]
         )
 
     def create_iteration_state(self, iteration):
         return IterationState(iteration=iteration,
-                              calibration_name=self.name,
+                              working_directory=self.name,
                               location=self.location,
                               suite_id=self.suite_id,
                               next_point_algo=self.next_point,
@@ -183,7 +178,7 @@ class CalibManager(object):
                 self.cleanup()
                 self.create_calibration(location)
             elif var == "R":
-                self.resume_calibration(location=location)
+                self.resume_calibration()
                 exit()  # avoid calling self.run_iterations(**kwargs)
             elif var == "P":
                 self.replot_calibration(iteration=None)
@@ -195,14 +190,18 @@ class CalibManager(object):
         logger.debug('Final samples:\n%s', pprint.pformat(final_samples))
         self.cache_calibration(**final_samples)
 
+        # remove any leftover experiments
+        self.cleanup_orphan_experiments()
+
+        # delete all backup file for CalibManger and each of iterations
+        self.cleanup_backup_files()
+
     def cache_calibration(self, **kwargs):
         """
         Cache information about the CalibManager that is needed to resume after an interruption.
         N.B. This is not currently the complete state, some of which relies on nested and frozen functions.
              As such, the 'resume' logic relies on the existence of the original configuration script.
         """
-        # TODO: resolve un-picklable nested SetupFunctions.set_calibration_site for self.sites
-        #       and frozen scipy.stats functions in MultiVariatePrior.function for self.next_point
         state = {'name': self.name,
                  'location': self.location,
                  'suites': self.suites,
@@ -245,19 +244,6 @@ class CalibManager(object):
 
         # resume from a given iteration
         self.run_iterations(self.iteration)
-
-        # post resume
-        self.post_resume_calibration()
-
-    def post_resume_calibration(self):
-        # get final sample and cache calibration
-        self.finalize_calibration()
-
-        # remove any leftover experiments
-        self.cleanup_orphan_experiments()
-
-        # delete all backup file for CalibManger and each of iterations
-        self.cleanup_backup_files()
 
     def load_calibration(self, iteration=None, iter_step=None):
         # step 1: load calibration
@@ -313,14 +299,9 @@ class CalibManager(object):
         # set up the resume point
         it.resume_point = StatusPoint[iter_step]
 
-        # # keep the current_iteration updated
-        # self.current_iteration = it
-
         # finally check user input location and experiment location and provide options for resume
-        # self.check_location()
         self.check_location(it)
 
-        # instead assign to self.current_iteration silently, make it return
         return it
 
     def check_location(self, iteration_state):
@@ -743,7 +724,6 @@ class CalibManager(object):
     def required_components(self):
         # update required objects for resume, reanalyze and replot
         kwargs = {
-                    'suite_id': self.suite_id,
                     'exp_builder_func': self.exp_builder_func,
                     'next_point_algo': self.next_point,
                     'config_builder': self.config_builder,
@@ -756,7 +736,6 @@ class CalibManager(object):
     def iteration_directory(self):
         return os.path.join(self.name, 'iter%d' % self.iteration)
 
-    #[TODO] Z: use restore_state(self, iteration) instead
     def state_for_iteration(self, iteration):
         iter_directory = os.path.join(self.name, 'iter%d' % iteration)
         return IterationState.from_file(os.path.join(iter_directory, 'IterationState.json'))
