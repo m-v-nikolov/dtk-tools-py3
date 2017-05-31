@@ -141,7 +141,7 @@ class CalibManager(object):
 
     def create_iteration_state(self, iteration):
         return IterationState(iteration=iteration,
-                              working_directory=self.name,
+                              calibration_name=self.name,
                               location=self.location,
                               suite_id=self.suite_id,
                               next_point_algo=self.next_point,
