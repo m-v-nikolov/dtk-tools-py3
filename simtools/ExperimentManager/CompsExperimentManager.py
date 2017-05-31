@@ -82,7 +82,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         return str(suite.id)
 
-    def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
+    def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
         COMPS_login(SetupParser.get('server_endpoint'))
 
@@ -102,6 +102,10 @@ class CompsExperimentManager(BaseExperimentManager):
         e = Experiment(name=experiment_name,
                        configuration=config,
                        suite_id=suite_id)
+
+        # Add tags if present
+        if self.experiment_tags: e.set_tags(self.experiment_tags)
+
         e.save()
 
         # Create experiment in the base class
