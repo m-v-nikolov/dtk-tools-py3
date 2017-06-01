@@ -504,7 +504,7 @@ class CalibManager(object):
                 logger.error("Try deleting the folder manually before retrying the calibration.")
 
         # Restore the selected block
-                SetupParser.override_block(user_selected_block)
+        SetupParser.override_block(user_selected_block)
 
     def reanalyze_calibration(self, iteration):
         """
