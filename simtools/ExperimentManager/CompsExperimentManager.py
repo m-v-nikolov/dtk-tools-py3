@@ -163,3 +163,7 @@ class CompsExperimentManager(BaseExperimentManager):
         COMPS_login(self.endpoint)
         s = Simulation.get(simulation.id)
         s.cancel()
+
+    def merge_tags(self, additional_tags):
+        comps_experiment = get_experiment_by_id(self.experiment.exp_id)
+        comps_experiment.merge_tags(additional_tags)
