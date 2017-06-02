@@ -448,9 +448,6 @@ class CalibManager(object):
         - Delete the result directory
         - If LOCAL -> also delete the simulations
         """
-        # Save the selected block the user wants
-        user_selected_block = SetupParser.selected_block
-
         try:
             calib_data = self.read_calib_data()
         except Exception:
@@ -458,41 +455,38 @@ class CalibManager(object):
             calib_data = None
 
         if calib_data:
-            # Retrieve suite ids and iter_count
-            suites = calib_data.get('suites')
-            iter_count = calib_data.get('iteration')
+            with SetupParser.TemporaryBlock(calib_data['selected_block']):
+                # Retrieve suite ids and iter_count
+                suites = calib_data.get('suites')
+                iter_count = calib_data.get('iteration')
 
-            # Also retrieve the selected block
-            SetupParser.override_block(calib_data['selected_block'])
+                # Kill
+                self.kill()
 
-            # Kill
-            self.kill()
+                # Delete the simulations too
+                logger.info('Cleaning up calibration %s' % self.name)
+                for i in range(0, iter_count + 1):
+                    # Get the iteration cache
+                    iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState.json')
 
-            # Delete the simulations too
-            logger.info('Cleaning up calibration %s' % self.name)
-            for i in range(0, iter_count + 1):
-                # Get the iteration cache
-                iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState.json')
+                    if not os.path.exists(iteration_cache):
+                        break
+                    # Retrieve the iteration state
+                    it = IterationState.from_file(iteration_cache)
 
-                if not os.path.exists(iteration_cache):
-                    break
-                # Retrieve the iteration state
-                it = IterationState.from_file(iteration_cache)
+                    # Create the associated experiment manager and ask for deletion
+                    try:
+                        exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
+                        exp_mgr.hard_delete()
+                    except: continue
 
-                # Create the associated experiment manager and ask for deletion
-                try:
-                    exp_mgr = ExperimentManagerFactory.from_experiment(DataStore.get_experiment(it.experiment_id))
-                    exp_mgr.hard_delete()
-                except:
-                    continue
-
-            # Delete all HPC suites (the local suites are only carried by experiments)
-            for suite in suites:
-                if suite['type'] == "HPC":
-                    logger.info('Delete COMPS suite %s' % suite['id'])
-                    COMPS_login(SetupParser.get('server_endpoint'))
-                    from simtools.Utilities.COMPSUtilities import delete_suite
-                    delete_suite(suite['id'])
+                # Delete all HPC suites (the local suites are only carried by experiments)
+                for suite in suites:
+                    if suite['type'] == "HPC":
+                        logger.info('Delete COMPS suite %s' % suite['id'])
+                        COMPS_login(SetupParser.get('server_endpoint'))
+                        from simtools.Utilities.COMPSUtilities import delete_suite
+                        delete_suite(suite['id'])
 
         # Then delete the whole directory
         calib_dir = os.path.abspath(self.name)
@@ -503,8 +497,6 @@ class CalibManager(object):
                 logger.error("Failed to delete %s" % calib_dir)
                 logger.error("Try deleting the folder manually before retrying the calibration.")
 
-        # Restore the selected block
-        SetupParser.override_block(user_selected_block)
 
     def reanalyze_calibration(self, iteration):
         """
@@ -512,48 +504,47 @@ class CalibManager(object):
         """
         calib_data = self.read_calib_data()
 
-        # Override our setup with what is in the file
-        SetupParser.override_block(calib_data['selected_block'])
-        self.location = SetupParser.get('type')
-        self.latest_iteration = int(calib_data.get('iteration', 0))
-        self.suites = calib_data['suites']
+        with SetupParser.TemporaryBlock(calib_data['selected_block']):
+            self.location = SetupParser.get('type')
+            self.latest_iteration = int(calib_data.get('iteration', 0))
+            self.suites = calib_data['suites']
 
-        if calib_data['location'] == 'HPC':
-            COMPS_login(SetupParser.get('server_endpoint'))
+            if calib_data['location'] == 'HPC':
+                COMPS_login(SetupParser.get('server_endpoint'))
 
-        # load all_results
-        results = calib_data.get('results')
-        if isinstance(results, dict):
-            self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-            # self.all_results.set_index('sample', inplace=True)
-        elif isinstance(results, list):
-            self.all_results = results
+            # load all_results
+            results = calib_data.get('results')
+            if isinstance(results, dict):
+                self.all_results = pd.DataFrame.from_dict(results, orient='columns')
+                # self.all_results.set_index('sample', inplace=True)
+            elif isinstance(results, list):
+                self.all_results = results
 
-        # Cleanup the LL_all.csv
-        if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
-            os.remove(os.path.join(self.name, 'LL_all.csv'))
+            # Cleanup the LL_all.csv
+            if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
+                os.remove(os.path.join(self.name, 'LL_all.csv'))
 
-        if iteration is not None:
-            assert (iteration <= self.latest_iteration)
-            self.reanalyze_iteration(iteration)
-            logger.info("Iteration %s got reanalyzed." % iteration)
-            return
+            if iteration is not None:
+                assert (iteration <= self.latest_iteration)
+                self.reanalyze_iteration(iteration)
+                logger.info("Iteration %s got reanalyzed." % iteration)
+                return
 
-        # Get the count of iterations and save the suite_id
-        iter_count = calib_data.get('iteration')
-        logger.info("Reanalyze will go through %s iterations." % (iter_count + 1))
+            # Get the count of iterations and save the suite_id
+            iter_count = calib_data.get('iteration')
+            logger.info("Reanalyze will go through %s iterations." % (iter_count + 1))
 
-        # Go through each already ran iterations
-        for i in range(0, iter_count + 1):
-            self.reanalyze_iteration(i)
+            # Go through each already ran iterations
+            for i in range(0, iter_count + 1):
+                self.reanalyze_iteration(i)
 
-        # Before leaving -> set back the suite_id
-        self.suites = calib_data['suites']
-        self.location = calib_data['location']
+            # Before leaving -> set back the suite_id
+            self.suites = calib_data['suites']
+            self.location = calib_data['location']
 
-        # Also finalize
-        self.finalize_calibration()
-        logger.info("Calibration got reanalyzed.")
+            # Also finalize
+            self.finalize_calibration()
+            logger.info("Calibration got reanalyzed.")
 
     def reanalyze_iteration(self, iteration):
         logger.info("\nReanalyze Iteration %s" % iteration)
