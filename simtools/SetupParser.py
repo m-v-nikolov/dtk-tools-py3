@@ -34,6 +34,7 @@ class SetupParserMeta(type):
         """
         if SetupParser.initialized:  # do not allow re-initialization
             raise SetupParser.AlreadyInitialized("Cannot re-initialize the SetupParser class")
+
         if kwargs.get('singleton', None):
             cls.singleton = kwargs.get('singleton')
         else:
@@ -167,6 +168,7 @@ class SetupParser(object):
         if overlay_path:
             overlay = ConfigParser()
             overlay.read(overlay_path)
+            overlay.set('DEFAULT', 'user', LocalOS.username)
             self._overlay_setup(overlay)
 
         # Add the user just in case it wasn't specified already
@@ -346,8 +348,11 @@ class SetupParser(object):
         cls.singleton.schema = json_schema
         return json_schema
 
-    # used for running a bit of code with a different selected block and ensuring a return to the original selected block
     class TemporaryBlock(object):
+        """
+            Used for running a bit of code with a different selected block
+            and ensuring a return to the original selected block
+        """
         def __init__(self, temporary_block):
             self.temporary_block = temporary_block
 
@@ -357,3 +362,26 @@ class SetupParser(object):
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             SetupParser.override_block(self.original_block)
+
+    class TemporarySetup(object):
+        """
+            Used for running a bit of code with a different selected block and ini path
+        """
+        def __init__(self, temporary_block, temporary_path=None):
+            ini_file = os.path.join(temporary_path, 'simtools.ini')
+            self.temporary_block = temporary_block
+            self.temporary_setup = SetupParser(selected_block=temporary_block,
+                                               setup_file=ini_file if os.path.exists(ini_file) else None,
+                                               old_style_instantiation=True)
+
+        def get(self, parameter):
+            return self.temporary_setup.setup.get(self.temporary_block, parameter)
+
+        def getboolean(self, parameter):
+            return self.temporary_setup.setup.getboolean(self.temporary_block, parameter)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
