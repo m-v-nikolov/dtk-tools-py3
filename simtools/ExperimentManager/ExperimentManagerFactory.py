@@ -34,7 +34,7 @@ class ExperimentManagerFactory(object):
     @classmethod
     def from_model(cls, model_file, location='LOCAL'):
         logger.debug('Factory - Initializing %s ExperimentManager from: %s', location, model_file)
-        return cls.factory(location)(model_file, None)
+        return cls.factory(location)(experiment=None, model_file=model_file)
 
     @classmethod
     def from_setup(cls):

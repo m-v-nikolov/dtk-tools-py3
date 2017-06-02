@@ -52,3 +52,4 @@ install/*.whl
 simtools/simtools.ini.bak
 .overseer_check_lock
 !examples/example_iterative/simtools.ini
+!test/simtools/input/simtools.ini
