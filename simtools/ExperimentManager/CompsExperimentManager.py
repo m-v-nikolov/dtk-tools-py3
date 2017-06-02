@@ -115,6 +115,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint
+        self.comps_experiment = e
 
     def create_simulation(self):
         files = self.config_builder.dump_files_to_string()
@@ -167,5 +168,5 @@ class CompsExperimentManager(BaseExperimentManager):
         s.cancel()
 
     def merge_tags(self, additional_tags):
-        comps_experiment = get_experiment_by_id(self.experiment.exp_id)
-        comps_experiment.merge_tags(additional_tags)
+        if self.comps_experiment:
+            self.comps_experiment.merge_tags(additional_tags)
