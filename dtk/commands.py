@@ -109,7 +109,7 @@ def run(args, unknownArgs):
     mod.run_sim_args['quiet']    = True if args.quiet    else False
 
     # Create the experiment manager based on the setup and run simulation.
-    exp_manager = ExperimentManagerFactory.from_setup()
+    exp_manager = ExperimentManagerFactory.from_setup(config_builder=mod.config_builder)
     exp_manager.run_simulations(**mod.run_sim_args)
 
 

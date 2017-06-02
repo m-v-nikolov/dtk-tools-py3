@@ -33,7 +33,7 @@ from dtk.utils.reports.CustomReport import format as format_reports
 from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.COMPSUtilities import translate_COMPS_path, stage_file
 from simtools.Utilities.Encoding import NumpyEncoder
-from simtools.Utilities.General import CommandlineGenerator, init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('ConfigBuilder')
 
@@ -329,7 +329,11 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         for r in reports:
             self.custom_reports.append(r)
-            self.dlls.add(r.get_dll_path())
+            dll_type, dll_path = r.get_dll_path()
+            self.dlls.add((dll_type, dll_path))
+
+            # path relative to dll_root, will be expanded before emodules_map.json is written
+            self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
 
     def add_input_file(self, name, content):
         """
@@ -373,25 +377,6 @@ class DTKConfigBuilder(SimConfigBuilder):
         if name in self.demog_overlays:
             raise Exception('Already have demographics overlay named %s' % name)
         self.demog_overlays[name] = content
-
-    def get_commandline(self, exe_path, paths):
-        """
-        Get the complete command line to run the simulation.
-
-        Args:
-            exe_path (string): The path to the model executable
-            paths (dict): Dictionary containing the setup and allowing this function to retrieve the ``input_root`` and ``python_path``
-
-        Returns:
-            The :py:class:`CommandlineGenerator` object created with the correct paths
-
-        """
-        eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
-
-        if 'python_path' in paths and paths['python_path'] != '':
-            eradication_options['--python-script-path'] = paths['python_path']
-
-        return CommandlineGenerator(exe_path, eradication_options, [])
 
     def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
         """
@@ -476,6 +461,8 @@ class DTKConfigBuilder(SimConfigBuilder):
                     with open(filename, 'w') as f:
                         f.write(content)
         """
+        from simtools.SetupParser import SetupParser
+
         if self.human_readability:
             dump = lambda content: json.dumps(content, sort_keys=True, indent=3, cls=NumpyEncoder).strip('"')
         else:
@@ -499,4 +486,14 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         write_fn('config.json', dump(self.config))
 
+        # complete the path to each dll before writing emodules_map.json
+        location = SetupParser.get('type')
+        if location == 'LOCAL':
+            root = SetupParser.get('dll_root')
+        elif location == 'HPC':
+            root = 'Assets'
+        else:
+            raise Exception('Unknown location: %s' % location)
+        for module_type in self.emodules_map.keys():
+            self.emodules_map[module_type] = [ os.path.join(root, dll) for dll in self.emodules_map[module_type] ]
         write_fn('emodules_map.json', dump(self.emodules_map))

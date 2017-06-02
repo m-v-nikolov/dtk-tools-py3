@@ -10,11 +10,10 @@ cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 configure_site(cb, 'Namawala')
 
 run_sim_args =  {
-    'config_builder': cb,
     'exp_name': 'ExampleSim',
 }
 
 if __name__ == "__main__":
     SetupParser.init()
-    exp_manager = ExperimentManagerFactory.from_setup()
+    exp_manager = ExperimentManagerFactory.from_setup(config_builder=cb)
     exp_manager.run_simulations(**run_sim_args)

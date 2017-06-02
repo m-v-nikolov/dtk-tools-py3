@@ -1,3 +1,4 @@
+from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
@@ -40,14 +41,14 @@ class LocalExperimentManager(BaseExperimentManager):
                     if sim.id not in self.unfinished_simulations:
                         self.unfinished_simulations[sim.id] = sim
 
-    def __init__(self, experiment, model_file=None):
+    def __init__(self, experiment, config_builder):
         self.local_queue = None
         self.simulations_commissioned = 0
         self.unfinished_simulations = {}
         self._experiment = None
         self.experiment = experiment
 
-        BaseExperimentManager.__init__(self, experiment,model_file)
+        BaseExperimentManager.__init__(self, experiment, config_builder)
 
     def commission_simulations(self, states):
         """
@@ -91,13 +92,6 @@ class LocalExperimentManager(BaseExperimentManager):
                     del self.unfinished_simulations[sim.id]
                     logger.debug("Choosing to NOT relaunch a sim: id: %s status: %s" % (sim.id, sim.status))
         return simulations
-
-    def check_input_files(self, input_files):
-        """
-        Check file exist and return the missing files as dict
-        """
-        input_root = SetupParser.get('input_root')
-        return input_root, self.find_missing_files(input_files, input_root)
 
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Create a unique id

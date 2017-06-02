@@ -157,8 +157,8 @@ class TestCommands(unittest.TestCase):
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
-        exp_manager = ExperimentManagerFactory.from_setup(manager.setup)
-        self.assertTrue(exp_manager.validate_input_files(manager.config_builder))
+        exp_manager = ExperimentManagerFactory.from_setup(manager.config_builder)
+        self.assertTrue(exp_manager.validate_input_files())
 
     def test_find_best_iteration_for_resume(self):
         mod = load_config_module('dummy_calib.py')
