@@ -20,12 +20,11 @@ cb = DTKConfigBuilder.from_defaults('MALARIA_SIM',
                                     Simulation_Duration=365*20)
 
 run_sim_args = {
-    'config_builder': cb,
     'exp_name': exp_name,
     'exp_builder': builder,
 }
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
-    exp_manager = ExperimentManagerFactory.from_setup()
+    exp_manager = ExperimentManagerFactory.from_setup(config_builder=cb)
     exp_manager.run_simulations(**run_sim_args)

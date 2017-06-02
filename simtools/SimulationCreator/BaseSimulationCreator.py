@@ -25,7 +25,7 @@ class BaseSimulationCreator(Process):
         self.max_sims_per_batch = max_sims_per_batch
         self.return_list=return_list
         # Extract the path we want from the setup
-        self.lib_staging_root = translate_COMPS_path(SetupParser.get('lib_staging_root'))
+#        self.lib_staging_root = translate_COMPS_path(SetupParser.get('lib_staging_root'))
         self.asset_service = SetupParser.getboolean('use_comps_asset_svc', default=False)
         self.dll_path = SetupParser.get('dll_path')
         self.callback = callback
@@ -56,8 +56,8 @@ class BaseSimulationCreator(Process):
                 md = func(cb)
                 tags.update(md)
 
-            # Stage the required dll for the experiment
-            cb.stage_required_libraries(self.dll_path,self.lib_staging_root, self.asset_service)
+#            # Stage the required dll for the experiment
+#            cb.stage_required_libraries(self.dll_path,self.lib_staging_root, self.asset_service)
 
             # Create the simulation
             s = self.create_simulation(cb)

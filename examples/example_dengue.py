@@ -17,11 +17,12 @@ add_OutbreakIndivisualDengue(cb, 5000, {}, 'Strain_4', [])
 
 # cb.set_param('Simulation_Duration', 30*365)
 
-run_sim_args = {'config_builder': cb,
-                'exp_name': 'ExampleSim'}
+run_sim_args = {
+    'exp_name': 'ExampleSim'
+}
 
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
-    exp_manager = ExperimentManagerFactory.from_setup()
+    exp_manager = ExperimentManagerFactory.from_setup(config_builder=cb)
     exp_manager.run_simulations(**run_sim_args)

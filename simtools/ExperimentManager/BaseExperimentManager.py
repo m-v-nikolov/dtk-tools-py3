@@ -34,17 +34,22 @@ class BaseExperimentManager:
     parserClass=SimulationOutputParser
     location = None
 
-    def __init__(self, model_file, experiment):
+    def __init__(self, experiment, config_builder=None):
         self.experiment = experiment
-        self.model_file = model_file or SetupParser.get('exe_path')
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
-        self.assets_service = None
         self.exp_builder = None
-        self.staged_bin_path = None
-        self.config_builder = None
-        self.commandline = None
+        self.config_builder = config_builder
         self.bypass_missing = False
+        if config_builder:
+            self.assets = self._get_assets()
+            # Check input files existence
+            if not self.validate_input_files():
+                exit()
+            self.assets.prepare(location=self.location)
+        else:
+            self.assets = None # can't use these without the config_builder
+        self.commandline = self._get_commandline()
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -63,10 +68,6 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def check_input_files(self, input_files):
-        pass
-
-    @abstractmethod
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         pass
 
@@ -76,7 +77,6 @@ class BaseExperimentManager:
             exp_id=experiment_id,
             suite_id=suite_id,
             sim_root=SetupParser.get('sim_root'),
-            exe_name=self.commandline.Executable,
             exp_name=experiment_name,
             location=self.location,
             analyzers=[],
@@ -139,22 +139,19 @@ class BaseExperimentManager:
     def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
         return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
-    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
+    def run_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
                         analyzers=[], blocking = False, quiet = False):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
+        :assets: A SimulationAssets object if not None (COMPS-land needed for AssetManager)
         """
 
         # Check experiment name as early as possible
         if not validate_exp_name(exp_name):
             exit()
 
-        # Check input files existence
-        if not self.validate_input_files(config_builder):
-            exit()
-
-        self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
+        self.create_simulations(exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not quiet)
         self.check_overseer()
 
@@ -185,29 +182,30 @@ class BaseExperimentManager:
 
         return missing_files
 
-    def validate_input_files(self, config_builder):
+    # ck4, this reworked method needs tests
+    def validate_input_files(self):
         """
         Check input files and make sure there exist
         Note: we by pass the 'Campaign_Filename'
+        This method only verifies local files, not (current) AssetManager-contained files
         """
-        # By-pass input file checking if using assets_service or we want to bypass
-        if self.assets_service or self.bypass_missing:
+        # By-pass input file checking if we want to bypass missing files
+        if self.bypass_missing:
             return True
         # If the config builder has no file paths -> bypass
-        if not hasattr(config_builder, 'get_input_file_paths'):
+        if not hasattr(self.config_builder, 'get_input_file_paths'):
             return True
 
-        input_files = config_builder.get_input_file_paths()
-        input_root, missing_files = self.check_input_files(input_files)
+        missing_files = []
+        for asset_type, asset in self.assets.collections.iteritems():
+            for file in asset.asset_files_to_use:
+                if file.is_local:
+                    full_path = os.path.join(file.root, file.relative_path, file.file_name)
+                    if not os.path.exists(full_path):
+                        missing_files.append(full_path)
 
-        # Py-passing 'Campaign_Filename' for now.
-        if 'Campaign_Filename' in missing_files:
-            logger.info("By-passing file '%s'..." % missing_files['Campaign_Filename'])
-            missing_files.pop('Campaign_Filename')
         if len(missing_files) > 0:
-
             print('Missing files list:')
-            print('input_root: %s' % input_root)
             print(json.dumps(missing_files, indent=2))
             var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
@@ -216,26 +214,14 @@ class BaseExperimentManager:
             else:
                 print("Answer is '%s'. Exiting..." % var.upper())
                 return False
-
         return True
 
-    def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), analyzers=[], suite_id=None, verbose=True):
+    def create_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), analyzers=[],
+                           suite_id=None, verbose=True):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         """
-        self.config_builder = config_builder
         self.exp_builder = exp_builder
-
-        # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
-        # If not, use the normal staging process
-        if self.assets_service:
-            self.staged_bin_path = SetupParser.get('bin_staging_root')
-        else:
-            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, SetupParser.get('bin_staging_root'))
-
-        # Create the command line
-        item_dict = dict(SetupParser.items())
-        self.commandline = self.config_builder.get_commandline(self.staged_bin_path, paths=item_dict)
 
         # Create the experiment if not present already
         if not self.experiment or self.experiment.exp_name != exp_name:
@@ -453,3 +439,62 @@ class BaseExperimentManager:
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
 
+    def _get_commandline(self):
+        """
+        Get the complete command line to run the simulations of this experiment.
+        Returns:
+            The :py:class:`CommandlineGenerator` object created with the correct paths
+
+        """
+        from simtools.Utilities.General import CommandlineGenerator
+
+        eradication_options = {'--config': 'config.json'}
+
+        python_path = SetupParser.get('python_path', default=None)
+        if python_path:
+            eradication_options['--python-script-path'] = python_path
+
+        # ck4, not ideal, put in LocalExperimentManager?
+        # If local, we need to potentially make a copy of the executable to a well-known place
+        if self.location == 'LOCAL' and self.config_builder:
+            exe_path = self.config_builder.stage_executable(self.assets.local_executable, SetupParser.get('bin_staging_root'))
+            logger.debug("Staged LOCAL executable: %s to: %s" % (self.assets.local_executable, exe_path))
+            eradication_options['--input-path'] = self.assets.local_input_root
+        else:
+            if self.location == 'LOCAL':
+                exe_path = os.path.join(SetupParser.get('sim_root'), 'Assets', os.path.basename(SetupParser.get('exe_path'))) # ck4, right?? Nope. Needs testing, if used at all.
+                eradication_options['--input-path'] = os.path.join(SetupParser.get('sim_root'), 'Assets') # ck4, right??? Nope. Needs testing, if used at all.
+            elif self.location == 'HPC':
+                exe_path = os.path.join('Assets', os.path.basename(SetupParser.get('exe_path')))
+                eradication_options['--input-path'] = 'Assets'
+            else:
+                raise Exception("Unknown location: %s" % self.location)
+        return CommandlineGenerator(exe_path, eradication_options, [])
+
+    def _get_assets(self):
+        """
+        Creates a SimulationAssets object corresponding to the current experiment.
+        :return:
+        """
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+
+        base_collection_id = {}
+        use_local_files = {}
+        for collection_type in SimulationAssets.COLLECTION_TYPES:
+            # Each is either None (no existing collection starting point) or an asset collection id
+            base_collection_id[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
+            if len(base_collection_id[collection_type]) == 0:
+                base_collection_id[collection_type] = None
+            # True/False, overlay locally-discovered files on top of any provided asset collection id?
+            use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
+
+        #print "Using base_collection_id: %s" % base_collection_id
+        #print "Using local_files: %s" % use_local_files
+
+        # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
+        # creating local AssetCollection instances internally to represent them.
+        assets = SimulationAssets.assemble_assets(config_builder=self.config_builder,
+                                                  base_collection_id=base_collection_id,
+                                                  use_local_files=use_local_files)
+        #assets.prepare()  # This uploads any local files that need to be & records the COMPS AssetCollection ids assigned.
+        return assets

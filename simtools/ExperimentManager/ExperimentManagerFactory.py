@@ -7,7 +7,7 @@ logger = init_logging('ExperimentManager')
 
 class ExperimentManagerFactory(object):
     @staticmethod
-    def factory(type):
+    def _factory(type):
         if type == 'LOCAL':
             from simtools.ExperimentManager.LocalExperimentManager import LocalExperimentManager
             return LocalExperimentManager
@@ -17,27 +17,27 @@ class ExperimentManagerFactory(object):
         raise Exception("ExperimentManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
-    def from_experiment(cls, experiment, generic=False):
+    def from_experiment(cls, experiment, generic=False, config_builder=None):
         logger.debug("Factory - Creating ExperimentManager for experiment %s pid: %d location: %s" % (experiment.id, os.getpid(), experiment.location))
-        manager_class = cls.factory(type=experiment.location)
+        manager_class = cls._factory(type=experiment.location)
         if generic: # ask the manager class for the location. USE ONLY FROM Overseer, who doesn't know better.
+            orig_block = SetupParser.selected_block
             try:
-                orig_block = SetupParser.selected_block
                 SetupParser.override_block(manager_class.location) # manager class constructor MAY access SetupParser
-                manager = manager_class('', experiment)
+                manager = manager_class(experiment=experiment, config_builder=config_builder)
             finally:
                 SetupParser.override_block(orig_block)
         else:
-            manager = manager_class('', experiment)
+            manager = manager_class(experiment=experiment, config_builder=config_builder)
         return manager
 
     @classmethod
-    def from_model(cls, model_file, location='LOCAL'):
+    def from_model(cls, model_file, location='LOCAL', config_builder=None):
         logger.debug('Factory - Initializing %s ExperimentManager from: %s', location, model_file)
-        return cls.factory(location)(model_file, None)
+        return cls._factory(location)(experiment=None, config_builder=config_builder)
 
     @classmethod
-    def from_setup(cls):
+    def from_setup(cls, config_builder=None):
         location = SetupParser.get('type')
         logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
-        return cls.factory(location)(SetupParser.get('exe_path'), None)
+        return cls._factory(location)(experiment=None, config_builder=config_builder)

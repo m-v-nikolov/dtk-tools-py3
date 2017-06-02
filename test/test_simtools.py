@@ -71,7 +71,7 @@ class TestConfigBuilder(unittest.TestCase):
         os.rmdir(staged_dir)
 
     def test_commandline(self):
-        commandline = self.cb.get_commandline('input/file.txt', dict(SetupParser.items()))
+        commandline = self.cb._get_commandline('input/file.txt', dict(SetupParser.items()))
         self.assertEqual('input/file.txt', commandline.Commandline)
 
         another_command = CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
@@ -344,9 +344,9 @@ class TestLocalExperimentManager(unittest.TestCase):
     def test_run(self):
         input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
         model_file = os.path.join(input_path, 'dummy_model.py')
-        local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL')
-        local_manager.run_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'),
-                                      exp_builder=RunNumberSweepBuilder(self.nsims))
+        local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL',
+                                                            config_builder=PythonConfigBuilder.from_defaults('sleep'))
+        local_manager.run_simulations(exp_builder=RunNumberSweepBuilder(self.nsims))
         self.assertEqual(local_manager.experiment.exp_name, 'test')
         experiment = local_manager.experiment
 
