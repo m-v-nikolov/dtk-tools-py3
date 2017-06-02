@@ -105,8 +105,6 @@ class IterationState(object):
 
         # Get the params from the next_point
         next_params = self.next_point_algo.get_samples_for_iteration(self.iteration)
-        # print 'commission_step'
-        # exit()
         self.set_samples_for_iteration(next_params, self.next_point_algo)
 
         # Then commission
@@ -209,15 +207,11 @@ class IterationState(object):
         self.next_point_algo.set_results_for_iteration(self.iteration, results)
         self.set_next_point(self.next_point_algo)
 
-        # print 'all_results before analyze: \n%s' % self.all_results
-
         # Update the summary table and all the results
         all_results, summary_table = self.next_point_algo.update_summary_table(self, self.all_results)
         self.all_results = all_results
         self.summary_table = summary_table
         logger.info(summary_table)
-
-        # print 'all_results after analyze: \n%s' % self.all_results
 
         # Cache IterationState
         self.save()
@@ -285,7 +279,7 @@ class IterationState(object):
         self.exp_manager.wait_for_finished(verbose=False, sleep_time=1)
 
         # Print confirmation
-        logger.info("Calibration %s successfully cancelled!" % self.name)
+        logger.info("Calibration %s successfully cancelled!" % self.calibration_name)
 
     @property
     def iteration_directory(self):
@@ -376,7 +370,6 @@ class IterationState(object):
         Cache information about the IterationState that is needed to resume after an interruption.
         If resuming from an existing iteration, also copy to backup the initial cached state.
         """
-        # print 'backup_existing: %s' % backup_existing
         try:
             os.makedirs(self.iteration_directory)
         except OSError:

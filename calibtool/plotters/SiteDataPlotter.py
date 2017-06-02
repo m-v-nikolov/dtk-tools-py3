@@ -24,15 +24,6 @@ class SiteDataPlotter(BasePlotter):
     def directory(self):
         return self.get_plot_directory()
 
-    def get_site_analyzer_orig(self, site_name, analyzer_name):
-        for site in self.manager.sites:
-            if site_name != site.name:
-                continue
-            for analyzer in site.analyzers:
-                if analyzer_name == analyzer.name:
-                    return analyzer
-        raise Exception('Unable to find analyzer=%s for site=%s' % (analyzer_name, site_name))
-
     #ZD [TODO]: self.iteration_state.analyzer_list doesn't keep site info, here we assume all analyzers have different names!!!
     def get_site_analyzer(self, site_name, analyzer_name):
         for site, analyzers in self.site_analyzer_names.items():
