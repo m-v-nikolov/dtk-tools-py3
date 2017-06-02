@@ -57,8 +57,6 @@ class ResumeIterationState(IterationState):
             # it will use the current results and resume from next iteration
             self.restore_results(self.iteration)
 
-        # print 'resume_init, all_results:\n%s' % self.all_results
-
         # step 4: prepare resume states
         if self.resume_point == StatusPoint.commission:
             # need to run simulations
@@ -183,14 +181,12 @@ class ResumeIterationState(IterationState):
             self.next_point_algo.cleanup()
             self.all_results = None
 
-        # print 'reanalyze, all_results:\n%s' % self.all_results
-
         # Empty the results and analyzers
         self.results = {}
         self.analyzers = {}
 
         # Update status and then plot
-        self.status = StatusPoint.analyze
+        self.status = StatusPoint.commission
         self.plot_iteration()
 
         # Analyze again!
@@ -223,7 +219,7 @@ class ResumeIterationState(IterationState):
             # [TODO]: need to re-consider this condition
             # if isinstance(plotter, SiteDataPlotter.SiteDataPlotter) and self.iteration != calibManager.latest_iteration:
             #     continue
-            plotter.visualize()
+            plotter.visualize(self)
             gc.collect()  # Have to clean up after matplotlib is done
 
 

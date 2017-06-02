@@ -284,7 +284,6 @@ class CalibManager(object):
                 "The iteration '%s' is beyond the maximum iteration '%s'" % (resume_iteration, self.latest_iteration))
 
         # validate input iter_step
-        # it = IterationState.restore_state(self.name, resume_iteration)
         it = ResumeIterationState.restore_state(self.name, resume_iteration)
 
         latest_step = StatusPoint[it.status]
@@ -373,7 +372,7 @@ class CalibManager(object):
         # restore the existing calibration data
         calib_data = self.read_calib_data()
         self.latest_iteration = int(calib_data.get('iteration', 0))
-        self.suites = calib_data.get('suites')  # ZDU: very important, otherwise it will create one which will cause cache_calibration!
+        self.suites = calib_data.get('suites')
 
         # restore calibration results
         results = calib_data.get('results')
@@ -402,7 +401,7 @@ class CalibManager(object):
         logger.info('Re-plotting for iteration: %d' % iteration)
 
         # Create the state for the current iteration
-        self.current_iteration = IterationState.restore_state(self.name, iteration)
+        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
         self.current_iteration.update(**self.required_components)
         self.current_iteration.replot(local_all_results)
 
@@ -516,7 +515,6 @@ class CalibManager(object):
             results = calib_data.get('results')
             if isinstance(results, dict):
                 self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-                # self.all_results.set_index('sample', inplace=True)
             elif isinstance(results, list):
                 self.all_results = results
 
@@ -550,7 +548,7 @@ class CalibManager(object):
         logger.info("\nReanalyze Iteration %s" % iteration)
 
         # Create the state for the current iteration
-        self.current_iteration = IterationState.restore_state(self.name, iteration)
+        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
         self.current_iteration.update(**self.required_components)
         self.current_iteration.reanalyze()
 
@@ -655,7 +653,6 @@ class CalibManager(object):
             delete_files(backup_files)
 
         # Step 2: delete backup files for CalibManger.json
-        # Get the CalibManager backup files
         calib_manager_cache = os.path.join(self.name, 'CalibManager_backup_*.json')
         backup_files = glob.glob(calib_manager_cache)
         if backup_files is None or len(backup_files) == 0:
