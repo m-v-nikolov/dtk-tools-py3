@@ -1,7 +1,8 @@
 import json
 import os
 import fasteners
-from ConfigParser import ConfigParser
+
+from simtools.Utilities.BetterConfigParser import BetterConfigParser
 from simtools.Utilities.LocalOS import LocalOS
 from simtools.Utilities.General import init_logging
 
@@ -107,32 +108,13 @@ class SetupParser(object):
         :param setup_file: If provided, this ini file will overlay the default UNLESS commissioning_directory was
                            also provided.
         :param commissioning_directory: If provided, the ini file within it will always overlay the default ini file.
-        :overrides: The values in this dict supersede those returned by the ConfigParser object in .get()
-        :is_testing: Allows bypassing of interactive login to COMPS if True. No login attempt is made in this case.
+        :param overrides: The values in this dict supersede those returned by the ConfigParser object in .get()
+        :param is_testing: Allows bypassing of interactive login to COMPS if True. No login attempt is made in this case.
         """
         if old_style_instantiation is None:
-            msg = "SetupParser(arguments) is deprecated. Please update your code to use SetupParser.init(arguments) " + \
-                  "exactly once. You may then use familiar SetupParser methods on the class, " + \
-                  "e.g. SetupParser.get('some_item')"
-            logger.warning(msg)
-            print msg
-
-            if not selected_block:
-                raise Exception("Use of deprecated initializer of SetupParser too generic. Please specify which block"
-                                "to select via argument 'block', e.g. SetupParser(block='LOCAL')")
-
-            if SetupParser.initialized:
-                if selected_block != SetupParser.selected_block:
-                    SetupParser.override_block(block=selected_block)
-            else:
-                kwargs = {'selected_block': selected_block,
-                          'setup_file': setup_file,
-                          'commissioning_directory': commissioning_directory,
-                          'overrides': overrides,
-                          'is_testing': is_testing,
-                          'old_style_instantiation': True
-                          }
-                SetupParser.init(**kwargs)
+            self.old_style_instantiation(selected_block=selected_block,setup_file=setup_file,
+                                         commissioning_directory=commissioning_directory, overrides=overrides,
+                                         is_testing=is_testing)
 
         self.selected_block = selected_block or self.default_block
         self.setup_file = setup_file
@@ -150,29 +132,14 @@ class SetupParser(object):
         overlay_path = self._select_and_verify_overlay(local_file=self.local_file, provided_file=self.setup_file,
                                                        commissioning_file=self.commissioning_file)
 
-        # Load the default and overlay it onto itself to explicitly resolve the type=LOCAL/HPC tags to key/values
-        # from the literal LOCAL/HPC blocks.
-        self.setup = ConfigParser()
-        self.setup.read(self.default_file)
-
-        for sec in self.setup.sections():
-            if sec not in ('HPC', 'LOCAL'):
-                self.setup.remove_section(sec)
-
-        cp = ConfigParser()
-        cp.read(self.default_file)
-        cp.set('DEFAULT', 'user', LocalOS.username)
-        self._overlay_setup(cp)
+        # Load the default file
+        self.setup = self.config_parser_from_file(self.default_file)
 
         # Apply the overlay if one was found
         if overlay_path:
-            overlay = ConfigParser()
-            overlay.read(overlay_path)
-            overlay.set('DEFAULT', 'user', LocalOS.username)
-            self._overlay_setup(overlay)
-
-        # Add the user just in case it wasn't specified already
-        self.setup.set('DEFAULT', 'user', LocalOS.username)
+            overlay = self.config_parser_from_file(overlay_path)
+            # Overlay the overlay to itself for type inheritance (same as for the basic file few lines before)
+            self.setup = self._overlay_setup(overlay, self.setup)
 
         # Verify that we have the requested block in our overlain result
         if not self.setup.has_section(self.selected_block):
@@ -182,6 +149,47 @@ class SetupParser(object):
         if self.setup.get(self.selected_block, 'type') == "HPC" and not is_testing:
             from simtools.Utilities.COMPSUtilities import COMPS_login
             COMPS_login(self.setup.get(self.selected_block, 'server_endpoint'))
+
+
+    def config_parser_from_file(self, ini_file):
+        """
+        Create a config parser from a file.
+        :param ini_file: The full path of the ini file to load
+        :return: a configured ConfigParser with additional variables
+        """
+        if not os.path.exists(ini_file):
+            raise Exception('No file found at %s' % ini_file)
+
+        ret = BetterConfigParser()
+        ret.read(ini_file)
+        ret.set('DEFAULT','user', LocalOS.username)
+        self.resolves_type_inheritance(ret)
+
+        return ret
+
+    def old_style_instantiation(self, selected_block, setup_file, commissioning_directory, overrides, is_testing):
+        msg = "SetupParser(arguments) is deprecated. Please update your code to use SetupParser.init(arguments) " + \
+              "exactly once. You may then use familiar SetupParser methods on the class, " + \
+              "e.g. SetupParser.get('some_item')"
+        logger.warning(msg)
+        print msg
+
+        if not selected_block:
+            raise Exception("Use of deprecated initializer of SetupParser too generic. Please specify which block"
+                            "to select via argument 'block', e.g. SetupParser(block='LOCAL')")
+
+        if SetupParser.initialized:
+            if selected_block != SetupParser.selected_block:
+                SetupParser.override_block(block=selected_block)
+        else:
+            kwargs = {'selected_block': selected_block,
+                      'setup_file': setup_file,
+                      'commissioning_directory': commissioning_directory,
+                      'overrides': overrides,
+                      'is_testing': is_testing,
+                      'old_style_instantiation': True
+                      }
+            SetupParser.init(**kwargs)
 
     @classmethod
     def override_block(cls, block):
@@ -195,9 +203,33 @@ class SetupParser(object):
         else:
             raise cls.MissingIniBlock("Override setup block '%s' does not exist in the setup overlay." % block)
 
-    def _overlay_setup(self, cp):
+    def resolves_type_inheritance(self, parser):
         """
-        Overlays a ConfigParser on the current self.setup ConfigParser.
+        Resolves the type inheritance:
+        [T]      [S]       [S RESULTS]
+        a = 1    type= T   type = T
+        b = 3    b = 2     a = 1
+                           b = 3
+        """
+        available_sections = parser.sections()
+        for section in available_sections:
+            # We have a section needing a type
+            if parser.has_option(section, 'type'):
+                parent = parser.get(section, 'type')
+
+                # Make sure we can get the parent here
+                if parent not in available_sections: continue
+
+                # Get all the params but dont override what is already set
+                for item in parser.items(parent):
+                    if not parser.has_option(section, item[0], bypass_defaults=True):
+                        parser.set(section, item[0], item[1])
+
+        return parser
+
+    def _overlay_setup(self, master, slave):
+        """
+        Overlays the master ConfigParser on another the slave one and returns the result.
         Overlays all the blocks found there.
 
         We need to do the overlay in two stages.
@@ -233,31 +265,25 @@ class SetupParser(object):
 
             Because we will first overlay the custom LOCAL to the global LOCAL and then overlay the CUSTOM block.
 
-        :param cp: The ConfigParser to overlay
+        :param master: The ConfigParser to overlay
+        :param slave: The ConfigParger to overlay on
+        :return Resulting ConfigParser
         """
-        # Overlay the LOCAL/HPC to the default ones
-        for section in cp.sections():
-            if section in ('HPC', 'LOCAL'):
-                for item in cp.items(section):
-                    self.setup.set(section, item[0], item[1])
-
-        # Then overlay all except the LOCAL/HPC ones (already did before)
-        for section in cp.sections():
-            if section in ("LOCAL", "HPC"):
-                continue
+        # Overlays all sections of master on slave
+        for section in master.sections():
 
             # The overlaid section doesnt exist in the setup -> create it
-            if not self.setup.has_section(section):
+            if not slave.has_section(section):
                 # Create the section
-                self.setup.add_section(section)
-
-                # Depending on the type grab the default from HPC or LOCAL
-                for item in self.setup.items(cp.get(section, 'type')):
-                    self.setup.set(section, item[0], item[1])
+                slave.add_section(section)
 
             # Override the items
-            for item in cp.items(section):
-                self.setup.set(section, item[0], item[1])
+            for item in master.items(section):
+                slave.set(section, item[0], item[1])
+
+        slave = self.resolves_type_inheritance(slave)
+
+        return slave
 
     @classmethod
     def get(cls, parameter, default=None, block=None):
