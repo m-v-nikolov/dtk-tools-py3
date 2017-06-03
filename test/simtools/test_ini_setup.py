@@ -21,12 +21,28 @@ class TestSetupParser(unittest.TestCase):
         os.chdir(self.cwd)
         SetupParser._uninit()
 
+    def test_regression_959(self):
+        """
+        Improper 'type' inheritance in simtools.ini
+        Test for https://github.com/InstituteforDiseaseModeling/dtk-tools/issues/959
+        """
+        SetupParser.init(selected_block='AM', setup_file=os.path.join(self.input_path,'959','simtools1.ini'), is_testing=True)
+        self.assertEqual(SetupParser.get('base_collection_id_dll'), "in AM")
+        SetupParser._uninit()
+
+        SetupParser.init(selected_block='AM', setup_file=os.path.join(self.input_path,'959','simtools2.ini'), is_testing=True)
+        self.assertEqual(SetupParser.get('base_collection_id_dll'), "in HPC")
+        SetupParser._uninit()
+
+        SetupParser.init(selected_block='AM', setup_file=os.path.join(self.input_path, '959', 'simtools3.ini'), is_testing=True)
+        self.assertEqual(SetupParser.get('base_collection_id_dll'), "in HPC")
+        SetupParser._uninit()
+
     def test_reinitialization_not_allowed(self):
         SetupParser.init(selected_block="LOCAL")
         kwargs = {"selected_block": "LOCAL"}
         self.assertRaises(SetupParser.AlreadyInitialized, SetupParser.init, **kwargs)
 
-        #SetupParser.init(**kwargs)
 
     def test_overlay_selection_priority(self):
         # Test all combinations of provided ini X commissioning ini X local dir ini
