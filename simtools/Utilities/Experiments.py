@@ -2,12 +2,14 @@ from __future__ import print_function
 
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login
 from simtools.Utilities.General import init_logging, utc_to_local
 
 max_exp_name_len = 100
 
 logger = init_logging('Utils')
+
+
 def validate_exp_name(exp_name):
     if len(exp_name) > max_exp_name_len:
         logger.info(
@@ -16,6 +18,7 @@ def validate_exp_name(exp_name):
         return False
     else:
         return True
+
 
 def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_update=False):
     """
@@ -26,6 +29,7 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
     :return: The experiment found
     """
     if not exp_id: raise Exception("Trying to retrieve an experiment without providing an experiment ID")
+
     # If we dont force the update -> look first in the DB
     exp = DataStore.get_experiment(exp_id)
     if exp:
@@ -57,6 +61,9 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
     :param save_new_experiment:
     :return:
     """
+    # Make sure we are logged in
+    COMPS_login(endpoint)
+
     # IF the experiment already exists and
     experiment = DataStore.get_experiment(exp_id)
     if experiment and experiment.is_done():
