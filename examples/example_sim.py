@@ -19,5 +19,6 @@ run_sim_args =  {
 }
 
 if __name__ == "__main__":
+    SetupParser.init()
     exp_manager = ExperimentManagerFactory.from_setup()
     exp_manager.run_simulations(**run_sim_args)

@@ -394,10 +394,10 @@ class SetupParser(object):
             Used for running a bit of code with a different selected block and ini path
         """
         def __init__(self, temporary_block, temporary_path=None):
-            ini_file = os.path.join(temporary_path, 'simtools.ini')
+            ini_file = os.path.join(temporary_path, 'simtools.ini') if temporary_path else None
             self.temporary_block = temporary_block
             self.temporary_setup = SetupParser(selected_block=temporary_block,
-                                               setup_file=ini_file if os.path.exists(ini_file) else None,
+                                               setup_file=ini_file if ini_file and os.path.exists(ini_file) else None,
                                                old_style_instantiation=True)
 
         def get(self, parameter):
