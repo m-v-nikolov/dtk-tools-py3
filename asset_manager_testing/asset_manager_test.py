@@ -6,6 +6,7 @@ from dtk.vector.study_sites import configure_site
 from simtools.AssetManager.SimulationAssets import SimulationAssets
 
 BAR = "".join(['-' for i in range(80)])
+SetupParser.default_block = 'AM'
 
 # def COMPS_login(endpoint):
 #     try:
@@ -31,13 +32,12 @@ run_sim_args =  {
     'exp_name': 'ExampleSim',
 }
 
-
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 if __name__ == "__main__":
     from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
-    SetupParser.init('AM')
+    SetupParser.init()
 
     exp_manager = ExperimentManagerFactory.from_setup(config_builder=config_builder)
     exp_manager.run_simulations(**run_sim_args)
