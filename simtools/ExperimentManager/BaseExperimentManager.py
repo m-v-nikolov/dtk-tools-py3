@@ -182,10 +182,19 @@ class BaseExperimentManager:
 
         return missing_files
 
-    # ck4, this reworked method needs tests
+    def _detect_missing_files(self):
+        missing_files = []
+        for asset_type, asset in self.assets.collections.iteritems():
+            for file in asset.asset_files_to_use:
+                if file.is_local:
+                    full_path = os.path.join(file.root, file.relative_path, file.file_name)
+                    if not os.path.exists(full_path):
+                        missing_files.append(full_path)
+        return missing_files
+
     def validate_input_files(self):
         """
-        Check input files and make sure there exist
+        Check input files and make sure they exist
         Note: we by pass the 'Campaign_Filename'
         This method only verifies local files, not (current) AssetManager-contained files
         """
@@ -196,14 +205,7 @@ class BaseExperimentManager:
         if not hasattr(self.config_builder, 'get_input_file_paths'):
             return True
 
-        missing_files = []
-        for asset_type, asset in self.assets.collections.iteritems():
-            for file in asset.asset_files_to_use:
-                if file.is_local:
-                    full_path = os.path.join(file.root, file.relative_path, file.file_name)
-                    if not os.path.exists(full_path):
-                        missing_files.append(full_path)
-
+        missing_files = self._detect_missing_files()
         if len(missing_files) > 0:
             print('Missing files list:')
             print(json.dumps(missing_files, indent=2))
@@ -462,8 +464,9 @@ class BaseExperimentManager:
             eradication_options['--input-path'] = self.assets.local_input_root
         else:
             if self.location == 'LOCAL':
-                exe_path = os.path.join(SetupParser.get('sim_root'), 'Assets', os.path.basename(SetupParser.get('exe_path'))) # ck4, right?? Nope. Needs testing, if used at all.
-                eradication_options['--input-path'] = os.path.join(SetupParser.get('sim_root'), 'Assets') # ck4, right??? Nope. Needs testing, if used at all.
+                return None
+                #exe_path = None # os.path.join(SetupParser.get('sim_root'), 'Assets', os.path.basename(SetupParser.get('exe_path'))) # ck4, right?? Nope. Needs testing, if used at all.
+                #eradication_options['--input-path'] = os.path.join(SetupParser.get('sim_root'), 'Assets') # ck4, right??? Nope. Needs testing, if used at all.
             elif self.location == 'HPC':
                 exe_path = os.path.join('Assets', os.path.basename(SetupParser.get('exe_path')))
                 eradication_options['--input-path'] = 'Assets'
@@ -488,13 +491,9 @@ class BaseExperimentManager:
             # True/False, overlay locally-discovered files on top of any provided asset collection id?
             use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
 
-        #print "Using base_collection_id: %s" % base_collection_id
-        #print "Using local_files: %s" % use_local_files
-
         # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
         # creating local AssetCollection instances internally to represent them.
         assets = SimulationAssets.assemble_assets(config_builder=self.config_builder,
                                                   base_collection_id=base_collection_id,
                                                   use_local_files=use_local_files)
-        #assets.prepare()  # This uploads any local files that need to be & records the COMPS AssetCollection ids assigned.
         return assets
