@@ -23,17 +23,21 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
+
     def __init__(self, experiment, config_builder):
-        BaseExperimentManager.__init__(self, experiment, config_builder)
-        self.comps_sims_to_batch = int(SetupParser.get('sims_per_thread'))
-        self.sims_to_create = []
-        self.commissioners = []
-        self.assets_service = SetupParser.getboolean('use_comps_asset_svc')
-        self.endpoint = SetupParser.get('server_endpoint')
-        self.compress_assets = SetupParser.getboolean('compress_assets')
-        COMPS_login(self.endpoint)
+        # Ensure we use the SetupParser environment of the experiment if it already exists
+        temp_block = experiment.selected_block if experiment else SetupParser.selected_block
+        temp_dir = experiment.working_directory if experiment else os.getcwd()
+
+        with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_dir) as setup:
+            BaseExperimentManager.__init__(self, experiment, config_builder)
+            self.comps_sims_to_batch = int(setup.get(parameter='sims_per_thread'))
+            self.endpoint = setup.get(parameter='server_endpoint')
+            COMPS_login(self.endpoint)
         self.creator_semaphore = None
         self.runner_thread = None
+        self.sims_to_create = []
+        self.commissioners = []
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
@@ -72,7 +76,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         return str(suite.id)
 
-    def create_experiment(self, experiment_name,experiment_id=None, suite_id=None):
+    def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
         COMPS_login(SetupParser.get('server_endpoint'))
 
@@ -93,6 +97,10 @@ class CompsExperimentManager(BaseExperimentManager):
         e = Experiment(name=experiment_name,
                        configuration=config,
                        suite_id=suite_id)
+
+        # Add tags if present
+        if self.experiment_tags: e.set_tags(self.experiment_tags)
+
         e.save()
 
         # Create experiment in the base class
@@ -100,6 +108,7 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint
+        self.comps_experiment = e
 
         # add AssetCollection tags - ids of individual exe, dll, input collections for later referencing
         asset_tags = {}
@@ -157,4 +166,6 @@ class CompsExperimentManager(BaseExperimentManager):
         s = Simulation.get(simulation.id)
         s.cancel()
 
-
+    def merge_tags(self, additional_tags):
+        if self.comps_experiment:
+            self.comps_experiment.merge_tags(additional_tags)

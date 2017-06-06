@@ -29,6 +29,7 @@ from simtools.Utilities.LocalOS import LocalOS
 current_dir = os.path.dirname(os.path.realpath(__file__))
 from COMPS.Data.Simulation import SimulationState
 
+
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
     parserClass=SimulationOutputParser
@@ -50,6 +51,7 @@ class BaseExperimentManager:
         else:
             self.assets = None # can't use these without the config_builder
         self.commandline = self._get_commandline()
+        self.experiment_tags = {}
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -140,16 +142,18 @@ class BaseExperimentManager:
         return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
     def run_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
-                        analyzers=[], blocking = False, quiet = False):
+                        analyzers=[], blocking = False, quiet = False, experiment_tags=None):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
         :assets: A SimulationAssets object if not None (COMPS-land needed for AssetManager)
         """
-
         # Check experiment name as early as possible
         if not validate_exp_name(exp_name):
             exit()
+
+        # Set the tags
+        self.experiment_tags.update(experiment_tags or {})
 
         self.create_simulations(exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not quiet)

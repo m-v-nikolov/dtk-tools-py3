@@ -9,7 +9,6 @@ import threading  # for multi-threaded job submission and monitoring
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
 
-from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
 
@@ -173,8 +172,6 @@ class CompsDTKOutputParser(SimulationOutputParser):
         return sim_map
 
     def load_all_files(self, filenames):
-        from COMPS.Data import AssetType
-
         if not self.asset_service:
             #  we can just open files locally...
             super(CompsDTKOutputParser, self).load_all_files(filenames)
@@ -183,6 +180,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
         # can't open files locally... we have to go through the COMPS asset service
         paths = [filename.replace('\\', '/') for filename in filenames]
 
+        from COMPS.Data import AssetType
+        # asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
         asset_byte_arrays = self.COMPS_simulation.retrieve_assets(asset_type=AssetType.Output,
                                                                   paths=paths,
                                                                   use_compression=self.use_compression)

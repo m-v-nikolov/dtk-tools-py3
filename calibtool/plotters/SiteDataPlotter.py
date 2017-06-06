@@ -1,15 +1,13 @@
 import logging
 import os
-
-import copy
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import pandas as pd
 import seaborn as sns
+from mpl_toolkits.mplot3d import Axes3D
+from calibtool.IterationState import IterationState
 from simtools.OutputParser import CompsDTKOutputParser
-
-from calibtool.utils import ResumePoint
-
+from calibtool.utils import StatusPoint
 from calibtool.plotters.BasePlotter import BasePlotter
 
 sns.set_style('white', {'axes.linewidth': 0.5})
@@ -26,22 +24,25 @@ class SiteDataPlotter(BasePlotter):
     def directory(self):
         return self.get_plot_directory()
 
+    #ZD [TODO]: self.iteration_state.analyzer_list doesn't keep site info, here we assume all analyzers have different names!!!
     def get_site_analyzer(self, site_name, analyzer_name):
-        for site in self.manager.sites:
-            if site_name != site.name:
+        for site, analyzers in self.site_analyzer_names.items():
+            if site_name != site:
                 continue
-            for analyzer in site.analyzers:
+            for analyzer in self.iteration_state.analyzer_list:
                 if analyzer_name == analyzer.name:
                     return analyzer
         raise Exception('Unable to find analyzer=%s for site=%s' % (analyzer_name, site_name))
 
     def get_analyzer_data(self, iteration, site_name, analyzer_name):
         site_analyzer = '%s_%s' % (site_name, analyzer_name)
-        return self.manager.state_for_iteration(iteration).analyzers[site_analyzer]
+        return IterationState.restore_state(self.iteration_state.calibration_name, iteration).analyzers[site_analyzer]
 
-    def visualize(self):
-        iteration_status = self.manager.iteration_state.status
-        if iteration_status != ResumePoint.next_point:
+    def visualize(self, iteration_state):
+        self.iteration_state = iteration_state
+        self.site_analyzer_names = iteration_state.site_analyzer_names
+        iteration_status = self.iteration_state.status
+        if iteration_status != StatusPoint.plot:
             return  # Only plot once results are available
 
         if self.combine_sites:
@@ -54,13 +55,8 @@ class SiteDataPlotter(BasePlotter):
                 sorted_results = self.all_results.sort_values(by='%s_total' % site_name, ascending=False).reset_index()
                 self.plot_analyzers(site_name, analyzer_names, sorted_results)
 
-         # Data needed for the LL_CSV
-        self.location = self.manager.location
-        self.iteration_state = self.manager.iteration_state
-        self.iteration = self.manager.iteration
-        self.suite_id = self.manager.suite_id
         try:
-            self.write_LL_csv(self.manager.exp_manager.experiment)
+            self.write_LL_csv(self.iteration_state.exp_manager.experiment)
         except:
             logger.info("Log likelihood CSV could not be created. Skipping...")
 
@@ -183,6 +179,12 @@ class SiteDataPlotter(BasePlotter):
         """
         Write the LL_summary.csv with what is in the CalibManager
         """
+         # Data needed for the LL_CSV
+        location = self.iteration_state.exp_manager.experiment.location
+        iteration_state = self.iteration_state
+        iteration = self.iteration_state.iteration
+        suite_id = iteration_state.suite_id
+
         # Deep copy all_results ato not disturb the calibration
         all_results = self.all_results.copy(True)
 
@@ -190,9 +192,9 @@ class SiteDataPlotter(BasePlotter):
         results_df = all_results.reset_index().set_index(['iteration', 'sample'])
 
         # Get the simulation info from the iteration state
-        siminfo_df = pd.DataFrame.from_dict(self.iteration_state.simulations, orient='index')
+        siminfo_df = pd.DataFrame.from_dict(iteration_state.simulations, orient='index')
         siminfo_df.index.name = 'simid'
-        siminfo_df['iteration'] = self.iteration
+        siminfo_df['iteration'] = iteration
         siminfo_df = siminfo_df.rename(columns={'__sample_index__': 'sample'}).reset_index()
 
         # Group simIDs by sample point and merge back into results
@@ -202,8 +204,8 @@ class SiteDataPlotter(BasePlotter):
         # TODO: merge in parameter values also from siminfo_df (sample points and simulation tags need not be the same)
 
         # Retrieve the mapping between simID and output file path
-        if self.location == "HPC":
-            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=self.suite_id, save=False)
+        if location == "HPC":
+            sims_paths = CompsDTKOutputParser.createSimDirectoryMap(suite_id=suite_id, save=False)
         else:
             sims_paths = {sim.id: os.path.join(experiment.get_path(), sim.id) for sim in experiment.simulations}
 

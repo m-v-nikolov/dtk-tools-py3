@@ -19,13 +19,17 @@ class CasesByAgePlotter(BasePlotter):
 
         self.fig_ext = 'png'
 
-    def visualize(self, calib_manager):
+    def visualize(self, iteration_state):
         print "CasesByAgePlotter::visualize"
-        self.directory = calib_manager.iteration_directory()
-        self.param_names = calib_manager.param_names()
-        self.site_analyzer_names = calib_manager.site_analyzer_names()
+        self.iteration_state = iteration_state
+        self.site_analyzer_names = iteration_state.site_analyzer_names
+        iteration_status = self.iteration_state.status
 
-        data_dict = calib_manager.iteration_state.analyzers['Santiago_Case Age Distribution']
+        self.directory = self.iteration_state.iteration_directory
+        self.param_names = self.iteration_state.param_names
+        self.site_analyzer_names = self.iteration_state.site_analyzer_names
+
+        data_dict = self.iteration_state.analyzers['Santiago_Case Age Distribution']
         #print data_dict.keys() # ['result', 'Sim', 'reference', 'reference_years']
         data = pd.DataFrame.from_dict(data_dict['Sim'], orient='columns')
 
@@ -60,9 +64,8 @@ class CasesByAgePlotter(BasePlotter):
         plt.savefig(os.path.join(self.directory, 'Cases by Age.' + self.fig_ext)); plt.close()
         print "CasesByAgePlotter::DONE"
 
-    def cleanup_plot(self, calib_manager):
+    def cleanup_plot(self):
         """
         cleanup the existing plots
-        :param calib_manager:
         :return:
         """

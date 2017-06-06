@@ -29,6 +29,7 @@ class ExperimentManagerFactory(object):
                 SetupParser.override_block(orig_block)
         else:
             manager = manager_class(experiment=experiment, config_builder=config_builder)
+
         return manager
 
     @classmethod

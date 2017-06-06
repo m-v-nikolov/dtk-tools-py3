@@ -10,27 +10,21 @@ class BasePlotter:
 
     def __init__(self, combine_sites=True):
         self.combine_sites = combine_sites
-
-        self.manager = None
+        self.iteration_state = None
         self.site_analyzer_names = None
 
-    def set_manager(self, manager):
-        self.manager = manager
-        self.site_analyzer_names = self.manager.site_analyzer_names()
-        return self
-
     def get_iteration_directory(self):
-        return self.manager.iteration_directory()
+        return self.iteration_state.iteration_directory
 
     def get_plot_directory(self):
-        return os.path.join(self.manager.name, '_plots')
+        return os.path.join(self.iteration_state.calibration_name, '_plots')
 
     @property
     def all_results(self):
-        return self.manager.all_results
+        return self.iteration_state.all_results
 
     @abstractmethod
-    def visualize(self):
+    def visualize(self, iteration_state):
         pass
 
     @abstractmethod

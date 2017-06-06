@@ -1,4 +1,3 @@
-from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
@@ -47,7 +46,6 @@ class LocalExperimentManager(BaseExperimentManager):
         self.unfinished_simulations = {}
         self._experiment = None
         self.experiment = experiment
-
         BaseExperimentManager.__init__(self, experiment, config_builder)
 
     def commission_simulations(self, states):
