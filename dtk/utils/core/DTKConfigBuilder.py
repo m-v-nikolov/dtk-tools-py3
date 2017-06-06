@@ -378,46 +378,6 @@ class DTKConfigBuilder(SimConfigBuilder):
             raise Exception('Already have demographics overlay named %s' % name)
         self.demog_overlays[name] = content
 
-    def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
-        """
-        Stage the required DLLs.
-
-        This function will work differently depending on the use of the assets service or not.
-        If the assets service is used, the function will simply create the path for the dll and not copy the file itself.
-        If the assets service is not used, the function will call the :py:func:`stage_file` function and store
-        the returned path.
-
-        For each dll to stage, the ``staged_dlls`` dictionary is updated with the path to the dll mapped to its
-        type and name and the ``emodules_map`` dictionary is also updated accordingly.
-
-        Args:
-            dll_path (string): The path where the dll to be staged are
-            staging_root (string): The staging dll path
-            assets_service (bool): Are we using the assets service?
-
-        """
-        for dll_type, dll_name in self.dlls:
-            # Try top retrieve the dll from the staged dlls
-            staged_dll = self.staged_dlls.get((dll_type, dll_name), None)
-
-            if not staged_dll:
-                if not assets_service:
-                    # If the assets service is not use, actually stage the dll file
-                    staged_dll = stage_file(os.path.join(dll_path, dll_type, dll_name),
-                                                  os.path.join(staging_root, dll_type))
-                else:
-                    # If the assets service is used, assume that the dll is staged already
-                    staged_dll = os.path.join(staging_root, dll_type, dll_name)
-
-                # Translate just in case
-                staged_dll = translate_COMPS_path(staged_dll)
-
-                # caching to avoid repeat md5 and os calls
-                self.staged_dlls[(dll_type, dll_name)] = staged_dll
-
-            # Add the dll to the emodules_map
-            self.emodules_map[dll_type].append(staged_dll)
-
     def get_dll_paths_for_asset_manager(self):
         """
         Generates relative path filenames for the requested dll files, relative to the root dll directory.

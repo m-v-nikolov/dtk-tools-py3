@@ -70,12 +70,12 @@ class TestConfigBuilder(unittest.TestCase):
         os.remove(staged_path)
         os.rmdir(staged_dir)
 
-    def test_commandline(self):
-        commandline = self.cb._get_commandline('input/file.txt', dict(SetupParser.items()))
-        self.assertEqual('input/file.txt', commandline.Commandline)
-
-        another_command = CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
-        self.assertEqual('input/file.txt --config config.json', another_command.Commandline)
+#    def test_commandline(self):
+#        commandline = self.cb._get_commandline('input/file.txt', dict(SetupParser.items()))
+#        self.assertEqual('input/file.txt', commandline.Commandline)
+#
+#        another_command = CommandlineGenerator('input/file.txt', {'--config': 'config.json'}, [])
+#        self.assertEqual('input/file.txt --config config.json', another_command.Commandline)
 
 
 class TestConfigExceptions(unittest.TestCase):
@@ -342,10 +342,12 @@ class TestLocalExperimentManager(unittest.TestCase):
         SetupParser._uninit()
 
     def test_run(self):
+        from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
+
         input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
         model_file = os.path.join(input_path, 'dummy_model.py')
         local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL',
-                                                            config_builder=PythonConfigBuilder.from_defaults('sleep'))
+                                                            config_builder=DTKConfigBuilder.from_defaults('VECTOR_SIM'))
         local_manager.run_simulations(exp_builder=RunNumberSweepBuilder(self.nsims))
         self.assertEqual(local_manager.experiment.exp_name, 'test')
         experiment = local_manager.experiment
