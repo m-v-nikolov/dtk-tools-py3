@@ -99,8 +99,8 @@ def COMPS_login(endpoint):
     return Client
 
 @retry_function
-def get_experiment_by_id(exp_id):
-    return Experiment.get(exp_id)
+def get_experiment_by_id(exp_id, query_criteria=None):
+    return Experiment.get(exp_id, query_criteria=query_criteria)
 
 @retry_function
 def get_simulation_by_id(sim_id):

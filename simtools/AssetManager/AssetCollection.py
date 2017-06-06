@@ -10,9 +10,7 @@ class AssetCollection(object):
     not usable UNLESS self.collection_id is not None
     """
 
-    class InvalidCollectionType(Exception): pass
-
-    class MissingFile(Exception): pass
+    class InvalidConfiguration(Exception): pass
 
     def __init__(self, base_collection_id = None, local_files = None, remote_files = None):
         """
@@ -21,14 +19,11 @@ class AssetCollection(object):
         :param remote_files: a COMPSAssetCollectionFile object list representing (existing) remote files to use.
         """
         if not (base_collection_id or local_files or remote_files):
-            raise Exception("Must provide at least one of: base_collection_id, local_files, remote_files .")
+            raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
         if base_collection_id and remote_files:
-            raise Exception("May only provide one of: base_collection_id, remote_files")
+            raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
         self.base_collection_id = base_collection_id
         self._remote_files = remote_files
-
-        if local_files and not len(local_files.invalid_files) == 0:
-            raise self.MissingFile("Local file(s) slated for use are missing: %s" % local_files.invalid_files)
         self.local_files = local_files
 
         self.asset_files_to_use = self._determine_files_to_use()
@@ -66,10 +61,9 @@ class AssetCollection(object):
             self._collection = self._get_or_create_collection(root_dir=root)
             # we have no _collection if no files were added to this collection-to-be (e.g. empty dll AssetCollection)
             self.collection_id = self._collection.id if self._collection else None
-        else:
+        else: # 'LOCAL'
             self._collection = None
-            self.collection_id = location # should only be 'LOCAL'
-#        print "Got collection id: %s" % self.collection_id.id
+            self.collection_id = location
         self.prepared = True
 
     @classmethod
@@ -83,20 +77,17 @@ class AssetCollection(object):
         """
         selected = {}
         for file in existing:
-            print("Merging existing file: %s %s" % (file.relative_path, file.file_name))
             relative_path = file.relative_path if file.relative_path is not None else ''
             selected[os.path.join(relative_path, file.file_name)] = file
         for file in local:
-            print("Merging LOCAL file: *%s* *%s*, %s %s" % (file.relative_path, file.file_name, type(file.relative_path), type(file.file_name)))
             selected[os.path.join(file.relative_path, file.file_name)] = file
-        print("selected files: %s" % selected)
         return selected.values()
 
     def _determine_files_to_use(self):
         if not (self.base_collection_id or self.load_local or self._remote_files):
-            raise Exception("Must provide at least one of: base_collection_id, local_files, remote_files .")
+            raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
         if self.base_collection_id and self._remote_files:
-            raise Exception("May only provide one of: base_collection_id, remote_files")
+            raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
 
         # identify the file sources to choose from
         local_asset_files = []
@@ -104,10 +95,8 @@ class AssetCollection(object):
         if self.base_collection_id:
             # obtain info for all files in the existing collection.
             existing_asset_files = COMPSAssetCollection.get(id=self.base_collection_id,
-                                                            query_criteria=self.asset_files_query()) # ck4, this is not right; need to grab files off of the return, and test this case
+                                                            query_criteria=self.asset_files_query()).assets
         elif self._remote_files:
-            print("Noted %d remote files" % len(self._remote_files))
-            print("They are:\n%s" % self._remote_files)
             existing_asset_files = self._remote_files
 
         if self.load_local:
@@ -135,9 +124,6 @@ class AssetCollection(object):
         for af in self.asset_files_to_use:
             if af.is_local:
                 full_path = os.path.join(root_dir, af.relative_path, af.file_name)
-                print "--------------------------------------------------------------------"
-                print "*** Adding asset filename FULL PATH: %s" % full_path
-                print "*** *** relative path: %s" % af.relative_path
                 collection.add_asset(af, file_path=full_path) # file_path here will trigger the MD5 checksum
             else:
                 collection.add_asset(af)
