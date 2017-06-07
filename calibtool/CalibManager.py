@@ -339,29 +339,6 @@ class CalibManager(object):
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
 
-    def restore_results(self, iteration):
-        """
-        Restore summary results from serialized state.
-        """
-        calib_data = self.read_calib_data()
-        if calib_data is None or not calib_data:
-            raise Exception('Metadata is empty in %s/CalibManager.json' % self.name)
-
-        results = calib_data.get('results')
-        if not results:
-            raise Exception('No cached results to reload from CalibManager.')
-
-        # Depending on the type of results (lists or dicts), handle differently how we treat the results
-        # This should be refactor to take care of both cases at once
-        if isinstance(results, dict):
-            self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-            self.all_results.set_index('sample', inplace=True)
-            self.all_results = self.all_results[self.all_results.iteration <= iteration]
-        elif isinstance(results, list):
-            self.all_results = results[iteration]
-
-        logger.debug(self.all_results)
-
     def replot_calibration(self, iteration):
         logger.info('Start Re-Plot Process!')
 
