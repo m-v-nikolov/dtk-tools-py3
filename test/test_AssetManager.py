@@ -110,7 +110,7 @@ class TestSimulationAssets(unittest.TestCase):
         """
         A regression test to verify we get back the same collection id for the same selected files.
         """
-        expected_collection_id = 'e0ce1817-dc4a-e711-80c1-f0921c167860'
+        expected_collection_id = '786f0e24-c64b-e711-80c1-f0921c167860'
 
         use_local_files = {
             SimulationAssets.EXE: True,
@@ -134,9 +134,7 @@ class TestSimulationAssets(unittest.TestCase):
         the 'master' asset collection id (id for all asset files together in one collection) is stored properly
         on the experiment as well.
         """
-        from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-
-        expected_asset_collection = 'e0ce1817-dc4a-e711-80c1-f0921c167860' # master collection
+        expected_asset_collection = '786f0e24-c64b-e711-80c1-f0921c167860' # master collection
 
         run_sim_args = {'exp_name': 'AssetCollectionTestSim'}
         exp_manager = ExperimentManagerFactory.from_setup(config_builder=self.config_builder)
