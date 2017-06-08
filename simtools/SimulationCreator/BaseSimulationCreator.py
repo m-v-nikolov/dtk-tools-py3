@@ -12,7 +12,6 @@ from simtools.Utilities.COMPSUtilities import translate_COMPS_path
 class BaseSimulationCreator(Process):
     """
     Simulation creator base class.
-    For compatibility issues, for now forces to be a Thread if ran on MacOS.
     """
     __metaclass__ = ABCMeta
 
