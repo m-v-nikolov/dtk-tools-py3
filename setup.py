@@ -31,9 +31,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.1',
+        'version': '2.0a2',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % dependencies_repo
+        'wheel': '%s/pyCOMPS-2.0a2-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -450,7 +450,6 @@ def handle_init():
     cp.write(open(example_simtools, 'w'))
 
     # create the test simtools.ini
-    print('this file: %s %s' % (__file__, os.path.abspath(__file__)))
     keywords = {
         'example_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples'),
         'test_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test')
@@ -464,10 +463,7 @@ def handle_init():
         items = dict(cp.items(section=section))
         for key, value in items.iteritems():
             for keyword, replacement in keywords.iteritems():
-                new_value = value.replace('$%s$'%keyword, replacement)
-                if new_value != value:
-                    print('Replacing: section: %s key: %s value: %s new value: %s' % (section, key, value, new_value))
-                value = new_value
+                value = value.replace('$%s$'%keyword, replacement)
             cp.set(section=section, option=key, value=value)
     cp.write(open(simtools_file, 'w'))
 
