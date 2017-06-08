@@ -2,11 +2,12 @@ import os
 import stat
 import unittest
 
+from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder, ModFn
 from simtools.SetupParser import SetupParser
-from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
+from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.General import get_md5, CommandlineGenerator
 from COMPS.Data.Simulation import SimulationState
 
@@ -136,9 +137,9 @@ class TestLocalExperimentManager(unittest.TestCase):
     def test_run(self):
         input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
         model_file = os.path.join(input_path, 'dummy_model.py')
-        local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL')
-        local_manager.run_simulations(config_builder=PythonConfigBuilder.from_defaults('sleep'),
-                                      exp_builder=RunNumberSweepBuilder(self.nsims))
+        config_builder = DTKConfigBuilder.from_defaults('sleep')
+        local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL', config_builder=config_builder)
+        local_manager.run_simulations(exp_builder=RunNumberSweepBuilder(self.nsims))
         self.assertEqual(local_manager.experiment.exp_name, 'test')
         experiment = local_manager.experiment
 
