@@ -11,7 +11,7 @@ setup = SetupParser.init(location)
 geography = 'DRC/Bandundu'
 sites = ['Bandundu']
 
-dll_root = SetupParser.get('dll_path')
+dll_root = SetupParser.get('dll_root')
 
 
 builder   = GenericSweepBuilder.from_dict({'_site_':sites, # study sites
