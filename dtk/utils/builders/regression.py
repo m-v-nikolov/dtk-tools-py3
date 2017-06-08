@@ -9,7 +9,7 @@ from dtk.generic.geography import convert_filepaths
 
 class RegressionSuiteBuilder(ModBuilder):
     def __init__(self, names):
-        self.regression_path = os.path.join(SetupParser().get('dll_path'),
+        self.regression_path = os.path.join(SetupParser().get('dll_root'),
                                             '..', '..', 'Regression')
         self.mod_generator = (self.add_test(n) for n in names)
 
