@@ -26,7 +26,7 @@ class BaseSimulationCreator(Process):
         # Extract the path we want from the setup
 #        self.lib_staging_root = translate_COMPS_path(SetupParser.get('lib_staging_root'))
         self.asset_service = SetupParser.getboolean('use_comps_asset_svc', default=False)
-        self.dll_path = SetupParser.get('dll_path')
+        self.dll_path = SetupParser.get('dll_root')
         self.callback = callback
         self.created_simulations = []
         self.setup_parser_singleton = SetupParser.singleton
