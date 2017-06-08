@@ -21,6 +21,16 @@ class TestSetupParser(unittest.TestCase):
         os.chdir(self.cwd)
         SetupParser._uninit()
 
+    def test_regression_968(self):
+        """
+        Investigate a difference of behavior between UNIX systems and Windows
+        Test for https://github.com/InstituteforDiseaseModeling/dtk-tools/issues/968
+        """
+        SetupParser.init()
+        singleton = SetupParser.singleton
+        SetupParser.init(singleton=singleton)
+        SetupParser._uninit()
+
     def test_regression_959(self):
         """
         Improper 'type' inheritance in simtools.ini

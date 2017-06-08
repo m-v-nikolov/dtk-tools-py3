@@ -90,9 +90,6 @@ class IterationState(object):
         self.iteration_start = datetime.now().replace(microsecond=0)
         logger.info('---- Starting Iteration %d ----' % self.iteration)
 
-        # Make a backup only in resume case!
-        self.save(backup_existing=False)
-
         # Output verbose resume point
         if self.resume_point.value > StatusPoint.iteration_start.value:
             logger.info('-- Resuming Point %d (%s) --' % (

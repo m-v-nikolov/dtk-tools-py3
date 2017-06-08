@@ -36,6 +36,7 @@ class ResumeIterationState(IterationState):
         """
         print 'ResumeIteration: resume'
         self.resume_init()
+        self.save(backup_existing=True)
         self.run()
 
     def resume_init(self):
@@ -72,6 +73,8 @@ class ResumeIterationState(IterationState):
             pass
         else:
             pass
+
+        self.status = StatusPoint.iteration_start
 
     def restore_results(self, iteration):
         """
