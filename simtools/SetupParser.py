@@ -33,7 +33,8 @@ class SetupParserMeta(type):
         :param kwargs: See __init__ for parameter list
         :return: Nothing.
         """
-        if SetupParser.initialized:  # do not allow re-initialization
+        # Do not allow reinitialization except if we pass a singleton, just take it
+        if SetupParser.initialized and not kwargs.get('singleton'):
             raise SetupParser.AlreadyInitialized("Cannot re-initialize the SetupParser class")
 
         if kwargs.get('singleton', None):
