@@ -3,7 +3,7 @@ from itertools import cycle, islice, repeat, chain
 
 import pandas as pd
 
-from dtk.utils.analyzers import defualt_filter_fn, default_select_fn, default_group_fn
+from dtk.utils.analyzers import default_filter_fn, default_select_fn, default_group_fn
 from timeseries import TimeseriesAnalyzer
 
 
@@ -24,7 +24,7 @@ class VectorSpeciesAnalyzer(TimeseriesAnalyzer):
 
     def __init__(self,
                  filename=os.path.join('output', 'VectorSpeciesReport.json'),
-                 filter_function=defualt_filter_fn,  # no filtering based on metadata
+                 filter_function=default_filter_fn,  # no filtering based on metadata
                  select_function=default_select_fn,  # return complete-&-unaltered timeseries
                  group_function=default_group_fn,  # group by unique simid-key from parser
                  plot_function=default_vectorplot_fn,

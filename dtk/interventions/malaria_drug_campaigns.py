@@ -81,7 +81,7 @@ def add_drug_campaign(cb, campaign_type, drug_code, start_days, coverage=1.0, re
         node_cfg = {'Node_List' : nodes, "class": "NodeSetNodeList"}
 
     # set up drug campaign
-    if campaign_type == 'MDA' or campaign_type == 'SMC ': # standard drug campaign: MDA, no event triggering
+    if campaign_type == 'MDA' or campaign_type == 'SMC': # standard drug campaign: MDA, no event triggering
         add_MDA(cb, start_days, coverage, drug_configs, receiving_drugs_event, repetitions, interval, node_cfg,
                 expire_recent_drugs, node_property_restrictions, ind_property_restrictions, target_group=target_group)
 
