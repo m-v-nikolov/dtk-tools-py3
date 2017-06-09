@@ -12,12 +12,17 @@ from urlparse import urlparse
 from argparse import ArgumentParser, Namespace
 
 from simtools.Utilities.General import nostdout
+from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
 
 installed_packages = dict()
+
+# to fake out urlparse, setting netloc == 'GITHUB'
+GITHUB = 'GITHUB'
+GITHUB_URL_PREFIX = 'http://%s' % GITHUB
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
@@ -27,55 +32,55 @@ requirements = OrderedDict([
         'platform': [LocalOS.WINDOWS],
         'version': '2.2',
         'test': '==',
-        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.0.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % dependencies_repo
+        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('scipy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.19.0',
         'test': '>=',
-        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('pandas', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.19.2',
         'test': '>=',
-        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('psutil', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '4.3.1',
         'test': '==',
-        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('python-snappy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
         'version': '0.5',
         'test': '==',
-        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('seaborn', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.7.1',
         'test': '==',
-        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
+        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('statsmodels', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.8.0',
         'test': '==',
-        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('SQLAlchemy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -121,7 +126,7 @@ requirements = OrderedDict([
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.12.0+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
+        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
 ])
 
@@ -174,13 +179,15 @@ def install_package(my_os, name, val, upgrade=False):
 
     host, path = urlparse(package_str)[1:3]
     # It is an internet file
-    if len(host) > 0 and len(path) > 0:
-        if os.path.exists(get_local_file_path(package_str)):
-            # Use local file if it exists
-            local_file = get_local_file_path(package_str)
-        else:
-            # Download file first
-            local_file = download_file(package_str)
+    if (len(host) > 0 and len(path) > 0) or host == GITHUB:
+        local_file = get_local_file_path(package_str)
+        if not os.path.exists(local_file):
+            # Download file if it does not exist locally
+            if host == GITHUB:
+                dependency = GitHubFile(local_file)
+                dependency.pull() # writes to local_file
+            else:
+                local_file = download_file(package_str)
 
         # Install package from local file (just downloaded or existing one)
         if upgrade:

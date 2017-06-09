@@ -28,6 +28,7 @@ from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retriev
 from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
 logger = init_logging('Commands')
 import simtools.Utilities.disease_packages as disease_packages
+from simtools.Utilities.GitHub.GitHub import GitHub
 from COMPS.Data.Simulation import SimulationState
 import simtools.Utilities.Initialization as init
 
@@ -477,7 +478,7 @@ def list_packages(args, unknownArgs):
             package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
         if not hasattr(args, 'quiet'):
             print "\n".join(package_names)
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         package_names = []
     return package_names
 
@@ -490,7 +491,7 @@ def list_package_versions(args, unknownArgs):
         else:
             versions = []
             print "Package %s does not exist." % package_name
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         versions = []
     return versions
 
@@ -524,7 +525,7 @@ def get_package(args, unknownArgs):
             print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
         else:
             print "Package %s does not exist, no changes made." % package_name
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         pass
 
 def analyze_from_script(args, sim_manager):
