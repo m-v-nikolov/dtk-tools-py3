@@ -113,7 +113,6 @@ class SimulationAssets(object):
             collections[collection_type] = AssetCollection(base_collection_id=base_collection_id[collection_type],
                                                            local_files=files)
 
-
         return cls(collections)
 
     @classmethod

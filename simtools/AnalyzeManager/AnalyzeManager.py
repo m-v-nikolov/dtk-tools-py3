@@ -59,14 +59,6 @@ class AnalyzeManager:
                                                           save=True, comps_experiment=exp_manager.comps_experiment,
                                                           verbose=self.verbose)
 
-            # Enable asset service if needed
-            if exp_manager.assets_service:
-                exp_manager.parserClass.enableAssetService()
-
-            # Enable compression if needed
-            if exp_manager.compress_assets:
-                exp_manager.parserClass.enableCompression()
-
         p = ThreadPool()
         res = []
         for simulation in exp_manager.experiment.simulations:

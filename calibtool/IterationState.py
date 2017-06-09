@@ -21,13 +21,13 @@ logger = init_logging("Calibration")
 
 
 class IterationState(object):
-    '''
+    """
     Holds the settings, parameters, simulation state, analysis results, etc.
     for one calibtool iteration.
 
     Allows for the resumption or extension of existing CalibManager instances
     from an arbitrary point in the iterative process.
-    '''
+    """
 
     def __init__(self, **kwargs):
         self.iteration = 0
@@ -138,7 +138,6 @@ class IterationState(object):
         self.set_next_point(self.next_point_algo)
 
     def commission_iteration(self, next_params):
-        # DJK: This needs to be encapsulated so we can commission other models or even deterministic functions
         """
         Commission an experiment of simulations constructed from a list of combinations of
         random seeds, calibration sites, and the next sample points.
@@ -150,7 +149,7 @@ class IterationState(object):
             self.exp_manager = ExperimentManagerFactory.from_experiment(
                 DataStore.get_experiment(self.experiment_id))
         else:
-            self.exp_manager = ExperimentManagerFactory.from_setup()
+            self.exp_manager = ExperimentManagerFactory.init()
 
             # use passed in function to create exp_builder
             exp_builder = self.exp_builder_func(next_params)

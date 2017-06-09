@@ -37,7 +37,23 @@ class ExperimentManagerFactory(object):
         return cls._factory(location)(experiment=None, config_builder=config_builder)
 
     @classmethod
-    def from_setup(cls, config_builder=None):
+    def from_setup(cls):
         location = SetupParser.get('type')
         logger.debug('Factory - Initializing %s ExperimentManager from parsed setup' % location)
+        logger.warning('ExperimentManagerFactory.from_setup is deprecated. Use ExperimentManagerFactory.init() instead or '
+                       'ExperimentManagerFactory.from_cb(config_builder) if you have a config_builder')
+        return cls._factory(location)(experiment=None, config_builder=None)
+
+    @classmethod
+    def init(cls):
+        location = SetupParser.get('type')
+        logger.debug('Factory - Initializing %s ExperimentManager' % location)
+        return cls._factory(location)(experiment=None, config_builder=None)
+
+    @classmethod
+    def from_cb(cls, config_builder=None):
+        location = SetupParser.get('type')
+        logger.debug('Factory - Initializing %s ExperimentManager from config_builder' % location)
         return cls._factory(location)(experiment=None, config_builder=config_builder)
+
+

@@ -112,12 +112,13 @@ experiment_builder = ModBuilder.from_combos(
 
 run_sim_args = {
     'exp_builder': experiment_builder,
-    'exp_name': 'TemplateDemo'
+    'exp_name': 'TemplateDemo',
+    'config_builder':config_builder
 }
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
-    exp_manager = ExperimentManagerFactory.from_setup(config_builder=config_builder)
+    exp_manager = ExperimentManagerFactory.from_cb(config_builder=config_builder)
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 

@@ -1,4 +1,4 @@
-from COMPS.Data import Simulation
+from COMPS.Data import Simulation, Configuration
 from COMPS.Data import SimulationFile
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
@@ -17,11 +17,11 @@ class COMPSSimulationCreator(BaseSimulationCreator):
 
     def create_simulation(self, cb):
         name = cb.get_param('Config_Name') if cb.get_param('Config_Name') else self.experiment.exp_name
-        return Simulation(name=name, experiment_id=self.experiment.exp_id)
+        return Simulation(name=name, experiment_id=self.experiment.exp_id,
+                          configuration=Configuration(asset_collection_id=cb.assets.collection_id))
 
     def save_batch(self):
         # Batch save after all sims in list have been added
-        # with nostdout():
         self.save_semaphore.acquire()
         try:
             with nostdout(stderr=True):

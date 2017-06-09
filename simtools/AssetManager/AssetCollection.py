@@ -117,13 +117,15 @@ class AssetCollection(object):
         return self._merge_local_and_existing_files(local_asset_files, existing_asset_files)
 
     def _get_or_create_collection(self, root_dir):
-        if len(self.asset_files_to_use) == 0:
-            return None # there are no files for this collection, so we don't do anything
+        # If there are no files for this collection, so we don't do anything
+        if len(self.asset_files_to_use) == 0:  return None
 
+        # Create a COMPS collection
         collection = COMPSAssetCollection()
         for af in self.asset_files_to_use:
             if af.is_local:
                 full_path = os.path.join(root_dir, af.relative_path, af.file_name)
+                if not os.path.exists(full_path): continue
                 collection.add_asset(af, file_path=full_path) # file_path here will trigger the MD5 checksum
             else:
                 collection.add_asset(af)
