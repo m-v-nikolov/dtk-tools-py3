@@ -128,9 +128,8 @@ class DTKGitHub(GitHub):
     LOGIN_REPOSITORY = 'dtk-tools'
     SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
 
-# ck4, fix this up properly for extended testing and committing
 class DependencyGitHub(GitHub):
-    OWNER = 'ckirkman-IDM'
-    REPOSITORY = 'test_repo'
-    LOGIN_REPOSITORY = 'test_repo'
-    SUPPORT_EMAIL = 'ckirkman@idmod.org'
+    OWNER = 'InstituteforDiseaseModeling'
+    REPOSITORY = 'PythonDependencies'
+    LOGIN_REPOSITORY = 'PythonDependencies'
+    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
