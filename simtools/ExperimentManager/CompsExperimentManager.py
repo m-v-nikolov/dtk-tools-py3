@@ -23,8 +23,7 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
-
-    def __init__(self, experiment, config_builder):
+    def __init__(self, experiment, config_builder=None):
         # Ensure we use the SetupParser environment of the experiment if it already exists
         temp_block = experiment.selected_block if experiment else SetupParser.selected_block
         temp_dir = experiment.working_directory if experiment else os.getcwd()
@@ -49,7 +48,6 @@ class CompsExperimentManager(BaseExperimentManager):
         if not self.creator_semaphore:
             self.creator_semaphore = multiprocessing.Semaphore(4)
 
-
         return COMPSSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
@@ -58,16 +56,6 @@ class CompsExperimentManager(BaseExperimentManager):
                                       callback=callback,
                                       return_list=return_list,
                                       save_semaphore=self.creator_semaphore)
-
-    def analyze_experiment(self):
-        if not self.assets_service:
-            self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
-        if self.compress_assets:
-            from simtools.Utilities.General import nostdout
-            with nostdout():
-                self.parserClass.enableCompression()
-
-        super(CompsExperimentManager, self).analyze_experiment()
 
     @staticmethod
     def create_suite(suite_name):
@@ -85,13 +73,12 @@ class CompsExperimentManager(BaseExperimentManager):
             simulation_input_args=self.commandline.Options,
             working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
             executable_path=self.commandline.Executable,
-            node_group_name=SetupParser.get('node_group'), # ck4 THIS might be overridden... Overseer needs to know about the overrides to set this properly
+            node_group_name=SetupParser.get('node_group'),
             maximum_number_of_retries=int(SetupParser.get('num_retries')),
             priority=Priority[SetupParser.get('priority')],
             min_cores=self.config_builder.get_param('Num_Cores', 1),
             max_cores=self.config_builder.get_param('Num_Cores', 1),
-            exclusive=self.config_builder.get_param('Exclusive', False),
-            asset_collection_id=self.assets.collection_id
+            exclusive=self.config_builder.get_param('Exclusive', False)
         )
 
         e = Experiment(name=experiment_name,

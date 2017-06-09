@@ -83,8 +83,8 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     staged_dlls = {}  # caching to avoid repeat md5 and os calls
 
-    def __init__(self, config={'parameters': {}}, campaign=empty_campaign, **kwargs):
-        self.config = config
+    def __init__(self, config=None, campaign=empty_campaign, **kwargs):
+        self.config = config or {'parameters': {}}
         self.campaign = campaign
         # Indent the files when dumping or not
         self.human_readability = True
@@ -96,6 +96,7 @@ class DTKConfigBuilder(SimConfigBuilder):
                              'disease_plugins': [],
                              'reporter_plugins': []}
         self.update_params(kwargs, validate=True)
+        self.assets = None
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -364,6 +365,34 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
+
+    def prepare_assets(self, location):
+        self.assets = self.get_assets()
+        self.assets.prepare(location)
+
+    def get_assets(self):
+        """
+        Returns a SimulationAssets object corresponding to the current simulation.
+        """
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        from simtools.SetupParser import SetupParser
+        base_collection_id = {}
+        use_local_files = {}
+        for collection_type in SimulationAssets.COLLECTION_TYPES:
+            # Each is either None (no existing collection starting point) or an asset collection id
+            base_collection_id[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
+            if len(base_collection_id[collection_type]) == 0:
+                base_collection_id[collection_type] = None
+
+            # True/False, overlay locally-discovered files on top of any provided asset collection id?
+            use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
+
+        # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
+        # creating local AssetCollection instances internally to represent them.
+        assets = SimulationAssets.assemble_assets(config_builder=self,
+                                                  base_collection_id=base_collection_id,
+                                                  use_local_files=use_local_files)
+        return assets
 
     def add_demog_overlay(self, name, content):
         """

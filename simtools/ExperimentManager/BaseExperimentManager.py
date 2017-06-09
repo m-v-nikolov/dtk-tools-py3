@@ -40,18 +40,27 @@ class BaseExperimentManager:
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
         self.exp_builder = None
-        self.config_builder = config_builder
+        self._config_builder = None
         self.bypass_missing = False
-        if config_builder:
-            self.assets = self._get_assets()
-            # Check input files existence
-            if not self.validate_input_files():
-                exit()
-            self.assets.prepare(location=self.location)
-        else:
-            self.assets = None # can't use these without the config_builder
-        self.commandline = self._get_commandline()
+        self.commandline = None
         self.experiment_tags = {}
+        self.config_builder = config_builder
+
+    @property
+    def config_builder(self):
+        return self._config_builder
+
+    @config_builder.setter
+    def config_builder(self, value):
+        if not value or value == self._config_builder: return
+        # Store the config builder
+        self._config_builder = value
+        # Get assets here for now
+        self.assets = value.get_assets()
+        # Check input files existence
+        if not self.validate_input_files(): exit()
+        # Set the appropriate command line
+        self.commandline = self._get_commandline()
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -141,8 +150,8 @@ class BaseExperimentManager:
     def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
         return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
-    def run_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
-                        analyzers=[], blocking = False, quiet = False, experiment_tags=None):
+    def run_simulations(self, config_builder=None, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
+                        analyzers=[], blocking=False, quiet=False, experiment_tags=None):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
@@ -152,11 +161,17 @@ class BaseExperimentManager:
         if not validate_exp_name(exp_name):
             exit()
 
+        # Store the config_builder if passed
+        self.config_builder = config_builder
+
         # Set the tags
         self.experiment_tags.update(experiment_tags or {})
 
+        # Create the simulations
         self.create_simulations(exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not quiet)
+
+        # Make sure overseer is running
         self.check_overseer()
 
         if blocking:
@@ -205,6 +220,7 @@ class BaseExperimentManager:
         # By-pass input file checking if we want to bypass missing files
         if self.bypass_missing:
             return True
+
         # If the config builder has no file paths -> bypass
         if not hasattr(self.config_builder, 'get_input_file_paths'):
             return True
@@ -477,27 +493,3 @@ class BaseExperimentManager:
             else:
                 raise Exception("Unknown location: %s" % self.location)
         return CommandlineGenerator(exe_path, eradication_options, [])
-
-    def _get_assets(self):
-        """
-        Creates a SimulationAssets object corresponding to the current experiment.
-        :return:
-        """
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-
-        base_collection_id = {}
-        use_local_files = {}
-        for collection_type in SimulationAssets.COLLECTION_TYPES:
-            # Each is either None (no existing collection starting point) or an asset collection id
-            base_collection_id[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
-            if len(base_collection_id[collection_type]) == 0:
-                base_collection_id[collection_type] = None
-            # True/False, overlay locally-discovered files on top of any provided asset collection id?
-            use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
-
-        # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
-        # creating local AssetCollection instances internally to represent them.
-        assets = SimulationAssets.assemble_assets(config_builder=self.config_builder,
-                                                  base_collection_id=base_collection_id,
-                                                  use_local_files=use_local_files)
-        return assets

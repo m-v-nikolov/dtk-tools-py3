@@ -79,7 +79,7 @@ class CalibManager(object):
     def suite_id(self):
         # Generate the suite ID if not present
         if not self.suites or self.suites[-1]['type'] != self.location:
-            exp_manager = ExperimentManagerFactory.factory(self.location)
+            exp_manager = ExperimentManagerFactory._factory(self.location)
             suite_id = exp_manager.create_suite(self.name)
             self.suites.append({'id': suite_id, 'type': self.location})
             self.cache_calibration()

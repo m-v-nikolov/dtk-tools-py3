@@ -117,7 +117,7 @@ class SetupParser(object):
                                          commissioning_directory=commissioning_directory, overrides=overrides,
                                          is_testing=is_testing)
 
-        self.selected_block = selected_block or self.default_block
+        self.selected_block = (selected_block or self.default_block).upper()
         self.setup_file = setup_file
         self.commissioning_directory = commissioning_directory
         self.commissioning_file = os.path.join(commissioning_directory, self.ini_filename) if commissioning_directory else None

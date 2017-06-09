@@ -15,17 +15,14 @@ class BaseSimulationCreator(Process):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
         self.initial_tags = initial_tags
         self.function_set = function_set
         self.max_sims_per_batch = max_sims_per_batch
-        self.return_list=return_list
-        # Extract the path we want from the setup
-#        self.lib_staging_root = translate_COMPS_path(SetupParser.get('lib_staging_root'))
-        self.asset_service = SetupParser.getboolean('use_comps_asset_svc', default=False)
+        self.return_list = return_list
         self.dll_path = SetupParser.get('dll_root')
         self.callback = callback
         self.created_simulations = []
@@ -55,8 +52,8 @@ class BaseSimulationCreator(Process):
                 md = func(cb)
                 tags.update(md)
 
-#            # Stage the required dll for the experiment
-#            cb.stage_required_libraries(self.dll_path,self.lib_staging_root, self.asset_service)
+            # Prepare the assets assets
+            cb.prepare_assets(location=self.experiment.location)
 
             # Create the simulation
             s = self.create_simulation(cb)
