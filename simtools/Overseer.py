@@ -87,7 +87,7 @@ if __name__ == "__main__":
                 logger.debug('Creating manager for experiment id: %s' % experiment.id)
                 try:
                     sys.path.append(experiment.working_directory)
-                    manager = ExperimentManagerFactory.from_experiment(experiment, generic=True)
+                    manager = ExperimentManagerFactory.from_experiment(experiment)
                 except Exception as e:
                     logger.error('Exception in creation manager for experiment %s' % experiment.id)
                     logger.error(e)

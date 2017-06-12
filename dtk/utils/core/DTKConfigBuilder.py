@@ -1,7 +1,6 @@
 import json
-import logging
 import os
-import re # find listed events by regex
+import re  # find listed events by regex
 
 import dtk.dengue.params as dengue_params
 import dtk.generic.params as generic_params
@@ -31,7 +30,6 @@ from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools.SimConfigBuilder import SimConfigBuilder
-from simtools.Utilities.COMPSUtilities import translate_COMPS_path, stage_file
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.General import init_logging
 

@@ -113,7 +113,7 @@ class SetupParser(object):
         :param is_testing: Allows bypassing of interactive login to COMPS if True. No login attempt is made in this case.
         """
         if old_style_instantiation is None:
-            self.old_style_instantiation(selected_block=selected_block,setup_file=setup_file,
+            self.old_style_instantiation(selected_block=selected_block, setup_file=setup_file,
                                          commissioning_directory=commissioning_directory, overrides=overrides,
                                          is_testing=is_testing)
 
@@ -130,27 +130,27 @@ class SetupParser(object):
         if not os.path.exists(self.default_file):
             raise self.MissingIniFile("Default ini file does not exist: %s . Please run 'python setup.py' again." % self.default_file)
 
-        overlay_path = self._select_and_verify_overlay(local_file=self.local_file, provided_file=self.setup_file,
-                                                       commissioning_file=self.commissioning_file)
+        self.overlay_path = self._select_and_verify_overlay(local_file=self.local_file, provided_file=self.setup_file,
+                                                            commissioning_file=self.commissioning_file)
 
         # Load the default file
         self.setup = self.config_parser_from_file(self.default_file)
 
         # Apply the overlay if one was found
-        if overlay_path:
-            overlay = self.config_parser_from_file(overlay_path)
+        if self.overlay_path:
+            overlay = self.config_parser_from_file(self.overlay_path)
             # Overlay the overlay to itself for type inheritance (same as for the basic file few lines before)
             self.setup = self._overlay_setup(overlay, self.setup)
 
         # Verify that we have the requested block in our overlain result
         if not self.setup.has_section(self.selected_block):
-            raise self.MissingIniBlock("Selected block: %s does not exist in ini file overlay." % self.selected_block)
+            raise self.MissingIniBlock("Selected block: %s does not exist in ini file overlay.\nOverlay path: %s"
+                                       % (self.selected_block, self.overlay_path))
 
         # If the selected block is type=HPC, take care of HPC initialization
         if self.setup.get(self.selected_block, 'type') == "HPC" and not is_testing:
             from simtools.Utilities.COMPSUtilities import COMPS_login
             COMPS_login(self.setup.get(self.selected_block, 'server_endpoint'))
-
 
     def config_parser_from_file(self, ini_file):
         """
@@ -163,7 +163,7 @@ class SetupParser(object):
 
         ret = BetterConfigParser()
         ret.read(ini_file)
-        ret.set('DEFAULT','user', LocalOS.username)
+        ret.set('DEFAULT', 'user', LocalOS.username)
         self.resolves_type_inheritance(ret)
 
         return ret
@@ -213,6 +213,7 @@ class SetupParser(object):
                            b = 3
         """
         available_sections = parser.sections()
+
         for section in available_sections:
             # We have a section needing a type
             if parser.has_option(section, 'type'):
@@ -225,7 +226,6 @@ class SetupParser(object):
                 for item in parser.items(parent):
                     if not parser.has_option(section, item[0], bypass_defaults=True):
                         parser.set(section, item[0], item[1])
-
         return parser
 
     def _overlay_setup(self, master, slave):
@@ -270,6 +270,10 @@ class SetupParser(object):
         :param slave: The ConfigParger to overlay on
         :return Resulting ConfigParser
         """
+        # Handle the defaults
+        for item in master.defaults():
+            slave.set('DEFAULT', item, master.get('DEFAULT', item))
+
         # Overlays all sections of master on slave
         for section in master.sections():
 
@@ -293,6 +297,10 @@ class SetupParser(object):
     @classmethod
     def getboolean(cls, parameter, default=None, block=None):
         return cls._get_guts(parameter, 'getboolean', default, block)
+
+    @classmethod
+    def set(cls, section, parameter, value):
+        return cls.singleton.setup.set(section, parameter, value)
 
     @classmethod
     def _get_guts(cls, parameter, get_method, default=None, block=None):
@@ -395,10 +403,13 @@ class SetupParser(object):
             Used for running a bit of code with a different selected block and ini path
         """
         def __init__(self, temporary_block, temporary_path=None):
-            ini_file = os.path.join(temporary_path, 'simtools.ini') if temporary_path else None
             self.temporary_block = temporary_block
+            # Replace the temporary path with the current setup_file if it is not passed or not existing
+            if not temporary_path or not os.path.exists(temporary_path):
+                temporary_path = SetupParser.setup_file
+
             self.temporary_setup = SetupParser(selected_block=temporary_block,
-                                               setup_file=ini_file if ini_file and os.path.exists(ini_file) else None,
+                                               setup_file=temporary_path,
                                                old_style_instantiation=True)
 
         def get(self, parameter):

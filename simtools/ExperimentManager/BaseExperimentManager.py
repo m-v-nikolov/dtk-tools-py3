@@ -94,8 +94,8 @@ class BaseExperimentManager:
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=get_tools_revision(),
             selected_block=SetupParser.selected_block,
-            setup_overlay_file=SetupParser.setup_file,
-            working_directory = os.getcwd(),
+            setup_overlay_file=SetupParser.overlay_path,
+            working_directory=os.getcwd(),
             command_line=self.commandline.Commandline)
 
     def done_commissioning(self):

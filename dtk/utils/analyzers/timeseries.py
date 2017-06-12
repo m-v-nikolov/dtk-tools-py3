@@ -57,14 +57,16 @@ class TimeseriesAnalyzer(BaseAnalyzer):
         return channel_data
 
     def combine(self, parsers):
-        logger.debug('Gathering selected data from parser threads...')
+        # Gathering selected data from parser threads...
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
-        logger.debug('Combining selected data...')
+
+        # Combining selected data...
         combined = pd.concat(selected, axis=1, 
                              keys=[(d.group, d.sim_id) for d in selected], 
                              names=self.data_group_names)
-        logger.debug('Re-ordering multi-index levels...')
-        self.data = combined.reorder_levels(self.ordered_levels, axis=1).sortlevel(axis=1)
+
+        # Re-ordering multi-index levels...
+        self.data = combined.reorder_levels(self.ordered_levels, axis=1).sort_index(axis=1)
 
     def finalize(self):
         if self.saveOutput:

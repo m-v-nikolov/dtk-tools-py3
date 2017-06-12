@@ -12,7 +12,6 @@ from urlparse import urlparse
 from argparse import ArgumentParser, Namespace
 
 from simtools.Utilities.General import nostdout
-from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -20,76 +19,63 @@ install_directory = os.path.join(current_directory, 'install')
 
 installed_packages = dict()
 
-# to fake out urlparse, setting netloc == 'GITHUB'
-GITHUB = 'GITHUB'
-GITHUB_URL_PREFIX = 'http://%s' % GITHUB
-
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
+dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
 requirements = OrderedDict([
-    ('github3.py', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.0a4',
-        'test': '>='
-    }),
-    ('packaging', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '16.8',
-        'test': '>='
-    }),
     ('curses', {
         'platform': [LocalOS.WINDOWS],
         'version': '2.2',
         'test': '==',
-        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.1',
+        'version': '2.0a2',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pyCOMPS-2.0a2-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.5.3',
         'test': '>=',
-        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('scipy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.19.0',
         'test': '>=',
-        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('pandas', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.20.2',
         'test': '>=',
-        'wheel': '%s/pandas-0.20.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pandas-0.20.2-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('psutil', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '4.3.1',
         'test': '==',
-        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('python-snappy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
         'version': '0.5',
         'test': '==',
-        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % dependencies_repo
     }),
     ('seaborn', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.7.1',
         'test': '==',
-        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % dependencies_repo
     }),
     ('statsmodels', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '0.8.0',
         'test': '==',
-        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
     ('SQLAlchemy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -126,11 +112,16 @@ requirements = OrderedDict([
     ('enum34', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
     }),
+    ('github3.py', {
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
+        'version': '1.0.0a4',
+        'test': '>='
+    }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.13.0+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % dependencies_repo
     }),
 ])
 
@@ -183,15 +174,13 @@ def install_package(my_os, name, val, upgrade=False):
 
     host, path = urlparse(package_str)[1:3]
     # It is an internet file
-    if (len(host) > 0 and len(path) > 0) or host == GITHUB:
-        local_file = get_local_file_path(package_str)
-        if not os.path.exists(local_file):
-            # Download file if it does not exist locally
-            if host == GITHUB:
-                dependency = GitHubFile(local_file)
-                dependency.pull() # writes to local_file
-            else:
-                local_file = download_file(package_str)
+    if len(host) > 0 and len(path) > 0:
+        if os.path.exists(get_local_file_path(package_str)):
+            # Use local file if it exists
+            local_file = get_local_file_path(package_str)
+        else:
+            # Download file first
+            local_file = download_file(package_str)
 
         # Install package from local file (just downloaded or existing one)
         if upgrade:
@@ -459,28 +448,6 @@ def handle_init():
         cp.set('HPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
 
     cp.write(open(example_simtools, 'w'))
-
-    # create the test simtools.ini
-    print('this file: %s %s' % (__file__, os.path.abspath(__file__)))
-    keywords = {
-        'example_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples'),
-        'test_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test')
-    }
-    default_test_ini = os.path.join(install_directory, 'default_test.ini')
-    simtools_file = os.path.join(os.path.dirname(__file__), 'test', 'simtools.ini')
-    shutil.copyfile(default_test_ini, simtools_file)
-    cp = ConfigParser()
-    cp.read(simtools_file)
-    for section in cp.sections():
-        items = dict(cp.items(section=section))
-        for key, value in items.iteritems():
-            for keyword, replacement in keywords.iteritems():
-                new_value = value.replace('$%s$'%keyword, replacement)
-                if new_value != value:
-                    print('Replacing: section: %s key: %s value: %s new value: %s' % (section, key, value, new_value))
-                value = new_value
-            cp.set(section=section, option=key, value=value)
-    cp.write(open(simtools_file, 'w'))
 
 def upgrade_pip(my_os):
     """

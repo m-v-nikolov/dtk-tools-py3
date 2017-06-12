@@ -1,5 +1,6 @@
 import os
 import unittest
+from ConfigParser import ConfigParser
 
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
@@ -21,13 +22,30 @@ class TestSimulationAssets(unittest.TestCase):
     SELECTED_BLOCK = 'SimulationAssets'
 
     def setUp(self):
-        SetupParser.init(selected_block=self.SELECTED_BLOCK)
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        input_dir = os.path.join(current_dir, 'input')
+        self.am_simtools = os.path.join(input_dir, 'am_simtools.ini')
+
+        # Adjust path sensitive parameters in the ini file
+        cp = ConfigParser()
+        cp.read(self.am_simtools)
+        cp.set('DEFAULT', 'path', input_dir)
+        cp.set('DEFAULT', 'example_dir', os.path.join(current_dir, '..', '..', 'examples'))
+        cp.write(open(self.am_simtools, 'w'))
+
+        SetupParser.init(selected_block=self.SELECTED_BLOCK, setup_file=self.am_simtools)
         self.config_builder = DTKConfigBuilder.from_defaults('VECTOR_SIM')
         configure_site(self.config_builder, 'Namawala')
         self.config_builder.add_reports(BaseReport(type="VectorHabitatReport"))
 
     def tearDown(self):
         SetupParser._uninit()
+        # Revert path sensitive parameters in the ini file
+        cp = ConfigParser()
+        cp.read(self.am_simtools)
+        cp.set('DEFAULT', 'path', '')
+        cp.set('DEFAULT', 'example_dir', '')
+        cp.write(open(self.am_simtools, 'w'))
 
     def test_ambiguous_assets_assembly(self):
         # all missing
@@ -132,12 +150,12 @@ class TestSimulationAssets(unittest.TestCase):
         """
         Makes sure the individual asset collection ids are stored as tags on an experiment and that
         the 'master' asset collection id (id for all asset files together in one collection) is stored properly
-        on the experiment as well.
+        on the simulations as well.
         """
         expected_asset_collection = '786f0e24-c64b-e711-80c1-f0921c167860' # master collection
 
         run_sim_args = {'exp_name': 'AssetCollectionTestSim'}
-        exp_manager = ExperimentManagerFactory.from_setup(config_builder=self.config_builder)
+        exp_manager = ExperimentManagerFactory.from_cb(config_builder=self.config_builder)
         exp_manager.run_simulations(**run_sim_args)
 
         # now query COMPS for this experiment and retrieve/verify tags
@@ -153,7 +171,7 @@ class TestSimulationAssets(unittest.TestCase):
         self.assertEqual(len(tags), len(SimulationAssets.COLLECTION_TYPES))
 
         # verify the asset_collection_id was added properly
-        asset_collection_id = exp_comps.configuration.asset_collection_id
+        asset_collection_id = exp_comps.get_simulations(query_criteria=COMPSQueryCriteria().select_children(children=['configuration']))[0].configuration.asset_collection_id
         self.assertEqual(str(asset_collection_id), expected_asset_collection)
 
     # BaseExperimentManager tests below (move to different test file?)
@@ -163,7 +181,7 @@ class TestSimulationAssets(unittest.TestCase):
         original_block = SetupParser.selected_block
         try:
             SetupParser.override_block(block='USE_LOCAL_FILES')
-            exp_manager = ExperimentManagerFactory.from_setup(config_builder=self.config_builder)
+            exp_manager = ExperimentManagerFactory.from_cb(config_builder=self.config_builder)
             missing_files = exp_manager._detect_missing_files()
             self.assertEqual(len(missing_files), 0)
 
@@ -180,8 +198,6 @@ class TestSimulationAssets(unittest.TestCase):
         finally:
             SetupParser.override_block(block=original_block)
 
-#    def test_get_commandline_works_properly(self):
-#        raise Exception("undefined")
 
 class TestAssetCollection(unittest.TestCase):
     LOCAL_ONLY = 'LOCAL_ONLY'
@@ -191,7 +207,9 @@ class TestAssetCollection(unittest.TestCase):
     SELECTED_BLOCK = 'AssetCollection'
 
     def setUp(self):
-        SetupParser.init(selected_block=self.SELECTED_BLOCK)
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        SetupParser.init(selected_block=self.SELECTED_BLOCK,
+                         setup_file=os.path.join(current_dir, 'input', 'am_simtools.ini'))
         COMPS_login(SetupParser.get('server_endpoint'))
 
         self.existing_collection = AssetCollection(base_collection_id=self.EXISTING_COLLECTION_ID)
