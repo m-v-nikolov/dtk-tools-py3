@@ -147,7 +147,7 @@ class GitHubFile(MultiPartFile):
                 else:
                     done = True
             if chunk_number == 0:
-                raise IOError('No matching file or file chunks found for: %s' %self.source_filename)
+                raise IOError('No matching file or file chunks found for: %s' % self.source_filename)
         self.chunks = chunks
         self.is_split = True
 

@@ -26,7 +26,6 @@ GITHUB_URL_PREFIX = 'http://%s' % GITHUB
 
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
-dependencies_repo = 'https://institutefordiseasemodeling.github.io/PythonDependencies'
 requirements = OrderedDict([
     ('curses', {
         'platform': [LocalOS.WINDOWS],
