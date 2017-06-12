@@ -12,13 +12,14 @@ class GitHub(object):
     class BadCredentials(Exception): pass
     class AuthorizationError(Exception): pass
 
-    AUTH_TOKEN_FIELD = 'github_authentication_token'
-
     # derivative classes must define the following fields
-    OWNER = None
     REPOSITORY = None
     LOGIN_REPOSITORY = None
-    SUPPORT_EMAIL = None
+
+    # derivative classes may redefine the following fields
+    OWNER = 'InstituteforDiseaseModeling'
+    AUTH_TOKEN_FIELD = 'github_authentication_token'
+    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
 
     @classmethod
     def repository(cls):
@@ -30,14 +31,12 @@ class GitHub(object):
             raise cls.AuthorizationError()
         return cls.repo
 
-
     @classmethod
     def login(cls):
         # Get an authorization token first
         token = cls.retrieve_token()
         cls.session = github3.login(token=token)
         cls.repo = cls.session.repository(cls.OWNER, cls.REPOSITORY)
-
 
     @classmethod
     def retrieve_token(cls):
@@ -47,7 +46,6 @@ class GitHub(object):
         else:
             token = cls.create_token()
         return token
-
 
     @classmethod
     def create_token(cls):
@@ -77,13 +75,10 @@ class GitHub(object):
 
         return auth.token
 
-
     @classmethod
     def get_directory_contents(cls, directory):
-#        print('Getting contents for directory: %s' % directory)
         contents = cls.repository().directory_contents(directory, return_as=dict)
         return contents
-
 
     @classmethod
     def file_in_repository(cls, filename):
@@ -97,7 +92,6 @@ class GitHub(object):
             return True
         else:
             return False
-
 
     @classmethod
     def get_file_data(cls, filename):
@@ -123,13 +117,9 @@ class GitHub(object):
 #
 
 class DTKGitHub(GitHub):
-    OWNER = 'InstituteforDiseaseModeling'
     REPOSITORY = 'dtk-packages'
     LOGIN_REPOSITORY = 'dtk-tools'
-    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
 
 class DependencyGitHub(GitHub):
-    OWNER = 'InstituteforDiseaseModeling'
     REPOSITORY = 'PythonDependencies'
     LOGIN_REPOSITORY = 'PythonDependencies'
-    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'

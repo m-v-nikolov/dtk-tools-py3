@@ -1,6 +1,5 @@
 import os
 
-from simtools.Utilities.disease_packages import DTKGitHub
 from simtools.Utilities.GitHub.GitHub import DependencyGitHub
 
 class MultiPartFile(object):
@@ -10,8 +9,8 @@ class MultiPartFile(object):
 
     def __init__(self, source_filename, max_chunk_size = None, chunk_digits = None):
         self.max_chunk_size = max_chunk_size or self.MAX_CHUNK_SIZE
-        self.chunk_digits = chunk_digits or self.CHUNK_DIGITS
-        self.source_filename = os.path.abspath(source_filename)
+        self.chunk_digits   = chunk_digits   or self.CHUNK_DIGITS
+        self.source_filename  = os.path.abspath(source_filename)
         self.source_directory = os.path.dirname(source_filename)
         self.destination_directory = self.source_directory # same file either way!
         self.chunks = [] # assumed to be IN ORDER AT ALL TIMES
@@ -58,7 +57,6 @@ class MultiPartFile(object):
         """
         destination_directory = os.path.abspath(self.destination_directory)
         dest_filename = self.source_filename
-        print "Attempting to write file: %s" % dest_filename
         if self.is_split:
             raise Exception('Cannot write a file that has not been joined.')
         if not os.path.exists(destination_directory):
@@ -97,10 +95,9 @@ class GitHubFile(MultiPartFile):
         chunk_number = 0
         for chunk in self.chunks:
             chunk_filename = chunk_filename_base + self._make_chunk_suffix(chunk_number)
-            if DTKGitHub.file_in_repository(filename=chunk_filename):
+            if DependencyGitHub.file_in_repository(filename=chunk_filename):
                 raise Exception("Cannot overwrite existing files with push().")
             else:
-#                print('Pushing chunk %s , size: %d' % (chunk_filename, len(chunk)))
                 repo.create_file(path=chunk_filename, message='added new file %s' % chunk_filename, content=chunk)
             chunk_number += 1
         self.chunks = []
@@ -108,12 +105,24 @@ class GitHubFile(MultiPartFile):
 
     def delete(self):
         """
-        Delete all parts from the GitHub repo
+        Delete all parts from the GitHub repo. Cannot delete legacy files.
         :return:
         """
-        self.is_split = False
+        repo = DependencyGitHub.repository()
+
+        done = False
+        chunk_number = 0
+        while not done:
+            chunk_filename_base = os.path.basename(self.source_filename)
+            chunk_filename = chunk_filename_base + self._make_chunk_suffix(chunk_number)
+            if DependencyGitHub.file_in_repository(filename=chunk_filename):
+                file_to_delete = repo.file_contents(chunk_filename)
+                file_to_delete.delete(message='deleting file: %s' % chunk_filename)
+            else:
+                done = True
+            chunk_number += 1
         self.chunks = [] # nothing here to do anything with
-        raise Exception('unfinished')
+        self.is_split = False
 
     def _retrieve(self):
         """
@@ -131,17 +140,14 @@ class GitHubFile(MultiPartFile):
             done = False
             while not done:
                 remote_chunk_filename = non_chunked_file_name + self._make_chunk_suffix(chunk_number)
-#                print('Retrieving chunk file: %s' % remote_chunk_filename)
                 chunk = DependencyGitHub.get_file_data(remote_chunk_filename)
                 if chunk:
- #                   print('    size: %d' % len(chunk))
                     chunks.append(chunk)
                     chunk_number += 1
                 else:
- #                   print('Did not find chunk: %s' % remote_chunk_filename)
                     done = True
             if chunk_number == 0:
-                raise Exception('No matching file or file chunks found for: %s' %self.source_filename)
+                raise IOError('No matching file or file chunks found for: %s' %self.source_filename)
         self.chunks = chunks
         self.is_split = True
 
