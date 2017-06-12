@@ -17,18 +17,10 @@ class ExperimentManagerFactory(object):
         raise Exception("ExperimentManagerFactory location argument should be either 'LOCAL' or 'HPC'.")
 
     @classmethod
-    def from_experiment(cls, experiment, generic=False, config_builder=None):
+    def from_experiment(cls, experiment, config_builder=None):
         logger.debug("Factory - Creating ExperimentManager for experiment %s pid: %d location: %s" % (experiment.id, os.getpid(), experiment.location))
         manager_class = cls._factory(type=experiment.location)
-        if generic: # ask the manager class for the location. USE ONLY FROM Overseer, who doesn't know better.
-            orig_block = SetupParser.selected_block
-            try:
-                SetupParser.override_block(manager_class.location) # manager class constructor MAY access SetupParser
-                manager = manager_class(experiment=experiment, config_builder=config_builder)
-            finally:
-                SetupParser.override_block(orig_block)
-        else:
-            manager = manager_class(experiment=experiment, config_builder=config_builder)
+        manager = manager_class(experiment=experiment, config_builder=config_builder)
 
         return manager
 

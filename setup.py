@@ -449,24 +449,6 @@ def handle_init():
 
     cp.write(open(example_simtools, 'w'))
 
-    # create the test simtools.ini
-    keywords = {
-        'example_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'examples'),
-        'test_dir': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test')
-    }
-    default_test_ini = os.path.join(install_directory, 'default_test.ini')
-    simtools_file = os.path.join(os.path.dirname(__file__), 'test', 'simtools.ini')
-    shutil.copyfile(default_test_ini, simtools_file)
-    cp = ConfigParser()
-    cp.read(simtools_file)
-    for section in cp.sections():
-        items = dict(cp.items(section=section))
-        for key, value in items.iteritems():
-            for keyword, replacement in keywords.iteritems():
-                value = value.replace('$%s$'%keyword, replacement)
-            cp.set(section=section, option=key, value=value)
-    cp.write(open(simtools_file, 'w'))
-
 def upgrade_pip(my_os):
     """
     Upgrade pip before install other packages

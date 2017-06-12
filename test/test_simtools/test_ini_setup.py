@@ -48,6 +48,15 @@ class TestSetupParser(unittest.TestCase):
         self.assertEqual(SetupParser.get('base_collection_id_dll'), "in HPC")
         SetupParser._uninit()
 
+    def test_regression_965(self):
+        """
+        Allow substitutions in simtools.ini
+        Test for https://github.com/InstituteforDiseaseModeling/dtk-tools/issues/965
+        """
+        SetupParser.init(selected_block='LOCAL', setup_file=os.path.join(self.input_path,'965','simtools.ini'), is_testing=True)
+        self.assertTrue(SetupParser.get('block'), 'PATH1')
+        SetupParser._uninit()
+
     def test_reinitialization_not_allowed(self):
         SetupParser.init(selected_block="LOCAL")
         kwargs = {"selected_block": "LOCAL"}
@@ -148,12 +157,6 @@ class TestSetupParser(unittest.TestCase):
         self.assertTrue(SetupParser.has_option('environment'))
         self.assertFalse(SetupParser.has_option('notanoption'))
 
-    def test_items(self):
-        filename = os.path.join(self.input_path, SetupParser.ini_filename)
-        SetupParser.init(selected_block='TEST', setup_file=filename, is_testing=True)
-        self.assertEqual(len(SetupParser.items()), 27)
-        self.assertEqual(len(SetupParser.items(block='HPC')), 23)
-
     def test_get(self):
         filename = os.path.join(self.input_path, SetupParser.ini_filename)
         SetupParser.init(selected_block='TEST', setup_file=filename, is_testing=True)
@@ -216,7 +219,10 @@ class TestSetupParser(unittest.TestCase):
         SetupParser('LOCAL')
         self.assertTrue (hasattr(SetupParser, 'selected_block'))
         self.assertEqual(getattr(SetupParser, 'selected_block'), 'LOCAL')
-        self.assertEqual(SetupParser.get('max_threads'), '16')
+        from ConfigParser import ConfigParser
+        cp = ConfigParser()
+        cp.read(SetupParser.default_file)
+        self.assertEqual(SetupParser.get('max_threads'),cp.get('LOCAL', 'max_threads'))
 
         SetupParser._uninit()
         self.assertFalse(SetupParser.initialized)

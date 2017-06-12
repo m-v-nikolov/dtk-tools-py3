@@ -28,6 +28,7 @@ class AssetCollection(object):
 
         self.asset_files_to_use = self._determine_files_to_use()
         self.collection_id = None
+        self._collection = None
         self.prepared = False # not allowed to run simulations with this collection until True (set by prepare())
 
     @property
@@ -76,11 +77,11 @@ class AssetCollection(object):
         :return: A list of COMPSAssetFile objects to use
         """
         selected = {}
-        for file in existing:
-            relative_path = file.relative_path if file.relative_path is not None else ''
-            selected[os.path.join(relative_path, file.file_name)] = file
-        for file in local:
-            selected[os.path.join(file.relative_path, file.file_name)] = file
+        for asset_file in existing:
+            relative_path = asset_file.relative_path if asset_file.relative_path is not None else ''
+            selected[os.path.join(relative_path, asset_file.file_name)] = asset_file
+        for asset_file in local:
+            selected[os.path.join(asset_file.relative_path, asset_file.file_name)] = asset_file
         return selected.values()
 
     def _determine_files_to_use(self):
@@ -108,17 +109,18 @@ class AssetCollection(object):
 
         # This is necessary so that _get_or_create_collection() can determine which COMPSAssetFile objects need
         # to be discovered locally (via full path)
-        for file in local_asset_files:
-            file.is_local = True
-            file.root = self.local_files.root
-        for file in existing_asset_files:
-            file.is_local = False
+        for asset_file in local_asset_files:
+            asset_file.is_local = True
+            asset_file.root = self.local_files.root
+
+        for asset_file in existing_asset_files:
+            asset_file.is_local = False
 
         return self._merge_local_and_existing_files(local_asset_files, existing_asset_files)
 
     def _get_or_create_collection(self, root_dir):
         # If there are no files for this collection, so we don't do anything
-        if len(self.asset_files_to_use) == 0:  return None
+        if len(self.asset_files_to_use) == 0: return None
 
         # Create a COMPS collection
         collection = COMPSAssetCollection()
@@ -126,7 +128,7 @@ class AssetCollection(object):
             if af.is_local:
                 full_path = os.path.join(root_dir, af.relative_path, af.file_name)
                 if not os.path.exists(full_path): continue
-                collection.add_asset(af, file_path=full_path) # file_path here will trigger the MD5 checksum
+                collection.add_asset(af, file_path=full_path)  # file_path here will trigger the MD5 checksum
             else:
                 collection.add_asset(af)
 

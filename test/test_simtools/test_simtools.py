@@ -137,7 +137,7 @@ class TestLocalExperimentManager(unittest.TestCase):
     def test_run(self):
         input_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'input')
         model_file = os.path.join(input_path, 'dummy_model.py')
-        config_builder = DTKConfigBuilder.from_defaults('sleep')
+        config_builder = DTKConfigBuilder.from_defaults('VECTOR_SIM')
         local_manager = ExperimentManagerFactory.from_model(model_file, 'LOCAL', config_builder=config_builder)
         local_manager.run_simulations(exp_builder=RunNumberSweepBuilder(self.nsims))
         self.assertEqual(local_manager.experiment.exp_name, 'test')

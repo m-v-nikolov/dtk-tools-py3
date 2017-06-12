@@ -26,13 +26,14 @@ class CompsExperimentManager(BaseExperimentManager):
     def __init__(self, experiment, config_builder=None):
         # Ensure we use the SetupParser environment of the experiment if it already exists
         temp_block = experiment.selected_block if experiment else SetupParser.selected_block
-        temp_dir = experiment.working_directory if experiment else os.getcwd()
+        temp_path = experiment.setup_overlay_file if experiment else None
 
-        with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_dir) as setup:
+        with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_path) as setup:
             BaseExperimentManager.__init__(self, experiment, config_builder)
             self.comps_sims_to_batch = int(setup.get(parameter='sims_per_thread'))
             self.endpoint = setup.get(parameter='server_endpoint')
             COMPS_login(self.endpoint)
+
         self.creator_semaphore = None
         self.runner_thread = None
         self.sims_to_create = []
