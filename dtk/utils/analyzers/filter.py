@@ -3,24 +3,26 @@ def example_filter(metadata):
     if rn is None:
         print("'Run_Number' key not found in metadata; simulation passing filter.")
         return True
-    return (rn > 0)
+    return rn > 0
 
 
 def name_match_filter(substr):
+
     def f(metadata):
-        Config_Name = metadata.get('Config_Name', None)
-        if Config_Name is None:
+        config_name = metadata.get('Config_Name', None)
+        if config_name is None:
             print("'Config_Name' key not found in metadata; simulation passing filter.")
-            return Config_Name
-        return (substr in Config_Name)
+            return config_name
+        return substr in config_name
 
     return f
 
 
 def key_value_within(key, value, threshold):
+
     def f(metadata):
         sim_value = metadata[key]
-        return (abs(sim_value - value) < threshold)
+        return abs(sim_value - value) < threshold
 
     return f
 
@@ -39,5 +41,6 @@ def combo_filter(*args):
 
     return f
 
-def defualt_filter_fn(md):
+
+def default_filter_fn(md):
     return True

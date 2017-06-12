@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from dtk.utils.analyzers import default_select_fn, default_group_fn, defualt_filter_fn
+from dtk.utils.analyzers import default_select_fn, default_group_fn, default_filter_fn
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 from plot import plot_by_channel
 
@@ -22,7 +22,7 @@ class TimeseriesAnalyzer(BaseAnalyzer):
     ordered_levels = ['channel', 'group', 'sim_id']
     output_file = 'timeseries.csv'
 
-    def __init__(self, filename=os.path.join('output', 'InsetChart.json'), filter_function=defualt_filter_fn,
+    def __init__(self, filename=os.path.join('output', 'InsetChart.json'), filter_function=default_filter_fn,
                  select_function=default_select_fn, group_function=default_group_fn, plot_function=default_plot_fn,
                  channels=['Statistical Population',
                            'Rainfall', 'Adult Vectors',

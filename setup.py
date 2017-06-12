@@ -54,9 +54,9 @@ requirements = OrderedDict([
     }),
     ('pandas', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.19.2',
+        'version': '0.20.2',
         'test': '>=',
-        'wheel': '%s/pandas-0.19.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pandas-0.20.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('psutil', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -124,9 +124,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.12.0+mkl',
+        'version': '1.13.0+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.12.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
 ])
 
