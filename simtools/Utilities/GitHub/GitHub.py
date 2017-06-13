@@ -20,6 +20,7 @@ class GitHub(object):
     OWNER = 'InstituteforDiseaseModeling'
     AUTH_TOKEN_FIELD = 'github_authentication_token'
     SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
+    AUTH_TOKEN = None # allows subclasses to bypass interactive login if overridden
 
     @classmethod
     def repository(cls):
@@ -40,11 +41,14 @@ class GitHub(object):
 
     @classmethod
     def retrieve_token(cls):
-        setting = DataStore.get_setting(cls.AUTH_TOKEN_FIELD)
-        if setting:
-            token = setting.value
+        if cls.AUTH_TOKEN:
+            token = cls.AUTH_TOKEN
         else:
-            token = cls.create_token()
+            setting = DataStore.get_setting(cls.AUTH_TOKEN_FIELD)
+            if setting:
+                token = setting.value
+            else:
+                token = cls.create_token()
         return token
 
     @classmethod
@@ -64,7 +68,7 @@ class GitHub(object):
             if len(user) == 0 or len(password) == 0:
                 raise cls.BadCredentials()
             auth = github3.authorize(user, password, scopes, note, note_url)
-        except (github3.models.GitHubError, cls.BadCredentials):
+        except (github3.GitHubError, cls.BadCredentials):
             print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance." \
                   % cls.SUPPORT_EMAIL
             raise cls.AuthorizationError()
@@ -123,3 +127,4 @@ class DTKGitHub(GitHub):
 class DependencyGitHub(GitHub):
     REPOSITORY = 'PythonDependencies'
     LOGIN_REPOSITORY = 'PythonDependencies'
+    AUTH_TOKEN = None # set token here to the default RO user
