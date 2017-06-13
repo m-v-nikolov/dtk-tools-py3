@@ -349,9 +349,10 @@ def sync(args, unknownArgs):
     Sync COMPS db with local db
     """
     # Create a default HPC setup parser
-    SetupParser.override_block('HPC')
-    endpoint = SetupParser.get('server_endpoint')
-    COMPS_login(endpoint)
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+        user = sp.get('user')
+        COMPS_login(endpoint)
 
     exp_to_save = list()
     exp_deleted = 0
@@ -369,7 +370,7 @@ def sync(args, unknownArgs):
     # Consider experiment id option
     exp_id = args.exp_id if args.exp_id else None
     exp_name = args.exp_name if args.exp_name else None
-    user = args.user if args.user else SetupParser.get('user')
+    user = args.user if args.user else user
 
     if exp_name:
         experiments = get_experiments_by_name(exp_name, user)
@@ -420,6 +421,7 @@ def sync(args, unknownArgs):
 
     # Start overseer
     BaseExperimentManager.check_overseer()
+
 
 def version(args, unknownArgs):
     logger.info(" ____    ______  __  __          ______                ___ ")

@@ -3,6 +3,7 @@ from __future__ import print_function
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login
+from simtools.Utilities.Encoding import cast_number
 from simtools.Utilities.General import init_logging, utc_to_local
 
 max_exp_name_len = 100
@@ -43,7 +44,9 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
         raise Exception('Experiment %s not found in the local database and sync disabled.' % exp_id)
 
     logger.info('Experiment with id %s not found in local database, trying sync.' % exp_id)
-    endpoint = SetupParser.get(block='HPC', parameter='server_endpoint')
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+
     exp = COMPS_experiment_to_local_db(exp_id, endpoint, verbose)
 
     if exp: return exp
@@ -106,10 +109,12 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
 
     # Go through the sims and create them
     for sim in sims:
+        # Cast the simulation tags
+
         # Create the simulation
         simulation = DataStore.create_simulation(id=str(sim.id),
                                                  status=sim.state, # this is already a SimulationState object
-                                                 tags=sim.tags,
+                                                 tags={tag:cast_number(val) for tag,val in sim.tags.items()},
                                                  date_created=utc_to_local(sim.date_created).replace(tzinfo=None))
         # Add to the experiment
         experiment.simulations.append(simulation)
