@@ -1,8 +1,5 @@
-import github3
 import os
 import uuid
-
-from simtools.DataAccess.DataStore import DataStore
 
 class GitHub(object):
     """
@@ -34,7 +31,8 @@ class GitHub(object):
 
     @classmethod
     def login(cls):
-        # Get an authorization token first
+        import github3
+        # Get an authorization token first\
         token = cls.retrieve_token()
         cls.session = github3.login(token=token)
         cls.repo = cls.session.repository(cls.OWNER, cls.REPOSITORY)
@@ -44,6 +42,7 @@ class GitHub(object):
         if cls.AUTH_TOKEN:
             token = cls.AUTH_TOKEN
         else:
+            from simtools.DataAccess.DataStore import DataStore
             setting = DataStore.get_setting(cls.AUTH_TOKEN_FIELD)
             if setting:
                 token = setting.value
@@ -54,6 +53,7 @@ class GitHub(object):
     @classmethod
     def create_token(cls):
         import getpass
+        import github3
         # Asks user for username/password
         user = raw_input("Please enter your GitHub username: ")
         password = getpass.getpass(prompt="Please enter your GitHub password: ")
@@ -75,6 +75,7 @@ class GitHub(object):
 
         # Write the info to disk
         # Update the (local) mysql db with the token
+        from simtools.DataAccess.DataStore import DataStore
         DataStore.save_setting(DataStore.create_setting(key=cls.AUTH_TOKEN_FIELD, value=auth.token))
 
         return auth.token
