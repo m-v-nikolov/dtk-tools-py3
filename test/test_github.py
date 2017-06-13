@@ -10,7 +10,6 @@ from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.GitHub.GitHub import DependencyGitHub
 DependencyGitHub.REPOSITORY = 'TestRepository'
 DependencyGitHub.LOGIN_REPOSITORY = 'TestRepository'
-DependencyGitHub.AUTH_TOKEN = None # force interactive login; read-only user can't currently use the test repo
 
 class TestGitHub(unittest.TestCase):
     def setUp(self):
