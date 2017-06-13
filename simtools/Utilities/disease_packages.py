@@ -1,14 +1,9 @@
 # this file contains methods for interfacing with the disease input packages github repository
-import subprocess
 import os
 import zipfile
-import uuid
-import github3
-from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
-
-class AuthorizationError(Exception):
-    pass
+from simtools.Utilities.General import rmtree_f
+from simtools.Utilities.GitHub.GitHub import DTKGitHub
 
 PACKAGES_GITHUB_URL = 'https://github.com/InstituteforDiseaseModeling/dtk-packages.git'
 TEST_DISEASE_PACKAGE_NAME = 'TestDisease42'
@@ -96,9 +91,9 @@ def get_available(id_type):
         :raises: Exception if id_type is not recognized.
     """
     if id_type == 'branch':
-        results = [b.name for b in DTKGitHub.repository().iter_branches()]
+        results = [b.name for b in DTKGitHub.repository().branches()]
     elif id_type == 'tag':
-        results = [t.name for t in DTKGitHub.repository().iter_tags()]
+        results = [t.name for t in DTKGitHub.repository().tags()]
     else:
         raise Exception('No such git type: %s . Must be branch or tag.' % id_type)
     if id_type == 'branch':
@@ -130,7 +125,7 @@ def get(package, version, dest):
         zip_ref = zipfile.ZipFile(zip_file, 'r')
 
         # Get the name of the root dir (only one)
-        dir = [x for x in zip_ref.namelist() if x.endswith('/') and x.count('/')==1][0]
+        dir = [x for x in zip_ref.namelist() if x.endswith('/') and x.count('/') == 1][0]
 
         try:
             # Extract and move package to desired location
@@ -156,65 +151,5 @@ def get(package, version, dest):
             os.remove(zip_file)
 
     # Update the (local) sqlite DB with the version being used
-    db_key = db_key = construct_package_version_db_key(package)
+    db_key = construct_package_version_db_key(package)
     DataStore.save_setting(DataStore.create_setting(key=db_key, value=version))
-
-class DTKGitHub(object):
-    OWNER = 'InstituteforDiseaseModeling'
-    PACKAGE_REPOSITORY = 'dtk-packages'
-    DTK_TOOLS_REPOSITORY = 'dtk-tools'
-    AUTH_TOKEN_FIELD = 'github_authentication_token'
-    SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
-
-    @classmethod
-    def login(cls):
-        # Get an authorization token first
-        token = cls.retrieve_token()
-        cls.session = github3.login(token=token)
-        cls.repo = cls.session.repository(cls.OWNER, cls.PACKAGE_REPOSITORY)
-
-    @classmethod
-    def repository(cls):
-        if not hasattr(cls, 'repo'):
-            cls.login()
-        if not cls.repo:
-            print "/!\\ WARNING /!\\ Authorization failure. You do not currently have permission to access disease packages. " \
-                  "Please contact %s for assistance." % cls.SUPPORT_EMAIL
-            raise AuthorizationError()
-        return cls.repo
-
-    @classmethod
-    def create_token(cls):
-        import getpass
-        # Asks user for username/password
-        user = raw_input("Please enter your GitHub username: ")
-        password = getpass.getpass(prompt="Please enter your GitHub password: ")
-
-        # Info for the GitHub token
-        note = 'dtk-tools-%s' % str(uuid.uuid4())[:4]
-        note_url = 'https://github.com/%s/%s' % (cls.OWNER, cls.DTK_TOOLS_REPOSITORY)
-        scopes = ['user', 'repo']
-
-        # Authenticate the user and create the token
-        try: # user may not have permissions to use the disease package repo yet
-            auth = github3.authorize(user, password, scopes, note, note_url)
-        except github3.models.GitHubError:
-            print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance."\
-                  % cls.SUPPORT_EMAIL
-            raise AuthorizationError()
-
-        # Write the info to disk
-        # Update the (local) mysql db with the token
-        DataStore.save_setting(DataStore.create_setting(key=cls.AUTH_TOKEN_FIELD, value=auth.token))
-
-        return auth.token
-
-    @classmethod
-    def retrieve_token(cls):
-        setting = DataStore.get_setting(cls.AUTH_TOKEN_FIELD)
-        if setting:
-            token = setting.value
-        else:
-            token = cls.create_token()
-        return token
-# class DTKGitHub

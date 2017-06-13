@@ -3,12 +3,16 @@ import os
 import struct
 import time
 import logging
+from collections import OrderedDict
+
+import itertools
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='ClimateFileCreator_Log.log', level=logging.DEBUG)
 
+
 class ClimateFileCreator:
-    def __init__(self, nodes, prefix, suffix, original_data_years, idref="Gridded world grump2.5arcmin", is_slim=False):
+    def __init__(self, nodes, prefix, suffix, original_data_years, idref="Gridded world grump2.5arcmin"):
         """
         :param nodes: format -
             node1 = WeatherNode()
@@ -32,7 +36,6 @@ class ClimateFileCreator:
         self.prefix = prefix
         self.suffix = suffix
         self.original_data_years = original_data_years
-        self.is_slim = is_slim
 
     def prepare_rainfall(self, invalid_handler=None, test_function=None):
         if not invalid_handler:
@@ -87,122 +90,24 @@ class ClimateFileCreator:
         return ret
 
     def generate_climate_files(self, output_path):
-        node_offset, offset_string = 0, ""
-        rainfall_count, air_temperature_count, land_temperature_count, humidity_count = 0, 0, 0, 0
-        rainfall_data, air_temperature_data, land_temperature_data, humidity_data = [], [], [], []
-        rainfall_dict, land_temperature_dict, air_temperature_dict, humidity_dict = {}, {}, {}, {}
-        rainfall_node_offset, air_temperature_node_offset, land_temperature_node_offset, humidity_node_offset = 0, 0, 0, 0
-        rainfall_offset_string, air_temperature_offset_string, land_temperature_offset_string, humidity_offset_string = "", "", "", ""
+        for data_set in ('air_temperature', 'land_temperature', 'humidity', 'rainfall'):
+            data = OrderedDict()
+            offset = 0
+            offset_string = ""
 
-        for node in self.nodes:
-            if self.is_slim:
-                if len(node.rainfall) > 0:
-                    if rainfall_count == 0:
-                        rainfall_count = len(node.rainfall)
+            for node in self.nodes:
+                key = tuple(getattr(node, data_set))
 
-                    key = str(node.rainfall)
-                    if key in rainfall_dict:
-                        rainfall_offset_string = "%s%08x%08x" % (rainfall_offset_string, node.id, rainfall_dict[key])
+                if not key in data:
+                    data[key] = offset
+                    offset += len(key)*4
 
-                    else:
-                        rainfall_data.extend(node.rainfall)
-                        rainfall_offset_string = "%s%08x%08x" % (rainfall_offset_string, node.id, rainfall_node_offset)
-                        rainfall_dict[key] = rainfall_node_offset
-                        rainfall_node_offset = len(rainfall_data) * 4
+                offset_string = "%s%08x%08x" % (offset_string, node.id, data[key])
 
-                if len(node.air_temperature) > 0:
-                    if air_temperature_count == 0:
-                        air_temperature_count = len(node.air_temperature)
+            if len(data) > 0:
+                self.write_files(output_path, len(data.keys()[0]), offset_string, len(data), list(itertools.chain.from_iterable(data.keys())), data_set)
 
-                    key = str(node.air_temperature)
-                    if key in air_temperature_dict:
-                        air_temperature_offset_string = "%s%08x%08x" % (air_temperature_offset_string, node.id,
-                                                                        air_temperature_dict[key])
-                    else:
-                        air_temperature_data.extend(node.air_temperature)
-                        air_temperature_offset_string = "%s%08x%08x" % (air_temperature_offset_string, node.id,
-                                                                        air_temperature_node_offset)
-                        air_temperature_dict[key] = air_temperature_node_offset
-                        air_temperature_node_offset = len(air_temperature_data) * 4
-
-                if len(node.land_temperature) > 0:
-                    if land_temperature_count == 0:
-                        land_temperature_count = len(node.land_temperature)
-
-                    key = str(node.land_temperature)
-                    if key in land_temperature_dict:
-                        land_temperature_offset_string = "%s%08x%08x" % (land_temperature_offset_string, node.id,
-                                                                         land_temperature_dict[key])
-                    else:
-                        land_temperature_data.extend(node.land_temperature)
-                        land_temperature_offset_string = "%s%08x%08x" % (land_temperature_offset_string, node.id,
-                                                                         land_temperature_node_offset)
-                        land_temperature_dict[key] = land_temperature_node_offset
-                        land_temperature_node_offset = land_temperature_count * 4
-
-                if len(node.humidity) > 0:
-                    if humidity_count == 0:
-                        humidity_count = len(node.humidity)
-
-                    key = str(node.humidity)
-                    if key in humidity_dict:
-                        humidity_offset_string = "%s%08x%08x" % (humidity_offset_string, node.id, humidity_dict[key])
-
-                    else:
-                        humidity_data.extend(node.humidity)
-                        humidity_offset_string = "%s%08x%08x" % (humidity_offset_string, node.id, humidity_node_offset)
-                        humidity_dict[key] = humidity_node_offset
-                        humidity_node_offset = humidity_count * 4
-
-            else:
-                if len(node.rainfall) > 0:
-                    if rainfall_count == 0:
-                        rainfall_count = len(node.rainfall)
-                    rainfall_data.extend(node.rainfall)
-
-                if len(node.air_temperature) > 0:
-                    if air_temperature_count == 0:
-                        air_temperature_count = len(node.air_temperature)
-                    air_temperature_data.extend(node.air_temperature)
-
-                if len(node.land_temperature) > 0:
-                    if land_temperature_count == 0:
-                        land_temperature_count = len(node.land_temperature)
-                    land_temperature_data.extend(node.land_temperature)
-
-                if len(node.humidity) > 0:
-                    if humidity_count == 0:
-                        humidity_count = len(node.humidity)
-                    humidity_data.extend(node.humidity)
-
-                offset_string = "%s%08x%08x" % (offset_string, node.id, node_offset)
-
-                if rainfall_count > 0:
-                    node_offset = len(rainfall_data) * 4
-
-                elif air_temperature_count > 0:
-                    node_offset = len(air_temperature_data) * 4
-
-                elif land_temperature_count > 0:
-                    node_offset = len(land_temperature_data) * 4
-
-                elif humidity_count > 0:
-                    node_offset = len(humidity_data) * 4
-
-        # Generate bin and json files
-        if len(rainfall_data) > 0:
-            self.write_files(output_path, rainfall_count, offset_string if not self.is_slim else rainfall_offset_string, rainfall_data, "rainfall")
-
-        if len(air_temperature_data) > 0:
-            self.write_files(output_path, air_temperature_count, offset_string if not self.is_slim else air_temperature_offset_string, air_temperature_data, "air_temperature")
-
-        if len(land_temperature_data) > 0:
-            self.write_files(output_path, land_temperature_count, offset_string if not self.is_slim else land_temperature_offset_string, land_temperature_data, "land_temperature")
-
-        if len(humidity_data) > 0:
-            self.write_files(output_path, humidity_count, offset_string if not self.is_slim else humidity_offset_string, humidity_data, "humidity")
-
-    def write_files(self, output_path, count, offset_string, data_to_save, data_name):
+    def write_files(self, output_path, count, offset_string, available_nodes_count, data_to_save, data_name):
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4).strip('"')
         metadata = {
             "Metadata": {
@@ -211,7 +116,8 @@ class ClimateFileCreator:
                 "DatavalueCount": count,
                 "DateCreated": time.strftime("%m/%d/%Y"),
                 "IdReference": self.idReference,
-                "NodeCount": len(self.nodes),
+                "NodeCount": available_nodes_count,
+                "NumberDTKNodes": len(self.nodes),
                 "OriginalDataYears": self.original_data_years,
                 "StartDayOfYear": "January 1",
                 "Tool": "Dtk-tools",
@@ -223,6 +129,7 @@ class ClimateFileCreator:
         file_name = self.prefix + "_" + data_name + "_" + self.suffix
         bin_file_name = file_name + ".bin"
         json_file_name = file_name + ".bin.json"
+
         with open(os.path.join(output_path, '%s' % bin_file_name), 'wb') as handle:
             a = struct.pack('f' * len(data_to_save), *data_to_save)
             # Write it to the file

@@ -25,11 +25,12 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-from simtools.Utilities.General import nostdout, override_HPC_settings, get_tools_revision, init_logging, rmtree_f
+from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
 logger = init_logging('Commands')
 import simtools.Utilities.disease_packages as disease_packages
+from simtools.Utilities.GitHub.GitHub import GitHub
 from COMPS.Data.Simulation import SimulationState
-
+import simtools.Utilities.Initialization as init
 
 builtinAnalyzers = {
     'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -45,30 +46,9 @@ builtinAnalyzers = {
     'hiv_WHOStageAnalyzer': WHOStageAnalyzer()
 }
 
-
 class objectview(object):
     def __init__(self, d):
         self.__dict__ = d
-
-
-def load_config_module(config_name):
-    # Support of relative paths
-    config_name = config_name.replace('\\', '/')
-    if '/' in config_name:
-        splitted = config_name.split('/')[:-1]
-        sys.path.append(os.path.join(os.getcwd(), *splitted))
-    else:
-        sys.path.append(os.getcwd())
-
-    module_name = os.path.splitext(os.path.basename(config_name))[0]
-
-    try:
-        return import_module(module_name)
-    except ImportError as e:
-        logger.error("ImportError: '%s' during loading module '%s' in %s. Exiting...",
-                     e.message, module_name, os.getcwd())
-        exit()
-
 
 def test(args, unknownArgs):
     # Get to the test dir
@@ -122,34 +102,14 @@ def setup2(args, unknownArgs):
 
 def run(args, unknownArgs):
     # get simulation-running instructions from script
-    mod = load_config_module(args.config_name)
-
-    # Get the proper configuration block.
-    if len(unknownArgs) == 0:
-        selected_block = None
-    elif len(unknownArgs) == 1:
-        selected_block = unknownArgs[0][2:].upper()
-    else:
-        raise Exception('Too many unknown arguments: please see help.')
-
-    # Parse setup.
-    setup = SetupParser(selected_block=selected_block, setup_file=args.ini, force=True)
+    mod = args.loaded_module
 
     # Assess arguments.
-    if args.blocking:
-        setup.set('blocking', '1')
-    if args.quiet:
-        setup.set('quiet', '1')
-
-    additional_args = {}
-    if setup.get('type') == 'HPC':
-        if args.priority:
-            additional_args['priority'] = args.priority
-        if args.node_group:
-            additional_args['node_group'] = args.node_group
+    mod.run_sim_args['blocking'] = True if args.blocking else False
+    mod.run_sim_args['quiet']    = True if args.quiet    else False
 
     # Create the experiment manager based on the setup and run simulation.
-    exp_manager = ExperimentManagerFactory.from_setup(setup, **additional_args)
+    exp_manager = ExperimentManagerFactory.from_setup()
     exp_manager.run_simulations(**mod.run_sim_args)
 
 
@@ -315,7 +275,7 @@ def progress(args, unknownArgs):
     exp_manager.add_analyzer(ProgressAnalyzer(args.simIds))
 
     if args.comps:
-        override_HPC_settings(exp_manager.setup, use_comps_asset_svc='1')
+        SetupParser.overrides['use_comps_asset_svc'] = '1'
 
     exp_manager.analyze_experiment()
 
@@ -390,8 +350,8 @@ def sync(args, unknownArgs):
     Sync COMPS db with local db
     """
     # Create a default HPC setup parser
-    sp = SetupParser('HPC')
-    endpoint = sp.get('server_endpoint')
+    SetupParser.override_block('HPC')
+    endpoint = SetupParser.get('server_endpoint')
     COMPS_login(endpoint)
 
     exp_to_save = list()
@@ -410,7 +370,7 @@ def sync(args, unknownArgs):
     # Consider experiment id option
     exp_id = args.exp_id if args.exp_id else None
     exp_name = args.exp_name if args.exp_name else None
-    user = args.user if args.user else sp.get('user')
+    user = args.user if args.user else SetupParser.get('user')
 
     if exp_name:
         experiments = get_experiments_by_name(exp_name, user)
@@ -518,7 +478,7 @@ def list_packages(args, unknownArgs):
             package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
         if not hasattr(args, 'quiet'):
             print "\n".join(package_names)
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         package_names = []
     return package_names
 
@@ -531,7 +491,7 @@ def list_package_versions(args, unknownArgs):
         else:
             versions = []
             print "Package %s does not exist." % package_name
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         versions = []
     return versions
 
@@ -565,17 +525,16 @@ def get_package(args, unknownArgs):
             print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
         else:
             print "Package %s does not exist, no changes made." % package_name
-    except disease_packages.AuthorizationError:
+    except GitHub.AuthorizationError:
         pass
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
-    mod = load_config_module(args.config_name)
+    mod = init.load_config_module(args.config_name)
 
     # analyze the simulations
     for analyzer in mod.analyzers:
         sim_manager.add_analyzer(analyzer)
-
 
 def reload_experiment(args=None, try_sync=True):
     """
@@ -593,6 +552,12 @@ def reload_experiment(args=None, try_sync=True):
         logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
         exit()
 
+    # make sure the SetupParser is configured properly for this experiment
+    try:
+        SetupParser.override_block(block=exp.selected_block)
+    except:
+        SetupParser.override_block(block=exp.location)
+
     return ExperimentManagerFactory.from_experiment(exp)
 
 
@@ -600,7 +565,13 @@ def reload_experiments(args=None):
     id = args.expId if args else None
     current_dir = args.current_dir if 'current_dir' in args else None
 
-    return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
+    managers = []
+    for exp in DataStore.get_experiments_with_options(id, current_dir):
+        # make sure the SetupParser is configured properly for this experiment
+        SetupParser.override_block(block=exp.selected_block)
+        managers.append(ExperimentManagerFactory.from_experiment(exp))
+    return managers
+    #return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
 
 
 def main():
@@ -709,8 +680,11 @@ def main():
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
-    args.func(args, unknownArgs)
 
+    # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
+    init.initialize_SetupParser_from_args(args, unknownArgs)
+
+    args.func(args, unknownArgs)
 
 if __name__ == '__main__':
     main()

@@ -1,7 +1,5 @@
 import datetime
 
-import numpy as np
-
 from simtools.DataAccess.BatchDataStore import BatchDataStore
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.Schema import Analyzer
@@ -21,6 +19,7 @@ def dumper(obj):
     Returns:
         Serializable format
     """
+    import numpy as np
     try:
         return obj.toJSON()
     except:

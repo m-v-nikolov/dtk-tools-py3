@@ -23,7 +23,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     exp_dict = collect_experiments(args)
 
     # consider batch existing case
-    exp_dict = exp_dict = consolidate_experiments_with_options(args, exp_dict)
+    exp_dict = consolidate_experiments_with_options(args, exp_dict)
 
     # check status for each experiment
     if not args.force:

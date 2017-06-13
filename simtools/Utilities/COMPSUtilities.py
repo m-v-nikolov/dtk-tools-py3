@@ -12,8 +12,10 @@ from COMPS.Data import Suite
 from COMPS import Client
 from COMPS.Data.Simulation import SimulationState
 
+from simtools.SetupParser import SetupParser
+
 path_translations = {}
-def translate_COMPS_path(path, setup=None):
+def translate_COMPS_path(path):
     """
     Transform a COMPS path into fully qualified path.
     Supports:
@@ -36,11 +38,6 @@ def translate_COMPS_path(path, setup=None):
     if not regexp:
         return path
 
-    # Check if we have a setup
-    if not setup:
-        from simtools.SetupParser import SetupParser
-        setup = SetupParser()
-
     # Retrieve the variable to translate
     groups = regexp.groups()
     comps_variable = groups[1]
@@ -50,17 +47,17 @@ def translate_COMPS_path(path, setup=None):
         abs_path = path_translations[comps_variable]
     else:
         # Prepare the variables we will need
-        environment = setup.get('environment')
+        environment = SetupParser.get('environment')
 
         #Q uery COMPS to get the path corresponding to the variable
-        COMPS_login(setup.get('server_endpoint'))
+        COMPS_login(SetupParser.get('server_endpoint'))
         abs_path = Client.auth_manager().get_environment_macros(environment)[groups[1]]
 
         # Cache
         path_translations[comps_variable] = abs_path
 
     # Replace and return
-    user = setup.get('user')
+    user = SetupParser.get('user')
     return path.replace(groups[0], abs_path).replace("$(User)", user)
 
 

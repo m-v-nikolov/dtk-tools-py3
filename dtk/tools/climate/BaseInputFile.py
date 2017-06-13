@@ -1,8 +1,7 @@
 from abc import ABCMeta, abstractmethod
-
 from datetime import datetime
 
-from simtools.SetupParser import SetupParser
+from simtools.Utilities.LocalOS import LocalOS
 
 
 class BaseInputFile:
@@ -19,7 +18,7 @@ class BaseInputFile:
         meta = {
             "DateCreated": datetime.today().strftime("%m/%d/%Y"),
             "Tool": "dtk-tools",
-            "Author": SetupParser().get('user'),
+            "Author": LocalOS.username,
             "IdReference": self.idref,
             "NodeCount":0
         }

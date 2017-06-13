@@ -1,10 +1,9 @@
 import os
 import json
-import getpass
 import datetime
 
 from simtools.SetupParser import SetupParser
-
+from simtools.Utilities.LocalOS import LocalOS
 
 def set_property(property, values, initial):
     """
@@ -47,7 +46,7 @@ def add_properties_overlay(cb, properties, directory=None, tag=''):
     :return: Nothing
     """
     if directory is None:
-        directory = SetupParser().get('input_root')
+        directory = SetupParser.get('input_root')
 
     filenames = cb.get_param('Demographics_Filenames')
     demogfiles = [f for f in filenames if 'demographics' in f]
@@ -65,7 +64,7 @@ def add_properties_overlay(cb, properties, directory=None, tag=''):
         j = json.loads(f.read())
 
     metadata = j['Metadata']
-    metadata.update({'Author': getpass.getuser(),
+    metadata.update({'Author': LocalOS.username,
                      'DateCreated': datetime.datetime.now().strftime('%a %b %d %X %Y'),
                      'Tool': os.path.basename(__file__)})
 

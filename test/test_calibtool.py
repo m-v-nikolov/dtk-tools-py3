@@ -12,15 +12,14 @@ import pandas as pd
 import shutil
 from ConfigParser import ConfigParser
 from scipy.stats import norm, uniform, multivariate_normal
-
 from calibtool.IterationState import IterationState
 from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContainer
-from calibtool.algo.IMIS import IMIS
-from calibtool.commands import get_calib_manager_args
-from calibtool.commands import load_config_module
+from calibtool.algorithms.IMIS import IMIS
+from calibtool.commands import get_calib_manager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.General import nostdout
+from simtools.Utilities.Initialization import load_config_module
 
 
 class TestCommands(unittest.TestCase):
@@ -341,7 +340,7 @@ class TestCommands(unittest.TestCase):
                          priority=None)
 
         unknownArgs = ['--HPC']  # will require COMPS login
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=False)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'HPC')
 
     def test_selected_block_white_box(self):
@@ -349,15 +348,15 @@ class TestCommands(unittest.TestCase):
                          priority=None)
 
         unknownArgs = []
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=False)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
         unknownArgs = ['--LOCAL']
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=False)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
         unknownArgs = ['--AZU']
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=False)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=False)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
     def test_selected_block_resume_white_box(self):
@@ -369,17 +368,17 @@ class TestCommands(unittest.TestCase):
 
         # Case: take location from iteration 1
         unknownArgs = []
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=True)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
         # Case: use location passed in
         unknownArgs = ['LOCAL']
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=True)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
         # Case: take default (LOCAL) for unknown location
         unknownArgs = ['AZU']
-        manager, calib_args = get_calib_manager_args(args, unknownArgs, force_metadata=True)  # True only for resume
+        manager, calib_args = get_calib_manager(args, unknownArgs, force_metadata=True)  # True only for resume
         self.assertEqual(manager.setup.selected_block, 'LOCAL')
 
 
