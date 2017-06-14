@@ -89,7 +89,7 @@ class GitHubFile(MultiPartFile):
         if not self.is_split:
             self._split()
 
-        repo = DependencyGitHub.repository()
+        repo = DependencyGitHub.repository() # ck4, this call may not be necessary...
 
         chunk_filename_base = os.path.basename(self.source_filename)
         chunk_number = 0

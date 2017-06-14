@@ -27,9 +27,8 @@ from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date,
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
 logger = init_logging('Commands')
-import simtools.Utilities.disease_packages as disease_packages
-from simtools.Utilities.GitHub.GitHub import GitHub
 from COMPS.Data.Simulation import SimulationState
+from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
 import simtools.Utilities.Initialization as init
 
 builtinAnalyzers = {
@@ -472,61 +471,77 @@ def db_list(args, unknownArgs):
         print "No experiments to display."
 
 def list_packages(args, unknownArgs):
-    try:
-        package_names = sorted(disease_packages.get_available('branch'))
-        if not hasattr(args, 'is_test'):
-            package_names.remove(disease_packages.TEST_DISEASE_PACKAGE_NAME)  # ONLY for use with running tests
-        if not hasattr(args, 'quiet'):
-            print "\n".join(package_names)
-    except GitHub.AuthorizationError:
-        package_names = []
+    package_names = DTKGitHub.get_package_list()
+    if not hasattr(args, 'quiet'):
+        print "\n".join(package_names)
     return package_names
 
 def list_package_versions(args, unknownArgs):
     try:
         package_name = args.package_name
-        if disease_packages.package_exists(package_name):
-            versions = sorted(disease_packages.get_versions_for_package(package_name))
-            print "\n".join(versions)
-        else:
-            versions = []
-            print "Package %s does not exist." % package_name
+        github = DTKGitHub(disease=package_name)
+        versions = github.get_versions()
+        if not hasattr(args, 'quiet'):
+            print "\n".join([str(v) for v in versions]); sys.stdout.flush()
     except GitHub.AuthorizationError:
         versions = []
     return versions
 
 def get_package(args, unknownArgs):
+    import pip
+    import tempfile
+    import zipfile
+    is_test = args.is_test if hasattr(args, 'is_test') else None # test == no pip install
+
     # overwrite any existing package by the same name (any version) with the specified version
+    release_dir = None
     try:
         package_name = args.package_name
-        if disease_packages.package_exists(package_name):
-            if args.package_version == 'latest':
-                version = disease_packages.get_latest_version_for_package(package_name) # if no versions exist, returns None
-            elif disease_packages.version_exists_for_package(args.package_version, package_name):
-                version = args.package_version
-            else:
-                version = None
+        github = DTKGitHub(disease=package_name)
 
-            if version == None:
-                print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
-                return
-
-            # obtain desired version of desired package, overwriting any existing version
-            # of this package
-            if hasattr(args, 'dest'):
-                packages_dir = args.dest # test code only
-            else:
-                packages_dir = os.path.join(os.path.dirname(__file__), 'packages')
-            package_dir = os.path.join(packages_dir, package_name)
-
-            print 'Obtaining package: %s version: %s .' % (package_name, version)
-            disease_packages.get(package = package_name, version = version, dest = package_dir)
-
-            print "Package: %s version: %s is available at: %s" % (package_name, version, package_dir)
+        if args.package_version == 'latest':
+            version = github.get_latest_version() # if no versions exist, returns None
+        elif github.version_exists(version=args.package_version):
+            version = args.package_version
         else:
-            print "Package %s does not exist, no changes made." % package_name
+            version = None
+
+        if version is None:
+            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+            return
+
+        tempdir = tempfile.mkdtemp()
+        zip_filename = github.get_zip(version=version, destination=tempdir)
+
+        # Unzip the obtained zip
+        zip_ref = zipfile.ZipFile(zip_filename, 'r')
+        zip_ref.extractall(tempdir)
+        zip_ref.close()
+        os.remove(zip_filename)
+
+        # Identify the unziped source directory
+        source_dir_candidates = [f for f in os.listdir(tempdir) if
+                                 'InstituteforDiseaseModeling-%s' % DTKGitHub.PACKAGE_LIST[package_name] in f]
+        if len(source_dir_candidates) != 1:
+            raise Exception('Failure to identify package to install')
+        else:
+            source_dir = source_dir_candidates[0]
+        release_dir = os.path.join(os.path.dirname(zip_filename), source_dir)
+
+        # edit source dir setup file for the correct version
+        setup_file = os.path.join(release_dir, 'setup.py')
+        with open(setup_file, 'r') as file:
+            text = file.read()
+        text = text.replace('$VERSION$', str(version))
+        with open(setup_file, 'w') as file:
+            file.write(text)
+
+        # install
+        if not is_test:
+            pip.main(['install', release_dir])
     except GitHub.AuthorizationError:
         pass
+    return release_dir
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
