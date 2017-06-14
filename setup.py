@@ -27,6 +27,16 @@ GITHUB_URL_PREFIX = 'http://%s' % GITHUB
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
 requirements = OrderedDict([
+    ('github3.py', {
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
+        'version': '1.0.0a4',
+        'test': '>='
+    }),
+    ('packaging', {
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
+        'version': '16.8',
+        'test': '>='
+    }),
     ('curses', {
         'platform': [LocalOS.WINDOWS],
         'version': '2.2',
@@ -115,11 +125,6 @@ requirements = OrderedDict([
     }),
     ('enum34', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('github3.py', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.0a4',
-        'test': '>='
     }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],

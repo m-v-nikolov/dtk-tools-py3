@@ -1,8 +1,5 @@
-import github3
 import os
 import uuid
-
-from simtools.DataAccess.DataStore import DataStore
 
 class GitHub(object):
     """
@@ -18,6 +15,7 @@ class GitHub(object):
     OWNER = 'InstituteforDiseaseModeling'
     AUTH_TOKEN_FIELD_PATTERN = '%s_github_authentication_token'
     SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
+    AUTH_TOKEN = None # allows subclasses to bypass interactive login if overridden
 
     def __init__(self, repository_name=None):
         self.repository_name = repository_name or self.DEFAULT_REPOSITORY_NAME
@@ -28,7 +26,6 @@ class GitHub(object):
         self.auth_token_field = self.AUTH_TOKEN_FIELD_PATTERN % repository_name
         self.support_email = self.SUPPORT_EMAIL
 
-    # ck4 update all .repository() refernces to .repository
     @property
     def repository(self):
         if not self._repo:
@@ -40,21 +37,27 @@ class GitHub(object):
         return self._repo
 
     def login(self):
+        import github3
         # Get an authorization token first
         token = self.retrieve_token()
         self.session = github3.login(token=token)
         self._repo = self.session.repository(self.OWNER, self.repository_name)
 
     def retrieve_token(self):
-        setting = DataStore.get_setting(self.auth_token_field)
-        if setting:
-            token = setting.value
+        if self.AUTH_TOKEN:
+            token = self.AUTH_TOKEN
         else:
-            token = self.create_token()
+            from simtools.DataAccess.DataStore import DataStore
+            setting = DataStore.get_setting(self.auth_token_field)
+            if setting:
+                token = setting.value
+            else:
+                token = self.create_token()
         return token
 
     def create_token(self):
         import getpass
+        import github3
         # Asks user for username/password
         user = raw_input("Please enter your GitHub username: ")
         password = getpass.getpass(prompt="Please enter your GitHub password: ")
@@ -69,14 +72,14 @@ class GitHub(object):
             if len(user) == 0 or len(password) == 0:
                 raise self.BadCredentials()
             auth = github3.authorize(user, password, scopes, note, note_url)
-        except (github3.models.GitHubError, self.BadCredentials):
+        except (github3.GitHubError, self.BadCredentials):
             print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance." \
                   % self.SUPPORT_EMAIL
             raise self.AuthorizationError()
 
         # Write the info to disk
         # Update the (local) mysql db with the token
-        print('Saving token: %s in field: %s' % (auth.token, self.auth_token_field))
+        from simtools.DataAccess.DataStore import DataStore
         DataStore.save_setting(DataStore.create_setting(key=self.auth_token_field, value=auth.token))
 
         return auth.token
@@ -234,3 +237,4 @@ class DTKGitHub(GitHub):
 
 class DependencyGitHub(GitHub):
     DEFAULT_REPOSITORY_NAME = 'PythonDependencies'
+    AUTH_TOKEN = '09ef3bad6e6eef13ddca6848c75ad1cd83e71051' # set token here to the default RO user

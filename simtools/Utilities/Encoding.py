@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 
-   
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -47,3 +46,21 @@ def json_numpy_obj_hook(dct):
         data = base64.b64decode(dct['__ndarray__'])
         return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
     return dct
+
+
+def cast_number(val):
+    """
+    Try casting the value to float/int returns str if cannot
+    :param val: the value to cast
+    :return: value casted
+    """
+    if "." in str(val):
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return val
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return val
+
