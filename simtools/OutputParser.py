@@ -21,7 +21,8 @@ class SimulationOutputParser(threading.Thread):
         self.sim_id = simulation.id
         self.sim_path = simulation.get_path()
         self.sim_data = simulation.tags
-
+        self.experiment = simulation.experiment
+        self.simulation = simulation
         self.analyzers = analyzers
         self.raw_data = {}
         self.selected_data = {}
