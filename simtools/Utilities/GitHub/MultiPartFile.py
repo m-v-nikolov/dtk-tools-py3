@@ -70,6 +70,7 @@ class GitHubFile(MultiPartFile):
 
     def __init__(self, source_filename):
         super(GitHubFile, self).__init__(source_filename)
+        self.github = DependencyGitHub() # will select the right repo as the default due to class naming/setup
 
     def pull(self):
         """
@@ -89,16 +90,14 @@ class GitHubFile(MultiPartFile):
         if not self.is_split:
             self._split()
 
-        repo = DependencyGitHub.repository() # ck4, this call may not be necessary...
-
         chunk_filename_base = os.path.basename(self.source_filename)
         chunk_number = 0
         for chunk in self.chunks:
             chunk_filename = chunk_filename_base + self._make_chunk_suffix(chunk_number)
-            if DependencyGitHub.file_in_repository(filename=chunk_filename):
+            if self.github.file_in_repository(filename=chunk_filename):
                 raise Exception("Cannot overwrite existing files with push().")
             else:
-                repo.create_file(path=chunk_filename, message='added new file %s' % chunk_filename, content=chunk)
+                self.github.repository.create_file(path=chunk_filename, message='added new file %s' % chunk_filename, content=chunk) # move this into github.METHOD ?
             chunk_number += 1
         self.chunks = []
         self.is_split = False
@@ -108,15 +107,13 @@ class GitHubFile(MultiPartFile):
         Delete all parts from the GitHub repo. Cannot delete legacy files.
         :return:
         """
-        repo = DependencyGitHub.repository()
-
         done = False
         chunk_number = 0
         while not done:
             chunk_filename_base = os.path.basename(self.source_filename)
             chunk_filename = chunk_filename_base + self._make_chunk_suffix(chunk_number)
-            if DependencyGitHub.file_in_repository(filename=chunk_filename):
-                file_to_delete = repo.file_contents(chunk_filename)
+            if self.github.file_in_repository(filename=chunk_filename):
+                file_to_delete = self.github.repository.file_contents(chunk_filename)
                 file_to_delete.delete(message='deleting file: %s' % chunk_filename)
             else:
                 done = True
@@ -133,14 +130,14 @@ class GitHubFile(MultiPartFile):
 
         # First, look for non-chunked version of the current file.
         non_chunked_file_name = os.path.basename(self.source_filename)
-        if DependencyGitHub.file_in_repository(non_chunked_file_name):
-            chunks.append(DependencyGitHub.get_file_data(non_chunked_file_name))
+        if self.github.file_in_repository(non_chunked_file_name):
+            chunks.append(self.github.get_file_data(non_chunked_file_name))
         else: # a non-chunked version of the file was not found, so look for chunks
             chunk_number = 0
             done = False
             while not done:
                 remote_chunk_filename = non_chunked_file_name + self._make_chunk_suffix(chunk_number)
-                chunk = DependencyGitHub.get_file_data(remote_chunk_filename)
+                chunk = self.github.get_file_data(remote_chunk_filename)
                 if chunk:
                     chunks.append(chunk)
                     chunk_number += 1
