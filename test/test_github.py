@@ -111,5 +111,38 @@ class TestGitHub(unittest.TestCase):
                 file_data.append(file.read())
         self.assertEqual(file_data[0], file_data[1])
 
+from simtools.Utilities.GitHub.GitHub import Version
+class TestVersion(unittest.TestCase):
+
+    def test_format_detection(self):
+        invalid_formats = ['1,2', 'a.b', '7.4.4h', '1..2', 'v1.2.9', '1.2.07', 'Hector\'s dolphin']
+        valid_formats = ['0', '0.1', '1.2.3.4.5.6.7.8.9', '2.107.3',
+                         '44.3.15', '1453.5.29', '1776.7.4', '1824.5.7', '1862.9.22',
+                         '1941.12.7', '1949.6.8', '1953.3.26','1969.7.21']
+
+        for version in invalid_formats:
+            self.assertRaises(Version.InvalidVersionFormat, Version, version_str=version)
+        for version in valid_formats:
+            Version(version)
+
+    def test_proper_parsing(self):
+        version = Version('1.20.9.0')
+        self.assertEqual(version.version_components, [1,20,9,0])
+        self.assertEqual(version.length, 4)
+
+    def test_version_comparison(self):
+        self.assertTrue(Version('1.0') <  Version('1.4'))
+        self.assertTrue(Version('1.0') <= Version('1.4'))
+        self.assertTrue(Version('1.0') != Version('1.4'))
+
+        self.assertFalse(Version('1.0') > Version('1.4'))
+        self.assertFalse(Version('1.0') >= Version('1.4'))
+        self.assertFalse(Version('1.0') == Version('1.4'))
+
+        # cannot compare versions of differing lengths
+        v1 = Version('1.0')
+        v2 = Version('1.0.0')
+        self.assertRaises(Exception, v1.__cmp__, v2)
+
 if __name__ == '__main__':
     unittest.main()

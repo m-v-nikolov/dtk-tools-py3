@@ -4,10 +4,20 @@ class Version(object, ):
 
     def __init__(self, version_str):
         self.version_str = version_str
-        self.version_components = [ int(i) for i in version_str.split('.') ]
+        try:
+            self.version_components = []
+            for component in version_str.split('.'):
+                # verify no leading 0s are present, as they will be 'normalized' by pip install, causing untold future problems
+                if component == str(int(component)):
+                    self.version_components.append(int(component))
+                else:
+                    raise self.InvalidVersionFormat('Versions must be of the form: n0.n1.n2 ... (nX being a non-negative integer, no leading 0s)')
+        except ValueError as e:
+            raise self.InvalidVersionFormat('Versions must be of the form: n0.n1.n2 ... (nX being a non-negative integer, no leading 0s)')
+
         self.length = len(self.version_components)
         if not self.length > 0:
-            raise self.InvalidVersionFormat('Versions must be of the form: n0.n1.n2 ... (nX being a non-negative integer)')
+            raise self.InvalidVersionFormat('Versions must be of the form: n0.n1.n2 ... (nX being a non-negative integer), no leading 0s')
 
     def __cmp__(self, other_version):
         """
