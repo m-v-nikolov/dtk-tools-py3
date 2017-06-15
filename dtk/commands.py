@@ -474,6 +474,7 @@ def db_list(args, unknownArgs):
 
 def list_packages(args, unknownArgs):
     package_names = DTKGitHub.get_package_list()
+    package_names.remove(DTKGitHub.TEST_DISEASE_PACKAGE_NAME) # don't show the test package/repo!
     if not hasattr(args, 'quiet'):
         print "\n".join(package_names)
     return package_names
