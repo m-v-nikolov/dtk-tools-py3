@@ -13,7 +13,7 @@ class GitHub(object):
     # derivative classes may redefine the following fields
     DEFAULT_REPOSITORY_NAME = None
     OWNER = 'InstituteforDiseaseModeling'
-    AUTH_TOKEN_FIELD_PATTERN = '%s_github_authentication_token'
+    AUTH_TOKEN_FIELD = 'github_authentication_token'
     SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
     AUTH_TOKEN = None # allows subclasses to bypass interactive login if overridden
 
@@ -23,7 +23,7 @@ class GitHub(object):
             raise Exception('repository name not supplied')
         self._repo = None
         self.owner = self.OWNER
-        self.auth_token_field = self.AUTH_TOKEN_FIELD_PATTERN % repository_name
+        self.auth_token_field = self.AUTH_TOKEN_FIELD
         self.support_email = self.SUPPORT_EMAIL
 
     @property

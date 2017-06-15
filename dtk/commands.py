@@ -542,6 +542,10 @@ def get_package(args, unknownArgs):
         # install
         if not is_test:
             pip.main(['install', release_dir])
+
+        # update the local DB with the version
+        db_key = github.disease_package_db_key
+        DataStore.save_setting(DataStore.create_setting(key=db_key, value=str(version)))
     except GitHub.AuthorizationError:
         pass
     return release_dir
