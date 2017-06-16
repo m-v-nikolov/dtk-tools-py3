@@ -1,4 +1,5 @@
 import os
+import errno
 import sys
 import logging
 
@@ -17,7 +18,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
     # For computing person-years, ASSUMING 6-monthly REPORTING INTERVAL! (Could read from config.json or elsewhere)
     report_timestep_in_years = 0.5
-    prevalent_cols = ['Population', 'Infected', 'On_ART','HasIntervention(EffectivePrEP)']
+    person_year_cols = ['Population', 'Infected', 'On_ART','HasIntervention(EffectivePrEP)']
 
     def __init__(self,
                 max_sims_per_scenario = -1,
@@ -72,16 +73,28 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         self.sim_ids = []
 
         if not os.path.isdir(self.basedir):
-            os.makedirs(self.basedir)
+            print 'ReportHIVByAgeAndGenderAnalyze::init making %s'%self.basedir
+            try:
+                os.makedirs(self.basedir)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise  # raises the error again
+
 
     def filter(self, sim_metadata):
         self.workdir = os.path.join(self.basedir, self.exp_id)
         if not os.path.isdir(self.workdir):
-            os.makedirs(self.workdir)
+            print 'ReportHIVByAgeAndGenderAnalyze::filter making %s'%self.workdir
+            try:
+                os.makedirs(self.workdir)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise  # raises the error again
 
-        self.figdir = os.path.join(self.workdir, self.__class__.__name__)
-        if not os.path.isdir(self.figdir):
-            os.makedirs(self.figdir)
+        #self.figdir = os.path.join(self.workdir, self.__class__.__name__)
+        #if not os.path.isdir(self.figdir):
+        #    print 'ReportHIVByAgeAndGenderAnalyze::filter making %s'%self.figdir
+        #    os.makedirs(self.figdir)
 
         scenario = sim_metadata['Scenario']
 
@@ -128,6 +141,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         # Sum over age and other factors to make the data smaller
         raw = parser.raw_data[self.filenames[0]]
 
+        # TODO: Move to PrEP-specific sub-class
         if 'HasIntervention:EffectivePrEP' in raw.columns.values:
             if self.verbose:
                 print 'Computing HasIntervention(EffectivePrEP) from HasIntervention:EffectivePrEP'
@@ -148,25 +162,27 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pop_scaling = self.reference_population / float(sim_pop)
         if self.verbose:
             print 'Population scaling is', pop_scaling
-        scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Received_PrEP', 'Diagnosed'] if sc in pdata.columns]
+        #scale_cols = [sc for sc in ['Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Received_PrEP', 'Diagnosed'] if sc in pdata.columns]
 
-        pdata[scale_cols] *= pop_scaling
+        #pdata[scale_cols] *= pop_scaling # Let the user do this
         #######################################################################
 
         ### ANNUALIZATION #####################################################
         # Compute person-years
-        prevalent_cols = [pc for pc in self.prevalent_cols if pc in pdata.columns]
-        py_cols = [ col + ' (PY)' for col in prevalent_cols ]
-        for col, py_col in zip(prevalent_cols, py_cols):
+        person_year_cols = [pc for pc in self.person_year_cols if pc in pdata.columns]
+        py_cols = [ col + ' (PY)' for col in person_year_cols ]
+        for col, py_col in zip(person_year_cols, py_cols):
             pdata[py_col] = self.report_timestep_in_years * pdata[col]
         #######################################################################
 
-        keep_cols = [kc for kc in ['Year', 'Gender', 'NodeId', 'IP_Key:Risk', 'Age', 'Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Received_PrEP', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Diagnosed'] if kc in pdata.columns]
-        keep_cols += py_cols
-        drop_cols = list( set(pdata.columns.values) - set(keep_cols) )
-        pdata.drop(drop_cols, axis=1, inplace=True)
+        #keep_cols = [kc for kc in ['Year', 'Gender', 'NodeId', 'IP_Key:Risk', 'Age', 'Population', 'Infected', 'Newly Infected', 'On_ART', 'Died', 'Died_from_HIV', 'Received_PrEP', 'Transmitters', 'HasIntervention(EffectivePrEP)', 'Diagnosed'] if kc in pdata.columns]
+        #keep_cols += py_cols
+        #drop_cols = list( set(pdata.columns.values) - set(keep_cols) )
+        #pdata.drop(drop_cols, axis=1, inplace=True)
 
-        pdata.rename(columns={'IP_Key:Risk':'Risk', 'NodeId':'Province'}, inplace=True)
+        pdata.rename(columns={'NodeId':'Province'}, inplace=True)
+        if 'IP_Key:Risk' in pdata.columns:
+            pdata.rename(columns={'IP_Key:Risk':'Risk'}, inplace=True)
 
         pdata = pdata.reset_index(drop=True).set_index('Province')
         pdata.rename(self.node_map, inplace=True)
@@ -175,6 +191,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         pdata.reset_index(inplace=True)
 
         # Make "Both" gender col in case data are not gender disaggregated
+        '''
         if add_both_level_to_gender:
             pdata.set_index(['Gender', 'Province', 'Year', 'Risk', 'Age'], inplace=True)
             both = pdata.loc['Male'] + pdata.loc['Female']
@@ -182,6 +199,7 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
             both = both.reset_index().set_index(['Gender', 'Province', 'Year', 'Risk', 'Age'])
             pdata = pd.concat([pdata, both])
             pdata.reset_index(inplace=True)
+        '''
 
         return {'Data':pdata, 'Pop_Scaling':pop_scaling}
 
