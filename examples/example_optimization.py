@@ -15,7 +15,7 @@ from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
-SetupParser.default_block = 'HPC2'
+SetupParser.default_block = 'HPC'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
