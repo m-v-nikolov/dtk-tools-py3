@@ -1,6 +1,8 @@
 import os
 import uuid
 
+from simtools.Utilities.General import retry_function
+
 class GitHub(object):
     """
     This class is intended to be subclassed for use. Defined subclasses go at the bottom of this file.
@@ -84,6 +86,7 @@ class GitHub(object):
 
         return auth.token
 
+    @retry_function
     def get_directory_contents(self, directory):
         contents = self.repository.directory_contents(directory, return_as=dict)
         return contents
@@ -100,6 +103,7 @@ class GitHub(object):
         else:
             return False
 
+    @retry_function
     def get_file_data(self, filename):
         directory = os.path.dirname(filename)
         contents = self.get_directory_contents(directory)
@@ -110,14 +114,13 @@ class GitHub(object):
                 req = urllib2.Request(download_url)
                 resp = urllib2.urlopen(req)
                 data = resp.read()
-                #            with open(local_filename, 'wb') as local_file:
-                #                local_file.write(data)
             except:
                 raise Exception("Could not retrieve file: %s in repository: %s" % (filename, self.repository_name))
         else:
-            data = None  # raise Exception("Requested file: %s does not exist in repository: %s" % (filename, cls.repository().name))
+            data = None
         return data
 
+    @retry_function
     def get_zip(self, tag, destination):
         """
         Obtains an archive zip of the specified git tag and names the resultant file: zip_file
@@ -137,7 +140,7 @@ class GitHub(object):
 # Derivative classes here
 #
 
-from simtools.Utilities.GitHub.Version import Version
+from distutils.version import LooseVersion
 class DTKGitHub(GitHub):
     # this file contains methods for interfacing with the disease input packages github repository
 
@@ -176,6 +179,7 @@ class DTKGitHub(GitHub):
         """
         return version in [str(v) for v in self.get_versions()]
 
+    @retry_function
     def get_versions(self):
         """
             Returns the (sorted) input versions available for the selected disease/package.
@@ -205,7 +209,7 @@ class DTKGitHub(GitHub):
         """
         str, version = tag.split('-')
         try:
-            version = Version(version)
+            version = LooseVersion(version)
             if str != cls.RELEASE:
                 raise Exception()
         except:
@@ -222,7 +226,6 @@ class DTKGitHub(GitHub):
         """
         return '-'.join([cls.RELEASE, str(ver)])
 
-    # ck4, update all references to this method from get -> get_zip
     def get_zip(self, version, destination):
         """
         Obtains the requested disease input package & version and puts it at the desired location.
