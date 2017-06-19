@@ -32,7 +32,7 @@ class BaseSimulationCreator(Process):
         self.setup_parser_singleton = SetupParser.singleton
 
     def run(self):
-        #SetupParser.init(singleton=self.setup_parser_singleton)
+        SetupParser.init(singleton=self.setup_parser_singleton)
         try:
             self.process()
         except Exception as e:
