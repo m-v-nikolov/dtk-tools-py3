@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import ctypes
 import os
 import re
@@ -9,7 +10,6 @@ from collections import OrderedDict
 from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
-from argparse import ArgumentParser, Namespace
 
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
@@ -532,15 +532,6 @@ def cleanup_locks():
 
 
 def main():
-    # if we add any more options, do this in a separate method
-    parser = ArgumentParser()
-    parser.add_argument('--nopackages', action='store_false', dest='get_packages',
-                        help='Do not automatically obtain disease packages (Default: obtain them).')
-    args = parser.parse_args()
-    # silly, but prevents conflict with install_packages method
-    if '--nopackages' in sys.argv:
-        sys.argv.remove('--nopackages')
-
     # Check OS
     my_os = LocalOS.name
     print ('os: %s' % my_os)
@@ -559,17 +550,6 @@ def main():
 
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
-
-    # Obtain the most recent disease input packages
-    if args.get_packages:
-        import dtk.commands
-        namespace = Namespace()
-        setattr(namespace, 'quiet', True)
-        package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
-        for package_name in package_names:
-            setattr(namespace, 'package_name', package_name)
-            setattr(namespace, 'package_version', 'latest')
-            dtk.commands.get_package(args=namespace, unknownArgs=None)
 
     cleanup_locks()
 
