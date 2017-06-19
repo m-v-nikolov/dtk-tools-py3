@@ -364,11 +364,11 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
-    def prepare_assets(self, location):
-        self.assets = self.get_assets()
+    def prepare_assets(self, location, cache=None):
+        self.assets = self.get_assets(cache or {})
         self.assets.prepare(location)
 
-    def get_assets(self):
+    def get_assets(self, cache=None):
         """
         Returns a SimulationAssets object corresponding to the current simulation.
         """
@@ -389,7 +389,8 @@ class DTKConfigBuilder(SimConfigBuilder):
         # creating local AssetCollection instances internally to represent them.
         assets = SimulationAssets.assemble_assets(config_builder=self,
                                                   base_collection_id=base_collection_id,
-                                                  use_local_files=use_local_files)
+                                                  use_local_files=use_local_files,
+                                                  cache=cache)
         return assets
 
     def add_demog_overlay(self, name, content):

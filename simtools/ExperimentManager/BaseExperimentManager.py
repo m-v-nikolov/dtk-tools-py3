@@ -79,7 +79,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list, asset_cache):
         pass
 
     @abstractmethod
@@ -162,7 +162,7 @@ class BaseExperimentManager:
             exit()
 
         # Store the config_builder if passed
-        self.config_builder = config_builder
+        self.config_builder = config_builder or self.config_builder
 
         # Set the tags
         self.experiment_tags.update(experiment_tags or {})
@@ -276,8 +276,10 @@ class BaseExperimentManager:
         fn_batches = batch(work_list, n=nbatches)
 
         # Create a manager for sharing the list of simulations created back with the main thread
+        # Also create a dict for the cache of md5
         manager = multiprocessing.Manager()
         return_list = manager.list()
+        asset_cache = manager.dict()
 
         # Create the simulation processes
         creator_processes = []
@@ -285,7 +287,7 @@ class BaseExperimentManager:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
                                             callback=lambda: print('.' if verbose else '', end=""),
-                                            return_list=return_list)
+                                            return_list=return_list, asset_cache=asset_cache)
             creator_processes.append(c)
 
         # Display some info

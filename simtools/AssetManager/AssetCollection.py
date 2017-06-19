@@ -4,6 +4,9 @@ from COMPS.Data.AssetCollection import AssetCollection as COMPSAssetCollection
 from COMPS.Data.AssetCollectionFile import AssetCollectionFile as COMPSAssetCollectionFile
 from COMPS.Data.QueryCriteria import QueryCriteria as COMPSQueryCriteria
 
+from simtools.Utilities.General import get_md5
+
+
 class AssetCollection(object):
     """
     This class represents a single collection of files (AssetFile) in a simulation. An object of this class is
@@ -12,7 +15,7 @@ class AssetCollection(object):
 
     class InvalidConfiguration(Exception): pass
 
-    def __init__(self, base_collection_id = None, local_files = None, remote_files = None):
+    def __init__(self, base_collection_id=None, local_files=None, remote_files=None, cache=None):
         """
         :param base_collection_id: A string COMPS AssetCollection id (if not None)
         :param local_files: a FileList object representing local files to use (if not None)
@@ -20,11 +23,14 @@ class AssetCollection(object):
         """
         if not (base_collection_id or local_files or remote_files):
             raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
+
         if base_collection_id and remote_files:
             raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
+
         self.base_collection_id = base_collection_id
         self._remote_files = remote_files
         self.local_files = local_files
+        self.cache = cache or {}
 
         self.asset_files_to_use = self._determine_files_to_use()
         self.collection_id = None
@@ -36,7 +42,7 @@ class AssetCollection(object):
         """
         :return: True/False, should local files be used for this AssetCollection?
         """
-        return not self.local_files is None
+        return self.local_files is not None
 
     def prepare(self, location):
         """
@@ -80,19 +86,23 @@ class AssetCollection(object):
         for asset_file in existing:
             relative_path = asset_file.relative_path if asset_file.relative_path is not None else ''
             selected[os.path.join(relative_path, asset_file.file_name)] = asset_file
+
         for asset_file in local:
             selected[os.path.join(asset_file.relative_path, asset_file.file_name)] = asset_file
+
         return selected.values()
 
     def _determine_files_to_use(self):
         if not (self.base_collection_id or self.load_local or self._remote_files):
             raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
+
         if self.base_collection_id and self._remote_files:
             raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
 
         # identify the file sources to choose from
         local_asset_files = []
         existing_asset_files = []
+
         if self.base_collection_id:
             # obtain info for all files in the existing collection.
             existing_asset_files = COMPSAssetCollection.get(id=self.base_collection_id,
@@ -103,9 +113,18 @@ class AssetCollection(object):
         if self.load_local:
             local_asset_files = []
             for file in self.local_files.files:
-                relative_path = os.path.dirname(file) if len(os.path.dirname(file)) > 0 else ''
+                relative_path = self.local_files.relative_path(file)
+                full_path = self.local_files.full_path(file)
+
+                if full_path in self.cache:
+                    md5 = self.cache[full_path]
+                else:
+                    md5 = get_md5(full_path)
+                    self.cache[full_path] = md5
+
                 local_asset_files.append(COMPSAssetCollectionFile(file_name=os.path.basename(file),
-                                                                  relative_path=relative_path))
+                                                                  relative_path=relative_path,
+                                                                  md5_checksum=md5))
 
         # This is necessary so that _get_or_create_collection() can determine which COMPSAssetFile objects need
         # to be discovered locally (via full path)
@@ -125,12 +144,7 @@ class AssetCollection(object):
         # Create a COMPS collection
         collection = COMPSAssetCollection()
         for af in self.asset_files_to_use:
-            if af.is_local:
-                full_path = os.path.join(root_dir, af.relative_path, af.file_name)
-                if not os.path.exists(full_path): continue
-                collection.add_asset(af, file_path=full_path)  # file_path here will trigger the MD5 checksum
-            else:
-                collection.add_asset(af)
+            collection.add_asset(af)
 
         collection.save()
         return collection

@@ -15,7 +15,7 @@ class BaseSimulationCreator(Process):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list, asset_cache):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
@@ -27,6 +27,7 @@ class BaseSimulationCreator(Process):
         self.callback = callback
         self.created_simulations = []
         self.setup_parser_singleton = SetupParser.singleton
+        self.asset_cache = asset_cache
 
     def run(self):
         SetupParser.init(singleton=self.setup_parser_singleton)
@@ -53,7 +54,7 @@ class BaseSimulationCreator(Process):
                 tags.update(md)
 
             # Prepare the assets assets
-            cb.prepare_assets(location=self.experiment.location)
+            cb.prepare_assets(location=self.experiment.location, cache=self.asset_cache)
 
             # Create the simulation
             s = self.create_simulation(cb)

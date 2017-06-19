@@ -200,11 +200,13 @@ def get_md5(filename):
         logger.error("The file %s does not exist ! No MD5 could be computed...")
         return None
 
-    with open(filename) as f:
-        data = f.read()
+    with open(filename, 'rb') as f:
+        md5calc = md5()
+        while True:
+            data = f.read(int(1e8))
+            if len(data) == 0: break
+            md5calc.update(data)
 
-    md5calc = md5()
-    md5calc.update(data)
     return uuid.UUID(md5calc.hexdigest())
 
 

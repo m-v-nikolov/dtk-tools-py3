@@ -84,7 +84,7 @@ class SimulationAssets(object):
         self.prepared = True
 
     @classmethod
-    def assemble_assets(cls, config_builder, base_collection_id=None, use_local_files=None):
+    def assemble_assets(cls, config_builder, base_collection_id=None, use_local_files=None, cache=None):
         """
         The entry point for creating a full SimulationAssets object in one go.
         :param config_builder: A DTKConfigBuilder associated with this process.
@@ -111,7 +111,7 @@ class SimulationAssets(object):
             else:
                 files = None
             collections[collection_type] = AssetCollection(base_collection_id=base_collection_id[collection_type],
-                                                           local_files=files)
+                                                           local_files=files, cache=cache)
 
         return cls(collections)
 

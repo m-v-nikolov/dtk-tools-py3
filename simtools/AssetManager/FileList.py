@@ -1,7 +1,7 @@
 import os
 
-class FileList(object):
 
+class FileList(object):
     def __init__(self, root, files_in_root):
         """
         Represents a set of files that are specified RELATIVE to root.
@@ -18,4 +18,10 @@ class FileList(object):
 
     @property
     def invalid_files(self):
-        return [ file for file in self.files_fullpath if not os.path.exists(file) ]
+        return [file for file in self.files_fullpath if not os.path.exists(file)]
+
+    def full_path(self, file):
+        return os.path.join(self.root, file)
+
+    def relative_path(self, file):
+        return os.path.dirname(file) if len(os.path.dirname(file)) > 0 else ''

@@ -139,11 +139,12 @@ class LocalExperimentManager(BaseExperimentManager):
             except Exception as e:
                 print e
 
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list, asset_cache):
         return LocalSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
                                       callback=callback,
-                                      return_list=return_list)
+                                      return_list=return_list,
+                                      asset_cache=asset_cache)
