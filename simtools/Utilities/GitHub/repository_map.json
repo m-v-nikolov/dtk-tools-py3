@@ -1,4 +1,5 @@
 {
-  "malaria": "malaria-package",
+  "malaria": "dtk-tools-malaria",
+  "HIV": "HIV-Analyzers",
   "test": "TestRepository"
 }
