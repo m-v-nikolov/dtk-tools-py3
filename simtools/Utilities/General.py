@@ -192,17 +192,20 @@ def get_tools_revision():
 
 
 def get_md5(filename):
-    from matplotlib.finance import md5
+    from hashlib import md5
+    import uuid
     logger.info('Getting md5 for ' + filename)
-    with open(filename) as file:
-        md5calc = md5()
-        while True:
-            data = file.read(10240)  # value picked from example!
-            if len(data) == 0:
-                break
-            md5calc.update(data)
-    md5_value = md5calc.hexdigest()
-    return md5_value
+
+    if not os.path.exists(filename):
+        logger.error("The file %s does not exist ! No MD5 could be computed...")
+        return None
+
+    with open(filename) as f:
+        data = f.read()
+
+    md5calc = md5()
+    md5calc.update(data)
+    return uuid.UUID(md5calc.hexdigest())
 
 
 def is_remote_path(path):
