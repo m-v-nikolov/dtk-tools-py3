@@ -1,7 +1,7 @@
-from dtk.malaria.immunity import add_immune_overlays
+from malaria.immunity import add_immune_overlays
+from malaria.site.input_EIR_by_site import configure_site_EIR
 
 from dtk.vector.species import set_larval_habitat, set_species_param, set_params_by_species
-from dtk.vector.input_EIR_by_site import configure_site_EIR
 
 from dtk.interventions.input_EIR import add_InputEIR
 from dtk.interventions.mosquito_release import add_mosquito_release
