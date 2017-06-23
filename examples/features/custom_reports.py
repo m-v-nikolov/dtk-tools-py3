@@ -1,6 +1,6 @@
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from dtk.utils.reports.MalariaReport import add_summary_report,add_immunity_report,add_survey_report
+from malaria.reports.MalariaReport import add_summary_report,add_immunity_report,add_survey_report
 
 exp_name  = 'CustomReports'
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')

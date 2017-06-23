@@ -1,6 +1,6 @@
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from dtk.utils.reports.MalariaReport import add_patient_report
+from malaria.reports.MalariaReport import add_patient_report
 from dtk.interventions.malaria_drugs import add_drug_campaign
 
 exp_name  = 'DrugCampaign'
