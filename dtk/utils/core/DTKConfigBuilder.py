@@ -148,7 +148,7 @@ class DTKConfigBuilder(SimConfigBuilder):
             except ImportError as e:
                 e.message = 'The malaria disease package must be installed via the \'dtk get_package\' command' + \
                             'before the MALARIA_SIM simulation type can be used.'
-                raise e
+                raise
 
             config["parameters"].update(vector_params.params)
             config["parameters"].update(malaria_params.params)
