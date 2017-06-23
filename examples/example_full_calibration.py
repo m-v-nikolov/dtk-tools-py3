@@ -10,28 +10,16 @@ from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from simtools.SetupParser import SetupParser
 
-from calibtool.study_sites import \
-    NdiopCalibSite, DielmoCalibSite, \
-    NamawalaCalibSite, RafinMarkeCalibSite, MatsariCalibSite, SugungumCalibSite, \
-    LayeCalibSite, DapelogoCalibSite, MatsariAgeSeasonCalibSite, RafinMarkeAgeSeasonCalibSite, \
-    SugungumAgeSeasonCalibSite
+from malaria.study_sites.RafinMarkeAgeSeasonCalibSite import RafinMarkeAgeSeasonCalibSite
+from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
 
 SetupParser.default_block = 'EXAMPLE'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 sites = [
-    # RafinMarkeCalibSite(),
     RafinMarkeAgeSeasonCalibSite(),
-    # MatsariCalibSite(),
-    # MatsariAgeSeasonCalibSite(),
-    # SugungumCalibSite(),
-    # SugungumAgeSeasonCalibSite(),
-    # NamawalaCalibSite(),
-    # NdiopCalibSite(),
     DielmoCalibSite(),
-    # LayeCalibSite(),
-    # DapelogoCalibSite()
 ]
 
 prior = MultiVariatePrior.by_range(
