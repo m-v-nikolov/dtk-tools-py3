@@ -513,7 +513,9 @@ def get_package(args, unknownArgs):
         package_name = args.package_name
         github = DTKGitHub(disease=package_name)
 
-        if args.package_version == 'latest':
+        if args.package_version.upper() == GitHub.HEAD:
+            version = GitHub.HEAD
+        elif args.package_version.lower() == 'latest':
             version = github.get_latest_version() # if no versions exist, returns None
         elif github.version_exists(version=args.package_version):
             version = args.package_version
