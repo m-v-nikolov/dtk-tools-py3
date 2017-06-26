@@ -24,8 +24,11 @@ class NumpyEncoder(json.JSONEncoder):
             return dict(__ndarray__=data_b64,
                         dtype=str(obj.dtype),
                         shape=obj.shape)
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder(self, obj)
+        try:
+            # Let the base class default method raise the TypeError
+            return json.dumps(obj)
+        except TypeError:
+            return str(obj)
 
 
 class GeneralEncoder(NumpyEncoder):
