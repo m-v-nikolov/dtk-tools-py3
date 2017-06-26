@@ -143,7 +143,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         campaign = empty_campaign
 
         if sim_type == "MALARIA_SIM":
-            try: # ck4, test this import
+            try:
                 import malaria.params as malaria_params # must have the malaria disease package installed!
             except ImportError as e:
                 e.message = 'The malaria disease package must be installed via the \'dtk get_package\' command' + \
