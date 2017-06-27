@@ -105,6 +105,11 @@ class AssetCollection(object):
 
         if self.base_collection_id:
             # obtain info for all files in the existing collection.
+
+            # Determine if the asset collection id is really a tag: a default, well-known collection, then get its files
+            default_collection_id = self.asset_collection_id_for_tag(tag_name='Name', tag_value=self.base_collection_id)
+            if default_collection_id:
+                self.base_collection_id = default_collection_id
             existing_asset_files = COMPSAssetCollection.get(id=self.base_collection_id,
                                                             query_criteria=self.asset_files_query()).assets
         elif self._remote_files:
@@ -152,3 +157,18 @@ class AssetCollection(object):
     @staticmethod
     def asset_files_query():
         return COMPSQueryCriteria().select_children(children=['assets'])
+
+    @staticmethod
+    def asset_collection_id_for_tag(tag_name, tag_value):
+        """
+        Looks to see if a collection id exists for a given collection tag
+        :param collection_tag: An asset collection tag that uniquely identifies an asset collection
+        :return: An asset collection id if ONE match is found, else None (for 0 or 2+ matches)
+        """
+        query = COMPSQueryCriteria().where_tag('%s=%s' % (tag_name, tag_value))
+        result = COMPSAssetCollection.get(query_criteria=query)
+        if len(result) == 1:
+            result = result[0].id
+        else:
+            result = None
+        return result
