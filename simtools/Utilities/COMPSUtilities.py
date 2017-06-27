@@ -69,7 +69,7 @@ def stage_file(from_path, to_directory):
     # Translate $COMPS path if needed
     to_directory_translated = translate_COMPS_path(to_directory)
 
-    file_hash = get_md5(from_path)
+    file_hash = str(get_md5(from_path))
     logger.info('MD5 of ' + os.path.basename(from_path) + ': ' + file_hash)
 
     # We need to use the translated path for the copy but return the untouched staged path
