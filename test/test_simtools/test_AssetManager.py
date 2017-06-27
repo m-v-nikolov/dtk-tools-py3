@@ -328,5 +328,35 @@ class TestAssetCollection(unittest.TestCase):
             self.assertTrue(self.existing_collection.collection_id is not None)
             self.assertTrue(self.existing_collection.collection_id != self.EXISTING_COLLECTION_ID) # a new collection
 
+    DEFAULT_COLLECTION_NAME = 'EMOD 2.10'
+    DEFAULT_COLLECTION_ID = 'c2d9468d-2b4a-e711-80c1-f0921c167860'
+
+    def test_asset_collection_id_for_tag(self):
+        tag_name = 'Name'
+        asset_collections = [
+            { # single match case
+                'Name': self.DEFAULT_COLLECTION_NAME,
+                'id': self.DEFAULT_COLLECTION_ID
+            },
+            { # 0 match case
+                'Name': 'To be, or not to be: that is the question',
+                'id': None
+            },
+            { # multiple match case
+                'Name': 'EMOD',
+                'id': None
+            }
+        ]
+        for collection in asset_collections:
+            key_tag = 'Name'
+            id = AssetCollection.asset_collection_id_for_tag(tag_name=key_tag, tag_value=collection[key_tag])
+            id = str(id) if id else id # convert UUID to string if not None
+            self.assertEqual(id, collection['id'])
+
+    # This verifies that a well-known default collection name is converted to the expected asset collection id
+    def test_default_collection_usage_properly_sets_the_AssetCollection(self):
+        collection = AssetCollection(base_collection_id=self.DEFAULT_COLLECTION_NAME)
+        self.assertEqual(str(collection.base_collection_id), self.DEFAULT_COLLECTION_ID)
+
 if __name__ == '__main__':
     unittest.main()

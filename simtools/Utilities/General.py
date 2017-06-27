@@ -197,7 +197,7 @@ def get_md5(filename):
     logger.info('Getting md5 for ' + filename)
 
     if not os.path.exists(filename):
-        logger.error("The file %s does not exist ! No MD5 could be computed...")
+        logger.error("The file %s does not exist ! No MD5 could be computed..." % filename)
         return None
 
     with open(filename, 'rb') as f:
