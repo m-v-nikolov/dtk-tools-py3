@@ -263,7 +263,14 @@ class CalibManager(object):
         # step 3: validate inputs
         self.current_iteration, resume_point = self.retrieve_iteration(iteration, iter_step)
 
-        # step 4: update required objects for resume
+        # step 4: load all_results
+        results = calib_data.get('results')
+        if isinstance(results, dict):
+            self.all_results = pd.DataFrame.from_dict(results, orient='columns')
+        elif isinstance(results, list):
+            self.all_results = results
+
+        # step 5: update required objects for resume
         self.current_iteration.update(**self.required_components)
 
         # Resume the iteration
