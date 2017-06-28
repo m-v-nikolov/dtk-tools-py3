@@ -1,26 +1,25 @@
 import gc
 import json
 import os
-import time
-import pandas as pd
 import re
-from calibtool.utils import StatusPoint
+import time
 from datetime import datetime
-from simtools.SetupParser import SetupParser
-from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.Utilities.General import init_logging
 
-# from calibtool.plotters import SiteDataPlotter
+import pandas as pd
+
+from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
-from simtools.DataAccess.DataStore import DataStore
-from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
+from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
+from simtools.Utilities.Experiments import retrieve_experiment
+from simtools.Utilities.General import init_logging
 
 logger = init_logging("Calibration")
 
 
-class IterationState(object):
+class IterationState:
     """
     Holds the settings, parameters, simulation state, analysis results, etc.
     for one calibtool iteration.
@@ -60,8 +59,17 @@ class IterationState(object):
             if isinstance(cs, unicode): self.iteration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
             else: self.iteration_start = cs
 
-        self.status = None
+        self._status = None
         self.update(**kwargs)
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        self._status = status
+        self.save()
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -179,7 +187,6 @@ class IterationState(object):
     def commission_step(self):
         # Ready for commissioning
         self.status = StatusPoint.commission
-        self.save()
 
         # Get the params from the next_point
         next_params = self.next_point_algo.get_samples_for_iteration(self.iteration)
@@ -194,7 +201,6 @@ class IterationState(object):
     def analyze_step(self):
         # Ready for analyzing
         self.status = StatusPoint.analyze
-        self.save()
 
         # Analyze the iteration
         self.analyze_iteration()
@@ -202,7 +208,6 @@ class IterationState(object):
     def plotting_step(self):
         # Ready for plotting
         self.status = StatusPoint.plot
-        self.save()
 
         # Plot the iteration
         self.plot_iteration()
@@ -210,7 +215,6 @@ class IterationState(object):
     def next_step(self):
         # Ready for next point
         self.status = StatusPoint.next_point
-        self.save()
 
         self.next_point_algo.update_iteration(self.iteration)
         self.set_next_point(self.next_point_algo)
