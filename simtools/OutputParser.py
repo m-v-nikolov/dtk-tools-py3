@@ -5,6 +5,7 @@ import logging
 import os  # mkdir, path, etc.
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
+from traceback import print_exc
 
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
@@ -142,16 +143,11 @@ class SimulationOutputParser(threading.Thread):
 
 class CompsDTKOutputParser(SimulationOutputParser):
     sim_dir_map = None
-    use_compression = False
     asset_service = False
 
     def __init__(self, simulation, analyzers, semaphore=None, parse=True):
         super(CompsDTKOutputParser, self).__init__(simulation, analyzers, semaphore, parse)
         self.COMPS_simulation = get_simulation_by_id(self.sim_id)
-
-    @classmethod
-    def enableCompression(cls):
-        cls.use_compression = True
 
     @classmethod
     def enableAssetService(cls):
@@ -183,11 +179,12 @@ class CompsDTKOutputParser(SimulationOutputParser):
         # can't open files locally... we have to go through the COMPS asset service
         paths = [filename.replace('\\', '/') for filename in filenames]
 
-        from COMPS.Data import AssetType
-        # asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
-        asset_byte_arrays = self.COMPS_simulation.retrieve_assets(asset_type=AssetType.Output,
-                                                                  paths=paths,
-                                                                  use_compression=self.use_compression)
+        try:
+            asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
+        except RuntimeError as ex:
+            print("Could not retrieve file for simulation %s." % self.sim_id)
+            print_exc(ex)
+            exit()
 
         for filename, byte_array in zip(filenames, asset_byte_arrays):
             self.load_single_file(filename, byte_array)
