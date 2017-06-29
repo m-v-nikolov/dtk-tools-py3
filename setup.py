@@ -45,9 +45,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '2.0',
+        'version': '2.0.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-2.0-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pyCOMPS-2.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
