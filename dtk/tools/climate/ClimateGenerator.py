@@ -1,10 +1,11 @@
 import glob
 import os
 import time
-
+import zipfile
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.General import file_size
 
 
 class ClimateGenerator:
@@ -14,6 +15,7 @@ class ClimateGenerator:
         self.work_order_path = work_order_path
         self.demographics_file_path = demographics_file_path
         self.climate_files_output_path = climate_files_output_path
+        if not os.path.exists(self.climate_files_output_path): os.makedirs(self.climate_files_output_path)
         self.climate_project = climate_project
 
         # see InputDataWorker for other work options
@@ -36,15 +38,10 @@ class ClimateGenerator:
         # login to COMPS (if not already logged in) to submit climate files generation work order
         self.wo.wo_2_json()
 
-        om("Submitting request for climate files generation to COMPS.")
-        om("This requires a login.")
-
         from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
-        from COMPS.Data import QueryCriteria, AssetType
+        from COMPS.Data import QueryCriteria
         from COMPS.Data import WorkItem, WorkItemFile
-
-        # COMPS_login(self.setup.get('server_endpoint'))
-        om("Login success!")
+        from COMPS.Data import AssetCollection
 
         workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
         wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, SetupParser.get('environment'))
@@ -65,7 +62,7 @@ class ClimateGenerator:
 
         wi.commission()
 
-        while (wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]):
+        while wi.state not in (WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled):
             om('Waiting for climate generation to complete (current state: ' + str(wi.state) + ')',
                style='flushed')
             time.sleep(5)
@@ -73,21 +70,31 @@ class ClimateGenerator:
 
         om("Climate files SUCCESSFULLY generated")
 
-        wi.refresh(QueryCriteria().select_children('files'))
-        wifilenames = [wif.file_name for wif in wi.files if wif.file_type == 'Output']
+        # Get the collection with our files
+        collections = wi.get_related_asset_collections()
+        collection_id = collections[0].id
+        comps_collection = AssetCollection.get(collection_id, query_criteria=QueryCriteria().select_children('assets'))
 
-        # wifilenames = [wif.file_name() for wif in wifiles if wif.file_type() == 'Output']
-        if len(wifilenames) > 0:
-            om('Found output files: ' + str(wifilenames))
-            om('Downloading now')
+        # Get the files
+        if len(comps_collection.assets) > 0:
+            print("Found output files:")
+            for asset in comps_collection.assets:
+                print("- %s (%s)" % (asset.file_name, file_size(asset.length)))
 
-            assets = wi.retrieve_assets(AssetType.Linked, wifilenames)
+            print("\nDownloading to %s..." % self.climate_files_output_path)
 
-            for i in range(len(wifilenames)):
-                om('Writing ' + wifilenames[i] + ' to ' + self.climate_files_output_path)
+            # Download the collection as zip
+            zip_path = os.path.join(self.climate_files_output_path, 'temp.zip')
+            with open(zip_path, 'wb') as outfile:
+                outfile.write(comps_collection.retrieve_as_zip())
 
-                with open(os.path.join(self.climate_files_output_path, wifilenames[i]), 'wb') as outfile:
-                    outfile.write(assets[i])
+            # Extract it
+            zip_ref = zipfile.ZipFile(zip_path, 'r')
+            zip_ref.extractall(self.climate_files_output_path)
+            zip_ref.close()
+
+            # Delete the temporary zip
+            os.remove(zip_path)
 
             # return filenames; this use of re in conjunction w/ glob is not great; consider refactor
             rain_bin_re = os.path.abspath(self.climate_files_output_path + '/*rain*.bin')
