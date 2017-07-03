@@ -45,6 +45,7 @@ class BaseExperimentManager:
         self.commandline = None
         self.experiment_tags = {}
         self.config_builder = config_builder
+        self.asset_service = None
 
     @property
     def config_builder(self):
@@ -60,7 +61,7 @@ class BaseExperimentManager:
         # Check input files existence
         if not self.validate_input_files(): exit()
         # Set the appropriate command line
-        self.commandline = self._get_commandline()
+        self.commandline = self.get_commandline()
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -177,38 +178,12 @@ class BaseExperimentManager:
         if blocking:
             self.wait_for_finished(verbose=not quiet)
 
-    def find_missing_files(self, input_files, input_root):
-        """
-        Find the missing files
-        """
-        missing_files = {}
-        for (filename, filepath) in input_files.iteritems():
-            if isinstance(filepath, basestring):
-                filepath = filepath.strip()
-                # Skip empty files
-                if len(filepath) == 0:
-                    continue
-                # Only keep un-existing files
-                if not os.path.exists(os.path.join(input_root, filepath)):
-                    missing_files[filename] = filepath
-            elif isinstance(filepath, list):
-                # Skip empty and only keep un-existing files
-                missing_files[filename] = [f.strip() for f in filepath if len(f.strip()) > 0
-                                           and not os.path.exists(os.path.join(input_root, f.strip()))]
-                # Remove empty list
-                if len(missing_files[filename]) == 0:
-                    missing_files.pop(filename)
-
-        return missing_files
-
     def _detect_missing_files(self):
         missing_files = []
         for asset_type, asset in self.assets.collections.iteritems():
-            for file in asset.asset_files_to_use:
-                if file.is_local:
-                    full_path = os.path.join(file.root, file.relative_path, file.file_name)
-                    if not os.path.exists(full_path):
-                        missing_files.append(full_path)
+            for asset_file in asset.asset_files_to_use:
+                if asset_file.is_local and not os.path.exists(asset_file.absolute_path):
+                    missing_files.append(asset_file.absolute_path)
         return missing_files
 
     def validate_input_files(self):
@@ -331,11 +306,13 @@ class BaseExperimentManager:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         logger.info("%s ('%s') states:" % (self.experiment.exp_name, self.experiment.exp_id))
+
+        # We have less than 20 simulations, display the simulations details
         if len(long_states) < 20 and verbose:
-            # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+
         # Display the counter no matter the number of simulations
-        logger.info(dict(Counter( [st.name for st in states.values()] )))
+        logger.info(dict(Counter([st.name for st in states.values()])))
 
     def delete_experiment(self, hard=False):
         """
@@ -353,7 +330,6 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, sleep_time=5):
-        # getch = helpers.find_getch()
         while True:
             # Get the new status
             try:
@@ -363,24 +339,17 @@ class BaseExperimentManager:
                 print (e)
                 return
 
-            if self.status_finished(states):
-                break
-            else:
-                if verbose:
-                    self.print_status(states, msgs)
+            # If we are done, exit the loop
+            if self.status_finished(states): break
 
-                # for i in range(sleep_time):
-                #     if helpers.kbhit():
-                #         if getch() == '\r':
-                #             break
-                #         else:
-                #             return
-                #     else:
-                #         time.sleep(1)
-                time.sleep(sleep_time)
+            # Display if verbose
+            if verbose: self.print_status(states, msgs)
 
-        if verbose:
-            self.print_status(states, msgs)
+            # Wait before going through the loop again
+            time.sleep(sleep_time)
+
+        # SHow status one last time
+        if verbose: self.print_status(states, msgs)
 
         # Refresh the experiment
         self.refresh_experiment()
@@ -463,7 +432,7 @@ class BaseExperimentManager:
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
 
-    def _get_commandline(self):
+    def get_commandline(self):
         """
         Get the complete command line to run the simulations of this experiment.
         Returns:
@@ -478,20 +447,12 @@ class BaseExperimentManager:
         if python_path:
             eradication_options['--python-script-path'] = python_path
 
-        # ck4, not ideal, put in LocalExperimentManager?
-        # If local, we need to potentially make a copy of the executable to a well-known place
-        if self.location == 'LOCAL' and self.config_builder:
+        if self.location == 'LOCAL':
             exe_path = self.config_builder.stage_executable(self.assets.local_executable, SetupParser.get('bin_staging_root'))
             logger.debug("Staged LOCAL executable: %s to: %s" % (self.assets.local_executable, exe_path))
             eradication_options['--input-path'] = self.assets.local_input_root
         else:
-            if self.location == 'LOCAL':
-                return None
-                #exe_path = None # os.path.join(SetupParser.get('sim_root'), 'Assets', os.path.basename(SetupParser.get('exe_path'))) # ck4, right?? Nope. Needs testing, if used at all.
-                #eradication_options['--input-path'] = os.path.join(SetupParser.get('sim_root'), 'Assets') # ck4, right??? Nope. Needs testing, if used at all.
-            elif self.location == 'HPC':
-                exe_path = os.path.join('Assets', os.path.basename(SetupParser.get('exe_path')))
-                eradication_options['--input-path'] = 'Assets'
-            else:
-                raise Exception("Unknown location: %s" % self.location)
+            exe_path = os.path.join('Assets', os.path.basename(SetupParser.get('exe_path')))
+            eradication_options['--input-path'] = 'Assets'
+
         return CommandlineGenerator(exe_path, eradication_options, [])

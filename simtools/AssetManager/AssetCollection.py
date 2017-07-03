@@ -104,8 +104,6 @@ class AssetCollection(object):
         existing_asset_files = []
 
         if self.base_collection_id:
-            # obtain info for all files in the existing collection.
-
             # Determine if the asset collection id is really a tag: a default, well-known collection, then get its files
             default_collection_id = self.asset_collection_id_for_tag(tag_name='Name', tag_value=self.base_collection_id)
             if default_collection_id:
@@ -117,42 +115,41 @@ class AssetCollection(object):
 
         if self.load_local:
             local_asset_files = []
-            for file in self.local_files.files:
-                relative_path = self.local_files.relative_path(file)
-                full_path = self.local_files.full_path(file)
-
-                if full_path in self.cache:
-                    md5 = self.cache[full_path]
-                else:
-                    md5 = get_md5(full_path)
-                    self.cache[full_path] = md5
-
-                local_asset_files.append(COMPSAssetCollectionFile(file_name=os.path.basename(file),
-                                                                  relative_path=relative_path,
-                                                                  md5_checksum=md5))
-
-        # This is necessary so that _get_or_create_collection() can determine which COMPSAssetFile objects need
-        # to be discovered locally (via full path)
-        for asset_file in local_asset_files:
-            asset_file.is_local = True
-            asset_file.root = self.local_files.root
+            for asset_file in self.local_files:
+                comps_file = COMPSAssetCollectionFile(file_name=asset_file.file_name,
+                                                      relative_path=asset_file.relative_path,
+                                                      md5_checksum=asset_file.md5)
+                # Enrich it with some info
+                comps_file.absolute_path = asset_file.absolute_path
+                comps_file.is_local = True
+                local_asset_files.append(comps_file)
 
         for asset_file in existing_asset_files:
             asset_file.is_local = False
 
         return self._merge_local_and_existing_files(local_asset_files, existing_asset_files)
 
-    def _get_or_create_collection(self, root_dir):
+    def _get_or_create_collection(self, root_dir, missing=None):
         # If there are no files for this collection, so we don't do anything
         if len(self.asset_files_to_use) == 0: return None
 
         # Create a COMPS collection
         collection = COMPSAssetCollection()
         for af in self.asset_files_to_use:
-            collection.add_asset(af)
+            if not missing or af.md5_checksum not in missing:
+                collection.add_asset(af)
+            else:
+                collection.add_asset(af, file_path=af.absolute_path)
 
-        collection.save()
-        return collection
+        # Get the missing files (if any)
+        missing = collection.save(return_missing_files=True)
+
+        # No files were missing -> we have our collection
+        if not missing:
+            return collection
+
+        # There was missing files, call again
+        return self._get_or_create_collection(root_dir, missing)
 
     @staticmethod
     def asset_files_query():

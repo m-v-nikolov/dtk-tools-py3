@@ -9,7 +9,8 @@ from simtools.Utilities.General import init_logging
 
 logger = init_logging("SimulationAssets")
 
-class SimulationAssets(object):
+
+class SimulationAssets:
     """
     This class represents a set of AssetCollection objects that together define all files needed by a simulation
     that are known a priori.
@@ -24,22 +25,24 @@ class SimulationAssets(object):
     INPUT = 'input'
     COLLECTION_TYPES = [EXE, DLL, INPUT]
 
-    def __init__(self, collections=None):
+    def __init__(self, collections):
         """
         :param collections: a dict of the known collections types needed by simulations
         """
-        collections = {self.EXE: None, self.DLL: None, self.INPUT: None} if collections is None else collections
+        if not collections:
+            raise Exception("SimulationAssets needs to be created with a dictionary associating collection type to the collection object. \n"
+                            "Types expected %s" % ", ".join(self.COLLECTION_TYPES))
+
         for collection_type in self.COLLECTION_TYPES:
             collection = collections.get(collection_type, None)
-            if collection is None or not isinstance(collection, AssetCollection):
+            if not collection or not isinstance(collection, AssetCollection):
                 raise self.InvalidCollection("Invalid %s collection." % collection_type)
+
         self.collections = collections
 
         exe_collection = collections[self.EXE]
         if exe_collection.local_files:
-            self.local_executable = os.path.join(exe_collection.local_files.root,
-                                                 exe_collection.asset_files_to_use[0].relative_path,
-                                                 exe_collection.asset_files_to_use[0].file_name)
+            self.local_executable = exe_collection.local_files[0].absolute_path
         else:
             self.local_executable = None
 
@@ -84,9 +87,11 @@ class SimulationAssets(object):
         self.prepared = True
 
     @classmethod
-    def assemble_assets(cls, config_builder, base_collection_id=None, use_local_files=None, cache=None):
+    def assemble_assets(cls, config_builder, base_collection_id=None, use_local_files=None, local_overrides=None, cache=None):
         """
         The entry point for creating a full SimulationAssets object in one go.
+        :param cache: Cache to keep fullpath:md5
+        :param local_overrides: Dictionarry associating colelction_type:[AssetFile()] to overrides local file to a certain collection
         :param config_builder: A DTKConfigBuilder associated with this process.
         :param base_collection_id: a dict containing keys: cls.COLLECTION_TYPES, values: None or a starting point
                                    AssetCollection id
@@ -95,10 +100,9 @@ class SimulationAssets(object):
         """
         base_collection_id = base_collection_id or {}
         use_local_files = use_local_files or {}
+        local_overrides = local_overrides or {}
 
-        # verify all needed collection types are represented in the inputs and verify each type has been properly
-        # specified
-
+        # verify all needed collection types are represented in the inputs and verify each type has been properly set
         for collection_type in cls.COLLECTION_TYPES:
             if not (base_collection_id.get(collection_type, None) or use_local_files.get(collection_type, None)):
                 raise cls.AmbiguousAssetSpecification("Must specify a base %s asset collection id and/or local file use."
@@ -108,8 +112,13 @@ class SimulationAssets(object):
         for collection_type in cls.COLLECTION_TYPES:
             if use_local_files[collection_type]:
                 files = cls._gather_files(config_builder, collection_type)
+                # apply the overrides
+                if collection_type in local_overrides:
+                    for override in local_overrides[collection_type]:
+                        files.files.append(override)
             else:
                 files = None
+
             collections[collection_type] = AssetCollection(base_collection_id=base_collection_id[collection_type],
                                                            local_files=files, cache=cache)
 
@@ -129,32 +138,6 @@ class SimulationAssets(object):
         elif collection_type == cls.INPUT:
             # returns a Hash with some items that need filtering through
             input_files = config_builder.get_input_file_paths()
-
-            # remove files we will not be putting into the inputs collection
-            ignored_keys = ['Campaign_Filename']
-            for key in ignored_keys:
-                if input_files.get(key, None):
-                    input_files.pop(key)
-
-            # remove blank filenames
-            for key in input_files.keys():
-                if not input_files[key]:  # None or "" values ignored
-                    input_files.pop(key)
-            input_files = input_files.values()
-
-            # flatten the list of filenames, in case there are lists in the list
-            for item in input_files:
-                if isinstance(item, list):
-                    input_files.remove(item)
-                    for i in item:
-                        input_files.append(i)
-
-            # Also include the .bin.json file pair for each .bin file
-            for file in input_files:
-                base_filename, extension = os.path.splitext(file)
-                if extension == '.bin':
-                    input_files.append(file + '.json')
-            input_files = list(set(input_files)) # just in case we somehow have duplicates
             file_list = FileList(root=SetupParser.get('input_root'), files_in_root=input_files)
         elif collection_type == cls.DLL:
             dll_relative_paths = config_builder.get_dll_paths_for_asset_manager()

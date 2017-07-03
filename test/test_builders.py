@@ -144,6 +144,8 @@ class TestBuilders(unittest.TestCase):
         self.assertEqual(ngenerated, 4)
 
     def test_listed_events(self):
+        from simtools.SetupParser import SetupParser
+        SetupParser.init()
         # Create a builder based on the files
         builder = DTKConfigBuilder.from_files(os.path.join(self.input_path,'customevents','configbad.json'),
                                               os.path.join(self.input_path,'customevents','campaign.json'))

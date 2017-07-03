@@ -122,7 +122,7 @@ class TestSimulationAssets(unittest.TestCase):
             expected_files = sorted([ os.path.join(expected['relative_path'], file) for file in expected['files'] ])
             file_list = sorted(SimulationAssets._gather_files(self.config_builder, collection_type).files)
             self.assertEqual(len(file_list),    len(expected_files))
-            self.assertEqual(sorted(file_list), sorted(expected_files))
+            self.assertEqual(sorted([os.path.join(f.relative_path, f.file_name) for f in file_list]), sorted(expected_files))
 
     def test_prepare_existing_master_collection(self):
         """
@@ -174,31 +174,6 @@ class TestSimulationAssets(unittest.TestCase):
         asset_collection_id = exp_comps.get_simulations(query_criteria=COMPSQueryCriteria().select_children(children=['configuration']))[0].configuration.asset_collection_id
         self.assertEqual(str(asset_collection_id), expected_asset_collection)
 
-    # BaseExperimentManager tests below (move to different test file?)
-
-    def test_verify_missing_files_properly_detected_and_reported(self):
-        # using local files
-        original_block = SetupParser.selected_block
-        try:
-            SetupParser.override_block(block='USE_LOCAL_FILES')
-            exp_manager = ExperimentManagerFactory.from_cb(config_builder=self.config_builder)
-            missing_files = exp_manager._detect_missing_files()
-            self.assertEqual(len(missing_files), 0)
-
-            # now add a spurious file that does not exist
-            new_file = COMPSAssetCollectionFile(file_name='somefile.txt', relative_path='hello')
-            new_file.root = "totallyMadeUp"
-            new_file.is_local = True
-            key = exp_manager.assets.collections.keys()[0]
-            exp_manager.assets.collections[key].asset_files_to_use.append(new_file)
-            missing_files = exp_manager._detect_missing_files()
-
-            self.assertEqual(len(missing_files), 1)
-            self.assertEqual(missing_files[0], os.path.join(new_file.root, new_file.relative_path, new_file.file_name))
-        finally:
-            SetupParser.override_block(block=original_block)
-
-
 class TestAssetCollection(unittest.TestCase):
     LOCAL_ONLY = 'LOCAL_ONLY'
     REMOTE_ONLY = 'REMOTE_ONLY'
@@ -207,6 +182,7 @@ class TestAssetCollection(unittest.TestCase):
     SELECTED_BLOCK = 'AssetCollection'
 
     def setUp(self):
+        SetupParser._uninit()
         current_dir = os.path.dirname(os.path.realpath(__file__))
         SetupParser.init(selected_block=self.SELECTED_BLOCK,
                          setup_file=os.path.join(current_dir, 'input', 'am_simtools.ini'))
@@ -224,8 +200,7 @@ class TestAssetCollection(unittest.TestCase):
         self.local_files = FileList(root=root, files_in_root=files)
 
         # take one away
-        files = list(self.local_files.files) # copy
-        files.remove(os.path.join('files', 'file1_REMOTE_ONLY'))
+        files = [os.path.join(f.relative_path, f.file_name) for f in self.local_files.files if f.file_name != 'file1_REMOTE_ONLY']
         # add some more
         dir = os.path.join(self.INPUT_DIR, 'additional_files')
         additional_files = [os.path.join(dir, f) for f in os.listdir(dir)]

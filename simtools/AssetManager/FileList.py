@@ -1,7 +1,9 @@
 import os
 
+from simtools.AssetManager.AssetFile import AssetFile
 
-class FileList(object):
+
+class FileList:
     def __init__(self, root, files_in_root):
         """
         Represents a set of files that are specified RELATIVE to root.
@@ -9,19 +11,21 @@ class FileList(object):
         :param root: The dir all files_in_root are relative to.
         :param files_in_root: The listed files
         """
+        self.files = []
+        for file_path in files_in_root:
+            file_name = os.path.basename(file_path)
+            relative_path = os.path.dirname(file_path) if len(os.path.dirname(file_path)) > 0 else ''
+            absolute_path = os.path.join(root, file_path)
+            self.files.append(AssetFile(file_name, relative_path, absolute_path))
         self.root = root
-        self.files = files_in_root
-
-    @property
-    def files_fullpath(self):
-        return [os.path.join(self.root, file) for file in self.files]
 
     @property
     def invalid_files(self):
-        return [file for file in self.files_fullpath if not os.path.exists(file)]
+        return [file for file in self.files if not os.path.exists(file.full_path)]
 
-    def full_path(self, file):
-        return os.path.join(self.root, file)
+    def __iter__(self):
+        return self.files.__iter__()
+    
+    def __getitem__(self, item):
+        return self.files.__getitem__(item)
 
-    def relative_path(self, file):
-        return os.path.dirname(file) if len(os.path.dirname(file)) > 0 else ''

@@ -143,15 +143,11 @@ class SimulationOutputParser(threading.Thread):
 
 class CompsDTKOutputParser(SimulationOutputParser):
     sim_dir_map = None
-    asset_service = False
+    asset_service = True
 
     def __init__(self, simulation, analyzers, semaphore=None, parse=True):
         super(CompsDTKOutputParser, self).__init__(simulation, analyzers, semaphore, parse)
         self.COMPS_simulation = get_simulation_by_id(self.sim_id)
-
-    @classmethod
-    def enableAssetService(cls):
-        cls.asset_service = True
 
     @classmethod
     def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True, comps_experiment=None, verbose=True):

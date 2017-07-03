@@ -58,6 +58,8 @@ class AnalyzeManager:
                                                           suite_id=exp_manager.experiment.suite_id,
                                                           save=True, comps_experiment=exp_manager.comps_experiment,
                                                           verbose=self.verbose)
+            if not exp_manager.asset_service:
+                exp_manager.parserClass.asset_service = False
 
         p = ThreadPool()
         res = []

@@ -34,6 +34,7 @@ class CompsExperimentManager(BaseExperimentManager):
             self.endpoint = setup.get(parameter='server_endpoint')
             COMPS_login(self.endpoint)
 
+        self.asset_service = True
         self.creator_semaphore = None
         self.runner_thread = None
         self.sims_to_create = []

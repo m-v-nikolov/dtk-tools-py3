@@ -94,7 +94,11 @@ class DTKConfigBuilder(SimConfigBuilder):
                              'disease_plugins': [],
                              'reporter_plugins': []}
         self.update_params(kwargs, validate=True)
-        self.assets = None
+
+        self.base_collections = {}
+        self.use_local_files = {}
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        self.local_overrides = {collection_type: [] for collection_type in SimulationAssets.COLLECTION_TYPES}
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -245,13 +249,31 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self):
+    def get_input_file_paths(self, ignored=('Campaign_Filename',)):
         params_dict = self.config['parameters']
-        file_dict = {filename: filepath for (filename, filepath) in params_dict.iteritems()
-                      if filename.endswith('_Filename') or filename.startswith('Filename_') or '_Filename_' in filename
-                      or filename.endswith('_Filenames') or filename.startswith('Filenames_') or '_Filenames_' in filename}
+        ignored = ignored
+        input_files = []
 
-        return file_dict
+        # Retrieve all the parameters with "Filename" in it
+        # Also do not add them if they are part of the ignored or blank
+        for (filename, filepath) in params_dict.items():
+            if 'Filename' not in filename or filename in ignored or filepath == '': continue
+
+            # If it is a list of files -> add them all
+            if isinstance(filepath, list):
+                input_files.extend(filepath)
+                continue
+            else:
+                input_files.append(filepath)
+
+            # If it is a .bin -> add the associated json
+            base_filename, extension = os.path.splitext(filepath)
+            if extension == ".bin": input_files.append("%s.json" % filepath)
+
+        # just in case we somehow have duplicates
+        input_files = list(set(input_files))
+
+        return input_files
 
     def enable(self, param):
         """
@@ -374,24 +396,23 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         from simtools.AssetManager.SimulationAssets import SimulationAssets
         from simtools.SetupParser import SetupParser
-        base_collection_id = {}
-        use_local_files = {}
+
         for collection_type in SimulationAssets.COLLECTION_TYPES:
             # Each is either None (no existing collection starting point) or an asset collection id
-            base_collection_id[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
-            if len(base_collection_id[collection_type]) == 0:
-                base_collection_id[collection_type] = None
+            if collection_type not in self.base_collections:
+                self.base_collections[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
 
             # True/False, overlay locally-discovered files on top of any provided asset collection id?
-            use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
+            if collection_type not in self.use_local_files:
+                self.use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
 
         # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
         # creating local AssetCollection instances internally to represent them.
-        assets = SimulationAssets.assemble_assets(config_builder=self,
-                                                  base_collection_id=base_collection_id,
-                                                  use_local_files=use_local_files,
-                                                  cache=cache)
-        return assets
+        return SimulationAssets.assemble_assets(config_builder=self,
+                                                base_collection_id=self.base_collections,
+                                                use_local_files=self.use_local_files,
+                                                local_overrides=self.local_overrides,
+                                                cache=cache)
 
     def add_demog_overlay(self, name, content):
         """
@@ -415,7 +436,6 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     def check_custom_events(self):
         # Return difference between config and campaign
-
         broadcast_events_from_campaign = re.findall(r"['\"]Broadcast_Event['\"]:\s['\"](.*?)['\"]",
                                                     str(json.dumps(self.campaign)), re.DOTALL)
 
@@ -483,5 +503,5 @@ class DTKConfigBuilder(SimConfigBuilder):
         else:
             raise Exception('Unknown location: %s' % location)
         for module_type in self.emodules_map.keys():
-            self.emodules_map[module_type] = [ os.path.join(root, dll) for dll in self.emodules_map[module_type] ]
+            self.emodules_map[module_type] = [os.path.join(root, dll) for dll in self.emodules_map[module_type]]
         write_fn('emodules_map.json', dump(self.emodules_map))
