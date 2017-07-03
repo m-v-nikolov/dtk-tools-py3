@@ -178,14 +178,6 @@ class BaseExperimentManager:
         if blocking:
             self.wait_for_finished(verbose=not quiet)
 
-    def _detect_missing_files(self):
-        missing_files = []
-        for asset_type, asset in self.assets.collections.iteritems():
-            for asset_file in asset.asset_files_to_use:
-                if asset_file.is_local and not os.path.exists(asset_file.absolute_path):
-                    missing_files.append(asset_file.absolute_path)
-        return missing_files
-
     def validate_input_files(self):
         """
         Check input files and make sure they exist
@@ -200,7 +192,12 @@ class BaseExperimentManager:
         if not hasattr(self.config_builder, 'get_input_file_paths'):
             return True
 
-        missing_files = self._detect_missing_files()
+        missing_files = []
+        for asset_type, asset in self.assets.collections.iteritems():
+            for asset_file in asset.asset_files_to_use:
+                if asset_file.is_local and not os.path.exists(asset_file.absolute_path):
+                    missing_files.append(asset_file.absolute_path)
+
         if len(missing_files) > 0:
             print('Missing files list:')
             print(json.dumps(missing_files, indent=2))
