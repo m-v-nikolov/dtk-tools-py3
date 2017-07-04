@@ -2,6 +2,8 @@ import json
 import os
 import re  # find listed events by regex
 
+import shutil
+
 import dtk.dengue.params as dengue_params
 import dtk.generic.params as generic_params
 import dtk.generic.seir as seir_params
@@ -508,3 +510,20 @@ class DTKConfigBuilder(SimConfigBuilder):
         for module_type in self.emodules_map.keys():
             self.emodules_map[module_type] = [os.path.join(root, dll) for dll in self.emodules_map[module_type]]
         write_fn('emodules_map.json', dump(self.emodules_map))
+
+    def dump_files(self, working_directory):
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+
+        def write_file(name, content):
+            filename = os.path.join(working_directory, '%s' % name)
+            with open(filename, 'w') as f:
+                f.write(content)
+
+        self.file_writer(write_file)
+
+        from simtools.SetupParser import SetupParser
+        if SetupParser.get('type') == "LOCAL":
+            for file in self.experiment_files:
+                shutil.copy(file.absolute_path, working_directory)
+

@@ -21,6 +21,7 @@ class SimulationAssets:
     EXE = 'exe'
     DLL = 'dll'
     INPUT = 'input'
+    LOCAL = 'local'
     COLLECTION_TYPES = [EXE, DLL, INPUT]
 
     def __init__(self, collections):
@@ -28,17 +29,6 @@ class SimulationAssets:
         :param collections: a dict of the known collections types needed by simulations
         """
         self.collections = collections
-
-        # exe_collection = collections[self.EXE]
-        # if exe_collection.local_files:
-        #     self.local_executable = exe_collection.local_files[0].absolute_path
-        # else:
-        #     self.local_executable = None
-        #
-        # input_collection = collections[self.INPUT]
-        # if input_collection.local_files:
-        #     self.local_input_root = input_collection.local_files.root
-
         self.master_collection = None
         self.prepared = False
 
@@ -104,7 +94,7 @@ class SimulationAssets:
 
         # If there are manually added files -> add them now
         if experiment_files:
-            collections['local'] = AssetCollection(base_collection=None, local_files=experiment_files, cache=cache)
+            collections[cls.LOCAL] = AssetCollection(base_collection=None, local_files=experiment_files, cache=cache)
 
         return cls(collections)
 

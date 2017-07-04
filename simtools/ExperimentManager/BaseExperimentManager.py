@@ -446,9 +446,8 @@ class BaseExperimentManager:
             eradication_options['--python-script-path'] = python_path
 
         if self.location == 'LOCAL':
-            exe_path = self.config_builder.stage_executable(self.assets.local_executable, SetupParser.get('bin_staging_root'))
-            logger.debug("Staged LOCAL executable: %s to: %s" % (self.assets.local_executable, exe_path))
-            eradication_options['--input-path'] = self.assets.local_input_root
+            exe_path = self.config_builder.stage_executable(SetupParser.get('exe_path'), SetupParser.get('bin_staging_root'))
+            eradication_options['--input-path'] = SetupParser.get('input_root')
         else:
             exe_path = os.path.join('Assets', os.path.basename(SetupParser.get('exe_path')))
             eradication_options['--input-path'] = 'Assets'

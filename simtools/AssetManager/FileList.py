@@ -54,10 +54,6 @@ class FileList:
             # Stop here if we dont want to be recursive
             if not recursive: break
 
-    @property
-    def invalid_files(self):
-        return [file for file in self.files if not os.path.exists(file.full_path)]
-
     def __iter__(self):
         return self.files.__iter__()
     
