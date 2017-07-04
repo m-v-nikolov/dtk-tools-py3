@@ -4,7 +4,7 @@ from simtools.AssetManager.AssetFile import AssetFile
 
 
 class FileList:
-    def __init__(self, root, files_in_root):
+    def __init__(self, root=None, files_in_root=None, recursive=False):
         """
         Represents a set of files that are specified RELATIVE to root.
         e.g. /a/b/c.json could be : root: '/a' files_in_root: ['b/c.json']
@@ -12,12 +12,47 @@ class FileList:
         :param files_in_root: The listed files
         """
         self.files = []
-        for file_path in files_in_root:
-            file_name = os.path.basename(file_path)
-            relative_path = os.path.dirname(file_path) if len(os.path.dirname(file_path)) > 0 else ''
-            absolute_path = os.path.join(root, file_path)
-            self.files.append(AssetFile(file_name, relative_path, absolute_path))
-        self.root = root
+
+        if root:
+            self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
+
+    def add_asset_file(self, af):
+        self.files.append(af)
+
+    def add_file(self, path, relative_path=''):
+        absolute_path = os.path.abspath(path)
+        file_name = os.path.basename(path)
+        af = AssetFile(file_name, relative_path, absolute_path)
+        self.add_asset_file(af)
+
+    def add_path(self, path, files_in_dir=None, relative_path=None, recursive=False):
+        if not os.path.isdir(path):
+            raise RuntimeError("add_path() requires a directory. '%s' is not." % path)
+
+        # Make sure we have an absolute path
+        path = os.path.abspath(path)
+
+        # Walk through the path
+        for root, subdirs, files in os.walk(path):
+            # Add the files in the current dir
+            for f in files:
+                # Find the file relative path compared to the root folder
+                # If the relative_path is . -> change it into ''
+                f_relative_path = os.path.normpath(os.path.relpath(root, path))
+                if f_relative_path == '.': f_relative_path = ''
+
+                # if files_in_dir specified -> skip the ones not included
+                if files_in_dir and f not in files_in_dir and os.path.join(f_relative_path, f) not in files_in_dir: continue
+
+                # if we want to force a relative path -> force it
+                if relative_path is not None:
+                    f_relative_path = relative_path
+
+                # add the file
+                self.add_file(os.path.join(root, f), relative_path=f_relative_path)
+
+            # Stop here if we dont want to be recursive
+            if not recursive: break
 
     @property
     def invalid_files(self):

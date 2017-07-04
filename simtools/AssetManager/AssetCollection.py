@@ -15,34 +15,36 @@ class AssetCollection(object):
 
     class InvalidConfiguration(Exception): pass
 
-    def __init__(self, base_collection_id=None, local_files=None, remote_files=None, cache=None):
+    def __init__(self, base_collection=None, local_files=None, remote_files=None, cache=None, forced_relative_path=None):
         """
         :param base_collection_id: A string COMPS AssetCollection id (if not None)
         :param local_files: a FileList object representing local files to use (if not None)
         :param remote_files: a COMPSAssetCollectionFile object list representing (existing) remote files to use.
         """
-        if not (base_collection_id or local_files or remote_files):
+        if not (base_collection or local_files or remote_files):
             raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
 
-        if base_collection_id and remote_files:
-            raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
+        if base_collection and remote_files:
+            raise self.InvalidConfiguration("May only provide one of: base_collection, remote_files")
 
-        self.base_collection_id = base_collection_id
+        self.base_collection = base_collection
         self._remote_files = remote_files
         self.local_files = local_files
         self.cache = cache or {}
-
         self.asset_files_to_use = self._determine_files_to_use()
         self.collection_id = None
-        self._collection = None
+        self.comps_collection = None
         self.prepared = False # not allowed to run simulations with this collection until True (set by prepare())
 
-    @property
-    def load_local(self):
-        """
-        :return: True/False, should local files be used for this AssetCollection?
-        """
-        return self.local_files is not None
+    def __contains__(self, item):
+        if not self.asset_files_to_use: return False
+        from simtools.AssetManager.AssetFile import AssetFile
+        for asset_file in self.asset_files_to_use:
+            if isinstance(item, AssetFile):
+                if asset_file.file_name == item.file_name: return True
+            elif isinstance(item, str):
+                if asset_file.file_name == item: return True
+        return False
 
     def prepare(self, location):
         """
@@ -64,12 +66,11 @@ class AssetCollection(object):
         # interface with AssetManager to obtain an existing matching or a new asset collection id
         # Any necessary uploads of files based on checksums happens here, too.
         if location == 'HPC':
-            root = self.local_files.root if self.local_files else None
-            self._collection = self._get_or_create_collection(root_dir=root)
+            self.comps_collection = self._get_or_create_collection()
             # we have no _collection if no files were added to this collection-to-be (e.g. empty dll AssetCollection)
-            self.collection_id = self._collection.id if self._collection else None
+            self.collection_id = self.comps_collection.id if self.comps_collection else None
         else: # 'LOCAL'
-            self._collection = None
+            self.comps_collection = None
             self.collection_id = location
         self.prepared = True
 
@@ -93,27 +94,23 @@ class AssetCollection(object):
         return selected.values()
 
     def _determine_files_to_use(self):
-        if not (self.base_collection_id or self.load_local or self._remote_files):
+        if not (self.base_collection or self.local_files or self._remote_files):
             raise self.InvalidConfiguration("Must provide at least one of: base_collection_id, local_files, remote_files .")
 
-        if self.base_collection_id and self._remote_files:
+        if self.base_collection and self._remote_files:
             raise self.InvalidConfiguration("May only provide one of: base_collection_id, remote_files")
 
         # identify the file sources to choose from
         local_asset_files = []
         existing_asset_files = []
 
-        if self.base_collection_id:
-            # Determine if the asset collection id is really a tag: a default, well-known collection, then get its files
-            default_collection_id = self.asset_collection_id_for_tag(tag_name='Name', tag_value=self.base_collection_id)
-            if default_collection_id:
-                self.base_collection_id = default_collection_id
-            existing_asset_files = COMPSAssetCollection.get(id=self.base_collection_id,
-                                                            query_criteria=self.asset_files_query()).assets
+        if self.base_collection:
+            existing_asset_files = self.base_collection.assets
+
         elif self._remote_files:
             existing_asset_files = self._remote_files
 
-        if self.load_local:
+        if self.local_files:
             local_asset_files = []
             for asset_file in self.local_files:
                 comps_file = COMPSAssetCollectionFile(file_name=asset_file.file_name,
@@ -129,7 +126,7 @@ class AssetCollection(object):
 
         return self._merge_local_and_existing_files(local_asset_files, existing_asset_files)
 
-    def _get_or_create_collection(self, root_dir, missing=None):
+    def _get_or_create_collection(self, missing=None):
         # If there are no files for this collection, so we don't do anything
         if len(self.asset_files_to_use) == 0: return None
 
@@ -149,23 +146,5 @@ class AssetCollection(object):
             return collection
 
         # There was missing files, call again
-        return self._get_or_create_collection(root_dir, missing)
+        return self._get_or_create_collection(missing)
 
-    @staticmethod
-    def asset_files_query():
-        return COMPSQueryCriteria().select_children(children=['assets'])
-
-    @staticmethod
-    def asset_collection_id_for_tag(tag_name, tag_value):
-        """
-        Looks to see if a collection id exists for a given collection tag
-        :param collection_tag: An asset collection tag that uniquely identifies an asset collection
-        :return: An asset collection id if ONE match is found, else None (for 0 or 2+ matches)
-        """
-        query = COMPSQueryCriteria().where_tag('%s=%s' % (tag_name, tag_value))
-        result = COMPSAssetCollection.get(query_criteria=query)
-        if len(result) == 1:
-            result = result[0].id
-        else:
-            result = None
-        return result

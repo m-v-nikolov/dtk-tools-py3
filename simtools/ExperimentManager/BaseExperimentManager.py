@@ -46,6 +46,7 @@ class BaseExperimentManager:
         self.experiment_tags = {}
         self.config_builder = config_builder
         self.asset_service = None
+        self.assets = None
 
     @property
     def config_builder(self):
@@ -56,7 +57,8 @@ class BaseExperimentManager:
         if not value or value == self._config_builder: return
         # Store the config builder
         self._config_builder = value
-        # Get assets here for now
+        # Get assets here for now to be able to check for missing input files
+        # THe assets may change at runtime and will be re-fetched in the simulation creator
         self.assets = value.get_assets()
         # Check input files existence
         if not self.validate_input_files(): exit()
@@ -189,19 +191,18 @@ class BaseExperimentManager:
             return True
 
         # If the config builder has no file paths -> bypass
-        if not hasattr(self.config_builder, 'get_input_file_paths'):
-            return True
+        needed_file_paths = self.config_builder.get_input_file_paths()
 
         missing_files = []
-        for asset_type, asset in self.assets.collections.iteritems():
-            for asset_file in asset.asset_files_to_use:
-                if asset_file.is_local and not os.path.exists(asset_file.absolute_path):
-                    missing_files.append(asset_file.absolute_path)
+        for needef_file in needed_file_paths:
+            if os.path.basename(needef_file) not in self.assets:
+                missing_files.append(needef_file)
 
         if len(missing_files) > 0:
-            print('Missing files list:')
-            print(json.dumps(missing_files, indent=2))
-            var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
+            print('The following files are specified in the config.json file but not present in the available assets:')
+            map(lambda f: print("- %s" % f), missing_files)
+
+            var = raw_input("The simulation may not run, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
                 print("Answer is '%s'. Continue..." % var.upper())
                 return True

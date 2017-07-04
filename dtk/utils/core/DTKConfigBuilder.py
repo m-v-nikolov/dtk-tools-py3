@@ -30,6 +30,7 @@ from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools.SimConfigBuilder import SimConfigBuilder
+from simtools.Utilities.COMPSUtilities import get_asset_collection_by_id, get_asset_collection
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.General import init_logging
 
@@ -96,9 +97,8 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.update_params(kwargs, validate=True)
 
         self.base_collections = {}
-        self.use_local_files = {}
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-        self.local_overrides = {collection_type: [] for collection_type in SimulationAssets.COLLECTION_TYPES}
+        from simtools.AssetManager.FileList import FileList
+        self.experiment_files = FileList()
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -397,21 +397,24 @@ class DTKConfigBuilder(SimConfigBuilder):
         from simtools.AssetManager.SimulationAssets import SimulationAssets
         from simtools.SetupParser import SetupParser
 
+        # First collect the base collection from the setup parser if needed
         for collection_type in SimulationAssets.COLLECTION_TYPES:
-            # Each is either None (no existing collection starting point) or an asset collection id
             if collection_type not in self.base_collections:
-                self.base_collections[collection_type] = SetupParser.get('base_collection_id' + '_' + collection_type)
+                collection_id = SetupParser.get('base_collection_id_%s' % collection_type)
+                if not collection_id: continue
 
-            # True/False, overlay locally-discovered files on top of any provided asset collection id?
-            if collection_type not in self.use_local_files:
-                self.use_local_files[collection_type] = SetupParser.getboolean('use_local' + '_' + collection_type)
+                collection = get_asset_collection(collection_id)
+                if collection:
+                    self.base_collections[collection_type] = collection
+                else:
+                    logger.error("The base collection id: %s (for %s) could not been found and has been ignored..."
+                                 % (collection_id, 'base_collection_id_%s' % collection_type))
 
         # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
         # creating local AssetCollection instances internally to represent them.
         return SimulationAssets.assemble_assets(config_builder=self,
-                                                base_collection_id=self.base_collections,
-                                                use_local_files=self.use_local_files,
-                                                local_overrides=self.local_overrides,
+                                                base_collections=self.base_collections,
+                                                experiment_files=self.experiment_files,
                                                 cache=cache)
 
     def add_demog_overlay(self, name, content):
@@ -483,8 +486,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             write_fn('custom_reports.json', dump(format_reports(self.custom_reports)))
 
         for name, content in self.demog_overlays.items():
-            self.append_overlay('%s.json' % name)
-            write_fn('%s.json' % name, dump(content))
+            self.append_overlay('%s' % name)
+            write_fn('%s' % name, dump(content))
 
         for name, content in self.input_files.items():
             write_fn(name, dump(content))
