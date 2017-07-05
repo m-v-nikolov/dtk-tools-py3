@@ -53,10 +53,13 @@ class SimulationAssets:
             if not collection.prepared:
                 collection.prepare(location=location)
 
+        # Sort the collections to first gather the assets from base collections and finish with the locally generated ones
+        sorted_collections = sorted(self.collections.iteritems(), key=lambda x: x[1].base_collection is None)
+
         # Gather the collection_ids from the above collections now that they have been prepared/uploaded (as needed)
         # and generate a 'super AssetCollection' containing all file references.
         asset_files = []
-        for collection_type, collection in self.collections.iteritems():
+        for collection_type, collection in sorted_collections:
             if location == 'LOCAL':
                 asset_files += collection.asset_files_to_use
             else:
@@ -108,17 +111,17 @@ class SimulationAssets:
         """
         file_list = None
         if collection_type == cls.EXE:
-            exe_path = SetupParser.get('exe_path')
+            exe_path = config_builder.exe_path
             file_list = FileList(root=os.path.dirname(exe_path), files_in_root=[os.path.basename(exe_path)])
         elif collection_type == cls.INPUT:
             # returns a Hash with some items that need filtering through
             input_files = config_builder.get_input_file_paths()
             if input_files:
-                file_list = FileList(root=SetupParser.get('input_root'), files_in_root=input_files, recursive=True)
+                file_list = FileList(root=config_builder.input_root, files_in_root=input_files, recursive=True)
         elif collection_type == cls.DLL:
             dll_relative_paths = config_builder.get_dll_paths_for_asset_manager()
             if dll_relative_paths:
-                file_list = FileList(root=SetupParser.get('dll_root'), files_in_root=dll_relative_paths, recursive=True)
+                file_list = FileList(root=config_builder.dll_root, files_in_root=dll_relative_paths, recursive=True)
         else:
             raise Exception("Unknown asset classification: %s" % collection_type)
         return file_list

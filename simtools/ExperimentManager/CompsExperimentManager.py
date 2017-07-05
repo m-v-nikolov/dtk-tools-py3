@@ -98,13 +98,6 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint
-        self.comps_experiment = e
-
-        # add AssetCollection tags - ids of individual exe, dll, input collections for later referencing
-        asset_tags = {}
-        for asset_type, asset in self.assets.collections.iteritems():
-            asset_tags[asset_type + '_collection_id'] = str(asset.collection_id)
-        e.merge_tags(asset_tags)
 
     def create_simulation(self):
         files = self.config_builder.dump_files_to_string()

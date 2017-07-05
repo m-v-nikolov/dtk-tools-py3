@@ -60,7 +60,7 @@ class BaseSimulationCreator(Process):
             s = self.create_simulation(cb)
 
             # Append the environment to the tag and add the default experiment tags if any
-            self.set_tags_to_simulation(s, tags)
+            self.set_tags_to_simulation(s, tags, cb)
 
             # Add the files
             self.add_files_to_simulation(s, cb)
@@ -98,5 +98,5 @@ class BaseSimulationCreator(Process):
         pass
 
     @abstractmethod
-    def set_tags_to_simulation(self, s, tags):
+    def set_tags_to_simulation(self, s, tags, cb):
         pass

@@ -1,7 +1,6 @@
 import json
 import os
 import re  # find listed events by regex
-
 import shutil
 
 import dtk.dengue.params as dengue_params
@@ -32,7 +31,7 @@ from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
 from simtools.SimConfigBuilder import SimConfigBuilder
-from simtools.Utilities.COMPSUtilities import get_asset_collection_by_id, get_asset_collection
+from simtools.Utilities.COMPSUtilities import get_asset_collection
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.General import init_logging
 
@@ -99,8 +98,57 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.update_params(kwargs, validate=True)
 
         self.base_collections = {}
+        self._exe_path = None
+        self._dll_root = None
+        self._input_root = None
+        self.master_collection_id = None
+
         from simtools.AssetManager.FileList import FileList
         self.experiment_files = FileList()
+
+    @property
+    def exe_path(self):
+        from simtools.SetupParser import SetupParser
+        return self._exe_path or SetupParser.get('exe_path')
+
+    @exe_path.setter
+    def exe_path(self, value):
+        if not os.path.exists(value):
+            raise Exception("The path specified in exe_path does not exist (%s)" % value)
+
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        self.base_collections[SimulationAssets.EXE] = None
+        self._exe_path = value
+
+    @property
+    def input_root(self):
+        from simtools.SetupParser import SetupParser
+        return self._input_root or SetupParser.get('input_root')
+
+    @input_root.setter
+    def input_root(self, input_root):
+        if not os.path.exists(input_root) or not os.path.isdir(input_root):
+            raise Exception(
+                "The path specified in input_root does not exist or is not a directory(%s)" % input_root)
+
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        self.base_collections[SimulationAssets.INPUT] = None
+        self._input_root = input_root
+
+    @property
+    def dll_root(self):
+        from simtools.SetupParser import SetupParser
+        return self._input_root or SetupParser.get('dll_root')
+
+    @dll_root.setter
+    def dll_root(self, dll_root):
+        if not os.path.exists(dll_root) or not os.path.isdir(dll_root):
+            raise Exception(
+                "The path specified in dll_root does not exist or is not a directory(%s)" % dll_root)
+
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        self.base_collections[SimulationAssets.DLL] = None
+        self._dll_root = dll_root
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -399,9 +447,19 @@ class DTKConfigBuilder(SimConfigBuilder):
         from simtools.AssetManager.SimulationAssets import SimulationAssets
         from simtools.SetupParser import SetupParser
 
+        master_collection= None
+        if self.master_collection_id:
+            master_collection = get_asset_collection(self.master_collection_id)
+            if not master_collection:
+                raise RuntimeError("Could not retrieve the master_collection identified by: %s" % self.master_collection_id)
+
         # First collect the base collection from the setup parser if needed
         for collection_type in SimulationAssets.COLLECTION_TYPES:
             if collection_type not in self.base_collections:
+                if master_collection:
+                    self.base_collections[collection_type] = master_collection
+                    continue
+
                 collection_id = SetupParser.get('base_collection_id_%s' % collection_type)
                 if not collection_id: continue
 
@@ -502,7 +560,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         # complete the path to each dll before writing emodules_map.json
         location = SetupParser.get('type')
         if location == 'LOCAL':
-            root = SetupParser.get('dll_root')
+            root = self.dll_root
         elif location == 'HPC':
             root = 'Assets'
         else:
