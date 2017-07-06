@@ -4,7 +4,7 @@ from simtools.AssetManager.AssetFile import AssetFile
 
 
 class FileList:
-    def __init__(self, root=None, files_in_root=None, recursive=False):
+    def __init__(self, root=None, files_in_root=None, recursive=None):
         """
         Represents a set of files that are specified RELATIVE to root.
         e.g. /a/b/c.json could be : root: '/a' files_in_root: ['b/c.json']
@@ -12,6 +12,10 @@ class FileList:
         :param files_in_root: The listed files
         """
         self.files = []
+
+        # If recursive has not been set and files_in_root is passed, we assume it is recursive if we find \\ in paths
+        if recursive is None and files_in_root is not None:
+            recursive = any([os.sep in f for f in files_in_root])
 
         if root:
             self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
@@ -42,7 +46,7 @@ class FileList:
                 if f_relative_path == '.': f_relative_path = ''
 
                 # if files_in_dir specified -> skip the ones not included
-                if files_in_dir and f not in files_in_dir and os.path.join(f_relative_path, f) not in files_in_dir: continue
+                if files_in_dir is not None and f not in files_in_dir and os.path.join(f_relative_path, f) not in files_in_dir: continue
 
                 # if we want to force a relative path -> force it
                 if relative_path is not None:

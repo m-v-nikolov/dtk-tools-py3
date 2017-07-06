@@ -15,7 +15,7 @@ class AssetCollection(object):
 
     class InvalidConfiguration(Exception): pass
 
-    def __init__(self, base_collection=None, local_files=None, remote_files=None, cache=None, forced_relative_path=None):
+    def __init__(self, base_collection=None, local_files=None, remote_files=None, forced_relative_path=None):
         """
         :param base_collection_id: A string COMPS AssetCollection id (if not None)
         :param local_files: a FileList object representing local files to use (if not None)
@@ -30,7 +30,6 @@ class AssetCollection(object):
         self.base_collection = base_collection
         self._remote_files = remote_files
         self.local_files = local_files
-        self.cache = cache or {}
         self.asset_files_to_use = self._determine_files_to_use()
         self.collection_id = None
         self.comps_collection = None

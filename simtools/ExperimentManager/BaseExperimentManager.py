@@ -40,30 +40,12 @@ class BaseExperimentManager:
         self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
         self.exp_builder = None
-        self._config_builder = None
+        self.config_builder = config_builder
         self.bypass_missing = False
         self.commandline = None
         self.experiment_tags = {}
-        self.config_builder = config_builder
         self.asset_service = None
         self.assets = None
-
-    @property
-    def config_builder(self):
-        return self._config_builder
-
-    @config_builder.setter
-    def config_builder(self, value):
-        if not value or value == self._config_builder: return
-        # Store the config builder
-        self._config_builder = value
-        # Get assets here for now to be able to check for missing input files
-        # THe assets may change at runtime and will be re-fetched in the simulation creator
-        self.assets = value.get_assets()
-        # Check input files existence
-        if not self.validate_input_files(): exit()
-        # Set the appropriate command line
-        self.commandline = self.get_commandline()
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -82,7 +64,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list, asset_cache):
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         pass
 
     @abstractmethod
@@ -166,6 +148,16 @@ class BaseExperimentManager:
 
         # Store the config_builder if passed
         self.config_builder = config_builder or self.config_builder
+
+        # Get the assets from the config builde
+        # #e just want to check the input files at this point even though it may change laterr
+        self.assets = self.config_builder.get_assets()
+
+        # Check input files existence
+        if not self.validate_input_files(): exit()
+
+        # Set the appropriate command line
+        self.commandline = self.get_commandline()
 
         # Set the tags
         self.experiment_tags.update(experiment_tags or {})
@@ -252,7 +244,6 @@ class BaseExperimentManager:
         # Also create a dict for the cache of md5
         manager = multiprocessing.Manager()
         return_list = manager.list()
-        asset_cache = manager.dict()
 
         # Create the simulation processes
         creator_processes = []
@@ -260,7 +251,7 @@ class BaseExperimentManager:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
                                             callback=lambda: print('.' if verbose else '', end=""),
-                                            return_list=return_list, asset_cache=asset_cache)
+                                            return_list=return_list)
             creator_processes.append(c)
 
         # Display some info

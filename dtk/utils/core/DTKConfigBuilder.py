@@ -30,6 +30,7 @@ from dtk.interventions.sirs_initial_seeding import sirs_campaign
 from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
+from simtools.AssetManager.SimulationAssets import SimulationAssets
 from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.COMPSUtilities import get_asset_collection
 from simtools.Utilities.Encoding import NumpyEncoder
@@ -56,7 +57,6 @@ class DTKConfigBuilder(SimConfigBuilder):
         kwargs (dict): Additional changes to make to the config
 
     Attributes:
-        staged_dlls (dict): Class variable holding the mapping between (type,dll name) and path
         config (dict): Holds the configuration as a dictionary
         campaign (dict): Holds the campaign as a dictionary
         demog_overlays (dict): map the demographic overlay names to content.
@@ -80,9 +80,6 @@ class DTKConfigBuilder(SimConfigBuilder):
         ``Simulation_Duration`` in the config.
 
     """
-
-    staged_dlls = {}  # caching to avoid repeat md5 and os calls
-
     def __init__(self, config=None, campaign=empty_campaign, **kwargs):
         self.config = config or {'parameters': {}}
         self.campaign = campaign
@@ -97,58 +94,11 @@ class DTKConfigBuilder(SimConfigBuilder):
                              'reporter_plugins': []}
         self.update_params(kwargs, validate=True)
 
-        self.base_collections = {}
-        self._exe_path = None
-        self._dll_root = None
-        self._input_root = None
-        self.master_collection_id = None
-
-        from simtools.AssetManager.FileList import FileList
-        self.experiment_files = FileList()
+        self.assets = SimulationAssets()
 
     @property
-    def exe_path(self):
-        from simtools.SetupParser import SetupParser
-        return self._exe_path or SetupParser.get('exe_path')
-
-    @exe_path.setter
-    def exe_path(self, value):
-        if not os.path.exists(value):
-            raise Exception("The path specified in exe_path does not exist (%s)" % value)
-
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-        self.base_collections[SimulationAssets.EXE] = None
-        self._exe_path = value
-
-    @property
-    def input_root(self):
-        from simtools.SetupParser import SetupParser
-        return self._input_root or SetupParser.get('input_root')
-
-    @input_root.setter
-    def input_root(self, input_root):
-        if not os.path.exists(input_root) or not os.path.isdir(input_root):
-            raise Exception(
-                "The path specified in input_root does not exist or is not a directory(%s)" % input_root)
-
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-        self.base_collections[SimulationAssets.INPUT] = None
-        self._input_root = input_root
-
-    @property
-    def dll_root(self):
-        from simtools.SetupParser import SetupParser
-        return self._input_root or SetupParser.get('dll_root')
-
-    @dll_root.setter
-    def dll_root(self, dll_root):
-        if not os.path.exists(dll_root) or not os.path.isdir(dll_root):
-            raise Exception(
-                "The path specified in dll_root does not exist or is not a directory(%s)" % dll_root)
-
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-        self.base_collections[SimulationAssets.DLL] = None
-        self._dll_root = dll_root
+    def experiment_files(self):
+        return self.assets.experiment_files
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -436,46 +386,27 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
-    def prepare_assets(self, location, cache=None):
-        self.assets = self.get_assets(cache or {})
-        self.assets.prepare(location)
+    def set_experiment_executable(self, path):
+        self.assets.exe_path = path
 
-    def get_assets(self, cache=None):
-        """
-        Returns a SimulationAssets object corresponding to the current simulation.
-        """
-        from simtools.AssetManager.SimulationAssets import SimulationAssets
-        from simtools.SetupParser import SetupParser
+    def set_input_files_root(self, path):
+        self.assets.input_root = path
 
-        master_collection= None
-        if self.master_collection_id:
-            master_collection = get_asset_collection(self.master_collection_id)
-            if not master_collection:
-                raise RuntimeError("Could not retrieve the master_collection identified by: %s" % self.master_collection_id)
+    def set_input_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.INPUT, collection)
 
-        # First collect the base collection from the setup parser if needed
-        for collection_type in SimulationAssets.COLLECTION_TYPES:
-            if collection_type not in self.base_collections:
-                if master_collection:
-                    self.base_collections[collection_type] = master_collection
-                    continue
+    def set_dll_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.DLL, collection)
 
-                collection_id = SetupParser.get('base_collection_id_%s' % collection_type)
-                if not collection_id: continue
+    def set_exe_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.EXE, collection)
 
-                collection = get_asset_collection(collection_id)
-                if collection:
-                    self.base_collections[collection_type] = collection
-                else:
-                    logger.error("The base collection id: %s (for %s) could not been found and has been ignored..."
-                                 % (collection_id, 'base_collection_id_%s' % collection_type))
+    def get_assets(self):
+        self.assets.create_collections(self)
+        return self.assets
 
-        # Takes care of the logic of knowing which files (remote and local) to use in coming simulations and
-        # creating local AssetCollection instances internally to represent them.
-        return SimulationAssets.assemble_assets(config_builder=self,
-                                                base_collections=self.base_collections,
-                                                experiment_files=self.experiment_files,
-                                                cache=cache)
+    def set_collection_id(self, collection):
+        self.assets.set_base_collection(SimulationAssets.MASTER, collection)
 
     def add_demog_overlay(self, name, content):
         """
@@ -560,7 +491,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         # complete the path to each dll before writing emodules_map.json
         location = SetupParser.get('type')
         if location == 'LOCAL':
-            root = self.dll_root
+            root = self.assets.dll_root
         elif location == 'HPC':
             root = 'Assets'
         else:

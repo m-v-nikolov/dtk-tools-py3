@@ -45,7 +45,7 @@ class CompsExperimentManager(BaseExperimentManager):
             id = self.experiment.exp_id
             self.comps_experiment = get_experiment_by_id(id)
 
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list, asset_cache):
+    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         # Creator semaphore limits the number of thread accessing the database at the same time
         if not self.creator_semaphore:
             self.creator_semaphore = multiprocessing.Semaphore(4)
@@ -57,8 +57,7 @@ class CompsExperimentManager(BaseExperimentManager):
                                       experiment=self.experiment,
                                       callback=callback,
                                       return_list=return_list,
-                                      save_semaphore=self.creator_semaphore,
-                                      asset_cache=asset_cache)
+                                      save_semaphore=self.creator_semaphore)
 
     @staticmethod
     def create_suite(suite_name):
@@ -92,6 +91,9 @@ class CompsExperimentManager(BaseExperimentManager):
         if self.experiment_tags: e.set_tags(self.experiment_tags)
 
         e.save()
+
+        # Store in our object
+        self.comps_experiment = e
 
         # Create experiment in the base class
         super(CompsExperimentManager, self).create_experiment(experiment_name,  str(e.id), suite_id)

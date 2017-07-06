@@ -406,7 +406,7 @@ class SetupParser(object):
             self.temporary_block = temporary_block
             # Replace the temporary path with the current setup_file if it is not passed or not existing
             if not temporary_path or not os.path.exists(temporary_path):
-                temporary_path = SetupParser.setup_file
+                temporary_path = SetupParser.setup_file if hasattr(SetupParser, 'setup_file') else None
 
             self.temporary_setup = SetupParser(selected_block=temporary_block,
                                                setup_file=temporary_path,
