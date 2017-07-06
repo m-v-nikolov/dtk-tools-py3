@@ -4,6 +4,7 @@ import json
 import os.path as path
 import os
 import dtk.tools.serialization.combine_inset_charts as cmb
+import dtk.tools.serialization.ks_channel_testing as kst
 
 PLAIN_CHART = "InsetChart.json"
 START_CHART = "InsetChart_start.json"
@@ -28,6 +29,7 @@ class CombineInsetChartTests(unittest.TestCase):
             if path.isfile(potential_file):
                 os.unlink(potential_file)
 
+    # <editor-fold desc="set flags for arguments">
     def set_serialized_flags(self, from_folder=True):
         self.flags.append('-s')
         if from_folder:
@@ -58,6 +60,7 @@ class CombineInsetChartTests(unittest.TestCase):
     def set_output_filename(self, filename):
         self.flags.append('-o')
         self.flags.append(filename)
+    # </editor-fold>
 
     def get_args(self):
         return self.parser.parse_args(self.flags)
@@ -84,6 +87,10 @@ class CombineInsetChartTests(unittest.TestCase):
         self.set_reloaded_flags(from_folder=False)
         self.set_default_chartname_flags()
         return self.get_args()
+
+    def create_ks_tester_custom(self, reference_chart_path, test_chart_path, channel_list):
+        k_t = kst.KsChannelTester(reference_chart_path, test_chart_path, channel_list)
+        return k_t
 
     def verify_charts_combined(self, start_chart, end_chart, combined_chart):
         start_keys = sorted(start_chart["Channels"].keys())
@@ -119,6 +126,29 @@ class CombineInsetChartTests(unittest.TestCase):
         with open(end_chart_path) as infile:
             end_chart = json.load(infile)
         self.verify_charts_combined(start_chart, end_chart, combined_chart)
+
+    def test_kstest_combined_charts_allgood(self):
+        args = self.combine_charts_all_local_default_output()
+        cmb.combine_charts(args.serialized,
+                           args.reload,
+                           args.output,
+                           serialized_chart_name=args.serializedchartname,
+                           reloaded_chart_name=args.reloadedchartname)
+        full_chart_path = os.path.join('.', FULL_CHART)
+        combined_chart_path = self.expected_new_files[0]
+        test_channels = ["Infected","New Infections",
+                         "Disease Deaths","Campaign Cost",
+                         "Statistical Population"]
+        k_t = self.create_ks_tester_custom(reference_chart_path=full_chart_path,
+                                           test_chart_path=combined_chart_path,
+                                           channel_list=test_channels)
+        for channel in test_channels:
+            stat, pvalue = k_t.test_channel(channel_name=channel)
+            # print "Channel is: {0}".format(channel)
+            # print "Stat is: {0}".format(stat)
+            # print "P_Value is: {0}".format(pvalue)
+            self.assertGreater(pvalue, 0.05)
+            self.assertLess(stat, 0.20)
 
 
     def test_args_AllFolderCustomOutput(self):
