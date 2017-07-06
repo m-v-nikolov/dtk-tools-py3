@@ -37,7 +37,6 @@ class BaseExperimentManager:
 
     def __init__(self, experiment, config_builder=None):
         self.experiment = experiment
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
         self.exp_builder = None
         self.config_builder = config_builder

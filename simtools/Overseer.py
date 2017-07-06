@@ -51,9 +51,8 @@ if __name__ == "__main__":
     max_local_sims = int(SetupParser.get('max_local_sims'))
     max_analysis_threads = int(SetupParser.get('max_threads'))
 
-    # Create the queues and semaphore
+    # Create the queue
     local_queue = multiprocessing.Queue(max_local_sims)
-    analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
     managers = OrderedDict()
 
@@ -94,7 +93,6 @@ if __name__ == "__main__":
                     logger.error(traceback.format_exc())
                     exit()
                 managers[experiment.id] = manager
-                manager.maxThreadSemaphore = analysis_semaphore
                 if manager.location == "LOCAL": manager.local_queue = local_queue
             else:
                 # Refresh the experiment

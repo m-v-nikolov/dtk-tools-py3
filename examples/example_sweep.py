@@ -26,6 +26,6 @@ run_sim_args = {
 }
 
 if __name__ == "__main__":
-    SetupParser.init(selected_block=SetupParser.default_block)
+    SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**run_sim_args)

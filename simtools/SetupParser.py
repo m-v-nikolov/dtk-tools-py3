@@ -402,8 +402,8 @@ class SetupParser(object):
         """
             Used for running a bit of code with a different selected block and ini path
         """
-        def __init__(self, temporary_block, temporary_path=None):
-            self.temporary_block = temporary_block
+        def __init__(self, temporary_block=None, temporary_path=None):
+            self.temporary_block = temporary_block or SetupParser.default_block
             # Replace the temporary path with the current setup_file if it is not passed or not existing
             if not temporary_path or not os.path.exists(temporary_path):
                 temporary_path = SetupParser.setup_file if hasattr(SetupParser, 'setup_file') else None
@@ -412,8 +412,11 @@ class SetupParser(object):
                                                setup_file=temporary_path,
                                                old_style_instantiation=True)
 
-        def get(self, parameter):
-            return self.temporary_setup.setup.get(self.temporary_block, parameter)
+        def get(self, parameter, default=None):
+            try:
+                return self.temporary_setup.setup.get(self.temporary_block, parameter)
+            except:
+                return default
 
         def getboolean(self, parameter):
             return self.temporary_setup.setup.getboolean(self.temporary_block, parameter)
