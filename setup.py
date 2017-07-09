@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import ctypes
 import os
 import re
@@ -9,7 +10,6 @@ from collections import OrderedDict
 from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
-from argparse import ArgumentParser, Namespace
 
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
@@ -45,9 +45,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.1',
+        'version': '2.0.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pyCOMPS-2.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -439,6 +439,9 @@ def handle_init():
 
     # Create the EXAMPLE block for the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+    if os.path.exists(example_simtools):
+        print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
+        shutil.move(example_simtools, "%s.old"%example_simtools)
 
     # Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
     open(example_simtools, 'a').close()
@@ -447,18 +450,25 @@ def handle_init():
     cp = ConfigParser()
     cp.read(example_simtools)
 
-    if not cp.has_section('EXAMPLE'):
-        # EXAMPLE section is not here -> create it
-        cp.add_section('EXAMPLE')
-        cp.set('EXAMPLE', 'type', 'LOCAL')
-        cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+    if not cp.has_section('EXAMPLE'): cp.add_section('EXAMPLE')
+    cp.set('EXAMPLE', 'type', 'LOCAL')
+    cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+
     if not cp.has_section('HPC'):
         cp.add_section('HPC')
         cp.set('HPC', 'type', 'HPC')
-        cp.set('HPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
-        cp.set('HPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
+
+    cp.set('HPC', 'exe_path', os.path.join(current_directory, 'examples', 'inputs', 'Eradication.exe'))
+    cp.set('HPC', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
+    cp.set('HPC', 'dll_root', os.path.join(current_directory, 'examples', 'inputs','dlls'))
+    cp.set('HPC', 'base_collection_id_exe ', '')
+    cp.set('HPC', 'base_collection_id_input ', '')
+    cp.set('HPC', 'base_collection_id_dll ', '')
 
     cp.write(open(example_simtools, 'w'))
+
+    # Also copy to the asset management examples
+    shutil.copy(example_simtools, os.path.join(current_directory, 'examples','AssetManagement'))
 
 
 def upgrade_pip(my_os):
@@ -532,15 +542,6 @@ def cleanup_locks():
 
 
 def main():
-    # if we add any more options, do this in a separate method
-    parser = ArgumentParser()
-    parser.add_argument('--nopackages', action='store_false', dest='get_packages',
-                        help='Do not automatically obtain disease packages (Default: obtain them).')
-    args = parser.parse_args()
-    # silly, but prevents conflict with install_packages method
-    if '--nopackages' in sys.argv:
-        sys.argv.remove('--nopackages')
-
     # Check OS
     my_os = LocalOS.name
     print ('os: %s' % my_os)
@@ -559,17 +560,6 @@ def main():
 
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
-
-    # Obtain the most recent disease input packages
-    if args.get_packages:
-        import dtk.commands
-        namespace = Namespace()
-        setattr(namespace, 'quiet', True)
-        package_names = dtk.commands.list_packages(args=namespace, unknownArgs=None)
-        for package_name in package_names:
-            setattr(namespace, 'package_name', package_name)
-            setattr(namespace, 'package_version', 'latest')
-            dtk.commands.get_package(args=namespace, unknownArgs=None)
 
     cleanup_locks()
 

@@ -3,6 +3,7 @@
 
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.builders.sweep import GenericSweepBuilder
+from dtk.vector.study_sites import configure_site
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
@@ -18,6 +19,7 @@ cb = DTKConfigBuilder.from_defaults('MALARIA_SIM',
                                     Base_Population_Scale_Factor=0.1,
                                     x_Temporary_Larval_Habitat=0.05,
                                     Simulation_Duration=365*20)
+configure_site(cb,'Namawala')
 
 run_sim_args = {
     'exp_name': exp_name,
