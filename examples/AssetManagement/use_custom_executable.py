@@ -12,7 +12,7 @@ exp_name = 'Example with custom executable'
 
 # Create a default ConfigBuilder
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
-configure_site(cb,'Namawala')
+configure_site(cb, 'Namawala')
 
 # Create a basic sweep
 builder = GenericSweepBuilder.from_dict({'Run_Number': range(3)})

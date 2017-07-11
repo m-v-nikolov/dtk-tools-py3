@@ -8,7 +8,7 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
-SetupParser.default_block = 'EXAMPLE'
+SetupParser.default_block = 'LOCAL'
 
 exp_name  = 'ExampleSweep'
 builder = GenericSweepBuilder.from_dict({'Run_Number': range(3),
