@@ -11,6 +11,9 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
+from copy import deepcopy
+
+from simtools.Utilities.ConfigObj import ConfigObj
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
@@ -421,54 +424,50 @@ def handle_init():
     # Copy the default.ini into the right directory if not already present
     current_simtools = os.path.join(current_directory, 'simtools', 'simtools.ini')
     default_ini = os.path.join(install_directory, 'default.ini')
+    default_config = ConfigObj(default_ini, write_empty_values=True)
+
+    # Set some things in the default CP
+    default_eradication = os.path.join(current_directory, 'examples', 'inputs', 'Eradication.exe')
+    default_inputs = os.path.join(current_directory, 'examples', 'inputs')
+    default_dlls = os.path.join(current_directory, 'examples', 'inputs', 'dlls')
+    default_config['LOCAL']['exe_path'] = default_eradication
+    default_config['LOCAL']['input_root'] = default_inputs
+    default_config['LOCAL']['dll_root'] = default_dlls
+    default_config['HPC']['input_root'] = default_inputs
+    default_config["HPC"]["base_collection_id_input"] = ''
+
     if not os.path.exists(current_simtools):
-        shutil.copyfile(default_ini, current_simtools)
+        default_config.write(open(current_simtools, 'w'))
     else:
-        # A simtools was already present, merge the best we can
         print ("\nA previous simtools.ini configuration file is present. Attempt to auto-merge")
-        merge_cp = ConfigParser()
-        merge_cp.read([default_ini, current_simtools])
+        # Merge it. The emrge is in place so make a copy of the defaults
+        default_config_merge = deepcopy(default_config)
+        current_config = ConfigObj(current_simtools)
+        default_config_merge.merge(current_config)
 
         # Backup copy the current
         print ("Backup copy your current simtools.ini to simtools.ini.bak")
         shutil.copy(current_simtools, current_simtools + ".bak")
 
         # Write the merged one
-        merge_cp.write(open(current_simtools, 'w'))
+        default_config_merge.write(open(current_simtools, 'w'))
         print ("Merged simtools.ini written!\n")
 
-    # Create the EXAMPLE block for the examples
+    # ALso write the default_cp in the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+    am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
+
     if os.path.exists(example_simtools):
         print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
-        shutil.move(example_simtools, "%s.old"%example_simtools)
+        shutil.move(example_simtools, "%s.bak" % example_simtools)
+    default_config.write(open(example_simtools, 'w'))
 
-    # Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
-    open(example_simtools, 'a').close()
-
-    # Check if we have the EXAMPLE block
-    cp = ConfigParser()
-    cp.read(example_simtools)
-
-    if not cp.has_section('EXAMPLE'): cp.add_section('EXAMPLE')
-    cp.set('EXAMPLE', 'type', 'LOCAL')
-    cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
-
-    if not cp.has_section('HPC'):
-        cp.add_section('HPC')
-        cp.set('HPC', 'type', 'HPC')
-
-    cp.set('HPC', 'exe_path', os.path.join(current_directory, 'examples', 'inputs', 'Eradication.exe'))
-    cp.set('HPC', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
-    cp.set('HPC', 'dll_root', os.path.join(current_directory, 'examples', 'inputs','dlls'))
-    cp.set('HPC', 'base_collection_id_exe ', '')
-    cp.set('HPC', 'base_collection_id_input ', '')
-    cp.set('HPC', 'base_collection_id_dll ', '')
-
-    cp.write(open(example_simtools, 'w'))
-
-    # Also copy to the asset management examples
-    shutil.copy(example_simtools, os.path.join(current_directory, 'examples','AssetManagement'))
+    if os.path.exists(am_examples_simtools):
+        print("Example simtools.ini already exists (%s) -> backup before modifying!" % am_examples_simtools)
+        shutil.move(am_examples_simtools, "%s.bak" % am_examples_simtools)
+    # Remove LOCAL section for the AM simtools.ini
+    del default_config["LOCAL"]
+    default_config.write(open(am_examples_simtools, 'w'))
 
 
 def upgrade_pip(my_os):
