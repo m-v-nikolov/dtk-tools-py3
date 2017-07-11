@@ -24,7 +24,7 @@ from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
-SetupParser.default_block = 'EXAMPLE'
+SetupParser.default_block = 'LOCAL'
 
 # The following directory holds the plugin files for this example.
 plugin_files_dir = 'Templates'

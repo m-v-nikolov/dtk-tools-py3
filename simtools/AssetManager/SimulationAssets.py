@@ -136,18 +136,25 @@ class SimulationAssets(object):
         self.prepared = True
 
     def create_collections(self, config_builder):
+        location = SetupParser.get("type")
         for collection_type in self.COLLECTION_TYPES:
             # Dont do anything if already set
             if collection_type in self.collections and self.collections[collection_type]: continue
 
-            # If we already have the master collection set -> set it as collection for every types
-            if self.master_collection:
-                self.collections[collection_type] = self.master_collection
-                continue
+            # Check if we are running LOCAL we should not have any base collections
+            if location == "LOCAL" and collection_type in self.base_collections:
+                print("The base_collection of type %s was specified but you are trying to run a LOCAL experiment.\n"
+                          "Using COMPS collection with LOCAL experiments is not supported. The collection will be ignored..." % collection_type)
 
-            if not collection_type in self.base_collections:
-                base_id = SetupParser.get('base_collection_id_%s' % collection_type, None)
-                if base_id: self.set_base_collection(collection_type, base_id)
+            if location == "HPC":
+                # If we already have the master collection set -> set it as collection for every types
+                if self.master_collection:
+                    self.collections[collection_type] = self.master_collection
+                    continue
+
+                if collection_type not in self.base_collections:
+                    base_id = SetupParser.get('base_collection_id_%s' % collection_type, None)
+                    if base_id: self.set_base_collection(collection_type, base_id)
 
             base_collection = self.base_collections.get(collection_type, None)
             if not base_collection:
