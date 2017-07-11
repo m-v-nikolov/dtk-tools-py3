@@ -3,6 +3,7 @@ from simtools.AssetManager.AssetCollection import AssetCollection
 from simtools.AssetManager.FileList import FileList
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import get_asset_collection
 
 if __name__ == "__main__":
     # Initialize an HPC setup
@@ -24,7 +25,22 @@ if __name__ == "__main__":
     ac.prepare('HPC')
 
     # Our collection is created -> the id is:
-    print("The new collection ID is: %s " % ac.collection_id)
+    print("The collection ID is: %s " % ac.collection_id)
+
+    # Now create another collection based on the one we just created and add some arbitrary files
+    # First we need to create the filelist of Local files to use
+    local_fl = FileList()
+    local_fl.add_file('inputs/docs/some_doc.txt')
+
+    # THen lets create an AssetCollection but this time we will give set the base_collection to be the one we created earlier
+    # base_collection needs a COMPSAssetCollection instance so we can retrieve this by doing:
+    comps_collection = get_asset_collection(ac.collection_id)
+    new_collection = AssetCollection(base_collection=comps_collection, local_files=local_fl)
+
+    # Dont forget to prepare the collection to send everything to COMPS
+    new_collection.prepare('HPC')
+
+    print("The new collection ID is: %s" % new_collection.collection_id)
 
     # Run a simulation with this new collection ID
     cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
@@ -32,7 +48,7 @@ if __name__ == "__main__":
     cb.set_param("Climate_Model", "CLIMATE_CONSTANT")
 
     # This is where we set the collection ID used to be the one we just created
-    cb.set_collection_id(ac.collection_id)
+    cb.set_collection_id(new_collection.collection_id)
 
     # Create an experiment manager and run the simulations
     exp_manager = ExperimentManagerFactory.from_cb(cb)
