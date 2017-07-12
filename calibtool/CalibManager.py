@@ -697,7 +697,8 @@ class CalibManager(object):
                     'analyzer_list': self.analyzer_list,
                     'plotters': self.plotters,
                     'all_results': self.all_results,
-                    'calibration_start':self.calibration_start
+                    'calibration_start':self.calibration_start,
+                    'site_analyzer_names': self.site_analyzer_names()
                 }
         return kwargs
 
