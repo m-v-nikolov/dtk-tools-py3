@@ -1,34 +1,32 @@
 import gc
 import json
 import os
-import time
-import pandas as pd
 import re
-from calibtool.utils import StatusPoint
+import time
 from datetime import datetime
-from simtools.SetupParser import SetupParser
-from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.Utilities.General import init_logging
 
-# from calibtool.plotters import SiteDataPlotter
+import pandas as pd
+
+from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
-from simtools.DataAccess.DataStore import DataStore
-from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
+from simtools.DataAccess.DataStore import DataStore
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
+from simtools.Utilities.Experiments import retrieve_experiment
+from simtools.Utilities.General import init_logging
 
 logger = init_logging("Calibration")
 
 
-class IterationState(object):
-    '''
+class IterationState:
+    """
     Holds the settings, parameters, simulation state, analysis results, etc.
     for one calibtool iteration.
 
     Allows for the resumption or extension of existing CalibManager instances
     from an arbitrary point in the iterative process.
-    '''
-
+    """
     def __init__(self, **kwargs):
         self.iteration = 0
         self.calibration_name = None
@@ -48,31 +46,127 @@ class IterationState(object):
         self.plotters = []
         self.all_results = None
         self.summary_table = None
-        self.calibration_start = None
         self.iteration_start = None
-        self.status = None
-        self.resume_point = StatusPoint.iteration_start
+        self.calibration_start = None
 
+        if 'calibration_start' in kwargs:
+            cs = kwargs.pop('calibration_start')
+            if isinstance(cs, unicode): self.calibration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
+            else: self.calibration_start = cs
+
+        if 'iteration_start' in kwargs:
+            cs = kwargs.pop('iteration_start')
+            if isinstance(cs, unicode): self.iteration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
+            else: self.iteration_start = cs
+
+        self._status = None
         self.update(**kwargs)
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        self._status = status
+        self.save()
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def restore_next_point(self, iter_step):
+        """
+        Restore next_point up to this iteration
+        """
+        # initialization and may need adjustment based on resume_point
+        self.next_point_algo.set_state(self.next_point, self.iteration)
+
+        # Handel the general cases for resume
+        if iter_step == StatusPoint.commission:
+            # Note: later will generate new samples. Need to clean up next_point for resume from commission.
+            if self.iteration == 0:
+                self.next_point_algo.cleanup()
+            elif self.iteration > 0:
+                # Now we need to restore next_point from previous iteration (need to re-generate new samples late)
+                iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
+                self.next_point_algo.set_state(iteration_state.next_point, self.iteration - 1)
+
+            # prepare and ready for new experiment and simulations
+            self.reset_state()
+        elif iter_step == StatusPoint.analyze:
+            # Note: self.next_point has been already restored from current iteration, so it has current samples!
+            if self.iteration == 0:
+                self.next_point_algo.cleanup()
+            elif self.iteration > 0:
+                # Now, we need to restore gaussian from previous iteration
+                iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
+                self.next_point_algo.restore(iteration_state)
+        elif iter_step == StatusPoint.plot or iter_step == StatusPoint.next_point:
+            # Note: self.next_point has been already restored from current iteration, so it has current samples!
+            # Note: self.next_point has been already restored from current iteration, move on to next iteration!
+            pass
+
+    def restore_results(self, iteration):
+        """
+        Restore summary results from serialized state.
+        """
+        # Depending on the type of results (lists or dicts), handle differently how we treat the results
+        # This should be refactor to take care of both cases at once
+        if isinstance(self.all_results, pd.DataFrame):
+            self.all_results.set_index('sample', inplace=True)
+            self.all_results = self.all_results[self.all_results.iteration <= iteration]
+        elif isinstance(self.all_results, list):
+            self.all_results = self.all_results[iteration]
+
+    def resume(self, iter_step):
+        # step 1: If we know we are running -> recreate the exp_manager
+        if iter_step.value >= StatusPoint.running.value:
+            self.exp_manager = ExperimentManagerFactory.from_experiment(retrieve_experiment(self.experiment_id))
+
+        # step 2: restore next_point
+        self.restore_next_point(iter_step)
+
+        # step 3: restore Calibration results
+        if self.iteration > 0:
+            if iter_step.value < StatusPoint.plot.value:
+                # it will combine current results with previous results
+                self.restore_results(self.iteration - 1)
+            else:
+                # it will use the current results and resume from next iteration
+                self.restore_results(self.iteration)
+
+        # step 4: prepare resume states
+        if iter_step == StatusPoint.commission:
+            # need to run simulations
+            self.simulations = {}
+            self.results = {}
+        elif iter_step == StatusPoint.analyze:
+            # just need to calculate the results
+            self.results = {}
+
+        self.status = StatusPoint(iter_step.value - 1) if iter_step.value > 0 else None
+
     def run(self):
         # START_STEP
-        self.starting_step()
+        if not self.status:
+            self.starting_step()
 
         # COMMISSION STEP
-        if self.qualifies_for(StatusPoint.commission):
+        if self.status == StatusPoint.iteration_start:
             self.commission_step()
 
+        # RUNNING
+        if self.status == StatusPoint.commission:
+            self.status = StatusPoint.running
+            self.wait_for_finished()
+
         # ANALYZE STEP
-        if self.qualifies_for(StatusPoint.analyze):
+        if self.status == StatusPoint.running:
             self.analyze_step()
 
         # PLOTTING STEP
-        if self.qualifies_for(StatusPoint.plot):
+        if self.status == StatusPoint.analyze:
             self.plotting_step()
 
         # Done with calibration? exit the loop
@@ -80,7 +174,7 @@ class IterationState(object):
             return
 
         # NEXT STEP
-        if self.qualifies_for(StatusPoint.next_point):
+        if self.status == StatusPoint.plot:
             self.next_step()
 
     def starting_step(self):
@@ -90,15 +184,9 @@ class IterationState(object):
         self.iteration_start = datetime.now().replace(microsecond=0)
         logger.info('---- Starting Iteration %d ----' % self.iteration)
 
-        # Output verbose resume point
-        if self.resume_point.value > StatusPoint.iteration_start.value:
-            logger.info('-- Resuming Point %d (%s) --' % (
-            self.resume_point.value, self.resume_point.name.title()))
-
     def commission_step(self):
         # Ready for commissioning
         self.status = StatusPoint.commission
-        self.save()
 
         # Get the params from the next_point
         next_params = self.next_point_algo.get_samples_for_iteration(self.iteration)
@@ -113,10 +201,6 @@ class IterationState(object):
     def analyze_step(self):
         # Ready for analyzing
         self.status = StatusPoint.analyze
-        self.save()
-
-        # Make sure all our simulations finished first
-        self.wait_for_finished()
 
         # Analyze the iteration
         self.analyze_iteration()
@@ -124,7 +208,6 @@ class IterationState(object):
     def plotting_step(self):
         # Ready for plotting
         self.status = StatusPoint.plot
-        self.save()
 
         # Plot the iteration
         self.plot_iteration()
@@ -132,19 +215,16 @@ class IterationState(object):
     def next_step(self):
         # Ready for next point
         self.status = StatusPoint.next_point
-        self.save()
 
         self.next_point_algo.update_iteration(self.iteration)
         self.set_next_point(self.next_point_algo)
 
     def commission_iteration(self, next_params):
-        # DJK: This needs to be encapsulated so we can commission other models or even deterministic functions
         """
         Commission an experiment of simulations constructed from a list of combinations of
         random seeds, calibration sites, and the next sample points.
         Cache the relevant experiment and simulation information to the IterationState.
         """
-
         if self.simulations:
             logger.info('Reloading simulation data from cached iteration (%s) state.' % self.iteration)
             self.exp_manager = ExperimentManagerFactory.from_experiment(
@@ -234,7 +314,7 @@ class IterationState(object):
                 states, msgs = self.exp_manager.get_simulation_status()
             except Exception as ex:
                 # logger.info(ex)
-                logger.error('Cannot get simulation status. Calibration cannot continue. Exiting...' % SetupParser.get('type'))
+                logger.error('Cannot get simulation status. Calibration cannot continue. Exiting...')
                 logger.error(ex)
                 exit()
 
@@ -325,6 +405,7 @@ class IterationState(object):
                  'samples_for_this_iteration': self.samples_for_this_iteration,
                  'analyzers': self.analyzers,
                  'iteration': self.iteration,
+                 'iteration_start': self.iteration_start,
                  'results': self.results,
                  'calibration_name': self.calibration_name,
                  'experiment_id': self.experiment_id,
@@ -378,15 +459,3 @@ class IterationState(object):
             os.rename(iter_state_path, os.path.join(self.iteration_directory, 'IterationState_%s.json' % backup_id))
 
         self.to_file(iter_state_path)
-
-    def qualifies_for(self, sp=StatusPoint.commission):
-        if sp == StatusPoint.commission:
-            return self.resume_point.value <= StatusPoint.commission.value
-        elif sp == StatusPoint.analyze:
-            return self.resume_point.value <= StatusPoint.analyze.value
-        elif sp == StatusPoint.plot:
-            return self.resume_point.value <= StatusPoint.plot.value
-        elif sp == StatusPoint.next_point:
-            return self.resume_point.value <= StatusPoint.next_point.value
-        else:
-            return False
