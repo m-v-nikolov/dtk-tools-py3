@@ -540,6 +540,13 @@ def cleanup_locks():
             print("Could not delete file: %s" % overseer_lock)
 
 
+def backup_db():
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
+    if os.path.exists(db_path):
+        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sql.bak")
+        shutil.move(db_path, "%s.bak" % db_path)
+
 def main():
     # Check OS
     my_os = LocalOS.name
@@ -556,6 +563,9 @@ def main():
 
     # Consider config file
     handle_init()
+
+    # Create new db
+    backup_db()
 
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
