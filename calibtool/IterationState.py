@@ -450,6 +450,8 @@ class IterationState(object):
         Cache information about the IterationState that is needed to resume after an interruption.
         If resuming from an existing iteration, also copy to backup the initial cached state.
         """
+        if not self.calibration_name: return
+
         try:
             os.makedirs(self.iteration_directory)
         except OSError:
