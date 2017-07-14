@@ -5,15 +5,12 @@ import os
 import re
 import shutil
 import sys
-from ConfigParser import ConfigParser
 from collections import OrderedDict
+from copy import deepcopy
 from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from copy import deepcopy
-
-from simtools.Utilities.ConfigObj import ConfigObj
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
@@ -30,6 +27,9 @@ GITHUB_URL_PREFIX = 'http://%s' % GITHUB
 # Set the list of requirements here
 # For Windows, the wheel can be provided in either tar.gz or whl format
 requirements = OrderedDict([
+    ('six', {
+        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
+    }),
     ('github3.py', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
         'version': '1.0.0a4',
@@ -421,6 +421,7 @@ def handle_init():
     """
     Consider user's configuration file
     """
+    from simtools.Utilities.ConfigObj import ConfigObj
     # Copy the default.ini into the right directory if not already present
     current_simtools = os.path.join(current_directory, 'simtools', 'simtools.ini')
     default_ini = os.path.join(install_directory, 'default.ini')
