@@ -19,6 +19,8 @@ class GitHub(object):
     SUPPORT_EMAIL = 'IDM-SW-Research@intven.com'
     AUTH_TOKEN = None # allows subclasses to bypass interactive login if overridden
 
+    HEAD = 'HEAD'
+
     def __init__(self, repository_name=None):
         self.repository_name = repository_name or self.DEFAULT_REPOSITORY_NAME
         if not self.repository_name:
@@ -234,7 +236,10 @@ class DTKGitHub(GitHub):
         :param dest: The directory to contain obtained inputs.
         :return: Nothing.
         """
-        release_tag = self.construct_tag(version)
+        if version == self.HEAD:
+            release_tag = self.HEAD
+        else:
+            release_tag = self.construct_tag(version)
         zip_file = os.path.join(destination, '%s.zip' % release_tag)
         return super(DTKGitHub, self).get_zip(tag=release_tag, destination=zip_file)
 

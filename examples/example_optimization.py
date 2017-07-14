@@ -10,10 +10,11 @@ from calibtool.algorithms.OptimTool import OptimTool
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
-from calibtool.study_sites.NdiopCalibSite import NdiopCalibSite
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
+
+from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
+from malaria.study_sites.NdiopCalibSite import NdiopCalibSite
 
 SetupParser.default_block = 'HPC'
 

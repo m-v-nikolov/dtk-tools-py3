@@ -7,7 +7,6 @@ import sys
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
-from dtk.HIV.analyzers import *
 from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
@@ -30,19 +29,31 @@ from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
 import simtools.Utilities.Initialization as init
 
-builtinAnalyzers = {
-    'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
-                                      plot_function=plot_grouped_lines),
-    'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_')),
-    'hiv_ReportHIVByAgeAndGender': ReportHIVByAgeAndGenderAnalyzer(force_apply=True, force_combine=True, verbose=True),
-    'hiv_RelationshipDuration': RelationshipDurationAnalyzer(),
-    'hiv_HIVDebutAnalyzer': RelationshipDurationAnalyzer(),
-    'hiv_DebutAgeAnalyzer': DebutAgeAnalyzer(),
-    'hiv_PrognosisAnalyzer': PrognosisAnalyzer(),
-    'hiv_CircumcisionAnalyzer': CircumcisionAnalyzer(),
-    'hiv_CD4ProgressionAnalyzer': CD4ProgressionAnalyzer(),
-    'hiv_WHOStageAnalyzer': WHOStageAnalyzer()
-}
+def builtinAnalyzers():
+    analyzers = {
+        'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
+                                          plot_function=plot_grouped_lines),
+        'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_')),
+    }
+
+    # try to import HIV analyzers, if available
+    try:
+        import hiv_analyzers
+        hiv_analyzer_dict = {
+            'hiv_ReportHIVByAgeAndGender': hiv_analyzers.ReportHIVByAgeAndGenderAnalyzer.ReportHIVByAgeAndGenderAnalyzer(force_apply=True, force_combine=True, verbose=True),
+            'hiv_RelationshipDuration': hiv_analyzers.RelationshipDurationAnalyzer.RelationshipDurationAnalyzer(),
+            'hiv_HIVDebutAnalyzer': hiv_analyzers.RelationshipDurationAnalyzer.RelationshipDurationAnalyzer(),
+            'hiv_DebutAgeAnalyzer': hiv_analyzers.DebutAgeAnalyzer.DebutAgeAnalyzer(),
+            'hiv_PrognosisAnalyzer': hiv_analyzers.PrognosisAnalyzer.PrognosisAnalyzer(),
+            'hiv_CircumcisionAnalyzer': hiv_analyzers.CircumcisionAnalyzer.CircumcisionAnalyzer(),
+            'hiv_CD4ProgressionAnalyzer': hiv_analyzers.CD4ProgressionAnalyzer.CD4ProgressionAnalyzer(),
+            'hiv_WHOStageAnalyzer': hiv_analyzers.WHOStageAnalyzer.WHOStageAnalyzer()
+        }
+        for key, value in hiv_analyzer_dict.iteritems():
+            analyzers[key] = value
+    except ImportError:
+        pass
+    return analyzers
 
 class objectview(object):
     def __init__(self, d):
@@ -281,7 +292,7 @@ def progress(args, unknownArgs):
 def analyze(args, unknownArgs):
     # logger.info('Analyzing results...')
     args.config_name = args.analyzer # prevents need for underlying refactor
-    AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers)
+    AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers())
 
 
 def create_batch(args, unknownArgs):
@@ -305,7 +316,7 @@ def clear_batch(args, unknownArgs):
 
 
 def analyze_list(args, unknownArgs):
-    logger.error('\n' + '\n'.join(builtinAnalyzers.keys()))
+    logger.error('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
 
 
 def log(args, unknownArgs):
@@ -501,7 +512,9 @@ def get_package(args, unknownArgs):
         package_name = args.package_name
         github = DTKGitHub(disease=package_name)
 
-        if args.package_version == 'latest':
+        if args.package_version.upper() == GitHub.HEAD:
+            version = GitHub.HEAD
+        elif args.package_version.lower() == 'latest':
             version = github.get_latest_version() # if no versions exist, returns None
         elif github.version_exists(version=args.package_version):
             version = args.package_version

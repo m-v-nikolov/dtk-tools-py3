@@ -15,7 +15,6 @@ import dtk.generic.sir_vaccinations_b as sir_vaccinations_b_params
 import dtk.generic.sir_vaccinations_c as sir_vaccinations_c_params
 import dtk.generic.sirs as sirs_params
 import dtk.generic.sis as sis_params
-import dtk.malaria.params as malaria_params
 import dtk.vector.params as vector_params
 from dtk.interventions.empty_campaign import empty_campaign
 from dtk.interventions.seir_initial_seeding import seir_campaign
@@ -147,6 +146,13 @@ class DTKConfigBuilder(SimConfigBuilder):
         campaign = empty_campaign
 
         if sim_type == "MALARIA_SIM":
+            try:
+                import malaria.params as malaria_params # must have the malaria disease package installed!
+            except ImportError as e:
+                e.message = 'The malaria disease package must be installed via the \'dtk get_package\' command' + \
+                            'before the MALARIA_SIM simulation type can be used.'
+                raise
+
             config["parameters"].update(vector_params.params)
             config["parameters"].update(malaria_params.params)
 
