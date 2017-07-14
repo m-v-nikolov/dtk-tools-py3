@@ -3,15 +3,15 @@ import os
 import re
 from datetime import datetime
 
-from COMPS.Data import Experiment, Configuration,Priority, Suite
-from simtools.SetupParser import SetupParser
+from COMPS.Data import Experiment, Configuration, Priority, Suite
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
+from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, \
-    translate_COMPS_path
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login
 from simtools.Utilities.General import init_logging
+
 logger = init_logging("COMPSExperimentManager")
 
 
@@ -35,7 +35,6 @@ class CompsExperimentManager(BaseExperimentManager):
             COMPS_login(self.endpoint)
 
         self.asset_service = True
-        self.creator_semaphore = None
         self.runner_thread = None
         self.sims_to_create = []
         self.commissioners = []
@@ -46,18 +45,13 @@ class CompsExperimentManager(BaseExperimentManager):
             self.comps_experiment = get_experiment_by_id(id)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
-        # Creator semaphore limits the number of thread accessing the database at the same time
-        if not self.creator_semaphore:
-            self.creator_semaphore = multiprocessing.Semaphore(4)
-
         return COMPSSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
                                       callback=callback,
-                                      return_list=return_list,
-                                      save_semaphore=self.creator_semaphore)
+                                      return_list=return_list)
 
     @staticmethod
     def create_suite(suite_name):
