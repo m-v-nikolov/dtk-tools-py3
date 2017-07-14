@@ -145,5 +145,4 @@ class AnalyzeManager:
 
         map(lambda p: p.join(), plotting_processes)
 
-        import matplotlib.pyplot as plt
-        plt.show()
+
