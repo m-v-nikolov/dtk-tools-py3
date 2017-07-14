@@ -18,7 +18,7 @@ try:
     from malaria.study_sites.NdiopCalibSite import NdiopCalibSite
 except ImportError as e:
     message = "The malaria package needs to be installed before running this example...\n" \
-                "Please run `dtk package malaria -v HEAD` to install"
+                "Please run `dtk get_package malaria -v HEAD` to install"
     raise ImportError(message)
 
 SetupParser.default_block = 'HPC'
