@@ -37,7 +37,7 @@ However, if the ``LOCAL`` block is used, the ``max_threads`` will be coming from
 
 Usually this section contains the following parameters: :setting:`exe_path`, :setting:`dll_path` and :setting:`max_threads`.
 
-Common parameters
+Default parameters
 ==================
 
 Those parameters apply to both HPC and LOCAL configurations.

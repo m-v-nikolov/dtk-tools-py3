@@ -35,5 +35,5 @@ class LocalSimulationCreator(BaseSimulationCreator):
     def add_files_to_simulation(self, s, cb):
        cb.dump_files(s.sim_dir)
 
-    def set_tags_to_simulation(self,s, tags):
+    def set_tags_to_simulation(self,s, tags, cb):
         s.tags = tags

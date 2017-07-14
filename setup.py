@@ -11,6 +11,9 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
+from copy import deepcopy
+
+from simtools.Utilities.ConfigObj import ConfigObj
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
@@ -45,9 +48,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.1',
+        'version': '2.0.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-1.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pyCOMPS-2.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -128,9 +131,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.13.0+mkl',
+        'version': '1.13.1+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/numpy-1.13.1+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
 ])
 
@@ -421,44 +424,58 @@ def handle_init():
     # Copy the default.ini into the right directory if not already present
     current_simtools = os.path.join(current_directory, 'simtools', 'simtools.ini')
     default_ini = os.path.join(install_directory, 'default.ini')
+    default_config = ConfigObj(default_ini, write_empty_values=True)
+
+    # Set some things in the default CP
+    default_eradication = os.path.join(current_directory, 'examples', 'inputs', 'Eradication.exe')
+    default_inputs = os.path.join(current_directory, 'examples', 'inputs')
+    default_dlls = os.path.join(current_directory, 'examples', 'inputs', 'dlls')
+    default_config['LOCAL']['exe_path'] = default_eradication
+    default_config['LOCAL']['input_root'] = default_inputs
+    default_config['LOCAL']['dll_root'] = default_dlls
+    default_config['HPC']['input_root'] = default_inputs
+    default_config["HPC"]["base_collection_id_input"] = ''
+
     if not os.path.exists(current_simtools):
-        shutil.copyfile(default_ini, current_simtools)
+        default_config.write(open(current_simtools, 'w'))
     else:
-        # A simtools was already present, merge the best we can
         print ("\nA previous simtools.ini configuration file is present. Attempt to auto-merge")
-        merge_cp = ConfigParser()
-        merge_cp.read([default_ini, current_simtools])
+        # Merge it. The emrge is in place so make a copy of the defaults
+        default_config_merge = deepcopy(default_config)
+        current_config = ConfigObj(current_simtools)
+        default_config_merge.merge(current_config)
 
         # Backup copy the current
         print ("Backup copy your current simtools.ini to simtools.ini.bak")
         shutil.copy(current_simtools, current_simtools + ".bak")
 
         # Write the merged one
-        merge_cp.write(open(current_simtools, 'w'))
+        default_config_merge.write(open(current_simtools, 'w'))
         print ("Merged simtools.ini written!\n")
 
-    # Create the EXAMPLE block for the examples
+    # ALso write the default_cp in the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
+    am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
 
-    # Create the simtools.ini if doesnt exist. Append so if it exists, will not alter the contents
-    open(example_simtools, 'a').close()
+    if os.path.exists(example_simtools):
+        print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
+        shutil.move(example_simtools, "%s.bak" % example_simtools)
 
-    # Check if we have the EXAMPLE block
-    cp = ConfigParser()
-    cp.read(example_simtools)
+    # Smoe specific examples modifications
+    example_config = deepcopy(default_config)
+    example_config['HPC']['exe_path'] = default_eradication
+    example_config['HPC']['dll_root'] = default_dlls
+    example_config['HPC']['base_collection_id_exe'] = ''
+    example_config['HPC']['base_collection_id_dll'] = ''
+    example_config.write(open(example_simtools, 'w'))
 
-    if not cp.has_section('EXAMPLE'):
-        # EXAMPLE section is not here -> create it
-        cp.add_section('EXAMPLE')
-        cp.set('EXAMPLE', 'type', 'LOCAL')
-        cp.set('EXAMPLE', 'input_root', os.path.join(current_directory, 'examples', 'inputs'))
-    if not cp.has_section('HPC'):
-        cp.add_section('HPC')
-        cp.set('HPC', 'type', 'HPC')
-        cp.set('HPC', 'lib_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing')
-        cp.set('HPC', 'bin_staging_root', '$COMPS_PATH(HOME)\\braybaud\\malariaongoing\\Eradication.exe')
+    if os.path.exists(am_examples_simtools):
+        print("Example simtools.ini already exists (%s) -> backup before modifying!" % am_examples_simtools)
+        shutil.move(am_examples_simtools, "%s.bak" % am_examples_simtools)
 
-    cp.write(open(example_simtools, 'w'))
+    # Remove LOCAL section for the AM simtools.ini
+    del default_config["LOCAL"]
+    default_config.write(open(am_examples_simtools, 'w'))
 
 
 def upgrade_pip(my_os):
@@ -510,6 +527,7 @@ def verify_matplotlibrc(my_os):
         with open(rc_file, "wb") as f:
             f.write('backend : TkAgg')
 
+
 def cleanup_locks():
     """
     Deletes the lock files if they exist
@@ -531,6 +549,14 @@ def cleanup_locks():
             print("Could not delete file: %s" % overseer_lock)
 
 
+def backup_db():
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
+    if os.path.exists(db_path):
+        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sql.bak")
+        shutil.move(db_path, "%s.bak" % db_path)
+
+
 def main():
     # Check OS
     my_os = LocalOS.name
@@ -547,6 +573,9 @@ def main():
 
     # Consider config file
     handle_init()
+
+    # Create new db
+    backup_db()
 
     # Make sure matplotlibrc file is valid
     verify_matplotlibrc(my_os)
@@ -570,4 +599,3 @@ if __name__ == "__main__":
         exit()
 
     main()
-

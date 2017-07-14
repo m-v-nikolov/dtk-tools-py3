@@ -12,7 +12,7 @@ params = {
     "Enable_Demographics_Birth": 1,
     "Enable_Demographics_Gender": 1,
     "Enable_Demographics_Initial": 1,
-    "Enable_Demographics_Other": 1,
+    "Enable_Demographics_Other": 0,
     "Enable_Demographics_Reporting": 0,
     "Enable_Demographics_Builtin":0,
 

@@ -251,9 +251,9 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         """
         asset_svc = self.fields['use_comps_asset_svc'].value
         self.fields['exe_path'].hidden = asset_svc
-        self.fields['dll_path'].hidden = asset_svc
+        self.fields['dll_root'].hidden = asset_svc
         self.helps['exe_path'].hidden = asset_svc
-        self.helps['dll_path'].hidden = asset_svc
+        self.helps['dll_root'].hidden = asset_svc
 
     def h_remove_block(self):
         """

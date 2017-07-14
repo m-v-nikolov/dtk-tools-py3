@@ -192,17 +192,22 @@ def get_tools_revision():
 
 
 def get_md5(filename):
-    from matplotlib.finance import md5
+    from hashlib import md5
+    import uuid
     logger.info('Getting md5 for ' + filename)
-    with open(filename) as file:
+
+    if not os.path.exists(filename):
+        logger.error("The file %s does not exist ! No MD5 could be computed..." % filename)
+        return None
+
+    with open(filename, 'rb') as f:
         md5calc = md5()
         while True:
-            data = file.read(10240)  # value picked from example!
-            if len(data) == 0:
-                break
+            data = f.read(int(1e8))
+            if len(data) == 0: break
             md5calc.update(data)
-    md5_value = md5calc.hexdigest()
-    return md5_value
+
+    return uuid.UUID(md5calc.hexdigest())
 
 
 def is_remote_path(path):
@@ -326,6 +331,41 @@ def import_submodules(package, recursive=True):
             results.update(import_submodules(full_name))
     return results
 
+labels = [
+    (1024 ** 5, ' PB'),
+    (1024 ** 4, ' TB'),
+    (1024 ** 3, ' GB'),
+    (1024 ** 2, ' MB'),
+    (1024 ** 1, ' KB'),
+    (1024 ** 0, (' byte', ' bytes')),
+    ]
+
+verbose = [
+    (1024 ** 5, (' petabyte', ' petabytes')),
+    (1024 ** 4, (' terabyte', ' terabytes')),
+    (1024 ** 3, (' gigabyte', ' gigabytes')),
+    (1024 ** 2, (' megabyte', ' megabytes')),
+    (1024 ** 1, (' kilobyte', ' kilobytes')),
+    (1024 ** 0, (' byte', ' bytes')),
+    ]
+
+def file_size(bytes, system=labels):
+    """
+    Human-readable file size.
+
+    """
+    for factor, suffix in system:
+        if bytes >= factor:
+            break
+    amount = int(bytes/factor)
+    if isinstance(suffix, tuple):
+        singular, multiple = suffix
+        if amount == 1:
+            suffix = singular
+        else:
+            suffix = multiple
+    return str(amount) + suffix
+
 def trim_leading_file_path(file_path, call_depth=1):
     """
     Removes the leading (left/top-most) path component of the provided file_path
@@ -355,7 +395,7 @@ def files_in_dir(dir, filters=None):
 
     filters = filters or ['*']
     discovered_files = []
-    for root, dirnames, filenames in os.walk('malaria'):
+    for root, dirnames, filenames in os.walk(dir):
         for filter in filters:
             for filename in fnmatch.filter(filenames, filter):
                 trimmed_root = trim_leading_file_path(root)

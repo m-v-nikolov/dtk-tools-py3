@@ -4,8 +4,6 @@ import datetime
 import os
 import subprocess
 import sys
-from importlib import import_module
-import shutil
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
@@ -25,6 +23,7 @@ from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date,
     get_experiments_by_name, COMPS_login
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
+
 logger = init_logging('Commands')
 from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
@@ -118,8 +117,8 @@ def run(args, unknownArgs):
     mod.run_sim_args['blocking'] = True if args.blocking else False
     mod.run_sim_args['quiet']    = True if args.quiet    else False
 
-    # Create the experiment manager based on the setup and run simulation.
-    exp_manager = ExperimentManagerFactory.from_setup()
+    # Create the experiment manager
+    exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
 
 

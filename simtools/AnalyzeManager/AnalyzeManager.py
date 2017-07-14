@@ -7,6 +7,7 @@ from COMPS.Data.Simulation import SimulationState
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.Utilities.General import init_logging
 from simtools.Utilities.LocalOS import LocalOS
 
@@ -22,13 +23,14 @@ class AnalyzeManager:
         self.experiments = []
         self.verbose = verbose
         self.analyzers = []
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads', 16)))
+        with SetupParser.TemporarySetup() as sp:
+            self.maxThreadSemaphore = multiprocessing.Semaphore(int(sp.get('max_threads', 16)))
         self.working_dir = working_dir or os.getcwd()
         self.parsers = []
         self.force_analyze = force_analyze
 
         # If no experiment is specified, retrieve the most recent as a convenience
-        if not exp_list:
+        if exp_list == 'latest':
             exp_list = DataStore.get_most_recent_experiment()
 
         # Initial adding of experiments
@@ -40,7 +42,12 @@ class AnalyzeManager:
         map(self.add_analyzer, analyzers)
 
     def add_experiment(self, experiment):
-        self.experiments.append(experiment)
+        from simtools.DataAccess.Schema import Experiment
+        if not isinstance(experiment, Experiment):
+            experiment = retrieve_experiment(experiment)
+
+        if experiment not in self.experiments:
+            self.experiments.append(experiment)
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.working_dir = working_dir or self.working_dir
@@ -58,14 +65,8 @@ class AnalyzeManager:
                                                           suite_id=exp_manager.experiment.suite_id,
                                                           save=True, comps_experiment=exp_manager.comps_experiment,
                                                           verbose=self.verbose)
-
-            # Enable asset service if needed
-            if exp_manager.assets_service:
-                exp_manager.parserClass.enableAssetService()
-
-            # Enable compression if needed
-            if exp_manager.compress_assets:
-                exp_manager.parserClass.enableCompression()
+            if not exp_manager.asset_service:
+                exp_manager.parserClass.asset_service = False
 
         p = ThreadPool()
         res = []

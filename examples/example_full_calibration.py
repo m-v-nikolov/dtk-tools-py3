@@ -13,7 +13,7 @@ from simtools.SetupParser import SetupParser
 from malaria.study_sites.RafinMarkeAgeSeasonCalibSite import RafinMarkeAgeSeasonCalibSite
 from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
 
-SetupParser.default_block = 'EXAMPLE'
+SetupParser.default_block = 'HPC'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
@@ -82,5 +82,4 @@ run_calib_args = {}
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
-    calib_manager.cleanup()
     calib_manager.run_calibration()

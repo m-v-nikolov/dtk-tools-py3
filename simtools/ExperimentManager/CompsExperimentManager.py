@@ -3,15 +3,15 @@ import os
 import re
 from datetime import datetime
 
-from COMPS.Data import Experiment, Configuration,Priority, Suite
-from simtools.SetupParser import SetupParser
+from COMPS.Data import Experiment, Configuration, Priority, Suite
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
+from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, \
-    translate_COMPS_path
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login
 from simtools.Utilities.General import init_logging
+
 logger = init_logging("COMPSExperimentManager")
 
 
@@ -23,59 +23,35 @@ class CompsExperimentManager(BaseExperimentManager):
     location = 'HPC'
     parserClass = CompsDTKOutputParser
 
-    def __init__(self, experiment, model_file=None):
+    def __init__(self, experiment, config_builder=None):
         # Ensure we use the SetupParser environment of the experiment if it already exists
         temp_block = experiment.selected_block if experiment else SetupParser.selected_block
-        temp_dir = experiment.working_directory if experiment else os.getcwd()
+        temp_path = experiment.setup_overlay_file if experiment else None
 
-        with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_dir) as setup:
-            BaseExperimentManager.__init__(self, experiment, model_file)
+        with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_path) as setup:
+            BaseExperimentManager.__init__(self, experiment, config_builder)
             self.comps_sims_to_batch = int(setup.get(parameter='sims_per_thread'))
-            self.assets_service = setup.getboolean(parameter='use_comps_asset_svc')
             self.endpoint = setup.get(parameter='server_endpoint')
-            self.compress_assets = setup.getboolean(parameter='compress_assets')
             COMPS_login(self.endpoint)
 
-        self.creator_semaphore = None
+        self.asset_service = True
         self.runner_thread = None
         self.sims_to_create = []
         self.commissioners = []
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
-            self.comps_experiment = get_experiment_by_id(self.experiment.exp_id)
+            id = self.experiment.exp_id
+            self.comps_experiment = get_experiment_by_id(id)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
-        # Creator semaphore limits the number of thread accessing the database at the same time
-        if not self.creator_semaphore:
-            self.creator_semaphore = multiprocessing.Semaphore(4)
-
         return COMPSSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
                                       callback=callback,
-                                      return_list=return_list,
-                                      save_semaphore=self.creator_semaphore)
-
-    def check_input_files(self, input_files):
-        """
-        Check file exist and return the missing files as dict
-        """
-        input_root = SetupParser.get('input_root')
-        input_root_real = translate_COMPS_path(input_root)
-        return input_root_real, self.find_missing_files(input_files, input_root_real)
-
-    def analyze_experiment(self):
-        if not self.assets_service:
-            self.parserClass.createSimDirectoryMap(self.experiment.exp_id, self.experiment.suite_id)
-        if self.compress_assets:
-            from simtools.Utilities.General import nostdout
-            with nostdout():
-                self.parserClass.enableCompression()
-
-        super(CompsExperimentManager, self).analyze_experiment()
+                                      return_list=return_list)
 
     @staticmethod
     def create_suite(suite_name):
@@ -92,8 +68,8 @@ class CompsExperimentManager(BaseExperimentManager):
             environment_name=SetupParser.get('environment'),
             simulation_input_args=self.commandline.Options,
             working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
-            executable_path=self.staged_bin_path,
-            node_group_name=SetupParser.get('node_group'), # ck4 THIS might be overridden... Overseer needs to know about the overrides to set this properly
+            executable_path=self.commandline.Executable,
+            node_group_name=SetupParser.get('node_group'),
             maximum_number_of_retries=int(SetupParser.get('num_retries')),
             priority=Priority[SetupParser.get('priority')],
             min_cores=self.config_builder.get_param('Num_Cores', 1),
@@ -110,12 +86,14 @@ class CompsExperimentManager(BaseExperimentManager):
 
         e.save()
 
+        # Store in our object
+        self.comps_experiment = e
+
         # Create experiment in the base class
         super(CompsExperimentManager, self).create_experiment(experiment_name,  str(e.id), suite_id)
 
         # Set some extra stuff
         self.experiment.endpoint = self.endpoint
-        self.comps_experiment = e
 
     def create_simulation(self):
         files = self.config_builder.dump_files_to_string()
