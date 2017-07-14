@@ -24,7 +24,7 @@ from simtools.ModBuilder import ModBuilder, ModFn
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
-SetupParser.default_block = 'LOCAL'
+SetupParser.default_block = 'HPC'
 
 # The following directory holds the plugin files for this example.
 plugin_files_dir = 'Templates'
@@ -38,10 +38,10 @@ Active templates will be written to the working directly.
 
 Note, you could easily use a different tag for each file / file type (config vs campaign vs demographics), but I have not demonstrated that here.
 """
-cfg = ConfigTemplate.from_file( os.path.join(plugin_files_dir, 'config.json') )
-cpn = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign.json'), '__KP' )   # Here is how you set the tag, "__KP", for campaign, demographics, and potentially also config files
-cpn_outbreak = CampaignTemplate.from_file( os.path.join(plugin_files_dir, 'campaign_outbreak_only.json') ) # These get the default tag, which is also "__KP"
-demog_pfa = DemographicsTemplate.from_file( os.path.join(plugin_files_dir, 'pfa_overlay.json') )
+cfg = ConfigTemplate.from_file(os.path.join(plugin_files_dir, 'config.json') )
+cpn = CampaignTemplate.from_file(os.path.join(plugin_files_dir, 'campaign.json'), '__KP' )   # Here is how you set the tag, "__KP", for campaign, demographics, and potentially also config files
+cpn_outbreak = CampaignTemplate.from_file(os.path.join(plugin_files_dir, 'campaign_outbreak_only.json') ) # These get the default tag, which is also "__KP"
+demog_pfa = DemographicsTemplate.from_file(os.path.join(plugin_files_dir, 'pfa_overlay.json') )
 
 # You can query and obtain values from templates.  Because some parameters can exist in multiple locations, i.e. tagged parameters, get_param return a tuple of (paths, values).\
 demo_key = 'Start_Year__KP_Seeding_Year'
@@ -63,9 +63,9 @@ static_demog_params = {
     'Relationship_Parameters__KP_TRANSITORY_and_INFORMAL.Coital_Act_Rate': 0.5
 }
 
-cfg.set_params( static_config_params )              # <-- Set static config parameters
-cpn.set_params( static_campaign_params )            # <-- Set static campaign parameters for campaign.json
-cpn_outbreak.set_params( static_campaign_params )   # <-- Set static campaign parameters for campaign_outbreak_only.json
+cfg.set_params(static_config_params)              # <-- Set static config parameters
+cpn.set_params(static_campaign_params)            # <-- Set static campaign parameters for campaign.json
+cpn_outbreak.set_params(static_campaign_params)   # <-- Set static campaign parameters for campaign_outbreak_only.json
 
 demo_key = static_demog_params.keys()[0]
 demo_value = static_demog_params.values()[0]
@@ -94,7 +94,7 @@ TODO: Directly setting config_template, campaign_template, and demographic_templ
 templates = TemplateHelper()
 
 # Give the header and table to the template helper
-templates.set_dynamic_header_table( header, table )
+templates.set_dynamic_header_table(header, table)
 
 # Let's use a standard DTKConfigBuilder.
 # Note, you can statically override config parameters here independently from the tagging system.  In this case, static parameters provided here will be overridden by the config template if the config template is activated.
@@ -102,6 +102,9 @@ config_builder = DTKConfigBuilder.from_files(
     os.path.join(plugin_files_dir, 'config.json'),
     os.path.join(plugin_files_dir, 'campaign.json')
  )
+
+# Use the default COMPS 2.10 and the SamplesInput folder for input files
+config_builder.set_exe_collection('EMOD 2.10')
 
 # For the experiment builder in the example, we use a ModBuilder from_combos to run
 # each of the configurations for two separate run numbers.
@@ -119,6 +122,7 @@ run_sim_args = {
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
     exp_manager = ExperimentManagerFactory.from_cb(config_builder=config_builder)
+    exp_manager.bypass_missing = True
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 

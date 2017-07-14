@@ -149,9 +149,9 @@ class DTKConfigBuilder(SimConfigBuilder):
             try:
                 import malaria.params as malaria_params # must have the malaria disease package installed!
             except ImportError as e:
-                e.message = 'The malaria disease package must be installed via the \'dtk get_package\' command' + \
+                message = 'The malaria disease package must be installed via the \'dtk get_package malaria -v HEAD\' command' + \
                             'before the MALARIA_SIM simulation type can be used.'
-                raise
+                raise ImportError(message)
 
             config["parameters"].update(vector_params.params)
             config["parameters"].update(malaria_params.params)
@@ -442,8 +442,11 @@ class DTKConfigBuilder(SimConfigBuilder):
         event_triggers_from_campaign = re.findall(r"['\"]Event_Trigger['\"]:\s['\"](.*?)['\"]",
                                                   str(json.dumps(self.campaign)), re.DOTALL)
 
-        return list(set(event_triggers_from_campaign + broadcast_events_from_campaign)
-                    - set(self.config['parameters']['Listed_Events']))
+        event_set = set(event_triggers_from_campaign + broadcast_events_from_campaign) - set(self.config['parameters']['Listed_Events'])
+
+        # Remove the built in events
+        builtin_events = set(["NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct",])
+        return [event for event in event_set if event not in builtin_events]
 
     def file_writer(self, write_fn):
         """
@@ -490,7 +493,7 @@ class DTKConfigBuilder(SimConfigBuilder):
             write_fn(name, dump(content))
 
         # Add missing item from campaign individual events into Listed_Events
-        self.config['parameters']['Listed_Events'].extend(self.check_custom_events())
+        self.config['parameters']['Listed_Events'] = self.check_custom_events()
 
         write_fn('config.json', dump(self.config))
 

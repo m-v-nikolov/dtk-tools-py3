@@ -9,9 +9,14 @@ from calibtool.algorithms.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from simtools.SetupParser import SetupParser
+try:
+    from malaria.study_sites.RafinMarkeAgeSeasonCalibSite import RafinMarkeAgeSeasonCalibSite
+    from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
+except ImportError as e:
+    message = "The malaria package needs to be installed before running this example...\n" \
+                "Please run `dtk package malaria -v HEAD` to install"
+    raise ImportError(message)
 
-from malaria.study_sites.RafinMarkeAgeSeasonCalibSite import RafinMarkeAgeSeasonCalibSite
-from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
 
 SetupParser.default_block = 'HPC'
 
