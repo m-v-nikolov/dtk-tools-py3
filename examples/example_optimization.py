@@ -13,8 +13,13 @@ from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
-from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
-from malaria.study_sites.NdiopCalibSite import NdiopCalibSite
+try:
+    from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
+    from malaria.study_sites.NdiopCalibSite import NdiopCalibSite
+except ImportError as e:
+    message = "The malaria package needs to be installed before running this example...\n" \
+                "Please run `dtk package malaria -v HEAD` to install"
+    raise ImportError(message)
 
 SetupParser.default_block = 'HPC'
 

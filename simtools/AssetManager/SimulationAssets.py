@@ -110,6 +110,7 @@ class SimulationAssets(object):
         :return: Nothing
         """
         location = SetupParser.get("type")
+        self.collections = {}
         self.create_collections(config_builder)
 
         for collection in self.collections.values():

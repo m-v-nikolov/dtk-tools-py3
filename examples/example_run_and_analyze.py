@@ -10,7 +10,7 @@ from simtools.SetupParser import SetupParser
 # This block will be used unless overridden on the command-line
 SetupParser.default_block = 'LOCAL'
 
-cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
+cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 configure_site(cb, 'Namawala')
 cb.set_param('Simulation_Duration',365)
 

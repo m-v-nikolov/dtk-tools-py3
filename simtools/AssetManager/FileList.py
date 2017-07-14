@@ -17,6 +17,10 @@ class FileList:
         if recursive is None and files_in_root is not None:
             recursive = any([os.sep in f for f in files_in_root])
 
+        # Make sure we have correct separator
+        if files_in_root:
+            files_in_root = [f.replace('/', os.sep).replace('\\', os.sep) for f in files_in_root]
+
         if root:
             self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
 
@@ -33,11 +37,18 @@ class FileList:
         if not os.path.isdir(path):
             raise RuntimeError("add_path() requires a directory. '%s' is not." % path)
 
+        # Calculate the max level of depth we will go with the recursive process
+        max_depth = max([f.count(os.sep) for f in files_in_dir])
+
         # Make sure we have an absolute path
         path = os.path.abspath(path)
 
         # Walk through the path
         for root, subdirs, files in os.walk(path):
+            # Little safety to not go too deep
+            depth = root[len(path) + len(os.path.sep):].count(os.path.sep)
+            if depth > max_depth: continue
+
             # Add the files in the current dir
             for f in files:
                 # Find the file relative path compared to the root folder
