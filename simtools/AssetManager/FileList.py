@@ -28,13 +28,19 @@ class FileList:
         self.files.append(af)
 
     def add_file(self, path, relative_path=''):
+        from simtools.Utilities.COMPSUtilities import translate_COMPS_path
+        path = translate_COMPS_path(path)
+
         absolute_path = os.path.abspath(path)
         file_name = os.path.basename(path)
         af = AssetFile(file_name, relative_path, absolute_path)
         self.add_asset_file(af)
 
     def add_path(self, path, files_in_dir=None, relative_path=None, recursive=False):
-        if not os.path.isdir(path):
+        from simtools.Utilities.COMPSUtilities import translate_COMPS_path
+        path = translate_COMPS_path(path)
+
+        if not os.path.isdir(path) and not path.startswith('\\\\'):
             raise RuntimeError("add_path() requires a directory. '%s' is not." % path)
 
         # Calculate the max level of depth we will go with the recursive process
