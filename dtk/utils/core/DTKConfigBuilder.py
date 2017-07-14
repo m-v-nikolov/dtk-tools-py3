@@ -442,7 +442,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         event_triggers_from_campaign = re.findall(r"['\"]Event_Trigger['\"]:\s['\"](.*?)['\"]",
                                                   str(json.dumps(self.campaign)), re.DOTALL)
 
-        event_set = set(event_triggers_from_campaign + broadcast_events_from_campaign) - set(self.config['parameters']['Listed_Events'])
+        event_set = set(event_triggers_from_campaign + broadcast_events_from_campaign + self.config['parameters']['Listed_Events'])
 
         # Remove the built in events
         builtin_events = set(["NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct",])
