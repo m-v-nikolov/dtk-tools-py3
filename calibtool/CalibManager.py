@@ -258,7 +258,7 @@ class CalibManager(object):
         self.location = calib_data.get('location')
         self.latest_iteration = int(calib_data.get('iteration', 0))
         self.suites = calib_data['suites']
-        self.calibration_start = datetime.strptime(calib_data['calibration_start'], '%Y-%m-%d %H:%M:%S')
+        self.calibration_start = datetime.strptime(calib_data['calibration_start'], '%Y-%m-%d %H:%M:%S') if 'calibration_start' in calib_data else datetime.now()
 
         # step 3: validate inputs
         self.current_iteration, resume_point = self.retrieve_iteration(iteration, iter_step)

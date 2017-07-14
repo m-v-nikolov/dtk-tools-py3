@@ -131,9 +131,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.13.0+mkl',
+        'version': '1.13.1+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/numpy-1.13.1+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
 ])
 
@@ -460,11 +460,19 @@ def handle_init():
     if os.path.exists(example_simtools):
         print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
         shutil.move(example_simtools, "%s.bak" % example_simtools)
-    default_config.write(open(example_simtools, 'w'))
+
+    # Smoe specific examples modifications
+    example_config = deepcopy(default_config)
+    example_config['HPC']['exe_path'] = default_eradication
+    example_config['HPC']['dll_root'] = default_dlls
+    example_config['HPC']['base_collection_id_exe'] = ''
+    example_config['HPC']['base_collection_id_dll'] = ''
+    example_config.write(open(example_simtools, 'w'))
 
     if os.path.exists(am_examples_simtools):
         print("Example simtools.ini already exists (%s) -> backup before modifying!" % am_examples_simtools)
         shutil.move(am_examples_simtools, "%s.bak" % am_examples_simtools)
+
     # Remove LOCAL section for the AM simtools.ini
     del default_config["LOCAL"]
     default_config.write(open(am_examples_simtools, 'w'))
@@ -519,6 +527,7 @@ def verify_matplotlibrc(my_os):
         with open(rc_file, "wb") as f:
             f.write('backend : TkAgg')
 
+
 def cleanup_locks():
     """
     Deletes the lock files if they exist
@@ -539,12 +548,14 @@ def cleanup_locks():
         except:
             print("Could not delete file: %s" % overseer_lock)
 
+
 def backup_db():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
     if os.path.exists(db_path):
         print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sql.bak")
         shutil.move(db_path, "%s.bak" % db_path)
+
 
 def main():
     # Check OS
