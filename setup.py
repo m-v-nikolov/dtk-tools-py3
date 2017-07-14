@@ -131,9 +131,9 @@ requirements = OrderedDict([
     }),
     ('numpy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.13.0+mkl',
+        'version': '1.13.1+mkl',
         'test': '>=',
-        'wheel': '%s/numpy-1.13.0+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/numpy-1.13.1+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
 ])
 
