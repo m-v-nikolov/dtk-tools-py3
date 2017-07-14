@@ -23,12 +23,13 @@ exp_name  = 'ExampleSweep'
 builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1,1.5,.1)})
 
 
-run_sim_args =  {'config_builder': cb,
-                 'exp_name': exp_name,
-                 'exp_builder': builder}
+run_sim_args =  {
+    'exp_name': exp_name,
+    'exp_builder': builder
+}
 
 
 if __name__ == "__main__":
     from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-    exp_manager = ExperimentManagerFactory.from_setup()
+    exp_manager = ExperimentManagerFactory.from_setup(config_builder=cb)
     exp_manager.run_simulations(**run_sim_args)

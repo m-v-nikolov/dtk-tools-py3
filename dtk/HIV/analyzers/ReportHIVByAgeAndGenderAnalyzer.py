@@ -73,7 +73,6 @@ class ReportHIVByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
         self.sim_ids = []
 
         if not os.path.isdir(self.basedir):
-            print 'ReportHIVByAgeAndGenderAnalyze::init making %s'%self.basedir
             try:
                 os.makedirs(self.basedir)
             except OSError as e:

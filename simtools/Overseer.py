@@ -51,9 +51,8 @@ if __name__ == "__main__":
     max_local_sims = int(SetupParser.get('max_local_sims'))
     max_analysis_threads = int(SetupParser.get('max_threads'))
 
-    # Create the queues and semaphore
+    # Create the queue
     local_queue = multiprocessing.Queue(max_local_sims)
-    analysis_semaphore = threading.Semaphore(max_analysis_threads)
 
     managers = OrderedDict()
 
@@ -87,14 +86,13 @@ if __name__ == "__main__":
                 logger.debug('Creating manager for experiment id: %s' % experiment.id)
                 try:
                     sys.path.append(experiment.working_directory)
-                    manager = ExperimentManagerFactory.from_experiment(experiment, generic=True)
+                    manager = ExperimentManagerFactory.from_experiment(experiment)
                 except Exception as e:
                     logger.error('Exception in creation manager for experiment %s' % experiment.id)
                     logger.error(e)
                     logger.error(traceback.format_exc())
                     exit()
                 managers[experiment.id] = manager
-                manager.maxThreadSemaphore = analysis_semaphore
                 if manager.location == "LOCAL": manager.local_queue = local_queue
             else:
                 # Refresh the experiment

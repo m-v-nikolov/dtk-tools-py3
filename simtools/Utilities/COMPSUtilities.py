@@ -5,7 +5,7 @@ import os
 import re
 
 import shutil
-from COMPS.Data import Experiment
+from COMPS.Data import Experiment, AssetCollection
 from COMPS.Data import QueryCriteria
 from COMPS.Data import Simulation
 from COMPS.Data import Suite
@@ -69,7 +69,7 @@ def stage_file(from_path, to_directory):
     # Translate $COMPS path if needed
     to_directory_translated = translate_COMPS_path(to_directory)
 
-    file_hash = get_md5(from_path)
+    file_hash = str(get_md5(from_path))
     logger.info('MD5 of ' + os.path.basename(from_path) + ': ' + file_hash)
 
     # We need to use the translated path for the copy but return the untouched staged path
@@ -98,9 +98,43 @@ def COMPS_login(endpoint):
 
     return Client
 
+
+def get_asset_collection(collection_id_or_name, query_criteria=None):
+    if not collection_id_or_name: return None
+
+    query_criteria = query_criteria or QueryCriteria().select_children('assets')
+    # Try by id first
+    collection = get_asset_collection_by_id(collection_id_or_name, query_criteria)
+    if collection: return collection
+
+    # And by name
+    collection = get_asset_collection_by_tag("Name",collection_id_or_name, query_criteria)
+    return collection
+
+
+def get_asset_collection_by_id(collection_id, query_criteria=None):
+    query_criteria = query_criteria or QueryCriteria().select_children('assets')
+    try:
+        return AssetCollection.get(collection_id, query_criteria)
+    except (RuntimeError, ValueError):
+        return None
+
+
+def get_asset_collection_by_tag(tag_name, tag_value, query_criteria=None):
+    """
+    Looks to see if a collection id exists for a given collection tag
+    :param collection_tag: An asset collection tag that uniquely identifies an asset collection
+    :return: An asset collection id if ONE match is found, else None (for 0 or 2+ matches)
+    """
+    query_criteria = query_criteria or QueryCriteria().select_children('assets')
+    query_criteria.where_tag('%s=%s' % (tag_name, tag_value))
+    result = AssetCollection.get(query_criteria=query_criteria)
+    if len(result) >= 1: return result[0]
+    return None
+
 @retry_function
-def get_experiment_by_id(exp_id):
-    return Experiment.get(exp_id)
+def get_experiment_by_id(exp_id, query_criteria=None):
+    return Experiment.get(exp_id, query_criteria=query_criteria)
 
 @retry_function
 def get_simulation_by_id(sim_id):

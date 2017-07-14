@@ -35,18 +35,16 @@ class BaseExperimentManager:
     parserClass=SimulationOutputParser
     location = None
 
-    def __init__(self, experiment=None, model_file=None):
+    def __init__(self, experiment, config_builder=None):
         self.experiment = experiment
-        self.model_file = model_file or SetupParser.get('exe_path')
-        self.maxThreadSemaphore = multiprocessing.Semaphore(int(SetupParser.get('max_threads')))
         self.amanager = None
-        self.assets_service = None
         self.exp_builder = None
-        self.staged_bin_path = None
-        self.config_builder = None
-        self.commandline = None
+        self.config_builder = config_builder
         self.bypass_missing = False
+        self.commandline = None
         self.experiment_tags = {}
+        self.asset_service = None
+        self.assets = None
 
     @abstractmethod
     def commission_simulations(self, states):
@@ -65,10 +63,6 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def check_input_files(self, input_files):
-        pass
-
-    @abstractmethod
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         pass
 
@@ -78,15 +72,14 @@ class BaseExperimentManager:
             exp_id=experiment_id,
             suite_id=suite_id,
             sim_root=SetupParser.get('sim_root'),
-            exe_name=self.commandline.Executable,
             exp_name=experiment_name,
             location=self.location,
             analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=get_tools_revision(),
             selected_block=SetupParser.selected_block,
-            setup_overlay_file=SetupParser.setup_file,
-            working_directory = os.getcwd(),
+            setup_overlay_file=SetupParser.overlay_path,
+            working_directory=os.getcwd(),
             command_line=self.commandline.Commandline)
 
     def done_commissioning(self):
@@ -141,106 +134,80 @@ class BaseExperimentManager:
     def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
         return self.parserClass(simulation, filtered_analyses, semaphore, parse)
 
-    def run_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
-                        analyzers=[], blocking = False, quiet = False, experiment_tags=None):
+    def run_simulations(self, config_builder=None, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
+                        analyzers=[], blocking=False, quiet=False, experiment_tags=None):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
+        :assets: A SimulationAssets object if not None (COMPS-land needed for AssetManager)
         """
         # Check experiment name as early as possible
         if not validate_exp_name(exp_name):
             exit()
 
+        # Store the config_builder if passed
+        self.config_builder = config_builder or self.config_builder
+
+        # Get the assets from the config builde
+        # #e just want to check the input files at this point even though it may change laterr
+        self.assets = self.config_builder.get_assets()
+
         # Check input files existence
-        if not self.validate_input_files(config_builder):
-            exit()
+        if not self.validate_input_files(): exit()
+
+        # Set the appropriate command line
+        self.commandline = self.get_commandline()
 
         # Set the tags
         self.experiment_tags.update(experiment_tags or {})
 
         # Create the simulations
-        self.create_simulations(config_builder=config_builder, exp_name=exp_name, exp_builder=exp_builder,
+        self.create_simulations(exp_name=exp_name, exp_builder=exp_builder,
                                 analyzers=analyzers, suite_id=suite_id, verbose=not quiet)
+
+        # Make sure overseer is running
         self.check_overseer()
 
         if blocking:
             self.wait_for_finished(verbose=not quiet)
 
-    def find_missing_files(self, input_files, input_root):
+    def validate_input_files(self):
         """
-        Find the missing files
-        """
-        missing_files = {}
-        for (filename, filepath) in input_files.iteritems():
-            if isinstance(filepath, basestring):
-                filepath = filepath.strip()
-                # Skip empty files
-                if len(filepath) == 0:
-                    continue
-                # Only keep un-existing files
-                if not os.path.exists(os.path.join(input_root, filepath)):
-                    missing_files[filename] = filepath
-            elif isinstance(filepath, list):
-                # Skip empty and only keep un-existing files
-                missing_files[filename] = [f.strip() for f in filepath if len(f.strip()) > 0
-                                           and not os.path.exists(os.path.join(input_root, f.strip()))]
-                # Remove empty list
-                if len(missing_files[filename]) == 0:
-                    missing_files.pop(filename)
-
-        return missing_files
-
-    def validate_input_files(self, config_builder):
-        """
-        Check input files and make sure there exist
+        Check input files and make sure they exist
         Note: we by pass the 'Campaign_Filename'
+        This method only verifies local files, not (current) AssetManager-contained files
         """
-        # By-pass input file checking if using assets_service or we want to bypass
-        if self.assets_service or self.bypass_missing:
+        # By-pass input file checking if we want to bypass missing files
+        if self.bypass_missing:
             return True
+
         # If the config builder has no file paths -> bypass
-        if not hasattr(config_builder, 'get_input_file_paths'):
-            return True
+        needed_file_paths = self.config_builder.get_input_file_paths()
 
-        input_files = config_builder.get_input_file_paths()
-        input_root, missing_files = self.check_input_files(input_files)
+        missing_files = []
+        for needef_file in needed_file_paths:
+            if os.path.basename(needef_file) not in self.assets:
+                missing_files.append(needef_file)
 
-        # Py-passing 'Campaign_Filename' for now.
-        if 'Campaign_Filename' in missing_files:
-            logger.info("By-passing file '%s'..." % missing_files['Campaign_Filename'])
-            missing_files.pop('Campaign_Filename')
         if len(missing_files) > 0:
+            print('The following files are specified in the config.json file but not present in the available assets:')
+            map(lambda f: print("- %s" % f), missing_files)
 
-            print('Missing files list:')
-            print('input_root: %s' % input_root)
-            print(json.dumps(missing_files, indent=2))
-            var = raw_input("Above shows the missing input files, do you want to continue? [Y/N]:  ")
+            var = raw_input("The simulation may not run, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':
                 print("Answer is '%s'. Continue..." % var.upper())
                 return True
             else:
                 print("Answer is '%s'. Exiting..." % var.upper())
                 return False
-
         return True
 
-    def create_simulations(self, config_builder, exp_name='test', exp_builder=SingleSimulationBuilder(), analyzers=[], suite_id=None, verbose=True):
+    def create_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), analyzers=[],
+                           suite_id=None, verbose=True):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         """
-        self.config_builder = config_builder
         self.exp_builder = exp_builder
-
-        # If the assets service is in use, do not stage the exe and just return whats in tbe bin_staging_path
-        # If not, use the normal staging process
-        if self.assets_service:
-            self.staged_bin_path = SetupParser.get('bin_staging_root')
-        else:
-            self.staged_bin_path = self.config_builder.stage_executable(self.model_file, SetupParser.get('bin_staging_root'))
-
-        # Create the command line
-        item_dict = dict(SetupParser.items())
-        self.commandline = self.config_builder.get_commandline(self.staged_bin_path, paths=item_dict)
 
         # Create the experiment if not present already
         if not self.experiment or self.experiment.exp_name != exp_name:
@@ -273,6 +240,7 @@ class BaseExperimentManager:
         fn_batches = batch(work_list, n=nbatches)
 
         # Create a manager for sharing the list of simulations created back with the main thread
+        # Also create a dict for the cache of md5
         manager = multiprocessing.Manager()
         return_list = manager.list()
 
@@ -326,11 +294,13 @@ class BaseExperimentManager:
                     long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         logger.info("%s ('%s') states:" % (self.experiment.exp_name, self.experiment.exp_id))
+
+        # We have less than 20 simulations, display the simulations details
         if len(long_states) < 20 and verbose:
-            # We have less than 20 simulations, display the simulations details
             logger.info(json.dumps(long_states, sort_keys=True, indent=4))
+
         # Display the counter no matter the number of simulations
-        logger.info(dict(Counter( [st.name for st in states.values()] )))
+        logger.info(dict(Counter([st.name for st in states.values()])))
 
     def delete_experiment(self, hard=False):
         """
@@ -348,7 +318,6 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, sleep_time=5):
-        # getch = helpers.find_getch()
         while True:
             # Get the new status
             try:
@@ -358,24 +327,17 @@ class BaseExperimentManager:
                 print (e)
                 return
 
-            if self.status_finished(states):
-                break
-            else:
-                if verbose:
-                    self.print_status(states, msgs)
+            # If we are done, exit the loop
+            if self.status_finished(states): break
 
-                # for i in range(sleep_time):
-                #     if helpers.kbhit():
-                #         if getch() == '\r':
-                #             break
-                #         else:
-                #             return
-                #     else:
-                #         time.sleep(1)
-                time.sleep(sleep_time)
+            # Display if verbose
+            if verbose: self.print_status(states, msgs)
 
-        if verbose:
-            self.print_status(states, msgs)
+            # Wait before going through the loop again
+            time.sleep(sleep_time)
+
+        # SHow status one last time
+        if verbose: self.print_status(states, msgs)
 
         # Refresh the experiment
         self.refresh_experiment()
@@ -458,3 +420,26 @@ class BaseExperimentManager:
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
 
+    def get_commandline(self):
+        """
+        Get the complete command line to run the simulations of this experiment.
+        Returns:
+            The :py:class:`CommandlineGenerator` object created with the correct paths
+
+        """
+        from simtools.Utilities.General import CommandlineGenerator
+
+        eradication_options = {'--config': 'config.json'}
+
+        python_path = SetupParser.get('python_path', default=None)
+        if python_path:
+            eradication_options['--python-script-path'] = python_path
+
+        if self.location == 'LOCAL':
+            exe_path = self.config_builder.stage_executable(SetupParser.get('exe_path'), SetupParser.get('bin_staging_root'))
+            eradication_options['--input-path'] = SetupParser.get('input_root')
+        else:
+            exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'Eradication.exe'))
+            eradication_options['--input-path'] = 'Assets'
+
+        return CommandlineGenerator(exe_path, eradication_options, [])

@@ -1,7 +1,7 @@
 import json
-import logging
 import os
-import re # find listed events by regex
+import re  # find listed events by regex
+import shutil
 
 import dtk.dengue.params as dengue_params
 import dtk.generic.params as generic_params
@@ -30,10 +30,11 @@ from dtk.interventions.sirs_initial_seeding import sirs_campaign
 from dtk.interventions.sis_initial_seeding import sis_campaign
 from dtk.utils.parsers.JSON import json2dict
 from dtk.utils.reports.CustomReport import format as format_reports
+from simtools.AssetManager.SimulationAssets import SimulationAssets
 from simtools.SimConfigBuilder import SimConfigBuilder
-from simtools.Utilities.COMPSUtilities import translate_COMPS_path, stage_file
+from simtools.Utilities.COMPSUtilities import get_asset_collection
 from simtools.Utilities.Encoding import NumpyEncoder
-from simtools.Utilities.General import CommandlineGenerator, init_logging
+from simtools.Utilities.General import init_logging
 
 logger = init_logging('ConfigBuilder')
 
@@ -56,7 +57,6 @@ class DTKConfigBuilder(SimConfigBuilder):
         kwargs (dict): Additional changes to make to the config
 
     Attributes:
-        staged_dlls (dict): Class variable holding the mapping between (type,dll name) and path
         config (dict): Holds the configuration as a dictionary
         campaign (dict): Holds the campaign as a dictionary
         demog_overlays (dict): map the demographic overlay names to content.
@@ -80,11 +80,8 @@ class DTKConfigBuilder(SimConfigBuilder):
         ``Simulation_Duration`` in the config.
 
     """
-
-    staged_dlls = {}  # caching to avoid repeat md5 and os calls
-
-    def __init__(self, config={'parameters': {}}, campaign=empty_campaign, **kwargs):
-        self.config = config
+    def __init__(self, config=None, campaign=empty_campaign, **kwargs):
+        self.config = config or {'parameters': {}}
         self.campaign = campaign
         # Indent the files when dumping or not
         self.human_readability = True
@@ -96,6 +93,12 @@ class DTKConfigBuilder(SimConfigBuilder):
                              'disease_plugins': [],
                              'reporter_plugins': []}
         self.update_params(kwargs, validate=True)
+
+        self.assets = SimulationAssets()
+
+    @property
+    def experiment_files(self):
+        return self.assets.experiment_files
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -246,13 +249,31 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self):
+    def get_input_file_paths(self, ignored=('Campaign_Filename',)):
         params_dict = self.config['parameters']
-        file_dict = {filename: filepath for (filename, filepath) in params_dict.iteritems()
-                      if filename.endswith('_Filename') or filename.startswith('Filename_') or '_Filename_' in filename
-                      or filename.endswith('_Filenames') or filename.startswith('Filenames_') or '_Filenames_' in filename}
+        ignored = ignored
+        input_files = []
 
-        return file_dict
+        # Retrieve all the parameters with "Filename" in it
+        # Also do not add them if they are part of the ignored or blank
+        for (filename, filepath) in params_dict.items():
+            if 'Filename' not in filename or filename in ignored or filepath == '': continue
+
+            # If it is a list of files -> add them all
+            if isinstance(filepath, list):
+                input_files.extend(filepath)
+                continue
+            else:
+                input_files.append(filepath)
+
+            # If it is a .bin -> add the associated json
+            base_filename, extension = os.path.splitext(filepath)
+            if extension == ".bin": input_files.append("%s.json" % filepath)
+
+        # just in case we somehow have duplicates
+        input_files = list(set(input_files))
+
+        return input_files
 
     def enable(self, param):
         """
@@ -329,7 +350,11 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         for r in reports:
             self.custom_reports.append(r)
-            self.dlls.add(r.get_dll_path())
+            dll_type, dll_path = r.get_dll_path()
+            self.dlls.add((dll_type, dll_path))
+
+            # path relative to dll_root, will be expanded before emodules_map.json is written
+            self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
 
     def add_input_file(self, name, content):
         """
@@ -361,6 +386,28 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
+    def set_experiment_executable(self, path):
+        self.assets.exe_path = path
+
+    def set_input_files_root(self, path):
+        self.assets.input_root = path
+
+    def set_input_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.INPUT, collection)
+
+    def set_dll_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.DLL, collection)
+
+    def set_exe_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.EXE, collection)
+
+    def get_assets(self):
+        self.assets.create_collections(self)
+        return self.assets
+
+    def set_collection_id(self, collection):
+        self.assets.set_base_collection(SimulationAssets.MASTER, collection)
+
     def add_demog_overlay(self, name, content):
         """
         Add a demographic overlay to the simulation.
@@ -374,68 +421,15 @@ class DTKConfigBuilder(SimConfigBuilder):
             raise Exception('Already have demographics overlay named %s' % name)
         self.demog_overlays[name] = content
 
-    def get_commandline(self, exe_path, paths):
+    def get_dll_paths_for_asset_manager(self):
         """
-        Get the complete command line to run the simulation.
-
-        Args:
-            exe_path (string): The path to the model executable
-            paths (dict): Dictionary containing the setup and allowing this function to retrieve the ``input_root`` and ``python_path``
-
-        Returns:
-            The :py:class:`CommandlineGenerator` object created with the correct paths
-
+        Generates relative path filenames for the requested dll files, relative to the root dll directory.
+        :return:
         """
-        eradication_options = {'--config': 'config.json', '--input-path': paths['input_root']}
-
-        if 'python_path' in paths and paths['python_path'] != '':
-            eradication_options['--python-script-path'] = paths['python_path']
-
-        return CommandlineGenerator(exe_path, eradication_options, [])
-
-    def stage_required_libraries(self, dll_path, staging_root, assets_service=False):
-        """
-        Stage the required DLLs.
-
-        This function will work differently depending on the use of the assets service or not.
-        If the assets service is used, the function will simply create the path for the dll and not copy the file itself.
-        If the assets service is not used, the function will call the :py:func:`stage_file` function and store
-        the returned path.
-
-        For each dll to stage, the ``staged_dlls`` dictionary is updated with the path to the dll mapped to its
-        type and name and the ``emodules_map`` dictionary is also updated accordingly.
-
-        Args:
-            dll_path (string): The path where the dll to be staged are
-            staging_root (string): The staging dll path
-            assets_service (bool): Are we using the assets service?
-
-        """
-        for dll_type, dll_name in self.dlls:
-            # Try top retrieve the dll from the staged dlls
-            staged_dll = self.staged_dlls.get((dll_type, dll_name), None)
-
-            if not staged_dll:
-                if not assets_service:
-                    # If the assets service is not use, actually stage the dll file
-                    staged_dll = stage_file(os.path.join(dll_path, dll_type, dll_name),
-                                                  os.path.join(staging_root, dll_type))
-                else:
-                    # If the assets service is used, assume that the dll is staged already
-                    staged_dll = os.path.join(staging_root, dll_type, dll_name)
-
-                # Translate just in case
-                staged_dll = translate_COMPS_path(staged_dll)
-
-                # caching to avoid repeat md5 and os calls
-                self.staged_dlls[(dll_type, dll_name)] = staged_dll
-
-            # Add the dll to the emodules_map
-            self.emodules_map[dll_type].append(staged_dll)
+        return [os.path.join(dll_type, dll_name) for dll_type, dll_name in self.dlls]
 
     def check_custom_events(self):
         # Return difference between config and campaign
-
         broadcast_events_from_campaign = re.findall(r"['\"]Broadcast_Event['\"]:\s['\"](.*?)['\"]",
                                                     str(json.dumps(self.campaign)), re.DOTALL)
 
@@ -469,6 +463,8 @@ class DTKConfigBuilder(SimConfigBuilder):
                     with open(filename, 'w') as f:
                         f.write(content)
         """
+        from simtools.SetupParser import SetupParser
+
         if self.human_readability:
             dump = lambda content: json.dumps(content, sort_keys=True, indent=3, cls=NumpyEncoder).strip('"')
         else:
@@ -481,8 +477,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             write_fn('custom_reports.json', dump(format_reports(self.custom_reports)))
 
         for name, content in self.demog_overlays.items():
-            self.append_overlay('%s.json' % name)
-            write_fn('%s.json' % name, dump(content))
+            self.append_overlay('%s' % name)
+            write_fn('%s' % name, dump(content))
 
         for name, content in self.input_files.items():
             write_fn(name, dump(content))
@@ -492,4 +488,31 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         write_fn('config.json', dump(self.config))
 
+        # complete the path to each dll before writing emodules_map.json
+        location = SetupParser.get('type')
+        if location == 'LOCAL':
+            root = self.assets.dll_root
+        elif location == 'HPC':
+            root = 'Assets'
+        else:
+            raise Exception('Unknown location: %s' % location)
+        for module_type in self.emodules_map.keys():
+            self.emodules_map[module_type] = [os.path.join(root, dll) for dll in self.emodules_map[module_type]]
         write_fn('emodules_map.json', dump(self.emodules_map))
+
+    def dump_files(self, working_directory):
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+
+        def write_file(name, content):
+            filename = os.path.join(working_directory, '%s' % name)
+            with open(filename, 'w') as f:
+                f.write(content)
+
+        self.file_writer(write_file)
+
+        from simtools.SetupParser import SetupParser
+        if SetupParser.get('type') == "LOCAL":
+            for file in self.experiment_files:
+                shutil.copy(file.absolute_path, working_directory)
+

@@ -100,7 +100,7 @@ geographies = {
 
     "Namawala": {"Geography": "Namawala",
                  "Air_Temperature_Filename": "Namawala_single_node_air_temperature_daily.bin",
-                 "Demographics_Filenames": ["Namawala_single_node_demographics.compiled.json"],
+                 "Demographics_Filenames": ["Namawala_single_node_demographics.json"],
                  "Land_Temperature_Filename": "Namawala_single_node_land_temperature_daily.bin",
                  "Rainfall_Filename": "Namawala_single_node_rainfall_daily.bin",
                  "Relative_Humidity_Filename": "Namawala_single_node_relative_humidity_daily.bin",

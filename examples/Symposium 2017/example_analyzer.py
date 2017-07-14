@@ -25,5 +25,5 @@ class PopulationAnalyzer(BaseAnalyzer):
 
 # This code will analyze the latest experiment ran with the PopulationAnalyzer
 if __name__ == "__main__":
-    am = AnalyzeManager(analyzers=PopulationAnalyzer())
+    am = AnalyzeManager('latest', analyzers=PopulationAnalyzer())
     am.analyze()

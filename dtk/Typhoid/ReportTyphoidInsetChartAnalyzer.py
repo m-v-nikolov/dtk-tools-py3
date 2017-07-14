@@ -42,6 +42,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
         self.count = 0
         self.num_outstanding = 0
 
+    def initialize(self):
         if not os.path.isdir(self.basedir):
             os.makedirs(self.basedir)
 

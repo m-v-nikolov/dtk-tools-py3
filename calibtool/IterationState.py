@@ -19,7 +19,8 @@ from simtools.Utilities.General import init_logging
 logger = init_logging("Calibration")
 
 
-class IterationState:
+
+class IterationState(object):
     """
     Holds the settings, parameters, simulation state, analysis results, etc.
     for one calibtool iteration.
@@ -27,6 +28,7 @@ class IterationState:
     Allows for the resumption or extension of existing CalibManager instances
     from an arbitrary point in the iterative process.
     """
+
     def __init__(self, **kwargs):
         self.iteration = 0
         self.calibration_name = None
@@ -230,7 +232,7 @@ class IterationState:
             self.exp_manager = ExperimentManagerFactory.from_experiment(
                 DataStore.get_experiment(self.experiment_id))
         else:
-            self.exp_manager = ExperimentManagerFactory.from_setup()
+            self.exp_manager = ExperimentManagerFactory.init()
 
             # use passed in function to create exp_builder
             exp_builder = self.exp_builder_func(next_params)

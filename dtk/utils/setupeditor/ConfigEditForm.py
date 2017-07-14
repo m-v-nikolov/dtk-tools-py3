@@ -225,15 +225,15 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
 
         if asset_svc:
             self.fields['exe_path'].Hide()
-            self.fields['dll_path'].Hide()
+            self.fields['dll_root'].Hide()
             self.labels['exe_path'].Hide()
-            self.labels['dll_path'].Hide()
+            self.labels['dll_root'].Hide()
             self.Layout()
         else:
             self.fields['exe_path'].Show()
-            self.fields['dll_path'].Show()
+            self.fields['dll_root'].Show()
             self.labels['exe_path'].Show()
-            self.labels['dll_path'].Show()
+            self.labels['dll_root'].Show()
             self.Layout()
 
     def define_help_panel(self, info):

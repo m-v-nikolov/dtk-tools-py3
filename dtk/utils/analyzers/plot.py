@@ -56,7 +56,7 @@ def plot_grouped_lines(df, ax):
     for i, (g, dfg) in enumerate(grouped):
         color = palette[i % len(palette)]
         pcolor = [color] if len(dfg.columns) > 1 else color
-        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, color=pcolor)
+        dfg.plot(ax=ax, legend=False, alpha=0.6, lw=1, c=pcolor)
         leg.append(plt.Line2D((0, 1), (0, 0), color=color))
     plt.legend(leg, df.keys().levels[0].tolist(), title='group')
 

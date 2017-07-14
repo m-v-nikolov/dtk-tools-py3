@@ -30,7 +30,7 @@ class RegressionTestAnalyzer(TimeseriesAnalyzer):
         self.onlyPlotFailed=onlyPlotFailed
         self.results = defaultdict(list)
         setup = SetupParser()
-        self.regression_path = os.path.join(setup.get('dll_path'),
+        self.regression_path = os.path.join(setup.get('dll_root'),
                                             '..', '..', 'Regression')
 
     def apply(self, parser):

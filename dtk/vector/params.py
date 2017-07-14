@@ -30,7 +30,7 @@ cohort_params = {
     "Enable_Vector_Migration_Human": 0,
     "Enable_Vector_Migration_Local": 0,
     "Enable_Vector_Migration_Wind": 0,
-
+    "Enable_Temperature_Dependent_Feeding_Cycle":0,
     "Enable_Vector_Migration_Regional": 0,
     "x_Vector_Migration_Local": 0,
     "x_Vector_Migration_Regional": 0,

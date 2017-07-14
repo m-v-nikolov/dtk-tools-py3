@@ -16,7 +16,7 @@ from calibtool.study_sites import \
     LayeCalibSite, DapelogoCalibSite, MatsariAgeSeasonCalibSite, RafinMarkeAgeSeasonCalibSite, \
     SugungumAgeSeasonCalibSite
 
-SetupParser.default_block = 'EXAMPLE'
+SetupParser.default_block = 'HPC'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
@@ -94,5 +94,4 @@ run_calib_args = {}
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
-    calib_manager.cleanup()
     calib_manager.run_calibration()
