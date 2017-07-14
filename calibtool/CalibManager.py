@@ -108,15 +108,13 @@ class CalibManager(object):
 
         # resume case
         if self.current_iteration:
-            self.current_iteration.calibration_start = self.calibration_start
-            self.current_iteration.resume()
+            self.current_iteration.run()
             self.post_iteration()
             iteration += 1
 
         # normal run
         for i in range(iteration, self.max_iterations):
             self.current_iteration = self.create_iteration_state(i)
-            self.current_iteration.calibration_start = self.calibration_start
             self.current_iteration.run()
             self.post_iteration()
 
@@ -150,7 +148,8 @@ class CalibManager(object):
                               analyzer_list=self.analyzer_list,
                               config_builder=self.config_builder,
                               plotters=self.plotters,
-                              all_results=self.all_results)
+                              all_results=self.all_results,
+                              calibration_start=self.calibration_start)
 
     def create_calibration(self, location):
         """
@@ -210,7 +209,8 @@ class CalibManager(object):
                  'sites': self.site_analyzer_names(),
                  'results': self.serialize_results(),
                  'setup_overlay_file': SetupParser.setup_file,
-                 'selected_block': SetupParser.selected_block}
+                 'selected_block': SetupParser.selected_block,
+                 'calibration_start':self.calibration_start}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
 
@@ -258,9 +258,10 @@ class CalibManager(object):
         self.location = calib_data.get('location')
         self.latest_iteration = int(calib_data.get('iteration', 0))
         self.suites = calib_data['suites']
+        self.calibration_start = datetime.strptime(calib_data['calibration_start'], '%Y-%m-%d %H:%M:%S')
 
         # step 3: validate inputs
-        self.current_iteration = self.validate_calibration(iteration, iter_step)
+        self.current_iteration, resume_point = self.retrieve_iteration(iteration, iter_step)
 
         # step 4: load all_results
         results = calib_data.get('results')
@@ -272,7 +273,10 @@ class CalibManager(object):
         # step 5: update required objects for resume
         self.current_iteration.update(**self.required_components)
 
-    def validate_calibration(self, iteration=None, iter_step=None):
+        # Resume the iteration
+        self.current_iteration.resume(resume_point)
+
+    def retrieve_iteration(self, iteration=None, iter_step=None):
         if iteration is None:
             resume_iteration = self.latest_iteration
         else:
@@ -284,7 +288,7 @@ class CalibManager(object):
                 "The iteration '%s' is beyond the maximum iteration '%s'" % (resume_iteration, self.latest_iteration))
 
         # validate input iter_step
-        it = ResumeIterationState.restore_state(self.name, resume_iteration)
+        it = IterationState.restore_state(self.name, resume_iteration)
 
         latest_step = StatusPoint[it.status]
         if iter_step is None:
@@ -292,16 +296,12 @@ class CalibManager(object):
 
         given_step = StatusPoint[iter_step]
         if given_step.value > latest_step.value:
-            raise Exception(
-                "The iter_step '%s' is beyond the latest step '%s'" % (given_step.name, latest_step.name))
-
-        # set up the resume point
-        it.resume_point = StatusPoint[iter_step]
+            raise Exception("The iter_step '%s' is beyond the latest step '%s'" % (given_step.name, latest_step.name))
 
         # finally check user input location and experiment location and provide options for resume
         self.check_location(it)
 
-        return it
+        return it, StatusPoint[iter_step]
 
     def check_location(self, iteration_state):
         """
@@ -395,11 +395,14 @@ class CalibManager(object):
         else:
             latest_iteration = iteration
 
-        # Restore IterationState
-        it = IterationState.from_file(os.path.join(self.name, 'iter%d' % latest_iteration, 'IterationState.json'))
+        try:
+            # Restore IterationState
+            it = IterationState.from_file(os.path.join(self.name, 'iter%d' % latest_iteration, 'IterationState.json'))
 
-        # Get experiment by id
-        return DataStore.get_experiment(it.experiment_id)
+            # Get experiment by id
+            return DataStore.get_experiment(it.experiment_id)
+        except:
+            return None
 
     def kill(self):
         """
@@ -472,7 +475,6 @@ class CalibManager(object):
             except OSError:
                 logger.error("Failed to delete %s" % calib_dir)
                 logger.error("Try deleting the folder manually before retrying the calibration.")
-
 
     def reanalyze_calibration(self, iteration):
         """
@@ -694,7 +696,9 @@ class CalibManager(object):
                     'config_builder': self.config_builder,
                     'analyzer_list': self.analyzer_list,
                     'plotters': self.plotters,
-                    'all_results': self.all_results
+                    'all_results': self.all_results,
+                    'calibration_start':self.calibration_start,
+                    'site_analyzer_names': self.site_analyzer_names()
                 }
         return kwargs
 

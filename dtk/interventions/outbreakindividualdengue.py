@@ -1,5 +1,5 @@
 # Add dengue outbreak individual event
-def add_OutbreakIndivisualDengue(config_builder, start, coverage_by_age, strain_id_name, nodeIDs=[]):
+def add_OutbreakIndividualDengue(config_builder, start, coverage_by_age, strain_id_name, nodeIDs=[]):
     dengue_event = {
         "class": "CampaignEvent",
         "Start_Day": int(start),
@@ -7,7 +7,11 @@ def add_OutbreakIndivisualDengue(config_builder, start, coverage_by_age, strain_
             "class": "StandardInterventionDistributionEventCoordinator",
             "Intervention_Config": {
                 "Strain_Id_Name": strain_id_name,  # eg. "Strain_1"
-                "class": "OutbreakIndividualDengue"
+                "class": "OutbreakIndividualDengue",
+                "Antigen": 0,
+                "Genome": 0,
+                "Comment_antigen_genome": "See GitHub https://github.com/InstituteforDiseaseModeling/DtkTrunk/issues/1682",
+                "Incubation_Period_Override": -1
             }
         }
     }

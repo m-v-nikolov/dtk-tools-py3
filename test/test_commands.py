@@ -3,9 +3,9 @@ import unittest
 import dtk.commands
 from argparse import Namespace
 import tempfile
-from simtools.Utilities.General import rmtree_f
 from simtools.DataAccess.DataStore import DataStore
-import simtools.Utilities.disease_packages as disease_packages
+from simtools.Utilities.General import rmtree_f
+from simtools.Utilities.GitHub.GitHub import DTKGitHub
 
 class TestCommands(unittest.TestCase):
     TEST_FILE_NAME = 'inputfile1'
@@ -15,120 +15,98 @@ class TestCommands(unittest.TestCase):
     }
 
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
+        pass
 
     def tearDown(self):
-        rmtree_f(self.tempdir)
+        pass
 
     def test_list_packages(self):
-        args = {
-            'is_test': True
-        }
+        args = {'quiet': True}
         namespace = self.init_namespace(args)
         packages = dtk.commands.list_packages(args=namespace, unknownArgs=None)
         self.assertTrue(isinstance(packages, list))
-        self.assertTrue(packages.__contains__(disease_packages.TEST_DISEASE_PACKAGE_NAME))
+        self.assertTrue('malaria' in packages)
 
     def test_list_package_versions(self):
         # positive test
         args = {
-            'package_name': disease_packages.TEST_DISEASE_PACKAGE_NAME
+            'package_name': DTKGitHub.TEST_DISEASE_PACKAGE_NAME,
+            'quiet': True
         }
         namespace = self.init_namespace(args)
         versions = dtk.commands.list_package_versions(args=namespace, unknownArgs=None)
         self.assertTrue(isinstance(versions, list))
-        self.assertEqual(2, len(versions))
-        self.assertEqual(['v1.0', 'v1.2'], sorted(versions))
+        self.assertEqual(4, len(versions))
+        self.assertEqual(['1.0.0', '1.0.1', '1.2.0', '2.0.1'], sorted(versions))
 
         # negative test
         args = {
-            'package_name': 'notapackage'
+            'package_name': 'notapackage',
+            'quiet': True
         }
         namespace = self.init_namespace(args)
-        versions = dtk.commands.list_package_versions(args=namespace, unknownArgs=None)
-        self.assertEqual(0, len(versions))
+        kwargs = {'args': namespace, 'unknownArgs': None}
+        self.assertRaises(DTKGitHub.UnknownRepository, dtk.commands.list_package_versions, **kwargs)
+
+    def verify_package_download(self, source_dir, expected_version):
+        test_data_pattern = "I am a file belonging to version %s .\n"
+
+        # verify the setup.py file points to the right version that would be installed
+        setup_filename = os.path.join(source_dir, 'setup.py')
+        self.assertTrue(os.path.isfile(setup_filename))
+        with open(setup_filename, 'r') as file:
+            data = file.read()
+            expected_string = 'version=\'%s\'' % expected_version
+            self.assertTrue(expected_string in data)
+
+        # test contents of a specific file
+        test_file = os.path.join(source_dir, 'module1', 'test.py')
+        expected_data = test_data_pattern % expected_version
+        self.assertTrue(os.path.isfile(test_file))
+        with open(test_file, 'r') as file:
+            test_data = file.read()
+            self.assertEqual(test_data, expected_data)
 
     def test_get_package(self):
-        workspace = self.tempdir
+        # This test does NOT test installation, but it does test that the appropriate setup occurs prior
+        # to pip install
 
-        # no existing version, default version obtained
-        # ... and NO local package directory
-        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
+        # for case each, verify:
+        # - setup.py has the right version string
+        # - data in a sample file is correct
+
+        package_name = DTKGitHub.TEST_DISEASE_PACKAGE_NAME
+
+        # no version specified, get latest (2.0.1)
         args = {
+            'is_test': True,
             'package_name': package_name,
-            'package_version': 'latest',
-            'dest': workspace,
+            'package_version': 'latest'
         }
         namespace = self.init_namespace(args)
-        dtk.commands.get_package(args=namespace, unknownArgs=None)
-        package_dir = os.path.join(workspace, package_name)
-        self.assertTrue(os.path.exists(workspace))
-        self.assertTrue(os.path.exists(package_dir))
-        self.assertGreaterEqual(len(os.listdir(package_dir)), 0)
-        # check a specific file for proper contents
-        test_file = os.path.join(package_dir, self.TEST_FILE_NAME)
-        contents = self.get_file_contents(test_file)
-        self.assertEqual(self.TEST_FILE_CONTENTS['v1.2'], contents)
-        # check DB status
-        db_key = disease_packages.construct_package_version_db_key(package_name)
-        self.assertEqual('v1.2', DataStore.get_setting(db_key).value)
+        source_dir = dtk.commands.get_package(args=namespace, unknownArgs=None)
+        self.verify_package_download(source_dir=source_dir, expected_version='2.0.1')
 
-        # preexisting version, specified version obtained
-        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
+        # version specified, get it!
+        expected_version = '1.0.1'
         args = {
+            'is_test': True,
             'package_name': package_name,
-            'package_version': 'v1.0',
-            'dest': workspace
+            'package_version': expected_version
         }
         namespace = self.init_namespace(args)
-        dtk.commands.get_package(args=namespace, unknownArgs=None)
-        package_dir = os.path.join(workspace, package_name)
-        self.assertTrue(os.path.exists(workspace))
-        self.assertTrue(os.path.exists(package_dir))
-        self.assertGreaterEqual(len(os.listdir(package_dir)), 0)
-        # check a specific file for proper contents
-        test_file = os.path.join(package_dir, self.TEST_FILE_NAME)
-        contents = self.get_file_contents(test_file)
-        self.assertEqual(self.TEST_FILE_CONTENTS['v1.0'], contents)
-        # check DB status
-        db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
-        self.assertEqual('v1.0', DataStore.get_setting(db_key).value)
+        source_dir = dtk.commands.get_package(args=namespace, unknownArgs=None)
+        self.verify_package_download(source_dir=source_dir, expected_version=expected_version)
 
-        # specified package exists, but version does not
-        package_name = disease_packages.TEST_DISEASE_PACKAGE_NAME
-        db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
-        original_version = DataStore.get_setting(db_key).value
-        args = {
-            'package_name': package_name,
-            'package_version': 'notaversion',
-            'dest': workspace
-        }
-        namespace = self.init_namespace(args)
-        dtk.commands.get_package(args=namespace, unknownArgs=None)
-        package_dir = os.path.join(workspace, package_name)
-        self.assertTrue(os.path.exists(workspace))
-        self.assertTrue(os.path.exists(package_dir))
-        self.assertGreaterEqual(len(os.listdir(package_dir)), 0)
-        self.assertEqual(original_version, DataStore.get_setting(db_key).value)
-        # check a specific file for proper contents
-        test_file = os.path.join(package_dir, self.TEST_FILE_NAME)
-        contents = self.get_file_contents(test_file)
-        self.assertEqual(self.TEST_FILE_CONTENTS['v1.0'], contents)
-
-        # specified package does not exist
         package_name = 'notapackage'
         args = {
+            'is_test': True,
             'package_name': package_name,
             'package_version': 'latest',
-            'dest': workspace
         }
         namespace = self.init_namespace(args)
-        dtk.commands.get_package(args=namespace, unknownArgs=None)
-        package_dir = os.path.join(workspace, package_name)
-        self.assertFalse(os.path.exists(package_dir))
-        # check DB status
-        db_key = db_key = disease_packages.construct_package_version_db_key(package_name)
-        self.assertEqual(None, DataStore.get_setting(db_key))
+        kwargs = {'args': namespace, 'unknownArgs': None}
+        self.assertRaises(DTKGitHub.UnknownRepository, dtk.commands.get_package, **kwargs)
 
     # Helper methods
 

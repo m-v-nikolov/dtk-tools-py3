@@ -539,7 +539,6 @@ def cleanup_locks():
         except:
             print("Could not delete file: %s" % overseer_lock)
 
-
 def backup_db():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')

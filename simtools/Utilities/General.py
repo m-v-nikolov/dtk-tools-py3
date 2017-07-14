@@ -311,3 +311,57 @@ def is_running(pid, name_part):
         return True
 
     return False
+
+import importlib
+import pkgutil
+def import_submodules(package, recursive=True):
+    """ Import all submodules of a module, recursively, including subpackages
+
+    :param package: package (name or actual module)
+    :type package: str | module
+    :rtype: dict[str, types.ModuleType]
+    """
+    if isinstance(package, str):
+        package = importlib.import_module(package)
+    results = {}
+    for loader, name, is_pkg in pkgutil.walk_packages(package.__path__):
+        full_name = package.__name__ + '.' + name
+        results[full_name] = importlib.import_module(full_name)
+        if recursive and is_pkg:
+            results.update(import_submodules(full_name))
+    return results
+
+labels = [
+    (1024 ** 5, ' PB'),
+    (1024 ** 4, ' TB'),
+    (1024 ** 3, ' GB'),
+    (1024 ** 2, ' MB'),
+    (1024 ** 1, ' KB'),
+    (1024 ** 0, (' byte', ' bytes')),
+    ]
+
+verbose = [
+    (1024 ** 5, (' petabyte', ' petabytes')),
+    (1024 ** 4, (' terabyte', ' terabytes')),
+    (1024 ** 3, (' gigabyte', ' gigabytes')),
+    (1024 ** 2, (' megabyte', ' megabytes')),
+    (1024 ** 1, (' kilobyte', ' kilobytes')),
+    (1024 ** 0, (' byte', ' bytes')),
+    ]
+
+def file_size(bytes, system=labels):
+    """
+    Human-readable file size.
+
+    """
+    for factor, suffix in system:
+        if bytes >= factor:
+            break
+    amount = int(bytes/factor)
+    if isinstance(suffix, tuple):
+        singular, multiple = suffix
+        if amount == 1:
+            suffix = singular
+        else:
+            suffix = multiple
+    return str(amount) + suffix

@@ -8,8 +8,7 @@ from time import sleep
 
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.GitHub.GitHub import DependencyGitHub
-DependencyGitHub.REPOSITORY = 'TestRepository'
-DependencyGitHub.LOGIN_REPOSITORY = 'TestRepository'
+DependencyGitHub.DEFAULT_REPOSITORY_NAME = 'TestRepository'
 
 class TestGitHub(unittest.TestCase):
     def setUp(self):
@@ -24,9 +23,7 @@ class TestGitHub(unittest.TestCase):
                 'max_chunk_size': 12 # bytes
             }
         }
-
-
-        self.legacy_file = os.path.join(os.path.dirname(__file__), 'input', 'GitHub', 'testfile.txt')
+        self.legacy_file = os.path.join(os.path.dirname(__file__), 'input', 'GitHub', 'testfile.whl')
 
     def tearDown(self):
         pass

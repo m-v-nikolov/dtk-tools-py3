@@ -6,3 +6,4 @@ Simtools package
        simtools/simtoolsini
        simtools/overlay
        simtools/experimentmanager
+       simtools/diseasepackages
