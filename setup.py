@@ -387,7 +387,7 @@ def install_packages(my_os, reqs):
     # Suppress the outputs except the errors
     with nostdout(stderr=True):
         setup(name='dtk-tools',
-              version='0.6',
+              version='1.0b1',
               description='Facilitating submission and analysis of simulations',
               url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
               author='Edward Wenger,'
