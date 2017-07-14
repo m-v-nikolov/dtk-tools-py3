@@ -130,13 +130,12 @@ class IterationState(object):
         self.restore_next_point(iter_step)
 
         # step 3: restore Calibration results
-        if self.iteration > 0:
-            if iter_step.value < StatusPoint.plot.value:
-                # it will combine current results with previous results
-                self.restore_results(self.iteration - 1)
-            else:
-                # it will use the current results and resume from next iteration
-                self.restore_results(self.iteration)
+        if self.iteration > 0 and iter_step.value < StatusPoint.plot.value:
+            # it will combine current results with previous results
+            self.restore_results(self.iteration - 1)
+        else:
+            # it will use the current results and resume from next iteration
+            self.restore_results(self.iteration)
 
         # step 4: prepare resume states
         if iter_step == StatusPoint.commission:
