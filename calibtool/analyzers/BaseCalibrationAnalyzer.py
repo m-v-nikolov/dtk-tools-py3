@@ -18,7 +18,6 @@ class BaseCalibrationAnalyzer(BaseComparisonAnalyzer):
         """
         Combine the simulation data into a single table for all analyzed simulations.
         """
-
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
         # Stack selected_data from each parser, adding unique (sim_id) and shared (sample) levels to MultiIndex
