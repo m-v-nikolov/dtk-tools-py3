@@ -20,8 +20,6 @@ class BaseCalibrationAnalyzer(BaseComparisonAnalyzer):
         """
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
-        print selected
-
         # Stack selected_data from each parser, adding unique (sim_id) and shared (sample) levels to MultiIndex
         combine_levels = ['sample', 'sim_id', 'channel']
         combined = pd.concat(selected, axis=1,
