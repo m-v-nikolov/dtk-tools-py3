@@ -46,7 +46,7 @@ def translate_COMPS_path(path):
     if comps_variable in path_translations:
         abs_path = path_translations[comps_variable]
     else:
-        with SetupParser.TemporarySetup() as setup:
+        with SetupParser.TemporarySetup('HPC') as setup:
             # Prepare the variables we will need
             environment = setup.get('environment')
 
@@ -60,7 +60,7 @@ def translate_COMPS_path(path):
     # Replace and return
     with SetupParser.TemporarySetup() as setup:
         user = setup.get('user')
-        
+
     return path.replace(groups[0], abs_path).replace("$(User)", user)
 
 
