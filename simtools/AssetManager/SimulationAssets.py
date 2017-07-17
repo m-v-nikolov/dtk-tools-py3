@@ -131,6 +131,11 @@ class SimulationAssets(object):
                 if collection.collection_id is not None: # None means "no files in this collection"
                     asset_files += collection.comps_collection.assets
 
+        # Delete collections that are None (no files)
+        for cid, collection in self.collections.items():
+            if collection.collection_id is None:
+                del self.collections[cid]
+
         logger.debug("Creating master collection with %d files" % len(asset_files))
         self.master_collection = AssetCollection(remote_files=asset_files)
         self.master_collection.prepare(location=location)
