@@ -398,6 +398,9 @@ class DTKConfigBuilder(SimConfigBuilder):
     def set_input_files_root(self, path):
         self.assets.input_root = path
 
+    def set_dll_root(self, path):
+        self.assets.dll_root = path
+
     def set_input_collection(self, collection):
         self.assets.set_base_collection(SimulationAssets.INPUT, collection)
 
