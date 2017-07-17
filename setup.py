@@ -440,19 +440,23 @@ def handle_init():
     if not os.path.exists(current_simtools):
         default_config.write(open(current_simtools, 'w'))
     else:
-        print ("\nA previous simtools.ini configuration file is present. Attempt to auto-merge")
-        # Merge it. The emrge is in place so make a copy of the defaults
-        default_config_merge = deepcopy(default_config)
-        current_config = ConfigObj(current_simtools)
-        default_config_merge.merge(current_config)
+        print ("\nA previous simtools.ini configuration file is present.")
 
         # Backup copy the current
         print ("Backup copy your current simtools.ini to simtools.ini.bak")
         shutil.copy(current_simtools, current_simtools + ".bak")
 
+        # Write new one
+        print("Writing new simtools.ini")
+        default_config.write(open(current_simtools,'w'))
+
         # Write the merged one
-        default_config_merge.write(open(current_simtools, 'w'))
-        print ("Merged simtools.ini written!\n")
+        # The merge is in place so make a copy of the defaults
+        # default_config_merge = deepcopy(default_config)
+        # current_config = ConfigObj(current_simtools)
+        # default_config_merge.merge(current_config)
+        # default_config_merge.write(open(current_simtools, 'w'))
+        # print ("Merged simtools.ini written!\n")
 
     # ALso write the default_cp in the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
