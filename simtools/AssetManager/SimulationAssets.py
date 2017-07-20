@@ -22,7 +22,7 @@ class SimulationAssets(object):
     INPUT = 'input'
     LOCAL = 'local'
     MASTER = 'master'
-    COLLECTION_TYPES = [EXE, DLL, INPUT]
+    COLLECTION_TYPES = [DLL, EXE, INPUT]
 
     def __init__(self):
         self.collections = {}
