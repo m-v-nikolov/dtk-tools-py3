@@ -104,6 +104,9 @@ class SimulationAssets(object):
         else:
             self.base_collections[collection_type] = AssetCollection(base_collection=collection)
 
+        if collection_type == self.DLL:
+            self.base_collections[self.DLL].asset_files_to_use = [a for a in self.base_collections[self.DLL].asset_files_to_use if not a.file_name.endswith('exe')]
+
     def prepare(self, config_builder):
         """
         Calls prepare() on all unprepared contained AssetCollection objects.
