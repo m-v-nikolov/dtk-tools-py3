@@ -72,9 +72,9 @@ requirements = OrderedDict([
     }),
     ('psutil', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '4.3.1',
+        'version': '5.2.2',
         'test': '==',
-        'wheel': '%s/psutil-4.3.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/psutil-5.2.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('python-snappy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
