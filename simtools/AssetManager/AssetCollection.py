@@ -1,10 +1,9 @@
+import hashlib
+import json
 import os
 
 from COMPS.Data.AssetCollection import AssetCollection as COMPSAssetCollection
 from COMPS.Data.AssetCollectionFile import AssetCollectionFile as COMPSAssetCollectionFile
-from COMPS.Data.QueryCriteria import QueryCriteria as COMPSQueryCriteria
-
-from simtools.Utilities.General import get_md5
 
 
 class AssetCollection(object):
@@ -12,7 +11,7 @@ class AssetCollection(object):
     This class represents a single collection of files (AssetFile) in a simulation. An object of this class is
     not usable UNLESS self.collection_id is not None
     """
-
+    comps_collection_cache = {}
     class InvalidConfiguration(Exception): pass
 
     def __init__(self, base_collection=None, local_files=None, remote_files=None):
@@ -137,11 +136,22 @@ class AssetCollection(object):
             else:
                 collection.add_asset(af, file_path=af.absolute_path)
 
+        # Calculate MD5 of the collection
+        collection_md5 = hashlib.md5(json.dumps(json.loads(str(collection)), sort_keys=True)).hexdigest()
+
+        # The collection was already there -> returns it
+        if collection_md5 in AssetCollection.comps_collection_cache:
+            return AssetCollection.comps_collection_cache[collection_md5]
+
         # Get the missing files (if any)
         missing = collection.save(return_missing_files=True)
 
         # No files were missing -> we have our collection
         if not missing:
+            # Add to the cache
+            AssetCollection.comps_collection_cache[collection_md5] = collection
+
+            # Return
             return collection
 
         # There was missing files, call again
