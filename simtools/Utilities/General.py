@@ -213,6 +213,9 @@ def get_md5(filename):
 def is_remote_path(path):
     return path.startswith('\\\\')
 
+def clean_path(path):
+    return path.strip('\\').strip('/').replace('/','\\')
+
 
 class CommandlineGenerator(object):
     """

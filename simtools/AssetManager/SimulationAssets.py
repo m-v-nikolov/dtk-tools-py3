@@ -93,11 +93,12 @@ class SimulationAssets(object):
 
         # If the collection given is not already an AssetCollection -> retrieve
         if not isinstance(collection, COMPSAssetCollection):
+            collection_id = collection
             with SetupParser.TemporarySetup('HPC'):
-                collection = get_asset_collection(collection)
+                collection = get_asset_collection(collection_id)
 
             if not collection:
-                raise self.InvalidCollection("The input collection '%s' provided could not be found on COMPS." % collection)
+                raise self.InvalidCollection("The input collection '%s' provided could not be found on COMPS." % collection_id)
 
         if collection_type == self.MASTER:
             self.master_collection = AssetCollection(base_collection=collection)
@@ -126,13 +127,16 @@ class SimulationAssets(object):
 
         # Gather the collection_ids from the above collections now that they have been prepared/uploaded (as needed)
         # and generate a 'super AssetCollection' containing all file references.
-        asset_files = []
+        asset_files = {}
         for collection in sorted_collections:
             if location == 'LOCAL':
                 asset_files += collection.asset_files_to_use
             else:
                 if collection.collection_id is not None: # None means "no files in this collection"
-                    asset_files += collection.comps_collection.assets
+                    # Add the assets to the asset_files
+                    # Make sure we have a key (file_name, path) to make sure we override assets
+                    for asset in collection.comps_collection.assets:
+                        asset_files[(asset.file_name, asset.relative_path)] = asset
 
         # Delete collections that are None (no files)
         for cid, collection in self.collections.items():
@@ -140,7 +144,7 @@ class SimulationAssets(object):
                 del self.collections[cid]
 
         logger.debug("Creating master collection with %d files" % len(asset_files))
-        self.master_collection = AssetCollection(remote_files=asset_files)
+        self.master_collection = AssetCollection(remote_files=asset_files.values())
         self.master_collection.prepare(location=location)
         self.prepared = True
 
