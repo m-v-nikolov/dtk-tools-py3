@@ -130,7 +130,8 @@ class SimulationAssets(object):
         asset_files = {}
         for collection in sorted_collections:
             if location == 'LOCAL':
-                asset_files += collection.asset_files_to_use
+                for asset in collection.asset_files_to_use:
+                    asset_files[(asset.file_name, asset.relative_path)] = asset
             else:
                 if collection.collection_id is not None: # None means "no files in this collection"
                     # Add the assets to the asset_files
