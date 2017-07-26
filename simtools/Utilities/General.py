@@ -214,7 +214,7 @@ def is_remote_path(path):
     return path.startswith('\\\\')
 
 def clean_path(path):
-    return path.strip('\\').strip('/').replace('/','\\')
+    return path.strip('\\').strip('/').replace('/', os.sep).replace('\\', os.sep)
 
 
 class CommandlineGenerator(object):

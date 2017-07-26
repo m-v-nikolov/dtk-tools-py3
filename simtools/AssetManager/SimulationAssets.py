@@ -196,11 +196,11 @@ class SimulationAssets(object):
             # returns a Hash with some items that need filtering through
             input_files = config_builder.get_input_file_paths()
             if input_files:
-                file_list = FileList(root=self.input_root, files_in_root=input_files, recursive=True)
+                file_list = FileList(root=self.input_root, files_in_root=input_files)
         elif collection_type == self.DLL:
             dll_relative_paths = config_builder.get_dll_paths_for_asset_manager()
             if dll_relative_paths:
-                file_list = FileList(root=self.dll_root, files_in_root=dll_relative_paths, recursive=True)
+                file_list = FileList(root=self.dll_root, files_in_root=dll_relative_paths)
         else:
             raise Exception("Unknown asset classification: %s" % collection_type)
         return file_list
