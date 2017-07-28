@@ -110,7 +110,7 @@ def nostdout(stdout = False, stderr=False):
     logging.disable(previous_level)
 
 
-def retry_function(func, wait=1, max_retries=5):
+def retry_function(func, wait=1.5, max_retries=5):
     """
     Decorator allowing to retry the call to a function with some time in between.
     Usage: 

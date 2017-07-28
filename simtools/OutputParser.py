@@ -12,6 +12,7 @@ import pandas as pd  # for reading csv files
 
 from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
+from simtools.Utilities.General import retry_function
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
 
@@ -166,6 +167,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
         return sim_map
 
+    @retry_function
     def load_all_files(self, filenames):
         if not self.asset_service:
             #  we can just open files locally...
