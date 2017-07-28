@@ -36,23 +36,6 @@ def builtinAnalyzers():
         'vector_species': VectorSpeciesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_')),
     }
 
-    # try to import HIV analyzers, if available
-    try:
-        import hiv_analyzers
-        hiv_analyzer_dict = {
-            'hiv_ReportHIVByAgeAndGender': hiv_analyzers.ReportHIVByAgeAndGenderAnalyzer.ReportHIVByAgeAndGenderAnalyzer(force_apply=True, force_combine=True, verbose=True),
-            'hiv_RelationshipDuration': hiv_analyzers.RelationshipDurationAnalyzer.RelationshipDurationAnalyzer(),
-            'hiv_HIVDebutAnalyzer': hiv_analyzers.RelationshipDurationAnalyzer.RelationshipDurationAnalyzer(),
-            'hiv_DebutAgeAnalyzer': hiv_analyzers.DebutAgeAnalyzer.DebutAgeAnalyzer(),
-            'hiv_PrognosisAnalyzer': hiv_analyzers.PrognosisAnalyzer.PrognosisAnalyzer(),
-            'hiv_CircumcisionAnalyzer': hiv_analyzers.CircumcisionAnalyzer.CircumcisionAnalyzer(),
-            'hiv_CD4ProgressionAnalyzer': hiv_analyzers.CD4ProgressionAnalyzer.CD4ProgressionAnalyzer(),
-            'hiv_WHOStageAnalyzer': hiv_analyzers.WHOStageAnalyzer.WHOStageAnalyzer()
-        }
-        for key, value in hiv_analyzer_dict.iteritems():
-            analyzers[key] = value
-    except ImportError:
-        pass
     return analyzers
 
 class objectview(object):

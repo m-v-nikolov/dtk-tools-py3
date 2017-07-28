@@ -3,7 +3,7 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 
 # Set the default configuration block to HPC (we will run on COMPS)
-SetupParser.default_block = 'LOCAL'
+SetupParser.default_block = 'HPC'
 
 # Choose a name for our experiment
 exp_name = 'Example with custom set of input files'
