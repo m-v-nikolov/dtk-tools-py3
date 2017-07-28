@@ -553,7 +553,7 @@ def get_package(args, unknownArgs):
 
         # install
         if not is_test:
-            pip.main(['install', release_dir])
+            pip.main(['install', '--no-dependencies', '--ignore-installed', release_dir])
 
         # update the local DB with the version
         db_key = github.disease_package_db_key
