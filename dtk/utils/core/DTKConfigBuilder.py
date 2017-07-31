@@ -84,6 +84,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.campaign = campaign
         # Indent the files when dumping or not
         self.human_readability = True
+        self.ignore_missing = False
         self.demog_overlays = {}
         self.input_files = {}
         self.custom_reports = []

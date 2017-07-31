@@ -153,7 +153,7 @@ class BaseExperimentManager:
         self.assets = self.config_builder.get_assets()
 
         # Check input files existence
-        if not self.validate_input_files(): exit()
+        if not config_builder.ignore_missing and not self.validate_input_files(): exit()
 
         # Set the appropriate command line
         self.commandline = self.get_commandline()
