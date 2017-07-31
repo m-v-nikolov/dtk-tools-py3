@@ -558,7 +558,7 @@ def backup_db():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
     if os.path.exists(db_path):
-        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sql.bak")
+        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sqlite.bak")
         shutil.move(db_path, "%s.bak" % db_path)
 
 
