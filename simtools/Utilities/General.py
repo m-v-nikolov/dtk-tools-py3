@@ -404,3 +404,14 @@ def files_in_dir(dir, filters=None):
                 trimmed_root = trim_leading_file_path(root)
                 discovered_files.append(os.path.join(trimmed_root, filename))
     return discovered_files
+
+def timestamp_filename(filename):
+    """
+    Create a timestamped filename by appending the time to the given filename.
+    :param filename: any filename to form the prefix of the output filename
+    :return: a filename that is the given filename + a timestamp
+    """
+    import time
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    new_filename = '.'.join([filename, timestamp])
+    return new_filename

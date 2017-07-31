@@ -11,7 +11,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from simtools.Utilities.General import nostdout
+from simtools.Utilities.General import nostdout, timestamp_filename
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
 
@@ -463,8 +463,9 @@ def handle_init():
     am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
 
     if os.path.exists(example_simtools):
-        print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
-        shutil.move(example_simtools, "%s.bak" % example_simtools)
+        dest_filename = timestamp_filename(filename=example_simtools)
+        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (example_simtools, dest_filename))
+        shutil.move(example_simtools, dest_filename)
 
     # Smoe specific examples modifications
     example_config = deepcopy(default_config)
@@ -475,8 +476,9 @@ def handle_init():
     example_config.write(open(example_simtools, 'w'))
 
     if os.path.exists(am_examples_simtools):
-        print("Example simtools.ini already exists (%s) -> backup before modifying!" % am_examples_simtools)
-        shutil.move(am_examples_simtools, "%s.bak" % am_examples_simtools)
+        dest_filename = timestamp_filename(filename=am_examples_simtools)
+        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (am_examples_simtools, dest_filename))
+        shutil.move(am_examples_simtools, dest_filename)
 
     # Remove LOCAL section for the AM simtools.ini
     del default_config["LOCAL"]
