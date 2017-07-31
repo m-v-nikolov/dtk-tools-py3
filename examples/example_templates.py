@@ -102,6 +102,7 @@ config_builder = DTKConfigBuilder.from_files(
     os.path.join(plugin_files_dir, 'config.json'),
     os.path.join(plugin_files_dir, 'campaign.json')
  )
+config_builder.ignore_missing = True
 
 # Use the default COMPS 2.10 and the SamplesInput folder for input files
 config_builder.set_exe_collection('EMOD 2.10')
@@ -122,7 +123,6 @@ run_sim_args = {
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
     exp_manager = ExperimentManagerFactory.from_cb(config_builder=config_builder)
-    exp_manager.bypass_missing = True
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 
