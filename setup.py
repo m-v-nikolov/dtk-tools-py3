@@ -20,6 +20,10 @@ install_directory = os.path.join(current_directory, 'install')
 
 installed_packages = dict()
 
+# This lets us guarantee a consistent time to be used for timestamped backup files
+import datetime
+this_time = datetime.datetime.utcnow()
+
 # to fake out urlparse, setting netloc == 'GITHUB'
 GITHUB = 'GITHUB'
 GITHUB_URL_PREFIX = 'http://%s' % GITHUB
@@ -443,8 +447,9 @@ def handle_init():
         print ("\nA previous simtools.ini configuration file is present.")
 
         # Backup copy the current
-        print ("Backup copy your current simtools.ini to simtools.ini.bak")
-        shutil.copy(current_simtools, current_simtools + ".bak")
+        dest_filename = timestamp_filename(filename=current_simtools, time=this_time)
+        print("simtools.ini already exists: (%s) -> backing up to: %s" % (current_simtools, dest_filename))
+        shutil.move(current_simtools, dest_filename)
 
         # Write new one
         print("Writing new simtools.ini")
@@ -463,7 +468,7 @@ def handle_init():
     am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
 
     if os.path.exists(example_simtools):
-        dest_filename = timestamp_filename(filename=example_simtools)
+        dest_filename = timestamp_filename(filename=example_simtools, time=this_time)
         print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (example_simtools, dest_filename))
         shutil.move(example_simtools, dest_filename)
 
@@ -476,7 +481,7 @@ def handle_init():
     example_config.write(open(example_simtools, 'w'))
 
     if os.path.exists(am_examples_simtools):
-        dest_filename = timestamp_filename(filename=am_examples_simtools)
+        dest_filename = timestamp_filename(filename=am_examples_simtools, time=this_time)
         print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (am_examples_simtools, dest_filename))
         shutil.move(am_examples_simtools, dest_filename)
 
@@ -560,9 +565,9 @@ def backup_db():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
     if os.path.exists(db_path):
-        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sql.bak")
-        shutil.move(db_path, "%s.bak" % db_path)
-
+        dest_filename = timestamp_filename(filename=db_path, time=this_time)
+        print("Creating a new local database. Backing up existing one to: %s" % dest_filename)
+        shutil.move(db_path, dest_filename)
 
 def main():
     # Check OS
