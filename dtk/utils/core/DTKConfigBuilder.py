@@ -394,13 +394,13 @@ class DTKConfigBuilder(SimConfigBuilder):
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
 
     def set_experiment_executable(self, path):
-        self.assets.exe_path = path
+        self.assets.exe_path = os.path.abspath(path)
 
     def set_input_files_root(self, path):
-        self.assets.input_root = path
+        self.assets.input_root = os.path.abspath(path)
 
     def set_dll_root(self, path):
-        self.assets.dll_root = path
+        self.assets.dll_root = os.path.abspath(path)
 
     def set_input_collection(self, collection):
         self.assets.set_base_collection(SimulationAssets.INPUT, collection)
