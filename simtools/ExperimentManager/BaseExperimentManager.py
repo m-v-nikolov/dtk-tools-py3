@@ -29,6 +29,8 @@ from simtools.Utilities.LocalOS import LocalOS
 current_dir = os.path.dirname(os.path.realpath(__file__))
 from COMPS.Data.Simulation import SimulationState
 
+def print_status_func():
+    print(".", end="")
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
@@ -244,12 +246,17 @@ class BaseExperimentManager:
         manager = multiprocessing.Manager()
         return_list = manager.list()
 
+        if verbose:
+            callback = print_status_func
+        else:
+            callback = None
+
         # Create the simulation processes
         creator_processes = []
         for fn_batch in fn_batches:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
-                                            callback=lambda: print('.' if verbose else '', end=""),
+                                            callback=callback,
                                             return_list=return_list)
             creator_processes.append(c)
 
