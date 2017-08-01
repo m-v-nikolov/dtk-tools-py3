@@ -59,6 +59,9 @@ class AnalyzeManager:
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
+        # Refresh the experiment just to be sure to have latest info
+        exp_manager.refresh_experiment()
+
         if exp_manager.location == 'HPC':
             # Get the sim map no matter what
             exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
