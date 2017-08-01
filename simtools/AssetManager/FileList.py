@@ -5,7 +5,7 @@ from simtools.Utilities.General import clean_path
 
 
 class FileList:
-    def __init__(self, root=None, files_in_root=None, recursive=False):
+    def __init__(self, root=None, files_in_root=None, recursive=False, ignore_missing=False):
         """
         Represents a set of files that are specified RELATIVE to root.
         e.g. /a/b/c.json could be : root: '/a' files_in_root: ['b/c.json']
@@ -13,6 +13,7 @@ class FileList:
         :param files_in_root: The listed files
         """
         self.files = []
+        self.ignore_missing = ignore_missing
 
         # Make sure we have correct separator
         if files_in_root:
@@ -33,8 +34,11 @@ class FileList:
 
         absolute_path = os.path.abspath(path)
         file_name = os.path.basename(path)
-        af = AssetFile(file_name, relative_path, absolute_path)
-        self.add_asset_file(af)
+        try:
+            af = AssetFile(file_name, relative_path, absolute_path)
+            self.add_asset_file(af)
+        except Exception as e:
+            if not self.ignore_missing: raise e
 
     def add_path(self, path, files_in_dir=None, relative_path=None, recursive=False):
         """
