@@ -11,7 +11,7 @@ from datetime import datetime
 from distutils.version import LooseVersion
 from urlparse import urlparse
 
-from simtools.Utilities.General import nostdout
+from simtools.Utilities.General import nostdout, timestamp_filename
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
 
@@ -19,6 +19,10 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
 
 installed_packages = dict()
+
+# This lets us guarantee a consistent time to be used for timestamped backup files
+import datetime
+this_time = datetime.datetime.utcnow()
 
 # to fake out urlparse, setting netloc == 'GITHUB'
 GITHUB = 'GITHUB'
@@ -443,8 +447,9 @@ def handle_init():
         print ("\nA previous simtools.ini configuration file is present.")
 
         # Backup copy the current
-        print ("Backup copy your current simtools.ini to simtools.ini.bak")
-        shutil.copy(current_simtools, current_simtools + ".bak")
+        dest_filename = timestamp_filename(filename=current_simtools, time=this_time)
+        print("simtools.ini already exists: (%s) -> backing up to: %s" % (current_simtools, dest_filename))
+        shutil.move(current_simtools, dest_filename)
 
         # Write new one
         print("Writing new simtools.ini")
@@ -463,8 +468,9 @@ def handle_init():
     am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
 
     if os.path.exists(example_simtools):
-        print("Example simtools.ini already exists (%s) -> backup before modifying!" % example_simtools)
-        shutil.move(example_simtools, "%s.bak" % example_simtools)
+        dest_filename = timestamp_filename(filename=example_simtools, time=this_time)
+        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (example_simtools, dest_filename))
+        shutil.move(example_simtools, dest_filename)
 
     # Smoe specific examples modifications
     example_config = deepcopy(default_config)
@@ -475,8 +481,9 @@ def handle_init():
     example_config.write(open(example_simtools, 'w'))
 
     if os.path.exists(am_examples_simtools):
-        print("Example simtools.ini already exists (%s) -> backup before modifying!" % am_examples_simtools)
-        shutil.move(am_examples_simtools, "%s.bak" % am_examples_simtools)
+        dest_filename = timestamp_filename(filename=am_examples_simtools, time=this_time)
+        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (am_examples_simtools, dest_filename))
+        shutil.move(am_examples_simtools, dest_filename)
 
     # Remove LOCAL section for the AM simtools.ini
     del default_config["LOCAL"]
@@ -558,9 +565,9 @@ def backup_db():
     current_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(current_dir, 'simtools', 'DataAccess', 'db.sqlite')
     if os.path.exists(db_path):
-        print("\nThe new version of simtools requires a new local database. The old one has been saved as db.sqlite.bak")
-        shutil.move(db_path, "%s.bak" % db_path)
-
+        dest_filename = timestamp_filename(filename=db_path, time=this_time)
+        print("Creating a new local database. Backing up existing one to: %s" % dest_filename)
+        shutil.move(db_path, dest_filename)
 
 def main():
     # Check OS
