@@ -92,7 +92,7 @@ class AnalyzeManager:
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
         if not self.force_analyze and simulation.status != SimulationState.Succeeded:
-            if self.verbose: print "Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name)
+            if self.verbose: print("Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name))
             return
 
         # Add the simulation_id to the tags
@@ -108,7 +108,7 @@ class AnalyzeManager:
                 filtered_analyses.append(a)
 
         if not filtered_analyses:
-            if self.verbose: print 'Simulation %s did not pass filter on any analyzer.' % simulation.id
+            if self.verbose: print("Simulation %s did not pass filter on any analyzer." % simulation.id)
             return
 
         # If all the analyzers present call for deactivating the parsing -> do it
