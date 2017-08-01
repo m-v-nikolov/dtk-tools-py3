@@ -216,7 +216,7 @@ class BaseExperimentManager:
             self.create_experiment(experiment_name=exp_name, suite_id=suite_id)
         else:
             # Refresh the experiment
-            self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+            self.refresh_experiment()
 
         # Add the analyzers
         for analyzer in analyzers:
@@ -276,7 +276,7 @@ class BaseExperimentManager:
         DataStore.bulk_insert_simulations(return_list)
 
         # Refresh the experiment
-        self.experiment = DataStore.get_experiment(self.experiment.exp_id)
+        self.refresh_experiment()
 
         # Display sims
         if verbose:
