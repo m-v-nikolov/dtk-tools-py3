@@ -24,6 +24,7 @@ class BaseShelveAnalyzer(BaseAnalyzer):
         self.force_apply = force_apply
         self.force_combine = force_combine
         self.verbose = verbose
+        self.multiprocessing_plot = False
 
         if self.force_apply and not self.force_combine:
             if self.verbose:

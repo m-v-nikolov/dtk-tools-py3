@@ -68,6 +68,11 @@ class AnalyzeManager:
             if not exp_manager.asset_service:
                 exp_manager.parserClass.asset_service = False
 
+        # Call the analyzer per experiment function for initialization
+        for analyzer in self.analyzers:
+            analyzer.per_experiment(experiment)
+
+        # Create the thread pool to create the parsers
         p = ThreadPool()
         res = []
         for simulation in exp_manager.experiment.simulations:
@@ -76,6 +81,7 @@ class AnalyzeManager:
         p.close()
         p.join()
 
+        # Retrieve the parsers from the pool
         for r in res:
             parser = r.get()
             if parser: self.parsers.append(parser)
@@ -113,6 +119,9 @@ class AnalyzeManager:
         if len(self.analyzers) == 0:
             return
 
+        # Empty the parsers
+        self.parsers = []
+
         # Create the parsers for the experiments
         map(self.create_parsers_for_experiment, self.experiments)
 
@@ -131,7 +140,7 @@ class AnalyzeManager:
             # Plot in another process
             try:
                 # If on mac just plot and continue
-                if LocalOS.name == LocalOS.MAC:
+                if LocalOS.name == LocalOS.MAC or (hasattr(a, 'multiprocessing_plot') and not a.multiprocessing_plot):
                     a.plot()
                     continue
                 plotting_process = Process(target=a.plot)
