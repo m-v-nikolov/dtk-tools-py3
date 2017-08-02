@@ -21,7 +21,7 @@ class SimulationOutputParser(threading.Thread):
     def __init__(self, simulation, analyzers, semaphore=None, parse=True):
         threading.Thread.__init__(self)
         self.sim_id = simulation.id
-        self.sim_path = simulation.get_path()
+        self._sim_path = None
         self.sim_data = simulation.tags
         self.experiment = simulation.experiment
         self.simulation = simulation
@@ -30,6 +30,11 @@ class SimulationOutputParser(threading.Thread):
         self.selected_data = {}
         self.semaphore = semaphore
         self.parse = parse
+
+    def sim_path(self):
+        if not self._sim_path:
+            self._sim_path = self.simulation.get_path()
+        return self._sim_path
 
     def run(self):
         try:
