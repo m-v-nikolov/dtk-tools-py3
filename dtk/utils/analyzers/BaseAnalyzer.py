@@ -21,8 +21,19 @@ class BaseAnalyzer(object):
         self.exp_id = None
         self.exp_name = None
         self.working_dir = None
+        self.multiprocessing_plot = True
 
     def initialize(self):
+        """
+        Called once after the analyzer has been added to the AnalyzeManager
+        """
+        pass
+
+    def per_experiment(self, experiment):
+        """
+        Called once per experiment before doing the apply on the simulations
+        :param experiment:
+        """
         pass
 
     def filter(self, sim_metadata):
