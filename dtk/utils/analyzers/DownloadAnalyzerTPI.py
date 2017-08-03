@@ -74,7 +74,7 @@ class DownloadAnalyzerTPI(BaseShelfAnalyzer):
         except KeyError:
             raise KeyError('Experiment simulations must have the tag \'%s\' in order to be compatible with '
                            'DownloadAnalyzerTPI' % self.TPI_tag)
-        infix_string = '_'.join(['TPI%s' % tpi_number, 'REP1'])  # REPn is hardcoded for now; will need to change
+        infix_string = '_'.join(['TPI{:04d}'.format(tpi_number), 'REP0001'])  # REPn is hardcoded for now; will need to change
         prefix, extension = os.path.splitext(filename)
 
         constructed_filename = '_'.join([prefix, infix_string]) + extension
