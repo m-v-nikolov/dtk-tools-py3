@@ -42,7 +42,6 @@ class BaseExperimentManager:
         self.amanager = None
         self.exp_builder = None
         self.config_builder = config_builder
-        self.bypass_missing = False
         self.commandline = None
         self.experiment_tags = {}
         self.asset_service = None
@@ -179,11 +178,7 @@ class BaseExperimentManager:
         Note: we by pass the 'Campaign_Filename'
         This method only verifies local files, not (current) AssetManager-contained files
         """
-        # By-pass input file checking if we want to bypass missing files
-        if self.bypass_missing:
-            return True
-
-        # If the config builder has no file paths -> bypass
+        # Get the needed file paths
         needed_file_paths = self.config_builder.get_input_file_paths()
 
         missing_files = []

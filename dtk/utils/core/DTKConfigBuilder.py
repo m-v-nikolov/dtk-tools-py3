@@ -256,7 +256,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self, ignored=('Campaign_Filename',)):
+    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames')):
         params_dict = self.config['parameters']
         ignored = ignored
         input_files = []

@@ -78,7 +78,7 @@ class SimulationOutputParser(threading.Thread):
         if content and file_extension not in ['bin', 'csv']:
             content = cStringIO.StringIO(content).getvalue()
 
-        if content and file_extension == 'csv':
+        if content and file_extension == 'csv' and self.parse:
             from StringIO import StringIO
             content = StringIO(content)
 
