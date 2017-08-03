@@ -31,6 +31,7 @@ class SimulationOutputParser(threading.Thread):
         self.semaphore = semaphore
         self.parse = parse
 
+    @property
     def sim_path(self):
         if not self._sim_path:
             self._sim_path = self.simulation.get_path()
@@ -144,7 +145,7 @@ class SimulationOutputParser(threading.Thread):
                                    'data': channel_data}
 
     def get_sim_dir(self):
-        return self.sim_path()
+        return self.sim_path
 
 
 class CompsDTKOutputParser(SimulationOutputParser):
