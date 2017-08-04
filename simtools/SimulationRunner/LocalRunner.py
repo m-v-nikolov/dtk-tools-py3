@@ -59,7 +59,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         """
         sim_pid = self.simulation.pid
 
-        while is_running(sim_pid, name_part='Eradication'):
+        while is_running(sim_pid, name_part='Eradication') and self.simulation.status != "Cancelled":
             logger.debug("monitor: waiting on pid: %s" % sim_pid)
             self.simulation.message = self.last_status_line()
             self.update_status()

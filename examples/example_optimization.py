@@ -1,5 +1,6 @@
 # Execute directly: 'python example_optimization.py'
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
+import copy
 import math
 import random
 
@@ -21,7 +22,7 @@ except ImportError as e:
                 "Please run `dtk get_package malaria -v HEAD` to install"
     raise ImportError(message)
 
-SetupParser.default_block = 'HPC'
+SetupParser.default_block = 'LOCAL'
 
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
@@ -95,6 +96,8 @@ def constrain_sample( sample ):
 
 def map_sample_to_model_input(cb, sample):
     tags = {}
+    # Make a copy of samples so we can alter it safely
+    sample = copy.deepcopy(sample)
 
     # Can perform custom mapping, e.g. a trivial example
     if 'Clinical Fever Threshold High' in sample:
@@ -132,12 +135,12 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
+calib_manager = CalibManager(name='ExampleOptimization2',    # <-- Please customize this name
                              config_builder = cb,
                              map_sample_to_model_input_fn = map_sample_to_model_input,
                              sites = sites,
                              next_point = optimtool,
-                             sim_runs_per_param_set = 1, # <-- Replicates
+                             sim_runs_per_param_set = 3, # <-- Replicates
                              max_iterations = 3,         # <-- Iterations
                              plotters = plotters)
 
