@@ -132,7 +132,7 @@ class CalibManager(object):
 
     def exp_builder_func(self, next_params):
         return ModBuilder.from_combos(
-                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i) for i in range(self.sim_runs_per_param_set)],
+                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i+1) for i in range(self.sim_runs_per_param_set)],
                 [ModFn(site.setup_fn) for site in self.sites],
                 [ModFn(self.map_sample_to_model_input_fn, index, samples) for index, samples in  enumerate(next_params)]
         )
