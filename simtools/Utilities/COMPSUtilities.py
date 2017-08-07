@@ -206,6 +206,12 @@ def workdirs_from_suite_id(suite_id):
     return workdirs_from_simulations(sims)
 
 
+def create_suite(suite_name):
+    suite = Suite(suite_name)
+    suite.save()
+    return str(suite.id)
+
+
 def delete_suite(suite_id):
     s = Suite.get(suite_id)
     try:
