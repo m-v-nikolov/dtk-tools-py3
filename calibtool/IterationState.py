@@ -115,7 +115,9 @@ class IterationState(object):
         """
         # Depending on the type of results (lists or dicts), handle differently how we treat the results
         # This should be refactor to take care of both cases at once
-        if isinstance(self.all_results, pd.DataFrame):
+        if len(self.all_results) == 0:
+            self.all_results = None
+        elif isinstance(self.all_results, pd.DataFrame):
             self.all_results.set_index('sample', inplace=True)
             self.all_results = self.all_results[self.all_results.iteration <= iteration]
         elif isinstance(self.all_results, list):
