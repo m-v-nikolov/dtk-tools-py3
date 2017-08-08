@@ -26,7 +26,7 @@ class NumpyEncoder(json.JSONEncoder):
                         shape=obj.shape)
         try:
             # Let the base class default method raise the TypeError
-            return json.dumps(obj)
+            return super(NumpyEncoder, self).default(obj)
         except TypeError:
             return str(obj)
 
