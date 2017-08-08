@@ -23,7 +23,7 @@ class DownloadAnalyzer(BaseAnalyzer):
         analyzer = DownloadAnalyzer(filenames=['output/InsetChart.json'])
 
     """
-    def __init__(self, output_path=None, filenames=None):
+    def __init__(self, filenames=None, output_path=None):
         super(DownloadAnalyzer, self).__init__()
 
         # Process the output_path

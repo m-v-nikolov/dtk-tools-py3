@@ -40,7 +40,7 @@ class AssetCollection(object):
         for asset_file in self.asset_files_to_use:
             if isinstance(item, AssetFile):
                 if asset_file.file_name == item.file_name: return True
-            elif isinstance(item, str):
+            elif isinstance(item, str) or isinstance(item, unicode):
                 if asset_file.file_name == item: return True
         return False
 
