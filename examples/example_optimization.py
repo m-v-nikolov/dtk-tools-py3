@@ -173,4 +173,4 @@ run_calib_args = {}
 
 if __name__ == "__main__":
     SetupParser.init()
-    calib_manager.resume_calibration()
+    calib_manager.run_calibration()
