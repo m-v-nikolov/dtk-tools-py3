@@ -86,6 +86,10 @@ class CalibManager(object):
 
         return self.suites[-1]['id']
 
+    @property
+    def iteration(self):
+        return self.current_iteration.iteration if self.current_iteration else 0
+
     def run_calibration(self):
         """
         Create and run a complete multi-iteration calibration suite.
@@ -128,7 +132,7 @@ class CalibManager(object):
     def post_iteration(self):
         self.all_results = self.current_iteration.all_results
         self.summary_table = self.current_iteration.summary_table
-        self.cache_calibration()
+        self.cache_calibration(iteration=self.iteration+1)
 
     def exp_builder_func(self, next_params):
         return ModBuilder.from_combos(
@@ -612,7 +616,7 @@ class CalibManager(object):
                     except OSError:
                         logger.error("Failed to delete %s" % f)
 
-        iter_count = self.iteration
+        iter_count = self.current_iteration.iteration
         if iter_count is None:
             try:
                 calib_data = self.read_calib_data()
@@ -668,10 +672,6 @@ class CalibManager(object):
                 exp_ids.append(exp_id)
 
         return [suite['id'] for suite in calib_data['suites']], exp_ids
-
-    @property
-    def iteration(self):
-        return self.current_iteration.iteration if self.current_iteration else 0
 
     @property
     def calibration_path(self):

@@ -123,6 +123,12 @@ def get_asset_collection_by_id(collection_id, query_criteria=None):
         return None
 
 
+def is_comps_alive(endpoint):
+    import requests
+    r = requests.get(endpoint)
+    return r.status_code == 200
+
+
 def get_asset_collection_by_tag(tag_name, tag_value, query_criteria=None):
     """
     Looks to see if a collection id exists for a given collection tag
