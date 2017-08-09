@@ -11,7 +11,9 @@ from datetime import datetime
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.Utilities.General import init_logging
+from simtools.Utilities.COMPSUtilities import is_comps_alive
 
 logger = init_logging('Overseer')
 
@@ -84,16 +86,31 @@ if __name__ == "__main__":
             logger.debug("Looking for manager for experiment %s" % experiment.id)
             if experiment.id not in managers:
                 logger.debug('Creating manager for experiment id: %s' % experiment.id)
+                manager = None
                 try:
                     sys.path.append(experiment.working_directory)
                     manager = ExperimentManagerFactory.from_experiment(experiment)
                 except Exception as e:
-                    logger.error('Exception in creation manager for experiment %s' % experiment.id)
-                    logger.error(e)
-                    logger.error(traceback.format_exc())
-                    exit()
-                managers[experiment.id] = manager
-                if manager.location == "LOCAL": manager.local_queue = local_queue
+                    logger.debug('Exception in creation manager for experiment %s' % experiment.id)
+                    logger.debug(e)
+                    logger.debug(traceback.format_exc())
+                    # See what to do depending on what happened
+                    if experiment.location == "HPC":
+                        # Exit if we couldnt ping COMPS
+                        if not is_comps_alive(experiment.endpoint):
+                            logger.error("Exiting the Overseer because COMPS is not available!")
+                            exit()
+                        else:
+                            # COMPS is alive, sync this particular experiment
+                            try:
+                                exp = retrieve_experiment(experiment.id, force_update=True)
+                                manager = ExperimentManagerFactory.from_experiment(exp)
+                            except:
+                                logger.debug("Experiment %s deleted from local DB!" % experiment.id)
+                if manager:
+                    if manager.location == "LOCAL": manager.local_queue = local_queue
+                    managers[experiment.id] = manager
+
             else:
                 # Refresh the experiment
                 logger.debug("Found manager for experiment %s" % experiment.id)

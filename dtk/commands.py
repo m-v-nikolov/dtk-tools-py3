@@ -370,8 +370,8 @@ def sync(args, unknownArgs):
         for experiment_data in experiments:
             experiment = COMPS_experiment_to_local_db(exp_id=str(experiment_data.id),
                                                       endpoint=endpoint,
-                                                      verbose=False,
-                                                      save_new_experiment=True)
+                                                      verbose=True,
+                                                      save_new_experiment=False)
             if experiment:
                 exp_to_save.append(experiment)
 
