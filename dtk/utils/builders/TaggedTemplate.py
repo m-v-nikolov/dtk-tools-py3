@@ -216,14 +216,15 @@ class CampaignTemplate(TaggedTemplate):
 
 class DemographicsTemplate(TaggedTemplate):
     def set_params_and_modify_cb(self, params, cb):
+        filename = self.get_filename()
         demog_filenames = cb.params['Demographics_Filenames']
         # Make sure the filename is listed in Demographics_Filenames
-        if self.get_filename() not in demog_filenames:
+        if filename not in demog_filenames:
             # Perhaps it was a relative path
             demog_filenames_file_only = [os.path.split(fn)[1] for fn in demog_filenames]
-            if self.get_filename() in demog_filenames_file_only:
+            if filename in demog_filenames_file_only:
                 # remove relative path from demographics filename as it will now be place in the working directory
-                idx = demog_filenames_file_only.index(self.get_filename())
+                idx = demog_filenames_file_only.index(filename)
                 logger.info(
                     "Changing Demographics_Filenames: " + demog_filenames[idx] + " --> " + demog_filenames_file_only[
                         idx])
@@ -232,8 +233,7 @@ class DemographicsTemplate(TaggedTemplate):
 
             else:
                 raise Exception(
-                    "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s",
-                    self.get_filename(), demog_filenames)
+                    "Using template with filename %s for demographics, but this filename is not included in Demographics_Filenames: %s" % (self.get_filename(), demog_filenames))
 
         tags = self.set_params(params)
         cb.add_input_file(self.filename, self.get_contents())
