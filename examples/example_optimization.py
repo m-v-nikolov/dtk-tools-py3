@@ -23,7 +23,7 @@ except ImportError as e:
     raise ImportError(message)
 
 # Which simtools.ini block to use for this calibration
-SetupParser.default_block = 'LOCAL'
+SetupParser.default_block = 'HPC'
 
 # Start from a base MALARIA_SIM config builder
 # This config builder will be modify by the different sites defined below
@@ -86,6 +86,7 @@ params = [
     },
 ]
 
+
 def constrain_sample( sample ):
     """
     This function is called on every samples and allow the user to edit them before they are passed
@@ -107,6 +108,7 @@ def constrain_sample( sample ):
         sample['Min Days Between Clinical Incidents'] = int( round(sample['Min Days Between Clinical Incidents']) )
 
     return sample
+
 
 def map_sample_to_model_input(cb, sample):
     """
@@ -135,22 +137,22 @@ def map_sample_to_model_input(cb, sample):
                 print 'Warning: %s not in sample, perhaps resuming previous iteration' % p['Name']
                 continue
             value = sample.pop( p['Name'] )
-            tags.update( cb.set_param(p['Name'], value) )
+            tags.update(cb.set_param(p['Name'], value))
 
     for name,value in sample.iteritems():
         print 'UNUSED PARAMETER:', name
     assert( len(sample) == 0 ) # All params used
 
     # Run for 10 years with a random random number seed
-    tags.update( cb.set_param('Simulation_Duration', 3650) )      # 10*365
-    tags.update( cb.set_param('Run_Number', random.randint(0, 1e6)) )
+    tags.update(cb.set_param('Simulation_Duration', 3650))      # 10*365
+    tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags
 
 # Just for fun, let the numerical derivative baseline scale with the number of dimensions
 volume_fraction = 0.05   # desired fraction of N-sphere area to unit cube area for numerical derivative (automatic radius scaling with N)
-num_params = len( [p for p in params if p['Dynamic']] )
-r = math.exp( 1/float(num_params)*( math.log(volume_fraction) + gammaln(num_params/2.+1) - num_params/2.*math.log(math.pi) ) )
+num_params = len([p for p in params if p['Dynamic']])
+r = math.exp(1/float(num_params)*(math.log(volume_fraction) + gammaln(num_params/2.+1) - num_params/2.*math.log(math.pi)))
 
 optimtool = OptimTool(params, 
     constrain_sample,   # <-- WILL NOT BE SAVED IN ITERATION STATE
@@ -161,13 +163,13 @@ optimtool = OptimTool(params,
 )
 
 calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
-                             config_builder = cb,
-                             map_sample_to_model_input_fn = map_sample_to_model_input,
-                             sites = sites,
-                             next_point = optimtool,
-                             sim_runs_per_param_set = 3, # <-- Replicates
-                             max_iterations = 3,         # <-- Iterations
-                             plotters = plotters)
+                             config_builder=cb,
+                             map_sample_to_model_input_fn=map_sample_to_model_input,
+                             sites=sites,
+                             next_point=optimtool,
+                             sim_runs_per_param_set=3,  # <-- Replicates
+                             max_iterations=3,          # <-- Iterations
+                             plotters=plotters)
 
 run_calib_args = {}
 
