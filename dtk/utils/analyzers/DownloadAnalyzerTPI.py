@@ -11,8 +11,8 @@ class DownloadAnalyzerTPI(BaseShelfAnalyzer):
     """
     DONE = True
 
-    def __init__(self, filenames, TPI_tag='TPI', output_dir="output"):
-        super(DownloadAnalyzerTPI, self).__init__()
+    def __init__(self, filenames, TPI_tag='TPI', output_dir="output", shelf_filename=None):
+        super(DownloadAnalyzerTPI, self).__init__(shelf_filename=shelf_filename)
         self.filenames = filenames
         self.parse = False
         self.TPI_tag = TPI_tag
