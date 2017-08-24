@@ -219,8 +219,8 @@ def create_suite(suite_name):
 
 
 def delete_suite(suite_id):
-    s = Suite.get(suite_id)
     try:
+        s = Suite.get(suite_id)
         s.delete()
     except Exception as e:
         print "Could not delete suite %s" % suite_id

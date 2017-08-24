@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from simtools.DataAccess.DataStore import DataStore
+from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login
 from simtools.Utilities.Encoding import cast_number
@@ -21,6 +22,51 @@ def validate_exp_name(exp_name):
         return True
 
 
+def retrieve_object(obj_id, obj_type, sync_if_missing=True, verbose=False, force_update=False):
+    """
+        Retrieve an object (Experiment, Simulation) in the local database based on its id.
+        Can call a sync if missing if the flag is true
+        :param obj_id: Id of the object to retrieve
+        :param obj_type: Type of the object to retrieve
+        :param sync_if_missing: Should we try to sync if not present?
+        :return: The experiment found
+
+        #TODO: SHould also support suites
+        """
+    typename = obj_type.__name__
+    if not obj_id: raise ValueError("Trying to retrieve an object (%s) without providing an ID" % typename)
+
+    # Try a hit in the DB
+    if obj_type == Experiment:
+        obj = DataStore.get_experiment(obj_id)
+    elif obj_type == Simulation:
+        obj = DataStore.get_simulation(obj_id)
+
+    if obj:
+        # If we have an experiment and we want to force the update -> delete it
+        if not force_update:
+            return obj
+        else:
+            if obj_type == Experiment:
+                DataStore.delete_experiment(obj_id)
+            elif obj_type == Simulation:
+                DataStore.delete_simulation(obj_id)
+
+    if not sync_if_missing:
+        raise Exception('%s %s not found in the local database and sync disabled.' % (typename, obj_id))
+
+    logger.info('%s with id %s not found in local database, trying sync.' % (typename, obj_id))
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+
+    if obj_type == Experiment:
+        obj = COMPS_experiment_to_local_db(obj_id, endpoint, verbose)
+    elif obj_type == Simulation:
+        obj =None
+
+    if obj: return obj
+    raise Exception("%s '%s' could not be retrieved." % (typename, obj_id))
+
 def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_update=False):
     """
     Retrieve an experiment in the local database based on its id.
@@ -30,6 +76,8 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
     :return: The experiment found
     """
     if not exp_id: raise Exception("Trying to retrieve an experiment without providing an experiment ID")
+    from uuid import UUID
+    if isinstance(exp_id,UUID): exp_id = str(exp_id)
 
     # If we dont force the update -> look first in the DB
     exp = DataStore.get_experiment(exp_id)
