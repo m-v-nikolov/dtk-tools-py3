@@ -22,8 +22,6 @@ From a command-prompt, run the following from the **dtk-tools** directory:
 python setup.py
 ```
 
-Add the path to `dtk_tools` to your `PYTHONPATH` environment variable.
-
 **Note:** If `pip` command is not found on your system, make sure to add the Python scripts directory (by default in Windows: `C:\Python27\Scripts`)
 to your `PATH` environment variable.
 
