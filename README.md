@@ -71,9 +71,9 @@ Make sure you are in the virtual environment by checking if the prompt displays 
 (idm) my-computer:dtk-tools
 ```
 
-Install pyCOMPS (wheel available [here](https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0-py2.py3-none-any.whl))
+Install pyCOMPS (wheel available [here](https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.0.1-py2.py3-none-any.whl))
 ```
-pip install pyCOMPS-1.0-py2.py3-none-any.whl
+pip install pyCOMPS-2.0.1-py2.py3-none-any.whl
 ```
 
 Navigate inside the `dtk-tools` folder and install dtk-tools:
@@ -93,6 +93,7 @@ Linux users, you need to install:
 - python-snappy
 - snappy-dev
 - LAPACK
+
 In order for the tools to work.
 
 Remark: the command ```python setup.py``` from previous step will do these installation for you!
