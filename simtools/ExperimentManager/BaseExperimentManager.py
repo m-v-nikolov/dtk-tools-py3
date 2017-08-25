@@ -182,9 +182,9 @@ class BaseExperimentManager:
         needed_file_paths = self.config_builder.get_input_file_paths()
 
         missing_files = []
-        for needef_file in needed_file_paths:
-            if os.path.basename(needef_file) not in self.assets:
-                missing_files.append(needef_file)
+        for needed_file in needed_file_paths:
+            if os.path.basename(needed_file) not in self.assets:
+                missing_files.append(needed_file)
 
         if len(missing_files) > 0:
             print('The following files are specified in the config.json file but not present in the available assets:')
