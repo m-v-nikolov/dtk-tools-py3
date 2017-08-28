@@ -199,10 +199,10 @@ class AnalyzeManager:
         map(self.create_parsers_for_experiment_from_simulation, self.experiments_simulations.keys())
 
         # only process experiments that have at least some data in them
-        # for experiment in self.experiments:
-        #     if experiment not in self.experiments_with_data: # this is set in self.create_parsers_for_experiment
-        #         print('Experiment %s has no simulations ready for analysis, skipping...' % experiment.exp_id)
-        #         self.experiments.remove(experiment)
+        for experiment in self.experiments:
+            if experiment not in self.experiments_with_data: # this is set in self.create_parsers_for_experiment
+                print('Experiment %s has no simulations ready for analysis, skipping...' % experiment.exp_id)
+                self.experiments.remove(experiment)
 
         if len(self.parsers) == 0:
             print('No experiments/simulations for analysis.')
