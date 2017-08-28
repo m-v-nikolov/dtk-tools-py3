@@ -57,6 +57,8 @@ class AnalyzeManager:
         self.analyzers.append(analyzer)
 
     def create_parsers_for_experiment(self, experiment):
+        self.experiments_with_data = [] # This is to aid in gracefully handling failures due to no data
+
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
@@ -87,9 +89,14 @@ class AnalyzeManager:
         p.join()
 
         # Retrieve the parsers from the pool
+        data = False
         for r in res:
             parser = r.get()
-            if parser: self.parsers.append(parser)
+            if parser:
+                self.parsers.append(parser)
+                data = True
+        if data:
+            self.experiments_with_data.append(experiment)
 
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
@@ -129,6 +136,16 @@ class AnalyzeManager:
 
         # Create the parsers for the experiments
         map(self.create_parsers_for_experiment, self.experiments)
+
+        # only process experiments that have at least some data in them
+        for experiment in self.experiments:
+            if experiment not in self.experiments_with_data: # this is set in self.create_parsers_for_experiment
+                print('Experiment %s has no simulations ready for analysis, skipping...' % experiment.exp_id)
+                self.experiments.remove(experiment)
+
+        if len(self.experiments) == 0:
+            print('No experiments have data ready for analysis.')
+            return # mimic the above len(self.analyzers) == 0 behavior
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()
