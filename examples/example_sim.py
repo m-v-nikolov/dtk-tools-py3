@@ -10,7 +10,7 @@ cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 configure_site(cb, 'Namawala')
 
 run_sim_args =  {
-    'exp_name': 'ExampleSim',
+    'exp_name': 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU',
     'config_builder': cb
 }
 

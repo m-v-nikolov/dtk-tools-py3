@@ -57,14 +57,16 @@ class CompsExperimentManager(BaseExperimentManager):
 
         return str(suite.id)
 
+    MAX_SUBDIRECTORY_LENGTH = 50 - len(timestamp()) - 1 # avoid maxpath issues on COMPS
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
         COMPS_login(SetupParser.get('server_endpoint'))
-        experiment_name = self.clean_and_verify_experiment_name(experiment_name)
+        experiment_name = self.clean_experiment_name(experiment_name)
+        subdirectory = experiment_name[0:self.MAX_SUBDIRECTORY_LENGTH] + '_' + timestamp()
         config = Configuration(
             environment_name=SetupParser.get('environment'),
             simulation_input_args=self.commandline.Options,
-            working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + timestamp()),
+            working_directory_root=os.path.join(SetupParser.get('sim_root'), subdirectory),
             executable_path=self.commandline.Executable,
             node_group_name=SetupParser.get('node_group'),
             maximum_number_of_retries=int(SetupParser.get('num_retries')),

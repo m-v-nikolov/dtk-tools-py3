@@ -94,7 +94,7 @@ class LocalExperimentManager(BaseExperimentManager):
         return simulations
 
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
-        experiment_name = self.clean_and_verify_experiment_name(experiment_name)
+        experiment_name = self.clean_experiment_name(experiment_name)
 
         # Create a unique id
         experiment_id = re.sub('[ :.-]', '_', str(datetime.now()))
