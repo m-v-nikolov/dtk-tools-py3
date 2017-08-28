@@ -23,7 +23,7 @@ from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
-from simtools.Utilities.General import is_running
+from simtools.Utilities.General import is_running, timestamp
 from simtools.Utilities.LocalOS import LocalOS
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -445,3 +445,21 @@ class BaseExperimentManager:
             eradication_options['--input-path'] = './Assets'
 
         return CommandlineGenerator(exe_path, eradication_options, [])
+
+    MAX_EXPERIMENT_NAME_LENGTH = 50 - len(timestamp()) - 1 # characters, accounting for timestamp suffix used in pathing
+    def clean_and_verify_experiment_name(self, experiment_name):
+        """
+        Enforce any COMPS-specific demands on experiment names. Raises exceptions if requirements not met.
+        :param experiment_name: a str
+        :return: the experiment name allowed for use (e.g. may be cleaned)
+        """
+        # cleaning step
+        for c in ['/', '\\', ':']:
+            experiment_name = experiment_name.replace(c, '_')
+
+        # verification step
+        if len(experiment_name) > self.MAX_EXPERIMENT_NAME_LENGTH:
+            raise Exception('Experiment names must be no longer than %d characters. Error with: %s .'
+                            % (self.MAX_EXPERIMENT_NAME_LENGTH, experiment_name))
+        return experiment_name
+

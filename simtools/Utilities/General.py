@@ -405,15 +405,22 @@ def files_in_dir(dir, filters=None):
                 discovered_files.append(os.path.join(trimmed_root, filename))
     return discovered_files
 
+def timestamp(time=None):
+    """
+    :param time: a time object; if None provided, use now.
+    :return: A str timestamp in UTC, format: YYYYMMDD_HHmmSS
+    """
+    import datetime
+    if not time:
+        time = datetime.datetime.utcnow()
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    return timestamp
+
 def timestamp_filename(filename, time=None):
     """
     Create a timestamped filename by appending the time to the given filename.
     :param filename: any filename to form the prefix of the output filename
     :return: a filename that is the given filename + a timestamp
     """
-    import datetime
-    if not time:
-        time = datetime.datetime.utcnow()
-    timestamp = time.strftime('%Y%m%d_%H%M%S')
-    new_filename = '.'.join([filename, timestamp])
+    new_filename = '.'.join([filename, timestamp(time)])
     return new_filename

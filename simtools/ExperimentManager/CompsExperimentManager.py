@@ -1,7 +1,4 @@
-import multiprocessing
 import os
-import re
-from datetime import datetime
 
 from COMPS.Data import Experiment, Configuration, Priority, Suite
 from simtools.DataAccess.Schema import Simulation
@@ -10,7 +7,7 @@ from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
 from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, timestamp
 
 logger = init_logging("COMPSExperimentManager")
 
@@ -63,11 +60,11 @@ class CompsExperimentManager(BaseExperimentManager):
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
         COMPS_login(SetupParser.get('server_endpoint'))
-
+        experiment_name = self.clean_and_verify_experiment_name(experiment_name)
         config = Configuration(
             environment_name=SetupParser.get('environment'),
             simulation_input_args=self.commandline.Options,
-            working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + re.sub('[ :.-]', '_', str(datetime.now()))),
+            working_directory_root=os.path.join(SetupParser.get('sim_root'), experiment_name + '_' + timestamp()),
             executable_path=self.commandline.Executable,
             node_group_name=SetupParser.get('node_group'),
             maximum_number_of_retries=int(SetupParser.get('num_retries')),
