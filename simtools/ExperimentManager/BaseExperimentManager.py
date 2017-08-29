@@ -157,7 +157,7 @@ class BaseExperimentManager:
         if not self.config_builder.ignore_missing and not self.validate_input_files(): exit()
 
         # Set the appropriate command line
-        self.commandline = self.get_commandline()
+        self.commandline = self.config_builder.get_commandline()
 
         # Set the tags
         self.experiment_tags.update(experiment_tags or {})
@@ -422,26 +422,3 @@ class BaseExperimentManager:
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
 
-    def get_commandline(self):
-        """
-        Get the complete command line to run the simulations of this experiment.
-        Returns:
-            The :py:class:`CommandlineGenerator` object created with the correct paths
-
-        """
-        from simtools.Utilities.General import CommandlineGenerator
-
-        eradication_options = {'--config': 'config.json'}
-
-        python_path = SetupParser.get('python_path', default=None)
-        if python_path:
-            eradication_options['--python-script-path'] = python_path
-
-        if self.location == 'LOCAL':
-            exe_path = self.config_builder.stage_executable(SetupParser.get('exe_path'), SetupParser.get('bin_staging_root'))
-            eradication_options['--input-path'] = SetupParser.get('input_root')
-        else:
-            exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'Eradication.exe'))
-            eradication_options['--input-path'] = './Assets'
-
-        return CommandlineGenerator(exe_path, eradication_options, [])

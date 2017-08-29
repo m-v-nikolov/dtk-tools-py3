@@ -184,7 +184,7 @@ class SimulationAssets(object):
     def _gather_files(self, config_builder, collection_type):
         """
         Identifies local files associated with the given collection_type.
-        :param config_builder: A DTKConfigBuilder object associated with this process
+        :param config_builder: A ConfigBuilder object associated with this process
         :param collection_type: one of cls.COLLECTION_TYPES
         :return: A FileList object
         """

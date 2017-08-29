@@ -29,7 +29,6 @@ class AnalyzeManager:
         self.parsers = []
         self.force_analyze = force_analyze
         self.create_dir_map = create_dir_map
-        self.standalones = []
 
         # If no experiment is specified, retrieve the most recent as a convenience
         if exp_list == 'latest':
@@ -50,17 +49,6 @@ class AnalyzeManager:
 
         if experiment not in self.experiments:
             self.experiments.append(experiment)
-
-    def add_simulations(self, simulations):
-        from simtools.DataAccess.Schema import Simulation
-        if isinstance(simulations, Simulation):
-            simulations = [simulations]
-
-        if not isinstance(simulations, list):
-            raise RuntimeError("Simulations passed to the add_simulations function should be a list")
-
-        self.standalones += simulations
-
 
     def add_analyzer(self, analyzer, working_dir=None):
         analyzer.working_dir = working_dir or self.working_dir
@@ -131,10 +119,6 @@ class AnalyzeManager:
         # Create the parser
         return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, parse)
 
-    def create_parsers_for_standalones(self):
-        for so in self.standalones:
-            pass
-
     def analyze(self):
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
@@ -145,8 +129,6 @@ class AnalyzeManager:
 
         # Create the parsers for the experiments
         map(self.create_parsers_for_experiment, self.experiments)
-        self.create_parsers_for_standalones()
-
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()
