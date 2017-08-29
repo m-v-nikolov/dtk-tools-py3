@@ -179,4 +179,5 @@ if __name__ == "__main__":
     # The following line is allowing to wait for the experiment to complete successfully
     # and display the status every few seconds. It is optional.
     exp_manager.wait_for_finished(verbose=True)
+    assert (exp_manager.succeeded())
 

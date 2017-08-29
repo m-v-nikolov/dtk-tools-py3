@@ -158,7 +158,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
     @classmethod
     def createSimDirectoryMap(cls, exp_id=None, suite_id=None, save=True, comps_experiment=None, verbose=True):
-        if suite_id:
+        if suite_id and not exp_id:
             sim_map = workdirs_from_suite_id(suite_id)
         elif exp_id:
             sim_map = workdirs_from_experiment_id(exp_id, comps_experiment)

@@ -1,7 +1,6 @@
 import os
 
 from simtools.AssetManager.AssetFile import AssetFile
-from simtools.Utilities.General import clean_path
 
 
 class FileList:
@@ -17,7 +16,7 @@ class FileList:
 
         # Make sure we have correct separator
         if files_in_root:
-            files_in_root = [clean_path(f) for f in files_in_root]
+            files_in_root = [os.path.normpath(f) for f in files_in_root]
 
         if root:
             self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
@@ -61,7 +60,7 @@ class FileList:
 
             for file_name in files_in_dir:
                 file_path = os.path.join(path, file_name)
-                f_relative_path = clean_path(file_path.replace(path, '').replace(os.path.basename(file_path), ''))
+                f_relative_path = os.path.normpath(file_path.replace(path, '').replace(os.path.basename(file_path), ''))
                 if relative_path is not None:
                     f_relative_path = os.path.join(relative_path, f_relative_path)
                 self.add_file(file_path, relative_path=f_relative_path)
