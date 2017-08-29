@@ -31,3 +31,5 @@ if __name__ == "__main__":
     SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**run_sim_args)
+    exp_manager.wait_for_finished(verbose=True)
+    assert (exp_manager.succeeded())

@@ -299,7 +299,7 @@ def clear_batch(args, unknownArgs):
 
 
 def analyze_list(args, unknownArgs):
-    logger.error('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
+    logger.info('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
 
 
 def log(args, unknownArgs):

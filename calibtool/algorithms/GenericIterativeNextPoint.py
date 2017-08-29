@@ -1,9 +1,9 @@
 import copy
 
-from calibtool.algorithms.BaseNextPointAlgorithm import BaseNextPointAlgorithm
+from calibtool.algorithms.NextPointAlgorithm import NextPointAlgorithm
 
 
-class GenericIterativeNextPoint(BaseNextPointAlgorithm):
+class GenericIterativeNextPoint(NextPointAlgorithm):
     """
     Represents a Generic Next Point allowing thew Calibtool to function as a more generic iterative process.
     Here a dictionary needs to be passed as the state. 
