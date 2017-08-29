@@ -11,6 +11,12 @@ class CMSConfigBuilder(SimConfigBuilder):
         super(CMSConfigBuilder, self).__init__(config)
         self.model = model
 
+    def set_config_param(self, param, value):
+        self.config[param] = value
+
+    def get_config_param(self, param):
+        return self.config[param] if param in self.config else None
+
     def get_commandline(self):
         """
         Get the complete command line to run the simulations of this experiment.
@@ -49,7 +55,10 @@ class CMSConfigBuilder(SimConfigBuilder):
         model = open(model_file, 'r').read()
 
         # Read the config
-        config = json.load(open(config_file, 'r'))
+        if config_file:
+            config = json.load(open(config_file, 'r'))
+        else:
+            config = {}
 
         # Do the overrides
         config.update(**kwargs)
@@ -72,13 +81,12 @@ class CMSConfigBuilder(SimConfigBuilder):
             write_fn: The function that will write the files. This function needs to take a file name and a content.
         """
         # Handle the config
-        if self.config:
-            if self.human_readability:
-                config = json.dumps(self.config, sort_keys=True, indent=3, cls=NumpyEncoder).strip('"')
-            else:
-                config = json.dumps(self.config, sort_keys=True, cls=NumpyEncoder).strip('"')
+        if self.human_readability:
+            config = json.dumps(self.config, sort_keys=True, indent=3, cls=NumpyEncoder).strip('"')
+        else:
+            config = json.dumps(self.config, sort_keys=True, cls=NumpyEncoder).strip('"')
 
-            write_fn('config.json', config)
+        write_fn('config.json', config)
 
         # And now the model
         write_fn('model.emodl', self.model)
