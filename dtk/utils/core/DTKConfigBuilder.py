@@ -80,11 +80,9 @@ class DTKConfigBuilder(SimConfigBuilder):
 
     """
     def __init__(self, config=None, campaign=empty_campaign, **kwargs):
+        super(DTKConfigBuilder, self).__init__(config, **kwargs)
         self.config = config or {'parameters': {}}
         self.campaign = campaign
-        # Indent the files when dumping or not
-        self.human_readability = True
-        self.ignore_missing = False
         self.demog_overlays = {}
         self.input_files = {}
         self.custom_reports = []
@@ -93,12 +91,6 @@ class DTKConfigBuilder(SimConfigBuilder):
                              'disease_plugins': [],
                              'reporter_plugins': []}
         self.update_params(kwargs, validate=True)
-
-        self.assets = SimulationAssets()
-
-    @property
-    def experiment_files(self):
-        return self.assets.experiment_files
 
     @classmethod
     def from_defaults(cls, sim_type=None, **kwargs):
@@ -231,6 +223,31 @@ class DTKConfigBuilder(SimConfigBuilder):
         config["parameters"]["Simulation_Type"] = sim_type
 
         return cls(config, campaign, **kwargs)
+
+    def get_commandline(self):
+        """
+        Get the complete command line to run the simulations of this experiment.
+        Returns:
+            The :py:class:`CommandlineGenerator` object created with the correct paths
+
+        """
+        from simtools.Utilities.General import CommandlineGenerator
+        from simtools.SetupParser import SetupParser
+
+        eradication_options = {'--config': 'config.json'}
+
+        python_path = SetupParser.get('python_path', default=None)
+        if python_path:
+            eradication_options['--python-script-path'] = python_path
+
+        if SetupParser.get('type') == 'LOCAL':
+            exe_path = self.stage_executable(self.assets.exe_path, SetupParser.get('bin_staging_root'))
+            eradication_options['--input-path'] = self.assets.input_root
+        else:
+            exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'Eradication.exe'))
+            eradication_options['--input-path'] = './Assets'
+
+        return CommandlineGenerator(exe_path, eradication_options, [])
 
     @classmethod
     def from_files(cls, config_name, campaign_name=None, **kwargs):
@@ -392,31 +409,6 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         """
         self.config['parameters']['Demographics_Filenames'].append(demog_file)
-
-    def set_experiment_executable(self, path):
-        self.assets.exe_path = os.path.abspath(path)
-
-    def set_input_files_root(self, path):
-        self.assets.input_root = os.path.abspath(path)
-
-    def set_dll_root(self, path):
-        self.assets.dll_root = os.path.abspath(path)
-
-    def set_input_collection(self, collection):
-        self.assets.set_base_collection(SimulationAssets.INPUT, collection)
-
-    def set_dll_collection(self, collection):
-        self.assets.set_base_collection(SimulationAssets.DLL, collection)
-
-    def set_exe_collection(self, collection):
-        self.assets.set_base_collection(SimulationAssets.EXE, collection)
-
-    def get_assets(self):
-        self.assets.create_collections(self)
-        return self.assets
-
-    def set_collection_id(self, collection):
-        self.assets.set_base_collection(SimulationAssets.MASTER, collection)
 
     def add_demog_overlay(self, name, content):
         """
