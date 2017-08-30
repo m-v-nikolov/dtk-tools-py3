@@ -19,7 +19,7 @@ class SimpleCMSAnalyzer(BaseAnalyzer):
 
     def plot(self):
         import matplotlib.pyplot as plt
-        self.data.plot()
+        self.data.plot(x='sampletimes')
         plt.show()
 
     def __init__(self):
