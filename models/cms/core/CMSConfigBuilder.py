@@ -10,6 +10,7 @@ class CMSConfigBuilder(SimConfigBuilder):
     def __init__(self, model, config=None):
         super(CMSConfigBuilder, self).__init__(config)
         self.model = model
+        self.exe_name = 'compartments.exe'
 
     def set_config_param(self, param, value):
         self.config[param] = value
@@ -27,14 +28,14 @@ class CMSConfigBuilder(SimConfigBuilder):
         from simtools.Utilities.General import CommandlineGenerator
         from simtools.SetupParser import SetupParser
 
-        eradication_options = {'-config': 'config.json', '-model': 'model.emodl'}
+        cms_options = {'-config': 'config.json', '-model': 'model.emodl'}
 
         if SetupParser.get('type') == 'LOCAL':
             exe_path = self.assets.exe_path
         else:
-            exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'compartments.exe'))
+            exe_path = os.path.join('Assets', self.exe_name)
 
-        return CommandlineGenerator(exe_path, eradication_options, [])
+        return CommandlineGenerator(exe_path, cms_options, [])
 
     @classmethod
     def from_files(cls, model_file, config_file=None, **kwargs):
