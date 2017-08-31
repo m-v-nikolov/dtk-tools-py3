@@ -11,7 +11,7 @@ cb = CMSConfigBuilder.from_files(model_file='inputs/models/simplemodel.emodl',
 # If the base collection containing CMS exists, use it
 # If not, use the local
 try:
-    cb.set_collection_id('fcbbeced-ff8c-e711-9401-f0921c16849d')
+    cb.set_collection_id('CMS 0.82 Pre-release')
 except SimulationAssets.InvalidCollection:
     cb.set_experiment_executable('inputs/compartments/compartments.exe')
     cb.set_dll_root('inputs/compartments')
