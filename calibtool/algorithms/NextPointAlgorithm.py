@@ -18,6 +18,9 @@ class NextPointAlgorithm:
     def cleanup(self):
         pass
 
+    def restore(self, iteration_state):
+        pass
+
     @abstractmethod
     def get_param_names(self):
         pass
