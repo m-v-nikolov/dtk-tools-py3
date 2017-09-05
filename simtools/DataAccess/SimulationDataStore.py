@@ -8,6 +8,8 @@ from sqlalchemy import not_
 from sqlalchemy import update
 
 from simtools.Utilities.General import init_logging
+from sqlalchemy.orm import joinedload
+
 logger = init_logging('DataAccess')
 from COMPS.Data.Simulation import SimulationState
 
@@ -74,7 +76,7 @@ class SimulationDataStore:
     def get_simulation(cls, sim_id):
         logger.debug("Get simulation")
         with session_scope() as session:
-            simulation = session.query(Simulation).filter(Simulation.id == sim_id).one_or_none()
+            simulation = session.query(Simulation).options(joinedload('experiment')).filter(Simulation.id == sim_id).one_or_none()
             session.expunge_all()
 
         return simulation
