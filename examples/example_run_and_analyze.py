@@ -33,6 +33,6 @@ if __name__ == "__main__":
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
 
-    am = AnalyzeManager('latest')
+    am = AnalyzeManager(exp_manager.experiment)
     map(am.add_analyzer, analyzers)
     am.analyze()
