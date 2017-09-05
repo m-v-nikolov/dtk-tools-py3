@@ -103,16 +103,37 @@ class MultiProcessStringIO(StringIO):
     # These ugly, non-generic extensions to the super class are required by pandas to .read_csv without failure
     # (specifically, the read() interface must be identical to StringIO)
     def read(self, n=-1):
-        return StringIO.read(self, n=n)
+        pid = os.getpid()
+        with self._lock:
+            result = StringIO.read(self, n=n)
+        return result
 
     def readline(self, length=None):
-        return StringIO.readline(self, length=length)
+        pid = os.getpid()
+        with self._lock:
+            if pid not in self._registered_processes:
+                raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
+            with PidIndex(pid=pid, io=self):
+                result = StringIO.readline(self, length=length)
+        return result
 
     def readlines(self, sizehint=0):
-        return StringIO.readlines(self, sizehint=sizehint)
+        pid = os.getpid()
+        with self._lock:
+            if pid not in self._registered_processes:
+                raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
+            with PidIndex(pid=pid, io=self):
+                result = StringIO.readlines(self, sizehint=sizehint)
+        return result
 
     def seek(self, pos, mode=0):
-        return StringIO.seek(self, pos=pos, mode=mode)
+        pid = os.getpid()
+        with self._lock:
+            if pid not in self._registered_processes:
+                raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
+            with PidIndex(pid=pid, io=self):
+                result = StringIO.seek(self, pos=pos, mode=mode)
+        return result
 
     # pandas does NOT support the use of the _super_interface() method, though the code does work otherwise.
     #
