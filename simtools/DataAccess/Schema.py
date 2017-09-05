@@ -156,6 +156,7 @@ class Experiment(Base):
 
         return ret
 
+
 class Batch(Base):
     __tablename__ = "batches"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -165,6 +166,9 @@ class Batch(Base):
     experiments = relationship("Experiment", secondary="batch_experiment", lazy='subquery',
                                order_by="Experiment.date_created")
 
+    simulations = relationship("Simulation", secondary="batch_simulation", lazy='subquery',
+                               order_by="Simulation.date_created")
+
     def __repr__(self):
         return "%s (id=%s)" % (self.name, self.id)
 
@@ -172,6 +176,12 @@ class Batch(Base):
     def get_experiment_ids(self):
         exp_ids = [exp.exp_id for exp in self.experiments]
         return exp_ids
+
+    # must be called from an instance
+    def get_simulation_ids(self):
+        sim_ids = [sim.id for sim in self.simulations]
+        return sim_ids
+
 
 class BatchExperiment(Base):
     __tablename__ = "batch_experiment"
@@ -181,5 +191,15 @@ class BatchExperiment(Base):
 
     def __repr__(self):
         return "batch_experiment"
+
+
+class BatchSimulation(Base):
+    __tablename__ = "batch_simulation"
+    batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
+    sim_id = Column(String, ForeignKey('simulations.id'), primary_key=True)
+    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
+
+    def __repr__(self):
+        return "batch_simulation"
 
 Base.metadata.create_all(engine)
