@@ -90,19 +90,45 @@ class MultiProcessStringIO(StringIO):
                 return None
 
     # These are the StringIO methods that are extended for multi-process use
-    def read(self, **kwargs):
-        method = inspect.stack()[0][3]
-        return self._super_interface(method, **kwargs)
 
-    def readline(self, **kwargs):
-        method = inspect.stack()[0][3]
-        return self._super_interface(method, **kwargs)
+    # This does not work
+    # def read(self, **kwargs):
+    #     print('read kwargs: %s' % kwargs)
+    #     return StringIO.read(self, **kwargs)
 
-    def readlines(self, **kwargs):
-        method = inspect.stack()[0][3]
-        return self._super_interface(method, **kwargs)
+    # This works
+    # def read(self, n=-1):
+    #     return StringIO.read(self, n=n)
 
-    def seek(self, **kwargs):
-        method = inspect.stack()[0][3]
-        return self._super_interface(method, **kwargs)
+    # These ugly, non-generic extensions to the super class are required by pandas to .read_csv without failure
+    # (specifically, the read() interface must be identical to StringIO)
+    def read(self, n=-1):
+        return StringIO.read(self, n=n)
+
+    def readline(self, length=None):
+        return StringIO.readline(self, length=length)
+
+    def readlines(self, sizehint=0):
+        return StringIO.readlines(self, sizehint=sizehint)
+
+    def seek(self, pos, mode=0):
+        return StringIO.seek(self, pos=pos, mode=mode)
+
+    # pandas does NOT support the use of the _super_interface() method, though the code does work otherwise.
+    #
+    # def read(self, **kwargs):
+    #     method = inspect.stack()[0][3]
+    #     return self._super_interface(method, **kwargs)
+    #
+    # def readline(self, **kwargs):
+    #     method = inspect.stack()[0][3]
+    #     return self._super_interface(method, **kwargs)
+    #
+    # def readlines(self, **kwargs):
+    #     method = inspect.stack()[0][3]
+    #     return self._super_interface(method, **kwargs)
+    #
+    # def seek(self, **kwargs):
+    #     method = inspect.stack()[0][3]
+    #     return self._super_interface(method, **kwargs)
 
