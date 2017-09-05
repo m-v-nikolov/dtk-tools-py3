@@ -36,10 +36,11 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         self._experiment = experiment
         if experiment:
-            for sim in experiment.simulations:
-                if sim.status not in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
-                    if sim.id not in self.unfinished_simulations:
-                        self.unfinished_simulations[sim.id] = sim
+            if hasattr(experiment, 'simulations'):
+                for sim in experiment.simulations:
+                    if sim.status not in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
+                        if sim.id not in self.unfinished_simulations:
+                            self.unfinished_simulations[sim.id] = sim
 
     def __init__(self, experiment, config_builder):
         self.local_queue = None
