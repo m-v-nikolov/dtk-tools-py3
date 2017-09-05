@@ -83,11 +83,10 @@ class AssetCollection(object):
         """
         selected = {}
         for asset_file in existing:
-            relative_path = asset_file.relative_path if asset_file.relative_path is not None else ''
-            selected[os.path.join(relative_path, asset_file.file_name)] = asset_file
+            selected[os.path.join(asset_file.relative_path or '', asset_file.file_name)] = asset_file
 
         for asset_file in local:
-            selected[os.path.join(asset_file.relative_path, asset_file.file_name)] = asset_file
+            selected[os.path.join(asset_file.relative_path or '', asset_file.file_name)] = asset_file
 
         return selected.values()
 

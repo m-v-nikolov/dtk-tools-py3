@@ -11,6 +11,8 @@ class AssetFile:
             raise Exception("File: %s does not exist!" % absolute_path)
 
         self.relative_path = os.path.normpath(relative_path)
+        # Follow COMPS convention None means root
+        self.relative_path = None if self.relative_path == '.' else self.relative_path
         self.file_name = os.path.normpath(file_name)
 
         self.absolute_path = absolute_path or os.path.join(os.getcwd(), self.relative_path, file_name)
