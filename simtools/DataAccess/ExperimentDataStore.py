@@ -109,6 +109,20 @@ class ExperimentDataStore:
             return cls.get_active_experiments(location)
 
     @classmethod
+    def get_experiment_from_simulation(cls, simulation=None):
+        """
+        Get associated experiment given simulation
+        """
+        logger.debug("Get experiment from simulation")
+        with session_scope() as session:
+            experiment = session.query(Experiment).filter(Experiment.exp_id == simulation.experiment_id) \
+                .options(joinedload('simulations').joinedload('experiment')) \
+                .one_or_none()
+
+            session.expunge_all()
+        return experiment
+
+    @classmethod
     def delete_experiment(cls, experiment):
         logger.debug("Delete experiment %s" % experiment.id)
         with session_scope() as session:
