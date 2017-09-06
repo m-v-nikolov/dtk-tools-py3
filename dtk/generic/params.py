@@ -34,7 +34,6 @@ params = {
     
     "Num_Cores": 1,
     "Python_Script_Path": "",
-    "Serialization_Test_Cycles": 0,
 
     "Load_Balance_Filename": "",
     "Load_Balance_Scheme": "STATIC",
