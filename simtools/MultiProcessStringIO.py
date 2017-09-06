@@ -27,6 +27,7 @@ class PidIndex(object):
         self.io._read_positions[self.pid] = self.io.pos # update this pid's read index for next time
         self.io.pos = self.original_pos
 
+class AlreadyRegistered(Exception): pass
 class NotRegistered(Exception): pass
 
 class MultiProcessStringIO(StringIO):
@@ -42,6 +43,7 @@ class MultiProcessStringIO(StringIO):
         StringIO.__init__(self, buf=buf)
         self._lock = lock or Lock()
         self._read_positions = {}
+        self.locking_pid = None # this is to handle the multiple readline() calls internal to readlines()
 
     @property
     def _registered_processes(self):
@@ -64,25 +66,27 @@ class MultiProcessStringIO(StringIO):
             with PidIndex(pid=pid, io=self):
                 return StringIO.read(self, **kwargs)
 
-    def register(self, pid=os.getpid()):
+    def register(self):
         """
         Create a read index for the specified (or current) process. Will not alter the read index if pid is already
         registered.
         :return: the pid of the registered process
         """
-        pid = int(pid)
+        pid = os.getpid()
         with self._lock:
-            if pid not in self._registered_processes:
+            if pid in self._registered_processes:
+                raise AlreadyRegistered('pid: %d already registered'% pid)
+            else:
                 self._read_positions[pid] = 0 # create a new read index at the beginning
         return pid
 
-    def unregister(self, pid=os.getpid()):
+    def unregister(self):
         """
         Remove this process's read index.
         :param pid: a process id (int)
         :return: the pid that was unregistered, None if pid was not registered
         """
-        pid = int(pid)
+        pid = os.getpid()
         with self._lock:
             if self._read_positions.pop(pid, None) is not None:
                 return pid
@@ -105,16 +109,26 @@ class MultiProcessStringIO(StringIO):
     def read(self, n=-1):
         pid = os.getpid()
         with self._lock:
-            result = StringIO.read(self, n=n)
-        return result
-
-    def readline(self, length=None):
-        pid = os.getpid()
-        with self._lock:
             if pid not in self._registered_processes:
                 raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
             with PidIndex(pid=pid, io=self):
-                result = StringIO.readline(self, length=length)
+                result = StringIO.read(self, n=n)
+        return result
+
+    def _do_readline(self, pid, length=None):
+        return StringIO.readline(self, length=length)
+
+    def readline(self, length=None):
+        pid = os.getpid()
+        if self.locking_pid and self.locking_pid == pid:
+            # already have the lock, continue; likely a readlines() is going on, which calls readline() repeatedly
+            result = self._do_readline(length=length, pid=pid)
+        else:
+            with self._lock:
+                if pid not in self._registered_processes:
+                    raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
+                with PidIndex(pid=pid, io=self):
+                    result = self._do_readline(length=length, pid=pid)
         return result
 
     def readlines(self, sizehint=0):
@@ -122,8 +136,10 @@ class MultiProcessStringIO(StringIO):
         with self._lock:
             if pid not in self._registered_processes:
                 raise NotRegistered('Current process is not registered to use this MultiProcessStringIO object.')
+            self.locking_pid = pid # needed to help deal with the multi-call to readline() inherent to readlines()
             with PidIndex(pid=pid, io=self):
                 result = StringIO.readlines(self, sizehint=sizehint)
+            self.locking_pid = None
         return result
 
     def seek(self, pos, mode=0):
