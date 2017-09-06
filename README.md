@@ -93,6 +93,8 @@ Linux users, you need to install:
 - python-snappy
 - snappy-dev
 - LAPACK
+- tk-dev
+- pysqlite2
 
 In order for the tools to work.
 
