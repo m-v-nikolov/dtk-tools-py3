@@ -70,15 +70,6 @@ def populate_stdout_arguments(subparsers, func=None):
     return parser_stdout
 
 
-# 'dtk progress' options
-def populate_progress_arguments(subparsers, func=None):
-    parser_progress = subparsers.add_parser('progress', help='Print progress from simulation(s) in experiment.')
-    parser_progress.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_progress.add_argument('-id', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to print.')
-    parser_progress.add_argument('-c', '--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
-    return parser_progress
-
-
 # 'dtk analyze' options
 def populate_analyze_arguments(subparsers, func=None):
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')

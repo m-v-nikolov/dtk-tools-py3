@@ -7,7 +7,7 @@ import sys
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
-from dtk.utils.analyzers import ProgressAnalyzer, sample_selection
+from dtk.utils.analyzers import sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers.group import group_by_name
@@ -256,20 +256,6 @@ def stdout(args, unknownArgs):
 
     am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error), force_analyze=True)
     am.analyze()
-
-
-def progress(args, unknownArgs):
-    logger.info('Getting progress...')
-
-    exp_manager = reload_experiment(args)
-    states, msgs = exp_manager.get_simulation_status()
-
-    exp_manager.add_analyzer(ProgressAnalyzer(args.simIds))
-
-    if args.comps:
-        SetupParser.overrides['use_comps_asset_svc'] = '1'
-
-    exp_manager.analyze_experiment()
 
 
 def analyze(args, unknownArgs):
@@ -625,11 +611,6 @@ def main():
     # 'dtk stdout' options
     parser_stdout = commands_args.populate_stdout_arguments(subparsers)
     parser_stdout.set_defaults(func=stdout)
-
-    # 'dtk progress' options
-    # Deactivated for now as it is impossible to read status.txt on COMPS
-    # parser_progress = commands_args.populate_progress_arguments(subparsers)
-    # parser_progress.set_defaults(func=progress)
 
     # 'dtk analyze' options
     parser_analyze = commands_args.populate_analyze_arguments(subparsers)

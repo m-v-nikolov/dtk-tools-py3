@@ -84,7 +84,6 @@ params = {
     "Sample_Rate_20_Plus": 1,
     "Sample_Rate_5_9": 1,
     "Sample_Rate_Birth": 2,
-    "Serialization_Test_Cycles": 0,
     "Simulation_Duration": 3650,
     "Simulation_Timestep": 1,
     "Simulation_Type": "GENERIC_SIM",
