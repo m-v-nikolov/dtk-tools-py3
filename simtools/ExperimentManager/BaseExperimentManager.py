@@ -320,6 +320,7 @@ class BaseExperimentManager:
         DataStore.delete_experiment(self.experiment)
 
     def wait_for_finished(self, verbose=False, sleep_time=5):
+        timeout = 3600 * 24 # 48 hours timeout
         while True:
             # Get the new status
             try:
@@ -329,6 +330,9 @@ class BaseExperimentManager:
                 print (e)
                 return
 
+            if timeout < 0:
+                raise Exception("Timeout exhausted for experiment {}".format(self.experiment.exp_id))
+
             # If we are done, exit the loop
             if self.status_finished(states): break
 
@@ -337,6 +341,7 @@ class BaseExperimentManager:
 
             # Wait before going through the loop again
             time.sleep(sleep_time)
+            timeout -= sleep_time
 
         # SHow status one last time
         if verbose: self.print_status(states, msgs)
