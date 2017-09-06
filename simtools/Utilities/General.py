@@ -414,3 +414,14 @@ def timestamp_filename(filename, time=None):
     timestamp = time.strftime('%Y%m%d_%H%M%S')
     new_filename = '.'.join([filename, timestamp])
     return new_filename
+
+def copy_and_reset_StringIO(sio):
+    """
+    A method to copy a StringIO and make sure read access starts at the beginning.
+    :param sio: A StringIO object
+    :return: a copy of sio with read index set to 0
+    """
+    import copy
+    new_sio = copy.deepcopy(sio)
+    new_sio.seek(0) # just in case the original had been read some
+    return new_sio
