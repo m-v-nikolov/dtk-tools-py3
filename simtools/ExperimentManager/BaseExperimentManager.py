@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from simtools.Utilities.General import init_logging, get_tools_revision
+
 logger = init_logging('ExperimentManager')
 
 import copy
@@ -16,7 +17,6 @@ from collections import Counter
 import dill
 import fasteners
 
-from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore, batch, dumper
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
@@ -39,7 +39,6 @@ class BaseExperimentManager:
 
     def __init__(self, experiment, config_builder=None):
         self.experiment = experiment
-        self.amanager = None
         self.exp_builder = None
         self.config_builder = config_builder
         self.commandline = None
@@ -348,27 +347,6 @@ class BaseExperimentManager:
 
         # Refresh the experiment
         self.refresh_experiment()
-
-    def analyze_experiment(self):
-        """
-        Deprecated: Use AnalyzeManager instead
-        
-        Apply one or more analyzers to the outputs of simulations.
-        A parser thread will be spawned for each simulation with filtered analyzers to run,
-        following which the combined outputs of all threads are reduced and displayed or saved.
-        The analyzer interface provides the following methods:
-           * filter -- based on the simulation meta-data return a Boolean to execute this analyzer
-           * apply -- parse simulation output files and emit a subset of data
-           * combine -- reduce the data emitted by each parser
-           * finalize -- plotting and saving output files
-        """
-        self.amanager.analyze()
-
-    def add_analyzer(self, analyzer, working_dir=None):
-        logger.warning("The add_analyzer and analyze_experiment methods are deprecated. "
-                       "The new way of analyzing an experiment is through AnalyzeManager. See examples/features/example_analyze.py for more information.")
-        if not self.amanager: self.amanager = AnalyzeManager(self.experiment)
-        self.amanager.add_analyzer(analyzer, working_dir)
 
     def kill(self, args, unknownArgs):
         if args.simIds:
