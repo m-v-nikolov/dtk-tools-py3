@@ -422,3 +422,14 @@ class BaseExperimentManager:
     def finished(self):
         return self.status_finished(self.get_simulation_status()[0])
 
+    def clean_experiment_name(self, experiment_name):
+        """
+        Enforce any COMPS-specific demands on experiment names.
+        :param experiment_name: a str
+        :return: the experiment name allowed for use (e.g. may be cleaned)
+        """
+        # cleaning step
+        for c in ['/', '\\', ':']:
+            experiment_name = experiment_name.replace(c, '_')
+        return experiment_name
+

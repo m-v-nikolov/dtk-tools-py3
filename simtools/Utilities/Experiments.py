@@ -7,16 +7,16 @@ from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login
 from simtools.Utilities.Encoding import cast_number
 from simtools.Utilities.General import init_logging, utc_to_local
 
-max_exp_name_len = 100
+max_exp_name_len = 255
 
 logger = init_logging('Utils')
 
 
 def validate_exp_name(exp_name):
     if len(exp_name) > max_exp_name_len:
-        logger.info(
-            "The experiment name '%s' exceeds the max length %s, please adjust your experiment name. Exiting...",
-            exp_name, max_exp_name_len)
+        logger.fatal(
+            "The experiment name '%s' exceeds the max length %d (%d), please adjust your experiment name. Exiting..." %
+            (exp_name, max_exp_name_len, len(exp_name)))
         return False
     else:
         return True
