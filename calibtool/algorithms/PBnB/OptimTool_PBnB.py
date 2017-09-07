@@ -2,10 +2,9 @@ import logging
 import operator
 import sys
 
-import calibtool.algorithms.PBnB.m_intial_paramters_setting as par
-from c_SubRegion import c_SubRegion
 from calibtool.algorithms.NextPointAlgorithm import NextPointAlgorithm
 from fun_PBnB_support_functions import *
+import m_intial_paramters_setting as par
 
 logger = logging.getLogger('PBnB_application')
 fh = logging.FileHandler('PBnB_running'+'-debug.log')
@@ -21,9 +20,9 @@ class OptimTool_PBnB(NextPointAlgorithm):
                  i_c=par.i_c,
                  i_replication=par.i_replication,
                  i_stopping_max_k=par.i_stopping_max_k,
-                 i_num_simulation_per_run=par.i_num_simulation_per_run,
+                 i_max_num_simulation_per_run=par.i_max_num_simulation_per_run,
+                 f_elite_worst_sampling_para=par.f_elite_worst_sampling_para,
                  ):
-        #self.args = locals()  # Store inputs in case set_state is called later and we want to override with new (user) args
 
         self.constrain_sample_fn = constrain_sample_fn
         self.params = params
@@ -49,12 +48,9 @@ class OptimTool_PBnB(NextPointAlgorithm):
         self.i_dimension = len(self.params)
         self.i_dimension_true = len([p for p in self.params if p['Dynamic'] is True]) #  delete the false dynamic dimension
         self.dict_n_branching_dim = {p['Name']: 0 for p in params if p['Dynamic'] is True}  # use for branching
-        if max([p['Max']-p['Min'] for p in self.params]) < 100:
-            self.f_epsilon = 0.25 * pow(max([p['Max']-p['Min'] for p in self.params]), self.i_dimension_true)  # can refer to the Hao's code: fun_diff(l_regionBound)
-        else:
-            self.f_epsilon = 0.15 * pow(max([p['Max']-p['Min'] for p in self.params]), self.i_dimension_true)
+        self.f_epsilon = f_elite_worst_sampling_para*pow(max([p['Max'] - p['Min'] for p in self.params]), self.i_dimension_true)
         self.f_epsilon_k = float(self.f_epsilon) / self.i_n_branching
-        self.i_num_simulation_per_run = i_num_simulation_per_run
+        self.i_max_num_simulation_per_run = i_max_num_simulation_per_run
         self.s_running_file_name = s_running_file_name
         self.s_problem_type = s_problem_type
         # use for checking the iteration logic
@@ -79,8 +75,8 @@ class OptimTool_PBnB(NextPointAlgorithm):
 
     def get_samples_for_iteration(self, iteration):
         df_samples = self.fun_probability_branching_and_bound(iteration)
-        if len(df_samples) >= self.i_num_simulation_per_run:
-            print 'simulation per run sent to COMPS is exceeded the limitation ' + str(self.i_num_simulation_per_run)
+        if len(df_samples) >= self.i_max_num_simulation_per_run:
+            print 'simulation per run sent to COMPS is exceeded the limitation ' + str(self.i_max_num_simulation_per_run)
             sys.exit()
         # return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]+['Run_Number']])
         return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]])
@@ -98,7 +94,6 @@ class OptimTool_PBnB(NextPointAlgorithm):
         while self.i_k <= self.i_stopping_max_k:
             if self.s_stage == 'stage_1':
                 logger.info('stage_1')
-
 
                 self.i_N_k = int(self.i_c_k / sum(1 for j in self.l_subr if j.s_label == 'C' and j.b_activate is True))
                 if self.s_problem_type is 'deterministic':
@@ -186,7 +181,7 @@ class OptimTool_PBnB(NextPointAlgorithm):
                         self.l_subr = fun_maintaining_labeler(self.l_subr)
                         if any(c_subr.s_label == 'M' for c_subr in self.l_subr):
                             fun_plot2D(self.l_subr, self.l_subr[0].l_coordinate_lower, self.l_subr[0].l_coordinate_upper, self.params, self.i_k, self.s_running_file_name, iteration)
-                            sys.exit()
+
                         # determine the next step
                         self.b_stopping_branchable = all(i.b_branchable is False for i in (i for i in self.l_subr if i.b_activate is True)) or all(i.s_label != 'C' for i in (i for i in self.l_subr if i.b_activate is True))  # any subregion is branchable
                         if self.b_stopping_branchable is True:  # (1)
@@ -212,8 +207,6 @@ class OptimTool_PBnB(NextPointAlgorithm):
                             # 2: alternative: choose the dimension having the minimum branching
 
                             s_branching_dim = min(self.dict_n_branching_dim, key=self.dict_n_branching_dim.get)
-                            if self.i_k == 1:
-                                s_branching_dim = 'funestus_scale'
                             self.dict_n_branching_dim[s_branching_dim] += 1
                             l_temp_new_branching_subr = []
                             for c_subr in (c_subr for c_subr in self.l_subr if c_subr.s_label == 'C' and c_subr.b_activate is True and c_subr.b_branchable is True):
@@ -461,9 +454,7 @@ class OptimTool_PBnB(NextPointAlgorithm):
         self.l_subr.sort(key=operator.attrgetter('i_index'))  # dinc->list and sorting
 
     def end_condition(self):
-        for c_subr in self.l_subr:
-            if c_subr.s_label == 'M':
-                return True
+        return False
 
 
     def get_results_to_cache(self, results):
