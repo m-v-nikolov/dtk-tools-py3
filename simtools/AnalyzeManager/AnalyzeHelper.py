@@ -314,14 +314,24 @@ def display_batch(batches):
         logger.info('---------- Batch(s) in DB -----------')
         if isinstance(batches, list):
             for batch in batches:
-                logger.info('%s (id=%s, count=%s)' % (batch.name, batch.id, len(batch.experiments)))
+                logger.info('%s (id=%s, exp_count=%s, sim_count=%s)' % (batch.name, batch.id, len(batch.experiments), len(batch.simulations)))
+                logger.info('Experiments:')
                 for exp in batch.experiments:
                     logger.info(' - %s' % exp.exp_id)
+
+                logger.info('Simulations:')
+                for sim in batch.simulations:
+                    logger.info(' - %s' % sim.id)
             logger.info('\nTotal: %s Batch(s)' % len(batches))
         else:
-            logger.info('%s (id=%s, count=%s)' % (batches.name, batches.id, len(batches.experiments)))
+            logger.info('%s (id=%s, exp_count=%s, sim_count=%s)' % (batches.name, batches.id, len(batches.experiments), len(batches.simulations)))
+            logger.info('Experiments:')
             for exp in batches.experiments:
                 logger.info(' - %s' % exp.exp_id)
+
+            logger.info('Simulations:')
+            for sim in batches.simulations:
+                logger.info(' - %s' % sim.id)
             logger.info('\nTotal: 1 Batch')
     else:
         logger.info('There is no Batch records in DB.')
