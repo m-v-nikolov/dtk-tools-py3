@@ -47,7 +47,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # Only create a batch if we pass more than one experiment or simulation in total
     elif len(exp_dict) + len(sim_dict) > 1:
         # check if there is any existing batch containing the same experiments
-        batch_existing = check_existing_batch(exp_dict)
+        batch_existing = check_existing_batch(exp_dict, sim_dict)
 
         if batch_existing is None:
             # save/create batch
@@ -69,14 +69,15 @@ def validate_parameters(args, unknownArgs):
         exit()
 
 
-def check_existing_batch(exp_list):
-    exp_list_ids = exp_list.keys()
+def check_existing_batch(exp_dict, sim_dict):
+    exp_ids_list = exp_dict.keys()
+    sim_ids_list = sim_dict.keys()
     batch_list = DataStore.get_batch_list_by_id()
 
     for batch in batch_list:
-        batch_list_ids = batch.get_experiment_ids()
-
-        if compare_two_ids_list(exp_list_ids, batch_list_ids):
+        batch_exp_ids = batch.get_experiment_ids()
+        batch_sim_ids = batch.get_simulation_ids()
+        if compare_two_ids_list(exp_ids_list, batch_exp_ids) and compare_two_ids_list(sim_ids_list, batch_sim_ids):
             return batch
 
     return None
@@ -314,7 +315,7 @@ def display_batch(batches):
         logger.info('---------- Batch(s) in DB -----------')
         if isinstance(batches, list):
             for batch in batches:
-                logger.info('%s (id=%s, exp_count=%s, sim_count=%s)' % (batch.name, batch.id, len(batch.experiments), len(batch.simulations)))
+                logger.info('\n%s (id=%s, exp_count=%s, sim_count=%s)' % (batch.name, batch.id, len(batch.experiments), len(batch.simulations)))
                 logger.info('Experiments:')
                 for exp in batch.experiments:
                     logger.info(' - %s' % exp.exp_id)
@@ -324,7 +325,7 @@ def display_batch(batches):
                     logger.info(' - %s' % sim.id)
             logger.info('\nTotal: %s Batch(s)' % len(batches))
         else:
-            logger.info('%s (id=%s, exp_count=%s, sim_count=%s)' % (batches.name, batches.id, len(batches.experiments), len(batches.simulations)))
+            logger.info('\n%s (id=%s, exp_count=%s, sim_count=%s)' % (batches.name, batches.id, len(batches.experiments), len(batches.simulations)))
             logger.info('Experiments:')
             for exp in batches.experiments:
                 logger.info(' - %s' % exp.exp_id)
