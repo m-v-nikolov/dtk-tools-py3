@@ -40,10 +40,13 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(exp_list=exp_dict.values(), sim_list=sim_dict.values(), analyzer_list=analyzers)
 
+    exp_ids_to_be_saved = list(set(exp_dict.keys()) - set(analyzeManager.experiments_simulations.keys()))
+    exp_to_be_saved = [exp_dict[exp_id] for exp_id in exp_ids_to_be_saved]
+
     # if batch name exists, always save experiments
     if args.batch_name:
         # save/create batch
-        save_batch(args, exp_dict.values(), sim_dict.values())
+        save_batch(args, exp_to_be_saved, sim_dict.values())
     # Only create a batch if we pass more than one experiment or simulation in total
     elif len(exp_dict) + len(sim_dict) > 1:
         # check if there is any existing batch containing the same experiments
@@ -51,7 +54,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
 
         if batch_existing is None:
             # save/create batch
-            save_batch(args, exp_dict.values(), sim_dict.values())
+            save_batch(args, exp_to_be_saved, sim_dict.values())
         else:
             # display the existing batch
             logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
@@ -188,6 +191,8 @@ def consolidate_experiments_with_options(args, exp_dict, sim_dict):
                     logger.error("Option '%s' is invalid..." % var)
                     exit()
 
+    return exp_dict, sim_dict
+
 
 def collect_analyzers(args, builtinAnalyzers):
     analyzers = []
@@ -249,6 +254,7 @@ def collect_experiments_simulations(args):
             # We have to retrieve_experiment even if we already have the experiment object
             # to make sure we are loading the simulations associated with it
             experiments.update({i.exp_id: retrieve_experiment(i.exp_id) for i in item.experiments})
+            simulations.update({i.id: DataStore.get_simulation(i.id) for i in item.simulations})
 
     return experiments, simulations
 
