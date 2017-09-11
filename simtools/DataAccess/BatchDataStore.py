@@ -1,5 +1,6 @@
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Batch, BatchExperiment
+from operator import and_
 
 
 class BatchDataStore:
@@ -89,7 +90,7 @@ class BatchDataStore:
     def remove_empty_batch(cls):
         cnt = 0
         with session_scope() as session:
-            batches = session.query(Batch).filter(~Batch.experiments.any()).all()
+            batches = session.query(Batch).filter(and_(~Batch.experiments.any(), ~Batch.simulations.any())).all()
 
             for batch in batches:
                 session.delete(batch)
@@ -106,6 +107,7 @@ class BatchDataStore:
             batch = session.query(Batch).filter(Batch.id == batch.id).one_or_none()
             if batch:
                 batch.experiments = []
+                batch.simulations = []
                 session.merge(batch)
 
     @classmethod
