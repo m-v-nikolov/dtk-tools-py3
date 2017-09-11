@@ -40,21 +40,18 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # create instance of AnalyzeManager
     analyzeManager = AnalyzeManager(exp_list=exp_dict.values(), sim_list=sim_dict.values(), analyzer_list=analyzers)
 
-    exp_ids_to_be_saved = list(set(exp_dict.keys()) - set(analyzeManager.experiments_simulations.keys()))
-    exp_to_be_saved = [exp_dict[exp_id] for exp_id in exp_ids_to_be_saved]
-
     # if batch name exists, always save experiments
     if args.batch_name:
         # save/create batch
-        save_batch(args, exp_to_be_saved, sim_dict.values())
+        save_batch(args, exp_dict.values(), sim_dict.values())
     # Only create a batch if we pass more than one experiment or simulation in total
     elif len(exp_dict) + len(sim_dict) > 1:
         # check if there is any existing batch containing the same experiments
-        batch_existing = check_existing_batch(exp_dict, sim_dict)
+        batch_existing = check_existing_batch(exp_dict)
 
         if batch_existing is None:
             # save/create batch
-            save_batch(args, exp_to_be_saved, sim_dict.values())
+            save_batch(args, exp_dict.values(), sim_dict.values())
         else:
             # display the existing batch
             logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
@@ -72,15 +69,14 @@ def validate_parameters(args, unknownArgs):
         exit()
 
 
-def check_existing_batch(exp_dict, sim_dict):
-    exp_ids_list = exp_dict.keys()
-    sim_ids_list = sim_dict.keys()
+def check_existing_batch(exp_list):
+    exp_list_ids = exp_list.keys()
     batch_list = DataStore.get_batch_list_by_id()
 
     for batch in batch_list:
-        batch_exp_ids = batch.get_experiment_ids()
-        batch_sim_ids = batch.get_simulation_ids()
-        if compare_two_ids_list(exp_ids_list, batch_exp_ids) and compare_two_ids_list(sim_ids_list, batch_sim_ids):
+        batch_list_ids = batch.get_experiment_ids()
+
+        if compare_two_ids_list(exp_list_ids, batch_list_ids):
             return batch
 
     return None
@@ -191,8 +187,6 @@ def consolidate_experiments_with_options(args, exp_dict, sim_dict):
                     logger.error("Option '%s' is invalid..." % var)
                     exit()
 
-    return exp_dict, sim_dict
-
 
 def collect_analyzers(args, builtinAnalyzers):
     analyzers = []
@@ -254,7 +248,6 @@ def collect_experiments_simulations(args):
             # We have to retrieve_experiment even if we already have the experiment object
             # to make sure we are loading the simulations associated with it
             experiments.update({i.exp_id: retrieve_experiment(i.exp_id) for i in item.experiments})
-            simulations.update({i.id: DataStore.get_simulation(i.id) for i in item.simulations})
 
     return experiments, simulations
 
@@ -296,7 +289,7 @@ def load_config_module(config_name):
 
 def list_batch(args, unknownArgs):
     """
-        List Details of Batches from local database
+        List experiments from local database
     """
     batches = None
     if args.id_or_name and len(unknownArgs) > 0:
@@ -321,24 +314,14 @@ def display_batch(batches):
         logger.info('---------- Batch(s) in DB -----------')
         if isinstance(batches, list):
             for batch in batches:
-                logger.info('\n%s (id=%s, exp_count=%s, sim_count=%s)' % (batch.name, batch.id, len(batch.experiments), len(batch.simulations)))
-                logger.info('Experiments:')
+                logger.info('%s (id=%s, count=%s)' % (batch.name, batch.id, len(batch.experiments)))
                 for exp in batch.experiments:
                     logger.info(' - %s' % exp.exp_id)
-
-                logger.info('Simulations:')
-                for sim in batch.simulations:
-                    logger.info(' - %s' % sim.id)
             logger.info('\nTotal: %s Batch(s)' % len(batches))
         else:
-            logger.info('\n%s (id=%s, exp_count=%s, sim_count=%s)' % (batches.name, batches.id, len(batches.experiments), len(batches.simulations)))
-            logger.info('Experiments:')
+            logger.info('%s (id=%s, count=%s)' % (batches.name, batches.id, len(batches.experiments)))
             for exp in batches.experiments:
                 logger.info(' - %s' % exp.exp_id)
-
-            logger.info('Simulations:')
-            for sim in batches.simulations:
-                logger.info(' - %s' % sim.id)
             logger.info('\nTotal: 1 Batch')
     else:
         logger.info('There is no Batch records in DB.')
