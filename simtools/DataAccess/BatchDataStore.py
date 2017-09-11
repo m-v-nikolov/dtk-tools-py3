@@ -1,5 +1,5 @@
 from simtools.DataAccess import session_scope
-from simtools.DataAccess.Schema import Batch
+from simtools.DataAccess.Schema import Batch, BatchExperiment
 from operator import and_
 
 
@@ -109,3 +109,20 @@ class BatchDataStore:
                 batch.experiments = []
                 batch.simulations = []
                 session.merge(batch)
+
+    @classmethod
+    def get_expIds_by_batchIds(cls, batch_ids):
+        """
+        Get the experiments which are associated with batch_ids
+        batch_ids: list of batch ids
+        """
+        if batch_ids is None or len(batch_ids) == 0:
+            return []
+
+        with session_scope() as session:
+            exp_list = session.query(BatchExperiment).filter(BatchExperiment.batch_id.in_(batch_ids)).all()
+            session.expunge_all()
+
+        exp_ids = [exp.exp_id for exp in exp_list]
+
+        return exp_ids
