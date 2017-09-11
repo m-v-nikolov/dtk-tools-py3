@@ -49,6 +49,10 @@ def retrieve_item(itemid):
     exps = DataStore.get_experiments_by_suite(itemid)
     if exps: return exps
 
+    # Still no item found -> test the suites
+    sim = DataStore.get_simulation(itemid)
+    if sim: return sim
+
     # Still not -> last chance is a COMPS suite
     exps = exps_for_suite_id(itemid)
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
