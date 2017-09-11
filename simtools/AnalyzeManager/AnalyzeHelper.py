@@ -289,7 +289,7 @@ def load_config_module(config_name):
 
 def list_batch(args, unknownArgs):
     """
-        List experiments from local database
+        List Details of Batches from local database
     """
     batches = None
     if args.id_or_name and len(unknownArgs) > 0:
