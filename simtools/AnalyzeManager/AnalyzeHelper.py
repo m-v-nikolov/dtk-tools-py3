@@ -5,7 +5,7 @@ from importlib import import_module
 
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
-from simtools.DataAccess.Schema import Batch, Experiment
+from simtools.DataAccess.Schema import Batch, Experiment, Simulation
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.Utilities.General import init_logging, retrieve_item
@@ -19,11 +19,11 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # validate parameters
     validate_parameters(args, unknownArgs)
 
-    # collect all experiments
-    exp_dict = collect_experiments(args)
+    # collect all experiments and simulations
+    exp_dict, sim_dict = collect_experiments_simulations(args)
 
     # consider batch existing case
-    exp_dict = consolidate_experiments_with_options(args, exp_dict)
+    exp_dict, sim_dict = consolidate_experiments_with_options(args, exp_dict, sim_dict)
 
     # check status for each experiment
     if not args.force:
@@ -32,26 +32,26 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # collect all analyzers
     analyzers = collect_analyzers(args, builtinAnalyzers)
 
-    if not exp_dict:
-        # No experiment specified -> using latest
+    if not exp_dict and not sim_dict:
+        # No experiment specified -> using latest experiment
         latest = DataStore.get_most_recent_experiment()
         exp_dict[latest.exp_id] = latest
 
     # create instance of AnalyzeManager
-    analyzeManager = AnalyzeManager(exp_dict.values(), analyzers)
+    analyzeManager = AnalyzeManager(exp_list=exp_dict.values(), sim_list=sim_dict.values(), analyzer_list=analyzers)
 
     # if batch name exists, always save experiments
     if args.batch_name:
         # save/create batch
-        save_batch(args, exp_dict.values())
-    # Only create a batch if we pass more than one experiment
-    elif len(exp_dict) != 1:
+        save_batch(args, exp_dict.values(), sim_dict.values())
+    # Only create a batch if we pass more than one experiment or simulation in total
+    elif len(exp_dict) + len(sim_dict) > 1:
         # check if there is any existing batch containing the same experiments
         batch_existing = check_existing_batch(exp_dict)
 
         if batch_existing is None:
             # save/create batch
-            save_batch(args, exp_dict.values())
+            save_batch(args, exp_dict.values(), sim_dict.values())
         else:
             # display the existing batch
             logger.info('\nBatch: %s (id=%s)' % (batch_existing.name, batch_existing.id))
@@ -86,9 +86,9 @@ def compare_two_ids_list(ids_1, ids_2):
     return len(ids_1) == len(ids_2) and set(ids_1) == set(ids_2)
 
 
-def save_batch(args, final_exp_list=None):
-    if len(final_exp_list) == 0:
-        logger.info('Please provide some experiment(s) to analyze.')
+def save_batch(args, exp_list=None, sim_list=None):
+    if len(exp_list) + len(sim_list) == 0:
+        logger.info('Please provide some experiment(s)/simulation(s) to analyze.')
         exit()
 
     batch = DataStore.get_batch_by_name(args.batch_name)
@@ -99,9 +99,14 @@ def save_batch(args, final_exp_list=None):
         batch = Batch()
 
     # add experiments
-    for exp in final_exp_list:
+    for exp in exp_list:
         # ok, SqlAlchemy won't add duplicated experiment
         batch.experiments.append(exp)
+
+    # add simulations
+    for sim in sim_list:
+        # ok, SqlAlchemy won't add duplicated simulation
+        batch.simulations.append(sim)
 
     # create batch and save with experiments
     batch_id = DataStore.save_batch(batch)
@@ -123,45 +128,59 @@ def create_batch(args, unknownArgs):
         create or use existing batch
     """
     # collect all experiments
-    exp_dict = collect_experiments(args)
+    exp_dict, sim_dict = collect_experiments_simulations(args)
 
     # consider batch existing case
     exp_dict = consolidate_experiments_with_options(args, exp_dict)
 
     # save/create batch
-    save_batch(args, exp_dict.values())
+    save_batch(args, exp_dict.values(), sim_dict.values())
 
 
-def consolidate_experiments_with_options(args, exp_dict):
+def consolidate_experiments_with_options(args, exp_dict, sim_dict):
     # if batch name exists, always save experiments
     if args.batch_name is None:
-        return exp_dict
+        return exp_dict, sim_dict
 
     batch = DataStore.get_batch_by_name(args.batch_name)
     if batch:
-        batch_list_ids = batch.get_experiment_ids()
+        batch_exp_id_list = batch.get_experiment_ids()
+        batch_sim_id_list = batch.get_simulation_ids()
 
-        if not compare_two_ids_list(exp_dict.values(), batch_list_ids):
+        exp_diff = not compare_two_ids_list(exp_dict.values(), batch_exp_id_list)
+        sim_diff = not compare_two_ids_list(sim_dict.values(), batch_sim_id_list)
+
+        if exp_diff or sim_diff:
 
             # confirm only if existing batch contains different experiments
             logger.info(
-                "\nBatch with name %s already exists and contains the following experiment(s):\n" % args.batch_name)
-            logger.info('\n'.join([' - %s' % exp_id for exp_id in batch_list_ids]))
+                "\nBatch with name %s already exists and contains the following experiment(s)/simulation(s):\n" % args.batch_name)
+            if len(batch_exp_id_list) > 0:
+                logger.info('Experiment(s):')
+                logger.info('\n'.join([' - %s' % exp_id for exp_id in batch_exp_id_list]))
+            if len(batch_sim_id_list) > 0:
+                logger.info('Simulation(s)')
+                logger.info('\n'.join([' - %s' % sim_id for sim_id in batch_sim_id_list]))
 
-            if exp_dict:
+            if exp_dict or sim_dict:
                 var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
                 # print "You selected '%s'" % var
                 if var == 'O':
                     # clear existing experiments associated with this Batch
                     DataStore.clear_batch(batch)
-                    return exp_dict
+                    return exp_dict, sim_dict
                 elif var == 'M':
                     # collect 'new' experiments to be added to the existing batch
-                    for exp_id in batch_list_ids:
+                    for exp_id in batch_exp_id_list:
                         if not exp_dict.has_key(exp_id):
                             exp_dict[exp_id] = retrieve_experiment(exp_id)
 
-                    return exp_dict
+                    # collect 'new' simulations to be added to the existing batch
+                    for sim_id in batch_sim_id_list:
+                        if not sim_dict.has_key(sim_id):
+                            sim_dict[sim_id] = DataStore.get_simulation(sim_id)
+
+                    return exp_dict, sim_dict
                 elif var == 'C':
                     exit()
                 else:
@@ -189,13 +208,31 @@ def collect_analyzers(args, builtinAnalyzers):
     return analyzers
 
 
-def collect_experiments(args):
-    experiments = dict()
+def collect_simulations(args):
+    simulations = dict()
 
     # retrieve ids
     ids = args.itemids
 
-    if not ids: return experiments
+    if not ids:
+        return simulations
+
+    # For each, treat it differently depending on what it is
+    for sid in ids:
+        sim = DataStore.get_simulation(sid)
+        simulations[sim.id] = sim
+
+    return simulations
+
+
+def collect_experiments_simulations(args):
+    experiments = dict()
+    simulations = dict()
+
+    # retrieve ids
+    ids = args.itemids
+
+    if not ids: return experiments, simulations
 
     # For each, treat it differently depending on what it is
     for itemid in ids:
@@ -205,12 +242,14 @@ def collect_experiments(args):
             experiments.update({i.exp_id: i for i in item})
         elif isinstance(item, Experiment):
             experiments[item.exp_id] = item
+        elif isinstance(item, Simulation):
+            simulations[item.id] = item
         elif isinstance(item, Batch):
             # We have to retrieve_experiment even if we already have the experiment object
             # to make sure we are loading the simulations associated with it
             experiments.update({i.exp_id: retrieve_experiment(i.exp_id) for i in item.experiments})
 
-    return experiments
+    return experiments, simulations
 
 
 def check_status(exp_list):
