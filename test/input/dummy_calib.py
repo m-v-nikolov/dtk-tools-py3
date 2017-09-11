@@ -2,7 +2,7 @@
 # or via the calibtool.py script: 'calibtool run example_calibration.py'
 from calibtool.CalibManager import CalibManager
 from calibtool.Prior import MultiVariatePrior
-from calibtool.algo.IMIS import IMIS
+from calibtool.algorithms.IMIS import IMIS
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from calibtool.study_sites.DielmoCalibSite import DielmoCalibSite
