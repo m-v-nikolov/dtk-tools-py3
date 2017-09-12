@@ -2,21 +2,20 @@ import os
 import unittest
 from ConfigParser import ConfigParser
 
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.SetupParser import SetupParser
-
-from COMPS.Data.QueryCriteria import QueryCriteria as COMPSQueryCriteria
-from COMPS.Data.AssetCollection import AssetCollection as COMPSAssetCollection
 from COMPS.Data.AssetCollectionFile import AssetCollectionFile as COMPSAssetCollectionFile
+from COMPS.Data.QueryCriteria import QueryCriteria as COMPSQueryCriteria
 
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login, get_asset_collection, \
-    get_asset_collection_by_tag
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.utils.reports.CustomReport import BaseReport
 from dtk.vector.study_sites import configure_site
 from simtools.AssetManager.AssetCollection import AssetCollection
 from simtools.AssetManager.FileList import FileList
 from simtools.AssetManager.SimulationAssets import SimulationAssets
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import COMPS_login, get_asset_collection, \
+    get_asset_collection_by_tag
+
 
 class TestSimulationAssets(unittest.TestCase):
 
