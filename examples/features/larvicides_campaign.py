@@ -3,7 +3,11 @@ import os
 from dtk.interventions.larvicides import add_larvicides
 from dtk.utils.analyzers import TimeseriesAnalyzer, group_by_name
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
+from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
+from simtools.SetupParser import SetupParser
+
+SetupParser.default_block = 'HPC'
 
 # Create a config builder from set of input files
 input_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"input")
@@ -69,3 +73,7 @@ analyzers = [
             ]
 
 
+if __name__ == "__main__":
+    SetupParser.init()
+    em = ExperimentManagerFactory.from_cb(cb)
+    em.run_simulations(exp_name='Sample larvicides epxeriment', exp_builder=builder)
