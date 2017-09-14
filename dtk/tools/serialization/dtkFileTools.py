@@ -396,8 +396,13 @@ def __read_header__(handle):
         header.engine = SNAPPY if header.compressed else NONE
         header.chunkcount = 1
         header.chunksizes = [header.bytecount]
+
+    if header.version >= 4:
+        header.engine = LZ4
+    else:
+        header.engine = header.engine.upper()
+
     __check_version__(header.version)
-    header.engine = header.engine.upper()
     __check_chunk_sizes__(header.chunksizes)
 
     return header
