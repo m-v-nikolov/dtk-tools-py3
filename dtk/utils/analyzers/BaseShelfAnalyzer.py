@@ -38,3 +38,6 @@ class BaseShelfAnalyzer(BaseAnalyzer):
         except KeyError:
             value = False
         return value
+
+    def __del__(self):
+        self._shelf.close()

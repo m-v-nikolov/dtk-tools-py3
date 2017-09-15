@@ -44,7 +44,6 @@ class BaseAnalyzer(object):
         """
         return True
 
-    @abstractmethod
     def apply(self, parser):
         """
         In parallel for each simulation, consume raw data from filenames and emit selected data
