@@ -267,7 +267,9 @@ class IterationState(object):
             exp = retrieve_experiment(self.experiment_id, verbose=True)
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
 
-        analyzerManager = AnalyzeManager(exp_manager.experiment, self.analyzer_list, working_dir=self.iteration_directory)
+        analyzerManager = AnalyzeManager(exp_list=exp_manager.experiment,
+                                         analyzer_list=self.analyzer_list,
+                                         working_dir=self.iteration_directory)
         analyzerManager.analyze()
 
         # Ask the analyzers to cache themselves
