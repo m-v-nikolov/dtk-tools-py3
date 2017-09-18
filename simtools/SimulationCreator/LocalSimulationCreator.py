@@ -16,13 +16,13 @@ class LocalSim:
 
 class LocalSimulationCreator(BaseSimulationCreator):
 
-    def create_simulation(self, cb):
+    def create_simulation(self):
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         try:
             os.makedirs(sim_dir)
         except OSError:
-            return self.create_simulation(cb)
+            raise RuntimeError('Cannot create simulation directory: %s' % sim_dir)
 
         return LocalSim(sim_dir=sim_dir, sim_id=sim_id)
 
