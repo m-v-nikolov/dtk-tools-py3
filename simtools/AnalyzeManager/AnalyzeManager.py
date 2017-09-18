@@ -7,9 +7,10 @@ from COMPS.Data.Simulation import SimulationState
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.Experiments import retrieve_experiment
-from simtools.Utilities.General import init_logging, retrieve_item
+from simtools.Utilities.General import init_logging
 from simtools.Utilities.LocalOS import LocalOS
+
+from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
 
 logger = init_logging('AnalyzeManager')
 
@@ -59,7 +60,7 @@ class AnalyzeManager:
     def add_simulation(self, simulation):
         from simtools.DataAccess.Schema import Simulation
         if not isinstance(simulation, Simulation):
-            simulation = retrieve_item(simulation)
+            simulation = retrieve_simulation(simulation)
 
         experiment = simulation.experiment
 
