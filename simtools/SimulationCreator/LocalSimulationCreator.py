@@ -16,7 +16,7 @@ class LocalSim:
 
 class LocalSimulationCreator(BaseSimulationCreator):
 
-    def create_simulation(self):
+    def create_simulation(self, cb):
         sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
         sim_dir = os.path.join(self.experiment.get_path(), sim_id)
         try:
