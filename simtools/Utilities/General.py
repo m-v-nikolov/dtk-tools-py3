@@ -34,6 +34,7 @@ def retrieve_item(itemid):
     from simtools.Utilities.Experiments import retrieve_experiment
     from simtools.DataAccess.DataStore import DataStore
     from simtools.Utilities.COMPSUtilities import exps_for_suite_id
+    from simtools.Utilities.COMPSUtilities import get_simulation_by_id
     try:
         return retrieve_experiment(itemid)
     except: pass
@@ -49,9 +50,20 @@ def retrieve_item(itemid):
     exps = DataStore.get_experiments_by_suite(itemid)
     if exps: return exps
 
+    # Still no item found -> test the suites
+    sim = DataStore.get_simulation(itemid)
+    if sim: return sim
+
     # Still not -> last chance is a COMPS suite
     exps = exps_for_suite_id(itemid)
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
+
+    # Nothing, consider COMPS simulation
+    csim = get_simulation_by_id(itemid)
+    if csim:
+        retrieve_experiment(str(csim.experiment_id))
+        sim = DataStore.get_simulation(itemid)
+        if sim: return sim
 
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
@@ -208,11 +220,6 @@ def get_md5(filename):
             md5calc.update(data)
 
     return uuid.UUID(md5calc.hexdigest())
-
-
-def is_remote_path(path):
-    return path.startswith('\\\\')
-
 
 class CommandlineGenerator(object):
     """
