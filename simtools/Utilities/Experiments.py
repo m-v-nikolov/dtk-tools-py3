@@ -101,6 +101,46 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
     raise Exception("Experiment '%s' could not be retrieved." % exp_id)
 
 
+def retrieve_simulation(sim_id, sync_if_missing=True, verbose=False, force_update=False):
+    """
+    Retrieve a simulation in the local database based on its id.
+    Can call a sync if missing if the flag is true.
+    :param sim_id: Id of the simulation to retrieve
+    :param sync_if_missing: Should we try to sync if not present?
+    :return: The simulation found
+    """
+    from simtools.Utilities.COMPSUtilities import get_simulation_by_id
+
+    if not sim_id: raise Exception("Trying to retrieve a simulation without providing an simulation ID")
+    from uuid import UUID
+    if isinstance(sim_id, UUID): sim_id = str(sim_id)
+
+    # If we dont force the update -> look first in the DB
+    sim = DataStore.get_simulation(sim_id)
+    if sim:
+        # If we have a simulation and we want to force the update -> delete it
+        if not force_update:
+            return sim
+        else:
+            DataStore.delete_simulation(sim)
+
+    if not sync_if_missing:
+        raise Exception('Simulation %s not found in the local database and sync disabled.' % sim_id)
+
+    logger.info('Simulation with id %s not found in local database, trying sync.' % sim_id)
+
+    csim = get_simulation_by_id(sim_id)
+    if csim:
+        with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+            endpoint = sp.get('server_endpoint')
+        COMPS_experiment_to_local_db(csim.experiment_id, endpoint, verbose)
+
+    sim = DataStore.get_simulation(sim_id)
+    if sim: return sim
+
+    raise Exception("Simulation '%s' could not be retrieved." % sim_id)
+
+
 def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_experiment=True):
     """
     Return a DB object representing an experiment coming from COMPS.
