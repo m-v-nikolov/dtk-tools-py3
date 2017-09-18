@@ -8,7 +8,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import retrieve_experiment
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, retrieve_item
 from simtools.Utilities.LocalOS import LocalOS
 
 logger = init_logging('AnalyzeManager')
@@ -59,7 +59,7 @@ class AnalyzeManager:
     def add_simulation(self, simulation):
         from simtools.DataAccess.Schema import Simulation
         if not isinstance(simulation, Simulation):
-            simulation = DataStore.get_simulation(simulation)
+            simulation = retrieve_item(simulation)
 
         experiment = simulation.experiment
 
@@ -75,8 +75,6 @@ class AnalyzeManager:
         self.analyzers.append(analyzer)
 
     def create_parsers_for_experiment(self, experiment):
-        self.experiments_with_data = [] # This is to aid in gracefully handling failures due to no data
-
         # Create a manager for the current experiment
         exp_manager = ExperimentManagerFactory.from_experiment(experiment)
 
@@ -116,14 +114,9 @@ class AnalyzeManager:
         p.join()
 
         # Retrieve the parsers from the pool
-        data = False
         for r in res:
             parser = r.get()
-            if parser:
-                self.parsers.append(parser)
-                data = True
-        if data:
-            self.experiments_with_data.append(experiment)
+            if parser: self.parsers.append(parser)
 
     def create_parsers_for_experiment_from_simulation(self, exp_id):
         experiment = retrieve_experiment(exp_id)
@@ -197,12 +190,6 @@ class AnalyzeManager:
 
         # Create the parsers for the experiments
         map(self.create_parsers_for_experiment_from_simulation, self.experiments_simulations.keys())
-
-        # only process experiments that have at least some data in them
-        for experiment in self.experiments:
-            if experiment not in self.experiments_with_data: # this is set in self.create_parsers_for_experiment
-                print('Experiment %s has no simulations ready for analysis, skipping...' % experiment.exp_id)
-                self.experiments.remove(experiment)
 
         if len(self.parsers) == 0:
             print('No experiments/simulations for analysis.')
