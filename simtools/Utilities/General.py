@@ -34,7 +34,7 @@ def retrieve_item(itemid):
     from simtools.Utilities.Experiments import retrieve_experiment
     from simtools.DataAccess.DataStore import DataStore
     from simtools.Utilities.COMPSUtilities import exps_for_suite_id
-    from simtools.Utilities.COMPSUtilities import get_simulation_by_id
+    from simtools.Utilities.Experiments import retrieve_simulation
     try:
         return retrieve_experiment(itemid)
     except: pass
@@ -59,11 +59,8 @@ def retrieve_item(itemid):
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
 
     # Nothing, consider COMPS simulation
-    csim = get_simulation_by_id(itemid)
-    if csim:
-        retrieve_experiment(str(csim.experiment_id))
-        sim = DataStore.get_simulation(itemid)
-        if sim: return sim
+    sim = retrieve_simulation(itemid)
+    if sim: return sim
 
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
