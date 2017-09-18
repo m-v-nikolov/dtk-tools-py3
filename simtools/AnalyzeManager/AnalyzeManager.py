@@ -7,7 +7,7 @@ from COMPS.Data.Simulation import SimulationState
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.General import init_logging, retrieve_item
+from simtools.Utilities.General import init_logging
 from simtools.Utilities.LocalOS import LocalOS
 
 from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
