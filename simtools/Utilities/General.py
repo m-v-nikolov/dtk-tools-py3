@@ -7,6 +7,8 @@ import sys
 
 import time
 
+from simtools.Utilities.COMPSUtilities import get_simulation_by_id
+
 logging_initialized = False
 def init_logging(name):
     import logging.config
@@ -56,6 +58,13 @@ def retrieve_item(itemid):
     # Still not -> last chance is a COMPS suite
     exps = exps_for_suite_id(itemid)
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
+
+    # Nothing, consider COMPS simulation
+    csim = get_simulation_by_id(itemid)
+    if csim:
+        retrieve_experiment(str(sim.experiment_id))
+        sim = DataStore.get_simulation(itemid)
+        if sim: return sim
 
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
@@ -212,11 +221,6 @@ def get_md5(filename):
             md5calc.update(data)
 
     return uuid.UUID(md5calc.hexdigest())
-
-
-def is_remote_path(path):
-    return path.startswith('\\\\')
-
 
 class CommandlineGenerator(object):
     """

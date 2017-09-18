@@ -1,4 +1,4 @@
-from simtools.Utilities.General import is_remote_path, init_logging, get_md5, retry_function
+from simtools.Utilities.General import init_logging, get_md5, retry_function
 logger = init_logging('Utils')
 
 import os
@@ -65,10 +65,6 @@ def translate_COMPS_path(path):
 
 
 def stage_file(from_path, to_directory):
-    if is_remote_path(from_path):
-        logger.info('File is already staged; skipping copy to file-share')
-        return from_path
-
     # Translate $COMPS path if needed
     to_directory_translated = translate_COMPS_path(to_directory)
 
