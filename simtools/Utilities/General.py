@@ -7,8 +7,6 @@ import sys
 
 import time
 
-from simtools.Utilities.COMPSUtilities import get_simulation_by_id
-
 logging_initialized = False
 def init_logging(name):
     import logging.config
@@ -36,6 +34,7 @@ def retrieve_item(itemid):
     from simtools.Utilities.Experiments import retrieve_experiment
     from simtools.DataAccess.DataStore import DataStore
     from simtools.Utilities.COMPSUtilities import exps_for_suite_id
+    from simtools.Utilities.COMPSUtilities import get_simulation_by_id
     try:
         return retrieve_experiment(itemid)
     except: pass
@@ -62,7 +61,7 @@ def retrieve_item(itemid):
     # Nothing, consider COMPS simulation
     csim = get_simulation_by_id(itemid)
     if csim:
-        retrieve_experiment(str(sim.experiment_id))
+        retrieve_experiment(str(csim.experiment_id))
         sim = DataStore.get_simulation(itemid)
         if sim: return sim
 
