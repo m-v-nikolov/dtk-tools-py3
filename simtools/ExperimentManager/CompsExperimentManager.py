@@ -6,7 +6,7 @@ from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManag
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore
 from simtools.Utilities.General import init_logging, timestamp
 
 logger = init_logging("COMPSExperimentManager")
@@ -35,6 +35,7 @@ class CompsExperimentManager(BaseExperimentManager):
         self.runner_thread = None
         self.sims_to_create = []
         self.commissioners = []
+        self.save_semaphore = get_semaphore()
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
@@ -48,7 +49,8 @@ class CompsExperimentManager(BaseExperimentManager):
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
                                       callback=callback,
-                                      return_list=return_list)
+                                      return_list=return_list,
+                                      save_semaphore=self.save_semaphore)
 
     @staticmethod
     def create_suite(suite_name):
