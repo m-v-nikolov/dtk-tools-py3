@@ -366,3 +366,4 @@ class add_drug_campaign_fn:
                                  diagnostic_threshold=self.diagnostic_threshold,
                                  snowballs=self.snowballs, delay=self.delay, nodes=self.nodes,
                                  target_group=self.target_group)
+ 
