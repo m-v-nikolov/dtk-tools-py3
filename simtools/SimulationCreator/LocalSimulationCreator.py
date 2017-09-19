@@ -22,7 +22,7 @@ class LocalSimulationCreator(BaseSimulationCreator):
         try:
             os.makedirs(sim_dir)
         except OSError:
-            return self.create_simulation(cb)
+            raise RuntimeError('Cannot create simulation directory: %s' % sim_dir)
 
         return LocalSim(sim_dir=sim_dir, sim_id=sim_id)
 
