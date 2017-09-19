@@ -1,4 +1,5 @@
 from simtools.Utilities.General import init_logging, get_md5, retry_function
+
 logger = init_logging('Utils')
 
 import os
@@ -15,6 +16,8 @@ from COMPS.Data.Simulation import SimulationState
 from simtools.SetupParser import SetupParser
 
 path_translations = {}
+
+
 def translate_COMPS_path(path):
     """
     Transform a COMPS path into fully qualified path.
@@ -50,7 +53,7 @@ def translate_COMPS_path(path):
             # Prepare the variables we will need
             environment = setup.get('environment')
 
-            #Q uery COMPS to get the path corresponding to the variable
+            # Q uery COMPS to get the path corresponding to the variable
             COMPS_login(setup.get('server_endpoint'))
             abs_path = Client.auth_manager().get_environment_macros(environment)[groups[1]]
 
@@ -74,7 +77,7 @@ def stage_file(from_path, to_directory):
     # We need to use the translated path for the copy but return the untouched staged path
     stage_dir = os.path.join(to_directory_translated, file_hash)
     stage_path = os.path.join(stage_dir, os.path.basename(from_path))
-    original_stage_path = os.path.join(to_directory,file_hash,os.path.basename(from_path))
+    original_stage_path = os.path.join(to_directory, file_hash, os.path.basename(from_path))
 
     if not os.path.exists(stage_dir):
         try:
@@ -83,15 +86,17 @@ def stage_file(from_path, to_directory):
             raise Exception("Unable to create directory: " + stage_dir)
 
     if not os.path.exists(stage_path):
-        logger.info('Copying %s to %s (translated in: %s)' % (os.path.basename(from_path), to_directory, to_directory_translated))
+        logger.info('Copying %s to %s (translated in: %s)' % (
+        os.path.basename(from_path), to_directory, to_directory_translated))
         shutil.copy(from_path, stage_path)
         logger.info('Copying complete.')
 
     return original_stage_path
 
+
 def COMPS_login(endpoint):
     try:
-        am= Client.auth_manager()
+        am = Client.auth_manager()
     except:
         Client.login(endpoint)
 
@@ -107,7 +112,7 @@ def get_asset_collection(collection_id_or_name, query_criteria=None):
     if collection: return collection
 
     # And by name
-    collection = get_asset_collection_by_tag("Name",collection_id_or_name, query_criteria)
+    collection = get_asset_collection_by_tag("Name", collection_id_or_name, query_criteria)
     return collection
 
 
@@ -137,13 +142,16 @@ def get_asset_collection_by_tag(tag_name, tag_value, query_criteria=None):
     if len(result) >= 1: return result[0]
     return None
 
+
 @retry_function
 def get_experiment_by_id(exp_id, query_criteria=None):
     return Experiment.get(exp_id, query_criteria=query_criteria)
 
+
 @retry_function
 def get_simulation_by_id(sim_id, query_criteria=None):
     return Simulation.get(id=sim_id, query_criteria=query_criteria)
+
 
 def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
@@ -173,11 +181,16 @@ def sims_from_suite_id(suite_id):
         sims += sims_from_experiment(e)
     return sims
 
+
 def exps_for_suite_id(suite_id):
     try:
         return Experiment.get(query_criteria=QueryCriteria().where('suite_id=%s' % suite_id))
     except:
         return None
+
+
+def get_semaphore():
+    return Simulation.get_save_semaphore()
 
 
 def experiment_is_running(e):

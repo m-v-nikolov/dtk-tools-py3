@@ -52,9 +52,9 @@ requirements = OrderedDict([
     }),
     ('pyCOMPS', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '2.0.1',
+        'version': '2.1',
         'test': '==',
-        'wheel': '%s/pyCOMPS-2.0.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pyCOMPS-2.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('matplotlib', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
@@ -64,21 +64,21 @@ requirements = OrderedDict([
     }),
     ('scipy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.19.0',
+        'version': '0.19.1',
         'test': '>=',
-        'wheel': '%s/scipy-0.19.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/scipy-0.19.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('pandas', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.20.2',
+        'version': '0.20.3',
         'test': '>=',
-        'wheel': '%s/pandas-0.20.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/pandas-0.20.3-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('psutil', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '5.2.2',
+        'version': '5.3.1',
         'test': '==',
-        'wheel': '%s/psutil-5.2.2-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/psutil-5.3.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
     }),
     ('python-snappy', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
@@ -88,9 +88,9 @@ requirements = OrderedDict([
     }),
     ('seaborn', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.7.1',
+        'version': '0.8.1',
         'test': '==',
-        'wheel': '%s/seaborn-0.7.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
+        'wheel': '%s/seaborn-0.8.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
     }),
     ('statsmodels', {
         'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
