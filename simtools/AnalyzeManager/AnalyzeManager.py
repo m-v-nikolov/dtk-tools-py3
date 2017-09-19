@@ -19,7 +19,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 class AnalyzeManager:
-    def __init__(self, exp_list=[], sim_list=[], analyzer_list=[], working_dir=None, force_analyze=False, verbose=True,
+    def __init__(self, exp_list=[], sim_list=[], analyzers=[], working_dir=None, force_analyze=False, verbose=True,
                  create_dir_map=True):
         self.experiments = []
         self.simulations = []
@@ -46,7 +46,7 @@ class AnalyzeManager:
         map(self.add_simulation, sim_list)
 
         # Initial adding of the analyzers
-        analyzer_list = analyzer_list if isinstance(analyzer_list, list) else [analyzer_list]
+        analyzer_list = analyzers if isinstance(analyzers, list) else [analyzers]
         map(self.add_analyzer, analyzer_list)
 
     def add_experiment(self, experiment):
