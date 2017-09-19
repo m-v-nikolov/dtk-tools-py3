@@ -360,6 +360,7 @@ class add_drug_campaign_fn:
         self.target_group = target_group
 
     def __call__(self, cb):
+        from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
         return add_drug_campaign(cb, self.campaign_type, self.drug_code, start_days=self.start_days,
                                  coverage=self.coverage, repetitions=self.repetitions, interval=self.interval,
                                  diagnostic_threshold=self.diagnostic_threshold,
