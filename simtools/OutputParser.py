@@ -173,7 +173,6 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
         return sim_map
 
-    @retry_function
     def load_all_files(self, filenames):
         if not self.asset_service:
             #  we can just open files locally...
