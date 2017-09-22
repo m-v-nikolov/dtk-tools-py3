@@ -378,7 +378,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.dlls.add((dll_type, dll_path))
 
             # path relative to dll_root, will be expanded before emodules_map.json is written
-            self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
+            if os.path.join(dll_type, dll_path) not in self.emodules_map:
+                self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
 
     def add_input_file(self, name, content):
         """
