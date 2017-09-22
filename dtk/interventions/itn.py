@@ -27,7 +27,8 @@ receiving_itn_event = {
 }
 
 
-def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], node_property_restrictions=[]):
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], node_property_restrictions=[],
+            ind_property_restrictions=[]):
     """
     Add an ITN intervention to the config_builder passed.
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
@@ -89,5 +90,11 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
             ITN_event["Event_Coordinator_Config"]["Intervention_Config"] = birth_triggered_intervention
             ITN_event["Event_Coordinator_Config"].pop("Demographic_Coverage")
             ITN_event["Event_Coordinator_Config"].pop("Target_Residents_Only")
+
+            if ind_property_restrictions:
+                ITN_event["Event_Coordinator_Config"]["Intervention_Config"]["Property_Restrictions_Within_Node"] = ind_property_restrictions
+
+        elif ind_property_restrictions:
+            ITN_event["Event_Coordinator_Config"]["Property_Restrictions_Within_Node"] = ind_property_restrictions
 
         config_builder.add_event(ITN_event)

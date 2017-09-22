@@ -5,7 +5,8 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         duration_of_stay=100, duration_of_stay_2=0, 
                         duration_before_leaving_distr_type='FIXED_DURATION', 
                         duration_before_leaving=0, duration_before_leaving_2=0, 
-                        target='Everyone', nodesfrom={"class": "NodeSetAll"}) :
+                        target='Everyone', nodesfrom={"class": "NodeSetAll"},
+                        ind_property_restrictions=[]) :
 
     migration_event = { "Event_Name": "Migration Event", 
                         "class": "CampaignEvent",
@@ -41,6 +42,10 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
     else :
         migration_event["Event_Coordinator_Config"].update({
                 "Target_Demographic": target } ) # default is Everyone
+
+    # Add IP restriction on who gets to travel
+    if ind_property_restrictions:
+        migration_event["Event_Coordinator_Config"]["Property_Restrictions_Within_Node"] = ind_property_restrictions
 
     cb.add_event(migration_event)
 
