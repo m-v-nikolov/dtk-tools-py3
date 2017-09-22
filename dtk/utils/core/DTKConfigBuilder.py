@@ -378,8 +378,7 @@ class DTKConfigBuilder(SimConfigBuilder):
             self.dlls.add((dll_type, dll_path))
 
             # path relative to dll_root, will be expanded before emodules_map.json is written
-            if os.path.join(dll_type, dll_path) not in self.emodules_map:
-                self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
+            self.emodules_map[dll_type].append(os.path.join(dll_type, dll_path))
 
     def add_input_file(self, name, content):
         """
@@ -503,7 +502,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         else:
             raise Exception('Unknown location: %s' % location)
         for module_type in self.emodules_map.keys():
-            self.emodules_map[module_type] = [os.path.join(root, dll) for dll in self.emodules_map[module_type]]
+            self.emodules_map[module_type] =list(set([os.path.join(root, dll) for dll in self.emodules_map[module_type]]))
         write_fn('emodules_map.json', dump(self.emodules_map))
 
     def dump_files(self, working_directory):
