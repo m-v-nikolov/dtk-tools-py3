@@ -1,5 +1,4 @@
-def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start_day=0, nodes={"class": "NodeSetAll"},
-                 ind_property_restrictions=[]):
+def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start_day=0, nodes={"class": "NodeSetAll"}):
     """
     Create an intervention introducing new infections (see `InputEIR <https://institutefordiseasemodeling.github.io/EMOD/malaria/parameter-campaign.html#iv-inputeir>`_ for detail)
 
@@ -18,7 +17,7 @@ def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start
             "class": "CampaignEvent",
             "Event_Coordinator_Config":
             {
-                "Number_Repetitions": 1,
+                "Number_Repetitions": -1,
                 "class": "StandardInterventionDistributionEventCoordinator",
                 "Intervention_Config":
                 {
@@ -29,8 +28,5 @@ def add_InputEIR(cb, monthlyEIRs, age_dependence="SURFACE_AREA_DEPENDENT", start
             },
             "Nodeset_Config": nodes
         }
-
-    if ind_property_restrictions:
-        input_EIR_event["Event_Coordinator_Config"]['Intervention_Config']["Property_Restrictions_Within_Node"] = ind_property_restrictions
 
     cb.add_event(input_EIR_event)
