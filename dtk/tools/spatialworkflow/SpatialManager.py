@@ -194,9 +194,9 @@ class SpatialManager:
             # climate generator instance w/ default climate generation work order parameters; climate_project name is mandatory
             # consult IDM large data for complete project lists
             self.cg = ClimateGenerator(
-                self.demographics_output_file_path,
-                os.path.join(self.log_path, 'climate_wo.json'),
-                os.path.join(self.sim_data_input, self.geography),
+                demographics_file_path=self.demographics_output_file_path,
+                work_order_path=os.path.join(self.log_path, 'climate_wo.json'),
+                climate_files_output_path=os.path.join(self.sim_data_input, self.geography),
             )
 
     def set_demographics_type(self, demographics_type):
@@ -357,11 +357,11 @@ class SpatialManager:
         if self.cg:
             om("generating climate files.", style='bold')
 
-            climate_file_names = self.cg.generate_climate_files()
+            rain_filename, humidify_filename, temperature_filename = self.cg.generate_climate_files()
 
-            rain_file_path = os.path.join(self.geography, climate_file_names['rain'])
-            humidity_file_path = os.path.join(self.geography, climate_file_names['humidity'])
-            temperature_file_path = os.path.join(self.geography, climate_file_names['temp'])
+            rain_file_path = os.path.join(self.geography, rain_filename)
+            humidity_file_path = os.path.join(self.geography, humidify_filename)
+            temperature_file_path = os.path.join(self.geography, temperature_filename)
 
             self.cb.update_params({
                 'Land_Temperature_Filename': temperature_file_path,
