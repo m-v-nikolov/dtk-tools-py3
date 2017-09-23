@@ -3,27 +3,22 @@
 import csv
 import json
 import os
-import time
-
-from COMPS.Data import QueryCriteria, AssetType
-from COMPS.Data import WorkItem, WorkItemFile
-from COMPS.Data.WorkItem import WorkerOrPluginKey, WorkItemState
 
 from dtk.tools.climate.BinaryFilesHelpers import extract_data_from_climate_bin_for_node
 from dtk.tools.climate.ClimateFileCreator import ClimateFileCreator
+from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.climate.WeatherNode import WeatherNode
 from dtk.tools.demographics.DemographicsFile import DemographicsFile
 from dtk.tools.demographics.Node import Node
-from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser
 
 # Set up the paths
 current_dir = os.path.dirname(os.path.realpath(__file__))
-output_path = os.path.join(current_dir,'output')
-internediate_dir = os.path.join(current_dir, 'intermediate','climate')
+output_path = os.path.join(current_dir, 'output')
+intermediate_dir = os.path.join(current_dir, 'intermediate', 'climate')
 
 # Make sure we have directory created
-if not os.path.exists(internediate_dir): os.makedirs(internediate_dir)
+if not os.path.exists(intermediate_dir): os.makedirs(intermediate_dir)
 if not os.path.exists(output_path): os.makedirs(output_path)
 
 # Get a setup
@@ -37,61 +32,30 @@ nodes = [
 
 # Create the file
 dg = DemographicsFile(nodes)
-dg.generate_file('climate_demog.json')
+climate_demog = os.path.join(intermediate_dir, 'climate_demog.json')
+dg.generate_file(climate_demog)
 
-# Create the workorder
-wo = InputDataWorker(demographics_file_path='climate_demog.json',
-                     wo_output_path='output',
-                     project_info='IDM-Zambia',
-                     start_year='2008', num_years='1', resolution='0')
+cg = ClimateGenerator(demographics_file_path=climate_demog,
+                      work_order_path=os.path.join(intermediate_dir, 'wo.json'),
+                      climate_files_output_path=intermediate_dir,
+                      climate_project='IDM-Zambia',
+                      start_year='2008', num_years='1', resolution='0', idRef="Gridded world grump2.5arcmin")
 
-# Get the weather from COMPS
-workerkey = WorkerOrPluginKey(name='InputDataWorker', version='1.0.0.0_RELEASE')
-
-wi = WorkItem('dtk-tools InputDataWorker WorkItem', workerkey, SetupParser.get('environment'))
-wi.set_tags({'dtk-tools':None, 'WorkItem type':'InputDataWorker dtk-tools'})
-wi.add_work_order(data=json.dumps(wo.wo_2_dict()))
-wi.add_file(WorkItemFile('climate_demog.json', 'Demographics', ''), data=json.dumps(dg.content))
-wi.save()
-wi.commission()
-
-# Wait for the workorder to be finished
-while wi.state not in [WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled]:
-    print "Waiting for work order to finish... (Current state = %s)" % wi.state
-    time.sleep(5)
-    wi.refresh()
-
-print "Successfully generated"
-
-# Get the files out of the workorder
-wi.refresh(QueryCriteria().select_children('files'))
-wifilenames = [wif.file_name for wif in wi.files if wif.file_type == 'Output']
-
-# Download the files to the local machine
-if len(wifilenames) > 0:
-    print 'Found output files: ' + str('\n'.join(wifilenames))
-    print 'Downloading now'
-
-    assets = wi.retrieve_assets(AssetType.Linked, wifilenames)
-
-    for i in range(len(wifilenames)):
-        with open(os.path.join(internediate_dir, wifilenames[i]), 'wb') as outfile:
-            outfile.write(assets[i])
-
+rain_fname, humidity_fname, temperature_fname = cg.generate_climate_files()
 
 # We now have the intermediate weather -> Create the list of nodes
 # Extract the nodes from the demog
 # Load the base climate nodes
-demog = json.load(open('climate_demog.json', 'rb'))
+demog = json.load(open(climate_demog, 'rb'))
 climate_nodes = {}
 for node in demog['Nodes']:
     n = WeatherNode()
     n.id = node['NodeID']
 
-    n.air_temperature = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
-    n.land_temperature = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_air_temperature_daily.bin')
-    n.rainfall = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_rainfall_daily.bin')
-    n.humidity = extract_data_from_climate_bin_for_node(n, 'intermediate/climate/Zambia_30arcsec_relative_humidity_daily.bin')
+    n.air_temperature = extract_data_from_climate_bin_for_node(n, os.path.join(intermediate_dir, temperature_fname))
+    n.land_temperature = extract_data_from_climate_bin_for_node(n, os.path.join(intermediate_dir, temperature_fname))
+    n.rainfall = extract_data_from_climate_bin_for_node(n, os.path.join(intermediate_dir, rain_fname))
+    n.humidity = extract_data_from_climate_bin_for_node(n, os.path.join(intermediate_dir, humidity_fname))
 
     climate_nodes[node['NodeAttributes']['FacilityName']] = n
 
@@ -122,7 +86,8 @@ for node in demog['Nodes']:
     nodes.append(n)
 
 # Create our files from the nodes
-cfc = ClimateFileCreator(nodes,'Bbondo_households_CBfilled_noworkvector','daily','2008-2008','Household-Scenario-Small')
+cfc = ClimateFileCreator(nodes, 'Bbondo_households_CBfilled_noworkvector', 'daily', '2008-2008',
+                         'Household-Scenario-Small')
 cfc.generate_climate_files(output_path)
 
 print "--------------------------------------"

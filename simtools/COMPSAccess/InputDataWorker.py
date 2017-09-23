@@ -3,7 +3,7 @@ import json
 
 class InputDataWorker:
     def __init__(self, demographics_file_path, wo_output_path, project_info="IDM-Democratic_Republic_of_the_Congo",
-                 include_non_pop=True, shape_id="", resolution="30", parameters=['tmean', 'humid', 'rain'],
+                 include_non_pop=True, shape_id="", resolution="30", parameters=('tmean', 'humid', 'rain'),
                  start_year='2009', num_years="4", nan_check=True, idRef='Gridded world grump2.5arcmin', project_root='v2016'):
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
@@ -19,9 +19,8 @@ class InputDataWorker:
         self.num_years = num_years
         self.nan_check = nan_check
         self.project_root = project_root
-        self.migration = False  # expose as parameter
+        self.migration = False
         self.id_reference = idRef
-        # self.id_reference = str(time.time())
         self.path = ''
 
     def wo_2_dict(self):
@@ -51,33 +50,6 @@ class InputDataWorker:
         # wo['NodeList'] = self.node_list
 
         return wo
-
-    def set_project_info(self, project_info):
-        self.project_info = project_info
-
-    def set_include_non_pop(self, include_non_pop):
-        self.include_non_pop = include_non_pop
-
-    def set_shape_id(self, shape_id):
-        self.shape_id = shape_id
-
-    def set_resolution(self, resolution):
-        self.resolution = resolution
-
-    def set_parameters(self, parameters):
-        self.parameters = parameters
-
-    def set_start_year(self, start_year):
-        self.start_year = start_year
-
-    def set_num_years(self, num_years):
-        self.num_years = num_years
-
-    def set_nan_check(self, nan_check):
-        self.nan_check = nan_check
-
-    def set_id_ref(self, id_ref):
-        self.id_reference = id_ref
 
     def wo_2_json(self):
         with open(self.wo_output_path, 'w') as wo_f:

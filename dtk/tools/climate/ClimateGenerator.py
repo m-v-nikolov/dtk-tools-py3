@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import time
 import zipfile
@@ -10,31 +11,40 @@ from simtools.Utilities.General import file_size
 
 class ClimateGenerator:
     def __init__(self, demographics_file_path, work_order_path, climate_files_output_path,
-                 climate_project="IDM-Zambia"):
+                 climate_project="IDM-Zambia", start_year=2000, num_years=1, resolution=0, idRef=None):
 
         self.work_order_path = work_order_path
         self.demographics_file_path = demographics_file_path
+        self.climate_project = climate_project
+        self.start_year = start_year
+        self.num_years = num_years
+        self.resolution = resolution
+        self.wo = None
+
+        # Get the idRef from the demographics_file if notspecified
+        demog = json.load(open(demographics_file_path, 'r'))
+        demog_idref = demog['Metadata']['IdReference']
+        if not idRef:
+            self.idRef = demog_idref
+        else:
+            self.idRef = idRef
+            if idRef != demog_idref:
+                print("/!\\ Warning: the idref of the demographics file ({}) "
+                      "is different from the one passed ({})".format(demog_idref, idRef))
+
         self.climate_files_output_path = climate_files_output_path
         if not os.path.exists(self.climate_files_output_path): os.makedirs(self.climate_files_output_path)
-        self.climate_project = climate_project
-
-        # see InputDataWorker for other work options
-        self.wo = InputDataWorker(self.demographics_file_path, self.work_order_path, self.climate_project,
-                                  idRef='Gridded world grump30arcsec')
-
-    def set_climate_project_info(self, climate_project):
-        self.wo.set_project_info(climate_project)
-
-    def set_climate_start_year(self, start_year):
-        self.wo.set_start_year(start_year)
-
-    def set_climate_num_years(self, num_years):
-        self.wo.set_num_years(num_years)
-
-    def set_climate_id_ref(self, id_ref):
-        self.wo.set_id_ref(id_ref)
 
     def generate_climate_files(self):
+        # see InputDataWorker for other work options
+        self.wo = InputDataWorker(demographics_file_path=self.demographics_file_path,
+                                  wo_output_path=self.work_order_path,
+                                  project_info=self.climate_project,
+                                  start_year=self.start_year,
+                                  num_years=self.num_years,
+                                  resolution=self.resolution,
+                                  idRef=self.idRef)
+
         # login to COMPS (if not already logged in) to submit climate files generation work order
         self.wo.wo_2_json()
 
@@ -57,18 +67,17 @@ class ClimateGenerator:
 
         wi.save()
 
-        om("Created request for climate files generation.")
-        om("Commissioning...")
+        print("Created request for climate files generation.")
+        print("Commissioning...")
 
         wi.commission()
 
         while wi.state not in (WorkItemState.Succeeded, WorkItemState.Failed, WorkItemState.Canceled):
-            om('Waiting for climate generation to complete (current state: ' + str(wi.state) + ')',
-               style='flushed')
+            om('Waiting for climate generation to complete (current state: ' + str(wi.state) + ')',  style='flushed')
             time.sleep(5)
             wi.refresh()
 
-        om("Climate files SUCCESSFULLY generated")
+        print("Climate files SUCCESSFULLY generated")
 
         # Get the collection with our files
         collections = wi.get_related_asset_collections()
@@ -105,9 +114,9 @@ class ClimateGenerator:
             humidity_file_name = os.path.basename(glob.glob(humidity_bin_re)[0])
             temperature_file_name = os.path.basename(glob.glob(temperature_bin_re)[0])
 
-            om('Climate files SUCCESSFULLY stored.')
+            print('Climate files SUCCESSFULLY stored.')
 
-            return {'rain': rain_file_name, 'temp': temperature_file_name, 'humidity': humidity_file_name}
+            return rain_file_name, temperature_file_name, humidity_file_name
 
         else:
-            om('No output files found')
+            print('No output files found')
