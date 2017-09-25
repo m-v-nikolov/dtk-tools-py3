@@ -155,6 +155,9 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
     # Make sure we are logged in
     COMPS_login(endpoint)
 
+    #Ensure exp_id is a string
+    exp_id = str(exp_id)
+
     # IF the experiment already exists and
     experiment = DataStore.get_experiment(exp_id)
     if experiment and experiment.is_done():
