@@ -133,7 +133,7 @@ def retrieve_simulation(sim_id, sync_if_missing=True, verbose=False, force_updat
     if csim:
         with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
             endpoint = sp.get('server_endpoint')
-        COMPS_experiment_to_local_db(str(csim.experiment_id), endpoint, verbose)
+        COMPS_experiment_to_local_db(csim.experiment_id, endpoint, verbose)
 
     sim = DataStore.get_simulation(sim_id)
     if sim: return sim
@@ -154,6 +154,9 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
     """
     # Make sure we are logged in
     COMPS_login(endpoint)
+
+    #Ensure exp_id is a string
+    exp_id = str(exp_id)
 
     # IF the experiment already exists and
     experiment = DataStore.get_experiment(exp_id)
