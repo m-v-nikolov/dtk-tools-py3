@@ -133,7 +133,7 @@ def retrieve_simulation(sim_id, sync_if_missing=True, verbose=False, force_updat
     if csim:
         with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
             endpoint = sp.get('server_endpoint')
-        COMPS_experiment_to_local_db(csim.experiment_id, endpoint, verbose)
+        COMPS_experiment_to_local_db(str(csim.experiment_id), endpoint, verbose)
 
     sim = DataStore.get_simulation(sim_id)
     if sim: return sim
