@@ -88,34 +88,47 @@ brew uninstall python
 brew install python --with-brewed-tk
 ```
 
-#### Linux users
-Linux users, you need to install:
-- python-snappy
-- snappy-dev
-- LAPACK
-- tk-dev
-- pysqlite2
+#### CentOS7 users
+You need to install the following system dependencies:
+```
+yum groupinstall -y development
+yum install snappy-devel -y
+yum install openssl-devel -y
+yum install python-devel -y
+yum install tkinter -y
+```
 
-In order for the tools to work.
+Install pip and create a virtual environment:
+```
+wget --no-check-certificate https://bootstrap.pypa.io/get-pip.py
+python get-pip.py
+pip install virtualenv
+virtualenv dtktools
+source dtktools/bin/activate
+```
 
-Remark: the command ```python setup.py``` from previous step will do these installation for you!
+Clone the tools:
+```
+yum install git -y
+git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+```
+
+Install pyCOMPS manually:
+```
+wget https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+pip install pyCOMPS-2.1-py2.py3-none-any.whl
+```
+
+Install the tools:
+```
+cd dtk-tools
+python setup.py
+```
+
 
 #### Setup
 
-To configure your user-specific paths and settings for local and HPC job submission, run the `dtk setup` command.
-The command will display an interface allowing you to:
-
-* Change the default `LOCAL` configuration (Configuration used by default for all simulations and running on your local computer)
-* Change the default `HPC` configuration (Configuration used if you append a `--HPC` to a command and that will run on HPC environment)
-* Add a new configuration block (If you wish to create a configuration block that you can later reference by `--BLOCK_NAME`)
-* Edit the configuration blocks
-
-In this interface, the **default configurations** refers to the configuration blocks accessible everywhere in your environment (by default `LOCAL` and `HPC`).
-The **local configurations** refers to the configurations stored in the `simtools.ini` file in your current working directory (the directory from where you call the `dtk setup` command) and are
-accessible only to commands ran there.
-
-Note that it is possible to have a local configuration called `LOCAL` or `HPC` which will overrides the global defaults.
-
-One can verify the proper system setup by navigating to the `test` directory and running the unit tests contained therein, e.g. by executing `nosetests` if one has the [`nose`](http://nose.readthedocs.org/en/latest/index.html) package installed.
+To configure your user-specific paths and settings for local and HPC job submission, please create a `simtools.ini` file in
+the same folder that contains your scripts or modify the master `simtools.ini` at `dtk-tools/simtools/simtools.ini`
 
 Simulation job management is handled through the various `dtk` command-line options, e.g. `dtk run example_sweep` or `dtk analyze example_plots`.  For a full list of options, execute `dtk --help`.  Many example configurations for simulation sweeps and analysis processing may be found in the `examples` directory.
