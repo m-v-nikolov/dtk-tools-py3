@@ -2,6 +2,7 @@ import multiprocessing
 import os
 from multiprocessing.pool import ThreadPool
 
+import collections
 from COMPS.Data.Simulation import SimulationState
 
 from simtools.DataAccess.DataStore import DataStore
@@ -15,11 +16,8 @@ from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulat
 logger = init_logging('AnalyzeManager')
 
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-
-
 class AnalyzeManager:
-    def __init__(self, exp_list=[], sim_list=[], analyzers=[], working_dir=None, force_analyze=False, verbose=True,
+    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True,
                  create_dir_map=True):
         self.experiments = []
         self.simulations = []
@@ -38,16 +36,19 @@ class AnalyzeManager:
             exp_list = DataStore.get_most_recent_experiment()
 
         # Initial adding of experiments
-        exp_list = exp_list if isinstance(exp_list, list) else [exp_list]
-        map(self.add_experiment, exp_list)
+        if exp_list:
+            exp_list = exp_list if isinstance(exp_list, collections.Iterable) else [exp_list]
+            for exp in exp_list: self.add_experiment(exp)
+
+        # Initial adding of the simulations
+        if sim_list:
+            sim_list = sim_list if isinstance(sim_list, collections.Iterable) else [sim_list]
+            for sim in sim_list: self.add_simulation(sim)
 
         # Initial adding of the analyzers
-        sim_list = sim_list if isinstance(sim_list, list) else [sim_list]
-        map(self.add_simulation, sim_list)
-
-        # Initial adding of the analyzers
-        analyzer_list = analyzers if isinstance(analyzers, list) else [analyzers]
-        map(self.add_analyzer, analyzer_list)
+        if analyzers:
+            analyzer_list = analyzers if isinstance(analyzers, collections.Iterable) else [analyzers]
+            for a in analyzer_list: self.add_analyzer(a)
 
     def add_experiment(self, experiment):
         from simtools.DataAccess.Schema import Experiment
@@ -153,7 +154,7 @@ class AnalyzeManager:
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
         if not self.force_analyze and simulation.status != SimulationState.Succeeded:
-            if self.verbose: print("Simulation %s skipped (status is %s)" % (simulation.id, simulation.status.name))
+            if self.verbose: print("Simulation {} skipped (status is {})".format(simulation.id, simulation.status.name))
             return
 
         # Add the simulation_id to the tags
@@ -169,7 +170,7 @@ class AnalyzeManager:
                 filtered_analyses.append(a)
 
         if not filtered_analyses:
-            if self.verbose: print("Simulation %s did not pass filter on any analyzer." % simulation.id)
+            if self.verbose: print("Simulation {} did not pass filter on any analyzer.".format(simulation.id))
             return
 
         # If all the analyzers present call for deactivating the parsing -> do it
@@ -187,13 +188,15 @@ class AnalyzeManager:
         self.parsers = []
 
         # Create the parsers for the experiments
-        map(self.create_parsers_for_experiment, self.experiments)
+        for exp in self.experiments:
+            self.create_parsers_for_experiment(exp)
 
-        # Create the parsers for the experiments
-        map(self.create_parsers_for_experiment_from_simulation, self.experiments_simulations.keys())
+        # Create the parsers for the experiments of the standalone simulations
+        for exp in self.experiments_simulations.keys():
+            self.create_parsers_for_experiment_from_simulation(exp)
 
         if len(self.parsers) == 0:
-            print('No experiments/simulations for analysis.')
+            print("No experiments/simulations for analysis.")
             return # mimic the above len(self.analyzers) == 0 behavior
 
         for parser in self.parsers:
@@ -201,7 +204,8 @@ class AnalyzeManager:
             parser.start()
 
         # We are all done, finish analyzing
-        map(lambda p: p.join(), self.parsers)
+        for parser in self.parsers:
+            parser.join()
 
         plotting_processes = []
         from multiprocessing import Process
@@ -219,8 +223,8 @@ class AnalyzeManager:
                 plotting_processes.append(plotting_process)
             except Exception as e:
                 print e
-                logger.error("Error in the plotting process for analyzer %s" % a)
-                logger.error("Experiments list %s" % self.experiments)
+                logger.error("Error in the plotting process for analyzer {}".format(a))
+                logger.error("Experiments list {}".format(self.experiments))
                 logger.error(e)
 
         map(lambda p: p.join(), plotting_processes)
