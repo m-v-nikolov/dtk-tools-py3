@@ -5,6 +5,7 @@ class InputDataWorker:
     def __init__(self, demographics_file_path, wo_output_path, project_info="IDM-Democratic_Republic_of_the_Congo",
                  include_non_pop=True, shape_id="", resolution="30", parameters=('tmean', 'humid', 'rain'),
                  start_year='2009', num_years="4", nan_check=True, idRef='Gridded world grump2.5arcmin', project_root='v2016'):
+
         self.demographics_file_path = demographics_file_path
         self.wo_output_path = wo_output_path
         self.work_item_type = "InputDataWorker"

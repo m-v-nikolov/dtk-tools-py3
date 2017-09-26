@@ -6,6 +6,7 @@ import zipfile
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser
+from simtools.Utilities.COMPSUtilities import download_asset_collection
 from simtools.Utilities.General import file_size
 
 
@@ -92,18 +93,8 @@ class ClimateGenerator:
 
             print("\nDownloading to %s..." % self.climate_files_output_path)
 
-            # Download the collection as zip
-            zip_path = os.path.join(self.climate_files_output_path, 'temp.zip')
-            with open(zip_path, 'wb') as outfile:
-                outfile.write(comps_collection.retrieve_as_zip())
-
-            # Extract it
-            zip_ref = zipfile.ZipFile(zip_path, 'r')
-            zip_ref.extractall(self.climate_files_output_path)
-            zip_ref.close()
-
-            # Delete the temporary zip
-            os.remove(zip_path)
+            # Download the collection
+            download_asset_collection(comps_collection, self.climate_files_output_path)
 
             # return filenames; this use of re in conjunction w/ glob is not great; consider refactor
             rain_bin_re = os.path.abspath(self.climate_files_output_path + '/*rain*.bin')
