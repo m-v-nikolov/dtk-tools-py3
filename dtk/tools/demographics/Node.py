@@ -49,7 +49,7 @@ class Node:
 
     @property
     def id(self):
-        return self.forced_id or nodeid_from_lat_lon(self.lat, self.lon, self.res_in_degrees)
+        return self.forced_id if self.forced_id is not None else nodeid_from_lat_lon(self.lat, self.lon, self.res_in_degrees)
 
     @classmethod
     def init_resolution_from_file(cls, fn):
@@ -76,7 +76,7 @@ class Node:
 
         # Create the node
         return Node(lat=latitude, lon=longitude,
-                    pop=population, name=name, extra_attributes=attributes)
+                    pop=population, name=name, extra_attributes=attributes, forced_id=nodeid)
 
 
 def get_xpix_ypix(nodeid):
