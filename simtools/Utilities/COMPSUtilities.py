@@ -1,3 +1,5 @@
+import zipfile
+
 from simtools.Utilities.General import init_logging, get_md5, retry_function
 
 logger = init_logging('Utils')
@@ -141,6 +143,27 @@ def get_asset_collection_by_tag(tag_name, tag_value, query_criteria=None):
     result = AssetCollection.get(query_criteria=query_criteria)
     if len(result) >= 1: return result[0]
     return None
+
+
+def download_asset_collection(collection, output_folder):
+    if not isinstance(collection, AssetCollection):
+        collection = AssetCollection.get(collection, query_criteria=QueryCriteria().select_children('assets'))
+
+    # Get the files
+    if len(collection.assets) > 0:
+
+        # Download the collection as zip
+        zip_path = os.path.join(output_folder, 'temp.zip')
+        with open(zip_path, 'wb') as outfile:
+            outfile.write(collection.retrieve_as_zip())
+
+        # Extract it
+        zip_ref = zipfile.ZipFile(zip_path, 'r')
+        zip_ref.extractall(output_folder)
+        zip_ref.close()
+
+        # Delete the temporary zip
+        os.remove(zip_path)
 
 
 @retry_function
