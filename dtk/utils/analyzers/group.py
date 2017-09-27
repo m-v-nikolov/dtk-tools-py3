@@ -1,23 +1,25 @@
+
 def no_grouping(simid, metadata):
     return simid
 
 
-def group_by_name(name):
-    def fn(simid, metadata):
-        return metadata.get(name, simid)
+class group_by_name:
+    def __init__(self, name):
+        self.name = name
 
-    return fn
-
+    def __call__(self, simid, metadata):
+        return metadata.get(self.name, simid)
 
 def group_all(simid, metadata):
     return 'all'
 
 
-def combo_group(*args):
-    def f(simid, metadata):
-        return tuple(group(simid, metadata) for group in args)
+class combo_group:
+    def __init__(self,*args):
+        self.args = args
 
-    return f
+    def __call__(self, simid, metadata):
+        return tuple(group(simid, metadata) for group in self.args)
 
 def default_group_fn(k,v):
     return k
