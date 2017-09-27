@@ -38,7 +38,7 @@ def analyze(args, unknownArgs, builtinAnalyzers):
         exp_dict[latest.exp_id] = latest
 
     # create instance of AnalyzeManager
-    analyzeManager = AnalyzeManager(exp_list=exp_dict.values(), sim_list=sim_dict.values(), analyzer_list=analyzers)
+    analyzeManager = AnalyzeManager(exp_list=exp_dict.values(), sim_list=sim_dict.values(), analyzers=analyzers)
 
     exp_ids_to_be_saved = list(set(exp_dict.keys()) - set(analyzeManager.experiments_simulations.keys()))
     exp_to_be_saved = [exp_dict[exp_id] for exp_id in exp_ids_to_be_saved]
