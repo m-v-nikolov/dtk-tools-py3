@@ -26,8 +26,7 @@ def add_incidence_counter(cb,
     :param threshold_type: 'COUNT' for raw counts or 'PERCENTAGE' to normalize by population
     :param thresholds: thresholds at which to engage a response
     :param triggered_events: event name to broadcast upon surpassing thresholds. Needs one per threshold.
-    :param coverage: Demographic coverage of the monitoring. Affects probability a count_trigger will be counted but is
-    ignored for calculating denominator for PERCENTAGE.
+    :param coverage: Demographic coverage of the monitoring
     :param target_group: to restrict monitoring by age, dict of {'agemin' : x, 'agemax' : y}. Default is targeting
     everyone.
     :param nodeIDs: list of node IDs to monitor; if empty, defaults to all nodes
@@ -83,6 +82,3 @@ def add_incidence_counter(cb,
         monitoring_event["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
     cb.add_event(monitoring_event)
-    listed_events = cb.get_param('Listed_Events')
-    new_events = [x for x in triggered_events if x not in listed_events]
-    cb.update_params({'Listed_Events': listed_events + new_events})
