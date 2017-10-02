@@ -11,6 +11,14 @@ from dtk.interventions.health_seeking import add_health_seeking
 import json
 import numpy as np
 
+# Call update_params on the CB
+class update_params:
+    def __init__(self, params):
+        self.params = params
+
+    def __call__(self, cb):
+        return cb.update_params(self.params)
+
 class config_setup_fn:
     def __init__(self, duration=21915):
         self.duration = duration

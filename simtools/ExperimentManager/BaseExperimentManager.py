@@ -263,8 +263,11 @@ class BaseExperimentManager:
             logger.info(" | Max simulations per threads: %s" % nbatches)
 
         # Wait for all to finish
-        map(lambda c: c.start(), creator_processes)
-        map(lambda c: c.join(), creator_processes)
+        for c in creator_processes:
+            c.start()
+
+        for c in creator_processes:
+            c.join()
 
         # Insert all those newly created simulations to the DB
         DataStore.bulk_insert_simulations(return_list)
