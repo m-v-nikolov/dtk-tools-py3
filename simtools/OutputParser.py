@@ -185,8 +185,8 @@ class CompsDTKOutputParser(SimulationOutputParser):
         try:
             asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
         except RuntimeError as ex:
-            print("Could not retrieve file for simulation %s." % self.sim_id)
-            print_exc(ex)
+            print("Could not retrieve file for simulation {} - Requested files: {}. Parser exiting..."
+                  .format(self.sim_id, paths))
             exit()
 
         for filename, byte_array in zip(filenames, asset_byte_arrays):

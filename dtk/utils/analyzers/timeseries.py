@@ -60,6 +60,10 @@ class TimeseriesAnalyzer(BaseAnalyzer):
         # Gathering selected data from parser threads...
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
+        if len(selected) == 0:
+            print("No data have been returned from apply... Exiting...")
+            exit()
+
         # Combining selected data...
         combined = pd.concat(selected, axis=1, 
                              keys=[(d.group, d.sim_id) for d in selected], 
