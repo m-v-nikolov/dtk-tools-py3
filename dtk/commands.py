@@ -7,12 +7,11 @@ import sys
 
 import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
-from dtk.utils.analyzers import sample_selection
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
+from dtk.utils.analyzers import sample_selection
 from dtk.utils.analyzers.group import group_by_name
 from dtk.utils.analyzers.plot import plot_grouped_lines
-from dtk.utils.setupui.SetupApplication import SetupApplication
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.DataAccess.LoggingDataStore import LoggingDataStore
@@ -55,23 +54,23 @@ def test(args, unknownArgs):
     subprocess.Popen(command, cwd=test_dir).wait()
 
 
-def setup2(args, unknownArgs):
-    """
-    Backup of setupui
-    """
-    if os.name == "nt":
-        # Get the current console size
-        output = subprocess.check_output("mode con", shell=True)
-        original_cols = output.split('\n')[3].split(':')[1].lstrip()
-        original_rows = output.split('\n')[4].split(':')[1].lstrip()
-
-        # Resize only if needed
-        if int(original_cols) < 300 or int(original_rows) < 110:
-            os.system("mode con: cols=100 lines=35")
-    else:
-        sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-
-    SetupApplication().run()
+# def setup2(args, unknownArgs):
+#     """
+#     Backup of setupui
+#     """
+#     if os.name == "nt":
+#         # Get the current console size
+#         output = subprocess.check_output("mode con", shell=True)
+#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
+#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
+#
+#         # Resize only if needed
+#         if int(original_cols) < 300 or int(original_rows) < 110:
+#             os.system("mode con: cols=100 lines=35")
+#     else:
+#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
+#
+#     SetupApplication().run()
 
 # def setup(args, unknownArgs):
 #     """
