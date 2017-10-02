@@ -223,14 +223,15 @@ def convert_to_counts(rates, pops):
     :param pops: a pandas.Series of average population counts
     :return: a pandas.Series (same binning as rates)
     """
-
-    rate_idx = rates.index.names
-    pop_idx = pops.index.names
+    # The outer join does not work for now
+    # Using a fix provided by pselvaraj
+    # rate_idx = rates.index.names
+    # pop_idx = pops.index.names
 
     # Join rates to population counts on the binning of the latter
-    df = rates.reset_index().set_index(pop_idx)\
-              .join(pops, how='left')\
-              .reset_index().set_index(rate_idx)
+    # df = rates.reset_index().set_index(pop_idx)\
+    #          .join(pops, how='left')\
+    #          .reset_index().set_index(rate_idx)
 
     # Multiply rates by population and return counts
     counts = rates * pops.rename(rates.name)
