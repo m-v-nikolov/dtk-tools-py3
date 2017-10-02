@@ -5,14 +5,12 @@ import logging
 import os  # mkdir, path, etc.
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
-from traceback import print_exc
 
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
 
 from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
-from simtools.Utilities.General import retry_function
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
 
