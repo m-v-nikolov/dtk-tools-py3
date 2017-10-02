@@ -28,7 +28,7 @@ class VectorSpeciesAnalyzer(TimeseriesAnalyzer):
                  select_function=default_select_fn,  # return complete-&-unaltered timeseries
                  group_function=default_group_fn,  # group by unique simid-key from parser
                  plot_function=default_vectorplot_fn,
-                 channels=['Adult Vectors', 'Infectious Vectors', 'Daily EIR'],
+                 channels=['Adult Vectors Per Node', 'Percent Infectious Vectors', 'Daily EIR'],
                  saveOutput=False):
         TimeseriesAnalyzer.__init__(self, filename,
                                     filter_function, select_function,
