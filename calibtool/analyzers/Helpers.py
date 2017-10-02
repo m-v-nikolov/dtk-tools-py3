@@ -233,7 +233,7 @@ def convert_to_counts(rates, pops):
               .reset_index().set_index(rate_idx)
 
     # Multiply rates by population and return counts
-    counts = (df[rates.name] * df[pops.name]).rename(rates.name)
+    counts = rates * pops.rename(rates.name)
     return counts
 
 
