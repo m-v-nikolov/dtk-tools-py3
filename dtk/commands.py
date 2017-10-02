@@ -95,6 +95,22 @@ def run(args, unknownArgs):
     # get simulation-running instructions from script
     mod = args.loaded_module
 
+    # Make sure we have run_sim_args
+    if not hasattr(mod, 'run_sim_args'):
+        if hasattr(mod, 'run_calib_args'):
+            print("The module you are trying to run seems to contain a calibration script and should be ran with the "
+                  "`calibtool run` command.")
+            exit()
+
+        import json
+        print("You are trying to run a module without the required run_sim_args dictionary.")
+        print("The run_sim_args is expected to be of the format:")
+        print(json.dumps({"config_builder": "cb",
+                          "exp_name": "Experiment_name",
+                          "exp_builder": "Optional builder"}, indent=3))
+        exit()
+
+
     # Assess arguments.
     mod.run_sim_args['blocking'] = True if args.blocking else False
     mod.run_sim_args['quiet']    = True if args.quiet    else False
@@ -652,8 +668,8 @@ def main():
     # parser_setup.set_defaults(func=setup)
 
     # Testing: 'dtk setup' options
-    parser_setup = subparsers.add_parser('setup2', help='Launch the setup UI allowing to edit ini configuration files.')
-    parser_setup.set_defaults(func=setup2)
+    # parser_setup = subparsers.add_parser('setup2', help='Launch the setup UI allowing to edit ini configuration files.')
+    # parser_setup.set_defaults(func=setup2)
 
     # 'dtk test' options
     parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
