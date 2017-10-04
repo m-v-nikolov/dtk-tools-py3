@@ -83,3 +83,6 @@ def add_incidence_counter(cb,
         monitoring_event["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
     cb.add_event(monitoring_event)
+    listed_events = cb.get_param('Listed_Events')
+    new_events = [x for x in triggered_events if x not in listed_events]
+    cb.update_params({'Listed_Events': listed_events + new_events})
