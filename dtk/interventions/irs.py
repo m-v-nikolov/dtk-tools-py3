@@ -152,7 +152,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=None, nodeIDs=[],
 
 
 def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, cost=None,
-                 irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[], trigger_string=''):
+                 irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[], trigger_string_list=[]):
 
     irs_config = copy.deepcopy(node_irs_config)
     irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
@@ -171,11 +171,11 @@ def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, co
                  "Event_Name": "Node Level IRS"
                  }
 
-    if trigger_string:
+    if trigger_string_list:
         IRS_event['Event_Coordinator_Config']['Intervention_Config'] = {
             "class": "NodeLevelHealthTriggeredIV",
             "Blackout_On_First_Occurrence": 1,
-            "Trigger_Condition_List": [trigger_string],
+            "Trigger_Condition_List": trigger_string_list,
             "Actual_IndividualIntervention_Config": node_irs_config,
             "Target_Residents_Only": 1
         }
@@ -205,13 +205,13 @@ def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, co
             recent_irs]
         del IRS_cfg['Event_Coordinator_Config']['Intervention_Config']
 
-        if target_string:
+        if trigger_string_list:
             IRS_cfg['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'].extend([{'SprayStatus': 'None'}])
         else:
             IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend([{ 'SprayStatus' : 'None'}])
 
     if node_property_restrictions:
-        if trigger_string:
+        if trigger_string_list:
             IRS_cfg['Event_Coordinator_Config']['Intervention_Config']['Node_Property_Restrictions'].extend(node_property_restrictions)
         else:
             IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend(node_property_restrictions)

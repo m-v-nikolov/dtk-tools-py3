@@ -2,7 +2,8 @@ import numpy as np
 import sys
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
-                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, trigger_string=''):
+                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1,
+                       trigger_string_list=[]):
 
     """
     Add an ITN intervention to the config_builder passed.
@@ -22,8 +23,8 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
     :param as_birth: If true, event is specified as a birth-triggered intervention.
     :param duration: If run as a birth-triggered event, specifies the duration for the distribution to continue. Default
     is to continue until the end of the simulation.
-    :param trigger_string: sets up a NodeLevelHealthTriggeredIV that listens for the defined trigger string event before giving out the intervention,
-    "as_birth" and "trigger_string" options are mutually exclusive, if "as_birth" is true, trigger_string will be ignored.
+    :param trigger_string_list: sets up a NodeLevelHealthTriggeredIV that listens for the defined trigger string event before giving out the intervention,
+    "as_birth" and "trigger_string_list" options are mutually exclusive, if "as_birth" is true, trigger_string_list will be ignored.
     :return: Nothing
     """
 
@@ -167,16 +168,14 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
         }
 
     else:
-        if trigger_string:
+        if trigger_string_list:
             itn_event = {
                 "Event_Coordinator_Config": {
                     "Intervention_Config": {
                         "Blackout_On_First_Occurrence": 1,
                         "Demographic_Coverage": 1,
                         "Target_Residents_Only": 1,
-                        "Trigger_Condition_List": [
-                            "Action1"
-                        ],
+                        "Trigger_Condition_List": trigger_string_list,
                         "class": "NodeLevelHealthTriggeredIV",
                         "Actual_IndividualIntervention_Config":{
                             "Intervention_List": [
