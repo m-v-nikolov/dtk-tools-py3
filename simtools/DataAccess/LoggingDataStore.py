@@ -16,8 +16,11 @@ class LoggingDataStore:
 
     @classmethod
     def save_record(cls, record):
-        with session_scope(Session_logs()) as session:
-            session.add(record)
+        try:
+            with session_scope(Session_logs()) as session:
+                session.add(record)
+        except:
+            pass
 
     @classmethod
     def get_records(cls, level,modules,number):

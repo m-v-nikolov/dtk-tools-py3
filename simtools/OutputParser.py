@@ -1,4 +1,4 @@
-import cStringIO
+from StringIO import StringIO
 import gc  # for garbage collection
 import json  # to read JSON output files
 import logging
@@ -75,10 +75,9 @@ class SimulationOutputParser(threading.Thread):
     def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
         if content and file_extension not in ['bin', 'csv']:
-            content = cStringIO.StringIO(content).getvalue()
+            content = StringIO(content).getvalue()
 
         if content and file_extension == 'csv' and self.parse:
-            from StringIO import StringIO
             content = StringIO(content)
 
         if not content:
@@ -112,6 +111,9 @@ class SimulationOutputParser(threading.Thread):
         self.raw_data[filename] = content
 
     def load_csv_file(self, filename, content):
+        if not isinstance(content, StringIO):
+            content = StringIO(content)
+
         csv_read = pd.read_csv(content, skipinitialspace=True)
         self.raw_data[filename] = csv_read
 
