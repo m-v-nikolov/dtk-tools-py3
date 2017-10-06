@@ -2,10 +2,14 @@ import numpy as np
 import sys
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
-                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1):
+                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, trigger_string=''):
 
     """
     Add an ITN intervention to the config_builder passed.
+    You will need to add the following custom events:
+        "Bednet_Discarded",
+        "Bednet_Got_New_One",
+        "Bednet_Using"
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bed net distribution
     :param coverage_all: Fraction of the population receiving bed nets in a given distribution event
@@ -18,6 +22,8 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
     :param as_birth: If true, event is specified as a birth-triggered intervention.
     :param duration: If run as a birth-triggered event, specifies the duration for the distribution to continue. Default
     is to continue until the end of the simulation.
+    :param trigger_string: sets up a NodeLevelHealthTriggeredIV that listens for the defined trigger string event before giving out the intervention,
+    "as_birth" and "trigger_string" options are mutually exclusive, if "as_birth" is true, trigger_string will be ignored.
     :return: Nothing
     """
 
@@ -161,64 +167,134 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
         }
 
     else:
-        itn_event = {
-            "Event_Coordinator_Config": {
-                "Intervention_Config": {
-                    "Intervention_List": [
-                        {
-                            "Bednet_Type": "ITN",
-                            "Blocking_Config": {
-                                "Decay_Time_Constant": block_decay,
-                                "Initial_Effect": block_initial,
-                                "class": "WaningEffectExponential"
-                            },
-                            "Cost_To_Consumer": cost,
-                            "Killing_Config": {
-                                "Decay_Time_Constant": kill_decay,
-                                "Initial_Effect": kill_initial,
-                                "class": "WaningEffectExponential"
-                            },
-                            "Usage_Config_List":
-                                [
-                                    {
-                                        "class": "WaningEffectMapLinearAge",
-                                        "Initial_Effect": 1.0,
-                                        "Durability_Map":
-                                            {
-                                                "Times": list(age_times),
-                                                "Values": list(age_values)
-                                            }
+        if trigger_string:
+            itn_event = {
+                "Event_Coordinator_Config": {
+                    "Intervention_Config": {
+                        "Blackout_On_First_Occurrence": 1,
+                        "Demographic_Coverage": 1,
+                        "Target_Residents_Only": 1,
+                        "Trigger_Condition_List": [
+                            "Action1"
+                        ],
+                        "class": "NodeLevelHealthTriggeredIV",
+                        "Actual_IndividualIntervention_Config":{
+                            "Intervention_List": [
+                                {
+                                    "Bednet_Type": "ITN",
+                                    "Blocking_Config": {
+                                        "Decay_Time_Constant": block_decay,
+                                        "Initial_Effect": block_initial,
+                                        "class": "WaningEffectExponential"
                                     },
-                                    {
-                                        "class": "WaningEffectMapLinearSeasonal",
-                                        "Initial_Effect": 1.0,
-                                        "Durability_Map":
+                                    "Cost_To_Consumer": cost,
+                                    "Killing_Config": {
+                                        "Decay_Time_Constant": kill_decay,
+                                        "Initial_Effect": kill_initial,
+                                        "class": "WaningEffectExponential"
+                                    },
+                                    "Usage_Config_List":
+                                        [
                                             {
-                                                "Times": list(seasonal_times),
-                                                "Values": list(seasonal_values)
+                                                "class": "WaningEffectMapLinearAge",
+                                                "Initial_Effect": 1.0,
+                                                "Durability_Map":
+                                                    {
+                                                        "Times": list(age_times),
+                                                        "Values": list(age_values)
+                                                    }
+                                            },
+                                            {
+                                                "class": "WaningEffectMapLinearSeasonal",
+                                                "Initial_Effect": 1.0,
+                                                "Durability_Map":
+                                                    {
+                                                        "Times": list(seasonal_times),
+                                                        "Values": list(seasonal_values)
+                                                    }
                                             }
-                                    }
-                                ],
-                            "class": "UsageDependentBednet",
-                            "Received_Event": "Bednet_Got_New_One",
-                            "Using_Event": "Bednet_Using",
-                            "Discard_Event": "Bednet_Discarded",
-                            "Expiration_Distribution_Type": "DUAL_TIMESCALE_DURATION",
-                            "Expiration_Period_1": discard_time1,
-                            "Expiration_Period_2": discard_time2,
-                            "Expiration_Percentage_Period_1": discard_fraction1
-                        },
-                    ],
-                    "class": "MultiInterventionDistributor"
+                                        ],
+                                    "class": "UsageDependentBednet",
+                                    "Received_Event": "Bednet_Got_New_One",
+                                    "Using_Event": "Bednet_Using",
+                                    "Discard_Event": "Bednet_Discarded",
+                                    "Expiration_Distribution_Type": "DUAL_TIMESCALE_DURATION",
+                                    "Expiration_Period_1": discard_time1,
+                                    "Expiration_Period_2": discard_time2,
+                                    "Expiration_Percentage_Period_1": discard_fraction1
+                                },
+                            ],
+                        "class": "MultiInterventionDistributor"
+                        }
+                    },
+                    "class": "StandardInterventionDistributionEventCoordinator",
+                    "Target_Demographic": "Everyone",
+                    "Demographic_Coverage": coverage_all,
+                    "Duration": duration
                 },
-                "class": "StandardInterventionDistributionEventCoordinator",
-                "Target_Demographic": "Everyone",
-                "Demographic_Coverage": coverage_all,
-                "Duration": duration
-            },
-            "Nodeset_Config": nodeset_config,
-            "Start_Day": start,
-            "class": "CampaignEvent"
-        }
+                "Nodeset_Config": nodeset_config,
+                "Start_Day": start,
+                "class": "CampaignEvent"
+            }
+        else:
+            itn_event = {
+                "Event_Coordinator_Config": {
+                    "Intervention_Config": {
+                        "Intervention_List": [
+                            {
+                                "Bednet_Type": "ITN",
+                                "Blocking_Config": {
+                                    "Decay_Time_Constant": block_decay,
+                                    "Initial_Effect": block_initial,
+                                    "class": "WaningEffectExponential"
+                                },
+                                "Cost_To_Consumer": cost,
+                                "Killing_Config": {
+                                    "Decay_Time_Constant": kill_decay,
+                                    "Initial_Effect": kill_initial,
+                                    "class": "WaningEffectExponential"
+                                },
+                                "Usage_Config_List":
+                                    [
+                                        {
+                                            "class": "WaningEffectMapLinearAge",
+                                            "Initial_Effect": 1.0,
+                                            "Durability_Map":
+                                                {
+                                                    "Times": list(age_times),
+                                                    "Values": list(age_values)
+                                                }
+                                        },
+                                        {
+                                            "class": "WaningEffectMapLinearSeasonal",
+                                            "Initial_Effect": 1.0,
+                                            "Durability_Map":
+                                                {
+                                                    "Times": list(seasonal_times),
+                                                    "Values": list(seasonal_values)
+                                                }
+                                        }
+                                    ],
+                                "class": "UsageDependentBednet",
+                                "Received_Event": "Bednet_Got_New_One",
+                                "Using_Event": "Bednet_Using",
+                                "Discard_Event": "Bednet_Discarded",
+                                "Expiration_Distribution_Type": "DUAL_TIMESCALE_DURATION",
+                                "Expiration_Period_1": discard_time1,
+                                "Expiration_Period_2": discard_time2,
+                                "Expiration_Percentage_Period_1": discard_fraction1
+                            },
+                        ],
+                        "class": "MultiInterventionDistributor"
+                    },
+                    "class": "StandardInterventionDistributionEventCoordinator",
+                    "Target_Demographic": "Everyone",
+                    "Demographic_Coverage": coverage_all,
+                    "Duration": duration
+                },
+                "Nodeset_Config": nodeset_config,
+                "Start_Day": start,
+                "class": "CampaignEvent"
+            }
 
     config_builder.add_event(itn_event)

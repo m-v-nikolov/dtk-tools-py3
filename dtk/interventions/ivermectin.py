@@ -34,7 +34,7 @@ def ivermectin_config_by_duration(drug_code=None):
     return cfg
 
 
-def add_ivermectin(config_builder, drug_code, coverage, start_days):
+def add_ivermectin(config_builder, drug_code, coverage, start_days, trigger_string=''):
     """
     Add an ivermectin event to the config_builder passed.
 
@@ -42,21 +42,34 @@ def add_ivermectin(config_builder, drug_code, coverage, start_days):
     :param drug_code: Can be 'DAY', 'WEEK' or 'MONTH' and drive the ``Killing_config`` (see `Killing_Config in Ivermectin <https://institutefordiseasemodeling.github.io/EMOD/malaria/parameter-campaign.html#iv-ivermectin>`_ for more info).
     :param coverage: Set the ``Demographic_Coverage``
     :param start_days: list of days when to start the ivermectin distribution
+    :param trigger_string: ivermectin will be distributed when it hears the trigger string event, please note the start_days then is used to distribute the NodeLevelHealthTriggeredIV
     :return: Nothing
     """
 
     cfg=ivermectin_config_by_duration(drug_code)
 
     for start_day in start_days:
-        IVM_event = { "class" : "CampaignEvent",
-                      "Start_Day": start_day,
-                      "Event_Coordinator_Config": {
-                          "class": "StandardInterventionDistributionEventCoordinator",
-                          "Demographic_Coverage": coverage,
-                          "Intervention_Config": cfg
-                      }
-                    }
+        IVM_event = {"class": "CampaignEvent",
+                     "Start_Day": start_day,
+                     "Event_Coordinator_Config": {
+                        "class": "StandardInterventionDistributionEventCoordinator"
 
-        IVM_event["Nodeset_Config"] = { "class": "NodeSetAll" }
+                    },
+                     "Nodeset_Config": {"class": "NodeSetAll"}}
+
+        if trigger_string:
+            IVM_event['Event_Coordinator_Config']['Intervention_Config'] = {
+                "class" : "NodeLevelHealthTriggeredIV",
+                "Trigger_Condition_List": [trigger_string],
+                "Target_Residents_Only": 1,
+                "Demographic_Coverage": coverage,
+                "Actual_IndividualIntervention_Config" : cfg
+            }
+        else:
+            IVM_event['Event_Coordinator_Config'].update( {
+                "Target_Residents_Only": 1,
+                "Demographic_Coverage": coverage,
+                'Intervention_Config' : cfg
+            })
 
         config_builder.add_event(IVM_event)
