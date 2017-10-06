@@ -57,7 +57,7 @@ def sample_point_fn(cb, sample_dimension_values):
     sample_point = prior.to_dict(sample_dimension_values)  # aligns names and values; rounds integer-range_type params
 
     params_to_update = dict()
-    params_to_update['Simulation_Duration'] = 365 * 5  # shorter for quick test
+    params_to_update['Simulation_Duration'] = 365 * 5 + 1  # shorter for quick test
 
     for sample_dimension_name, sample_dimension_value in sample_point.items():
         # Apply specific logic to convert sample-point dimensions into simulation configuration parameters
