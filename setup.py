@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import ctypes
+import json
+import operator
 import os
 import re
 import shutil
@@ -9,7 +11,10 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from distutils.version import LooseVersion
-from urlparse import urlparse
+from enum import Enum
+from urllib.request import Request, urlopen
+
+import pip
 
 from simtools.Utilities.General import nostdout, timestamp_filename
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
@@ -21,312 +26,110 @@ install_directory = os.path.join(current_directory, 'install')
 installed_packages = dict()
 
 # This lets us guarantee a consistent time to be used for timestamped backup files
-import datetime
-this_time = datetime.datetime.utcnow()
+this_time = datetime.utcnow()
 
 # to fake out urlparse, setting netloc == 'GITHUB'
 GITHUB = 'GITHUB'
 GITHUB_URL_PREFIX = 'http://%s' % GITHUB
 
-# Set the list of requirements here
-# For Windows, the wheel can be provided in either tar.gz or whl format
-requirements = OrderedDict([
-    ('six', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('github3.py', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.0.0a4',
-        'test': '>='
-    }),
-    ('packaging', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '16.8',
-        'test': '>='
-    }),
-    ('curses', {
-        'platform': [LocalOS.WINDOWS],
-        'version': '2.2',
-        'test': '==',
-        'wheel': '%s/curses-2.2-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('pyCOMPS', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '2.1',
-        'test': '==',
-        'wheel': '%s/pyCOMPS-2.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
-    }),
-    ('matplotlib', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.5.3',
-        'test': '>=',
-        'wheel': '%s/matplotlib-1.5.3-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('scipy', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.19.1',
-        'test': '>=',
-        'wheel': '%s/scipy-0.19.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('pandas', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.20.3',
-        'test': '>=',
-        'wheel': '%s/pandas-0.20.3-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('psutil', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '5.3.1',
-        'test': '==',
-        'wheel': '%s/psutil-5.3.1-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('python-snappy', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX],
-        'version': '0.5',
-        'test': '==',
-        'wheel': '%s/python_snappy-0.5-cp27-none-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('seaborn', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.8.1',
-        'test': '==',
-        'wheel': '%s/seaborn-0.8.1-py2.py3-none-any.whl' % GITHUB_URL_PREFIX
-    }),
-    ('statsmodels', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.8.0',
-        'test': '==',
-        'wheel': '%s/statsmodels-0.8.0-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-    ('SQLAlchemy', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.1.5',
-        'test': '=='
-    }),
-    ('npyscreen', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '4.10.5',
-        'test': '=='
-    }),
-    ('fasteners', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '0.14.1',
-        'test': '=='
-    }),
-    ('decorator', {
-        'platform': [LocalOS.MAC],
-        'version': '4.0.10',
-        'test': '=='
-    }),
-    ('validators', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('networkx', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('patsy', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('dill', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('enum34', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-    }),
-    ('numpy', {
-        'platform': [LocalOS.WINDOWS, LocalOS.LINUX, LocalOS.MAC],
-        'version': '1.13.1+mkl',
-        'test': '>=',
-        'wheel': '%s/numpy-1.13.1+mkl-cp27-cp27m-win_amd64.whl' % GITHUB_URL_PREFIX
-    }),
-])
+# Get the installed packages on the system
+installed_packages = {package.project_name: package.version for package in pip.get_installed_distributions()}
+
+# Load the list of requirements
+requirements = json.load(open('requirements.json', 'r'), object_pairs_hook=OrderedDict)
+
+# Prepare the operators
+operators = {">": operator.gt, ">=": operator.ge, "<": operator.lt, "<=": operator.le, "==": operator.eq}
 
 
-def get_installed_packages():
-    """
-    Check packages in system
-    """
-    import pip
-
-    # Flatten the list
-    for package in pip.get_installed_distributions():
-        installed_packages[package.project_name] = package.version
+class PackageStatus(Enum):
+    MISSING = 0
+    VALID = 1
+    WRONGVERSION = 2
 
 
-def download_file(url):
-    """
-    Download package
-    """
-    import urllib2
-
-    local_file = get_local_file_path(url)
-
-    req = urllib2.Request(url)
-    resp = urllib2.urlopen(req)
-    data = resp.read()
-    with open(local_file, "wb") as code:
-        code.write(data)
-
-    return local_file
+class DownloadMethod(Enum):
+    GITHUB = 'GITHUB'
+    DIRECT = 'DIRECT'
 
 
-def get_local_file_path(url):
-    # If it is local file, use it
-    if os.path.exists(url):
-        return url
+def download_wheel(wheel, method=DownloadMethod.GITHUB):
+    if method == DownloadMethod.GITHUB:
+        dependency = GitHubFile(wheel)
+        dependency.destination_directory = install_directory
+        dependency.pull()
+    elif method == DownloadMethod.DIRECT:
+        req = Request(wheel)
+        resp = urlopen(req)
+        data = resp.read()
+        with open(os.path.join(install_directory, os.path.basename(wheel)), "wb") as code:
+            code.write(data)
+    return os.path.join(install_directory, os.path.basename(wheel))
 
-    # Compose local file
-    file_name = os.path.basename(url)
-    local_file = os.path.join(install_directory, file_name)
-    return local_file
 
-
-def install_package(my_os, name, val, upgrade=False):
-    """
-    Install or upgrade package
-    """
-    import pip
-    package_str = build_package_str(my_os, name, val)
-
-    host, path = urlparse(package_str)[1:3]
-    # It is an internet file
-    if (len(host) > 0 and len(path) > 0) or host == GITHUB:
-        local_file = get_local_file_path(package_str)
-        if not os.path.exists(local_file):
-            # Download file if it does not exist locally
-            if host == GITHUB:
-                dependency = GitHubFile(local_file)
-                dependency.pull() # writes to local_file
-            else:
-                local_file = download_file(package_str)
-
-        # Install package from local file (just downloaded or existing one)
-        if upgrade:
-            pip.main(['install', local_file, '--upgrade'])
-        else:
-            pip.main(['install', local_file])
-    # Check if it is local wheel file or tar.gz file
-    elif (package_str.endswith('.whl') or package_str.endswith('.tar.gz')) \
-            and os.path.exists(get_local_file_path(package_str)):
-        # Use local file if it exists
-        if upgrade:
-            pip.main(['install', get_local_file_path(package_str), '--upgrade'])
-        else:
-            pip.main(['install', get_local_file_path(package_str)])
-    # Just package name w/o version
+def install_package(package, version=None, wheel=None, upgrade=False, method=DownloadMethod.GITHUB):
+    # A wheel is present => easy just install it
+    if wheel:
+        install_str = download_wheel(wheel, method)
     else:
-        if upgrade:
-            pip.main(['install', package_str, '--upgrade'])
-        else:
-            pip.main(['install', package_str])
+        # No wheel, we need to construct the string for pip
+        install_str = package
+        if version:
+            install_str += "=={}".format(version)
 
-
-def test_package_g(my_os, name, val):
-    """
-    Case: required version > installed version
-    """
-    version = val.get('version', None)
-    test = val.get('test', None)
-
-    if test in ['==', '>=']:
-        print("Package %s (%s) already installed with lower version. Upgrading to (%s)..." %  (name, installed_packages[name], version))
-        install_package(my_os, name, val, True)
+    # Handle the upgrade by forcing the reinstall
+    if upgrade:
+        pip.main(['install', install_str, '-I'])
     else:
-        # Usually we don't have this case.
-        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
+        pip.main(['install', install_str])
 
 
-def test_package_e(my_os, name, val):
+def test_package(package, version, test):
     """
-    Case: required version == installed version
+    Test if a package is present and with the correct version installed.
+    :param package: Package name
+    :param version: Needed version
+    :param test: can be >= == or <=
+    :param extra: used to store extra info
+    :return: PackageStatus (MISSING, VALID, WRONGVERSION)
     """
-    test = val.get('test', None)
+    # The package is not present -> Missing
+    if package not in installed_packages:
+        return PackageStatus.MISSING
 
-    if test in ['>=', '<=']:
-        print ("Package %s (%s) already installed. Skipping..." % (name, installed_packages[name]))
-    elif test in ['==']:
-        print ("Package %s (%s) with exact version already installed. Skipping..." % (name, installed_packages[name]))
-    else:
-        print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
+    # The package is in the installed packages
+    # The package has no particular version requirement -> all good
+    if not version:
+        return PackageStatus.VALID
 
+    # The version is required, test if correct
+    operator = operators[test]
+    if not operator(LooseVersion(installed_packages[package]), LooseVersion(version)):
+        return PackageStatus.WRONGVERSION
 
-def test_package_l(my_os, name, val):
-    """
-    Case: required version < installed version
-    """
-    version = val.get('version', None)
-
-    # Usually we don't have this case.
-    print ("Package %s (%s) with higher version installed but require lower version (%s). Installing..." %  (name, installed_packages[name], version))
-    install_package(my_os, name, val)
-
-
-def test_package(my_os, name, val):
-    """
-    Check installation
-    """
-    version = val.get('version', None)
-
-    if name in installed_packages:
-        if not version:
-            print ("Package %s (%s) installed. Skipping..." % (name, installed_packages[name]))
-            return
-
-        if LooseVersion(version) > LooseVersion(installed_packages[name]):
-            test_package_g(my_os, name, val)
-        elif LooseVersion(version) == LooseVersion(installed_packages[name]):
-            test_package_e(my_os, name, val)
-        else:
-            test_package_l(my_os, name, val)
-    else:
-        print ("Package %s not installed. Installing..." % name)
-        install_package(my_os, name, val)
-
-
-def build_package_str(my_os, name, val):
-    """
-    Build package installation string
-    """
-    package_str = None
-
-    if my_os in [LocalOS.WINDOWS]:
-        if val.get('wheel', None):
-            package_str = val['wheel']
-        elif val.get('version', None):
-            # Win doesn't support >= or <=. Replace with ==
-            op = val['test']
-            op = re.sub('[><]', '=', op) if not op else op
-            package_str = "%s%s%s" % (name, op, val['version'])
-        else:
-            package_str = name
-    elif my_os in [LocalOS.MAC, LocalOS.LINUX]:
-        if val.get('test', None) and val.get('version', None):
-            package_str = "%s%s%s" % (name, val['test'], val['version'])
-        else:
-            package_str = "%s" % name
-
-    return package_str
+    # If we made it here, we have the correct package/version
+    return PackageStatus.VALID
 
 
 def get_requirements_by_os(my_os):
     """
     Update requirements based on OS
     """
-    reqs = OrderedDict([(name, val) for (name, val) in requirements.iteritems() if my_os in val['platform']])
+    reqs = OrderedDict()
 
-    # OS: Mac or Linux. No wheel needed
-    if my_os in [LocalOS.MAC, LocalOS.LINUX]:
-        for (name, val) in reqs.iteritems():
-            if 'wheel' in val:
+    for name, val in requirements.items():
+        # If no platform specified or the os is in the platforms, add it
+        if not val or 'platform' not in val or my_os in val['platform']:
+            # OS: Mac or Linux. No wheel needed
+            if my_os in (LocalOS.MAC, LocalOS.LINUX) and 'wheel' in val:
                 val.pop('wheel')
 
-    # OS: Linux. No version for some packages
-    if my_os in [LocalOS.LINUX]:
-        for name in ['numpy', 'scipy']:
-            if 'version' in reqs[name]:
-                reqs[name].pop('version')
-            if 'test' in reqs[name]:
-                reqs[name].pop('test')
+            # OS: Linux. No version for some packages
+            if my_os == LocalOS.LINUX and name in ('numpy', 'scipy'):
+                if 'version' in val: val.pop('version')
+                if 'test' in val: val.pop('test')
+
+            reqs[name] = val
 
     return reqs
 
@@ -372,16 +175,56 @@ def install_packages(my_os, reqs):
     """
     Install required packages
     """
-    if my_os in [LocalOS.LINUX]:
+    if my_os == LocalOS.LINUX:
         # Doing the apt-get install pre-requisites
         install_linux_pre_requisites()
 
-    # Get the installed package to not reinstall everything
-    get_installed_packages()
-
     # Go through the requirements
-    for (name, val) in reqs.iteritems():
-        test_package(my_os, name, val)
+    accept_all = False
+    deny_all = False
+    for name, val in reqs.items():
+        print("\n--- {} ---".format(name))
+
+        val = val or {}
+        version = val.get('version', None)
+        test = val.get('test', '>=')
+        wheel = val.get('wheel', None)
+        method = DownloadMethod(val.get('method')) if 'method' in val else DownloadMethod.GITHUB
+        result = test_package(name, version, test)
+
+        # Valid package -> just display info
+        if result == PackageStatus.VALID:
+            print("Package {} installed and with correct version.".format(name))
+
+        # Missing -> install
+        elif result == PackageStatus.MISSING:
+            print("Package {} is missing. Installing...".format(name))
+            install_package(name, version, wheel, method=method)
+
+        # Wrong version -> Prompt user
+        elif result == PackageStatus.WRONGVERSION:
+            current_v = installed_packages[name]
+            print("Package {} is installed with version {}, but we recommend {}.".format(name, current_v, version))
+            if deny_all:
+                user_input = 'N'
+            elif accept_all:
+                user_input = 'Y'
+            else:
+                user_input = None
+
+            while user_input not in ('Y', 'N', 'A', 'L'):
+                user_input = input('Would you like to install the recommended version over your system version? [Y]es/[N]o/Yes to [A]ll/No to a[L]l : ').upper()
+            if user_input == 'Y' or user_input == 'A':
+                install_package(name, version, wheel, upgrade=True, method=method)
+            else:
+                print("Keeping system package {} (v. {})".format(name, current_v))
+
+            if user_input == 'A':
+                accept_all = True
+            if user_input == 'L':
+                deny_all = True
+
+        print("---")
 
     # Add the develop by default
     sys.argv.append('develop')
@@ -453,7 +296,7 @@ def handle_init():
 
         # Write new one
         print("Writing new simtools.ini")
-        default_config.write(open(current_simtools,'w'))
+        default_config.write(open(current_simtools, 'wb'))
 
         # Write the merged one
         # The merge is in place so make a copy of the defaults
@@ -478,7 +321,7 @@ def handle_init():
     example_config['HPC']['dll_root'] = default_dlls
     example_config['HPC']['base_collection_id_exe'] = ''
     example_config['HPC']['base_collection_id_dll'] = ''
-    example_config.write(open(example_simtools, 'w'))
+    example_config.write(open(example_simtools, 'wb'))
 
     if os.path.exists(am_examples_simtools):
         dest_filename = timestamp_filename(filename=am_examples_simtools, time=this_time)
@@ -487,7 +330,7 @@ def handle_init():
 
     # Remove LOCAL section for the AM simtools.ini
     del default_config["LOCAL"]
-    default_config.write(open(am_examples_simtools, 'w'))
+    default_config.write(open(am_examples_simtools, 'wb'))
 
 
 def upgrade_pip(my_os):
@@ -569,6 +412,7 @@ def backup_db():
         print("Creating a new local database. Backing up existing one to: %s" % dest_filename)
         shutil.move(db_path, dest_filename)
 
+
 def main():
     # Check OS
     my_os = LocalOS.name
@@ -603,7 +447,7 @@ def main():
 if __name__ == "__main__":
     # check os first
     if ctypes.sizeof(ctypes.c_voidp) != 8:
-        print ("""\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+        print("""\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
         - Windows: https://www.python.org/downloads/windows/
         - Mac OSX: https://www.python.org/downloads/mac-osx/
         - Linux: https://www.python.org/downloads/source/\n
