@@ -7,12 +7,13 @@ class MultiPartFile(object):
     MAX_CHUNK_SIZE = 1 * 2**20 # bytes
     CHUNK_DIGITS = 9 # create chunk file suffixes with this many digits
 
-    def __init__(self, source_filename, max_chunk_size = None, chunk_digits = None):
+    def __init__(self, source_file, max_chunk_size = None, chunk_digits = None):
         self.max_chunk_size = max_chunk_size or self.MAX_CHUNK_SIZE
         self.chunk_digits   = chunk_digits   or self.CHUNK_DIGITS
-        self.source_filename  = os.path.abspath(source_filename)
-        self.source_directory = os.path.dirname(source_filename)
-        self.destination_directory = self.source_directory # same file either way!
+        self.source_filename  = os.path.basename(source_file)
+        self.source_directory = os.path.dirname(source_file)
+        self.source_path = os.path.abspath(os.path.join(self.source_directory, self.source_filename))
+        self.destination_directory = self.source_directory
         self.chunks = [] # assumed to be IN ORDER AT ALL TIMES
         self.is_split = False
 
@@ -24,7 +25,7 @@ class MultiPartFile(object):
         if self.is_split:
             raise Exception('Cannot re-split a split MultiPartFile')
 
-        with open(self.source_filename, 'rb') as source_file:
+        with open(self.source_path, 'rb') as source_file:
             source_data = source_file.read()
         source_data_length = len(source_data)
 
@@ -47,7 +48,7 @@ class MultiPartFile(object):
         if not self.is_split:
             raise Exception('Cannot join file chunks that are not split.')
 
-        self.chunks = ["".join(self.chunks)]
+        self.chunks = [b''.join(self.chunks)]
         self.is_split = False
 
     def _write(self):
@@ -56,12 +57,11 @@ class MultiPartFile(object):
         :return:
         """
         destination_directory = os.path.abspath(self.destination_directory)
-        dest_filename = self.source_filename
         if self.is_split:
             raise Exception('Cannot write a file that has not been joined.')
         if not os.path.exists(destination_directory):
             os.makedirs(destination_directory)
-        with open(dest_filename, 'wb') as dest_file:
+        with open(os.path.join(self.destination_directory, self.source_filename), 'wb') as dest_file:
             dest_file.write(self.chunks[0])
 
 class GitHubFile(MultiPartFile):
@@ -129,7 +129,7 @@ class GitHubFile(MultiPartFile):
         chunks = []
 
         # First, look for non-chunked version of the current file.
-        non_chunked_file_name = os.path.basename(self.source_filename)
+        non_chunked_file_name = self.source_filename
         if self.github.file_in_repository(non_chunked_file_name):
             chunks.append(self.github.get_file_data(non_chunked_file_name))
         else: # a non-chunked version of the file was not found, so look for chunks

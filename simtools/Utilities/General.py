@@ -1,4 +1,3 @@
-import cStringIO
 import contextlib
 import functools
 import logging
@@ -6,6 +5,7 @@ import os
 import sys
 
 import time
+from io import StringIO
 
 logging_initialized = False
 def init_logging(name):
@@ -66,18 +66,6 @@ def retrieve_item(itemid):
     raise(Exception('Could not find any item corresponding to %s' % itemid))
 
 
-def get_os():
-    """
-    Retrieve OS
-    """
-    msg = "simtools.Utilities.General.get_os() is deprecated. Use simtools.Utilities.General.LocalOS.name"
-    logger.warning(msg)
-    print msg
-
-    from simtools.Utilities.LocalOS import LocalOS
-    return LocalOS.name
-
-
 def utc_to_local(utc_dt):
     import pytz
     from pytz import timezone
@@ -99,10 +87,10 @@ def nostdout(stdout = False, stderr=False):
     # Save current state and disable output
     if not stdout:
         save_stdout = sys.stdout
-        sys.stdout  = cStringIO.StringIO()
+        sys.stdout = StringIO()
     if not stderr:
         save_stderr = sys.stderr
-        sys.stderr = cStringIO.StringIO()
+        sys.stderr = StringIO()
 
     # Deactivate logging
     previous_level = logging.root.manager.disable
@@ -139,10 +127,10 @@ def retry_function(func, wait=1.5, max_retries=5):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         retExc = None
-        for i in xrange(max_retries):
+        for i in range(max_retries):
             try:
                 return func(*args, **kwargs)
-            except Exception, e:
+            except Exception as e:
                 retExc = e
                 time.sleep(wait)
         raise retExc

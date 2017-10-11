@@ -34,7 +34,7 @@ class TestGitHub(unittest.TestCase):
         single-part and multi-part files.
         :return:
         """
-        for case_name, case in self.test_case.iteritems():
+        for case_name, case in self.test_case.items():
             # write the new file to use
             new_file = str(randint(0, 1000000000))
             local_file = os.path.join(self.temp_dir, new_file)
@@ -84,7 +84,7 @@ class TestGitHub(unittest.TestCase):
         dependency.max_chunk_size = case['max_chunk_size']
         dependency._split()
         self.assertEqual(len(dependency.chunks), 3)
-        self.assertEqual(dependency.chunks[-1], 'yz')
+        self.assertEqual(dependency.chunks[-1], b'yz')
 
     def test_get_legacy_file(self):
         """
