@@ -1,5 +1,6 @@
 import os
 import uuid
+from urllib.request import Request, urlopen
 
 from simtools.Utilities.General import retry_function
 
@@ -77,8 +78,8 @@ class GitHub(object):
                 raise self.BadCredentials()
             auth = github3.authorize(user, password, scopes, note, note_url)
         except (github3.GitHubError, self.BadCredentials):
-            print "/!\\ WARNING /!\\ Bad GitHub credentials. Cannot access disease packages. Please contact %s for assistance." \
-                  % self.SUPPORT_EMAIL
+            print("/!\\ WARNING /!\\ Bad GitHub credentials.")
+            print("Cannot access disease packages. Please contact %s for assistance.".format(self.SUPPORT_EMAIL))
             raise self.AuthorizationError()
 
         # Write the info to disk
@@ -111,10 +112,9 @@ class GitHub(object):
         contents = self.get_directory_contents(directory)
         if filename in contents:
             download_url = contents[filename].download_url
-            import urllib2
             try:
-                req = urllib2.Request(download_url)
-                resp = urllib2.urlopen(req)
+                req = Request(download_url)
+                resp = urlopen(req)
                 data = resp.read()
             except:
                 raise Exception("Could not retrieve file: %s in repository: %s" % (filename, self.repository_name))
