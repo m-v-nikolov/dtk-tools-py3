@@ -74,7 +74,7 @@ def update_duration_type(migration_event, duration_at_node_distr_type, dur_param
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "POISSON_DURATION"
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Poisson_Mean"] = dur_param_1
     else :
-        print "warning: unsupported duration distribution type, reverting to fixed duration"
+        print("warning: unsupported duration distribution type, reverting to fixed duration")
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Distribution_Type"] = "FIXED_DURATION"
         migration_event["Event_Coordinator_Config"]["Intervention_Config"]["Duration_" + trip_end + "_Fixed"] = dur_param_1
 

@@ -268,7 +268,7 @@ class OptimTool(NextPointAlgorithm):
         # User may have added or removed params
         param_names = [p['Name'] for p in self.params]
         # Remove -
-        new_center_df = {k: v for k, v in new_center_dict.iteritems() if k in param_names}
+        new_center_df = {k: v for k, v in new_center_dict.items() if k in param_names}
         # Add -
         new_params = {p['Name']: p['Guess'] for p in self.params if p['Name'] not in new_center_dict}
         new_center_dict.update(new_params)

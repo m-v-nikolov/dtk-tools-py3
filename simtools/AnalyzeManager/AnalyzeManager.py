@@ -222,7 +222,7 @@ class AnalyzeManager:
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
             except Exception as e:
-                print e
+                print(e)
                 logger.error("Error in the plotting process for analyzer {}".format(a))
                 logger.error("Experiments list {}".format(self.experiments))
                 logger.error(e)

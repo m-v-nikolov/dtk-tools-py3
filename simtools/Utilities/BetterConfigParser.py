@@ -1,4 +1,4 @@
-from ConfigParser import SafeConfigParser, DEFAULTSECT
+from configparser import SafeConfigParser, DEFAULTSECT
 
 
 class BetterConfigParser(SafeConfigParser):

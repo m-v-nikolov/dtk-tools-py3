@@ -228,40 +228,39 @@ def install_packages(my_os, reqs):
 
     # Add the develop by default
     sys.argv.append('develop')
-    sys.argv.append('--quiet')
+    # sys.argv.append('--quiet')
 
     from setuptools import setup, find_packages
-    # Suppress the outputs except the errors
-    with nostdout(stderr=True):
-        setup(name='dtk-tools',
-              version='1.0b3',
-              description='Facilitating submission and analysis of simulations',
-              url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
-              author='Edward Wenger,'
-                     'Benoit Raybaud,'
-                     'Daniel Klein,'
-                     'Jaline Gerardin,'
-                     'Milen Nikolov,'
-                     'Aaron Roney,'
-                     'Zhaowei Du,'
-                     'Prashanth Selvaraj'
-                     'Clark Kirkman IV',
-              author_email='ewenger@intven.com,'
-                           'braybaud@intven.com,'
-                           'dklein@idmod.org,'
-                           'jgerardin@intven.com,'
-                           'mnikolov@intven.com,'
-                           'aroney@intven.com,'
-                           'zdu@intven.com,'
-                           'pselvaraj@intven.com'
-                           'ckirkman@intven.com',
-              packages=find_packages(),
-              install_requires=[],
-              entry_points={
-                  'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
-              },
-              package_data={'': ['simtools/simtools.ini']},
-              zip_safe=False)
+
+    setup(name='dtk-tools',
+          version='1.0b3',
+          description='Facilitating submission and analysis of simulations',
+          url='https://github.com/InstituteforDiseaseModeling/dtk-tools',
+          author='Edward Wenger,'
+                 'Benoit Raybaud,'
+                 'Daniel Klein,'
+                 'Jaline Gerardin,'
+                 'Milen Nikolov,'
+                 'Aaron Roney,'
+                 'Zhaowei Du,'
+                 'Prashanth Selvaraj'
+                 'Clark Kirkman IV',
+          author_email='ewenger@intven.com,'
+                       'braybaud@intven.com,'
+                       'dklein@idmod.org,'
+                       'jgerardin@intven.com,'
+                       'mnikolov@intven.com,'
+                       'aroney@intven.com,'
+                       'zdu@intven.com,'
+                       'pselvaraj@intven.com'
+                       'ckirkman@intven.com',
+          packages=find_packages(),
+          install_requires=[],
+          entry_points={
+              'console_scripts': ['calibtool = calibtool.commands:main', 'dtk = dtk.commands:main']
+          },
+          package_data={'': ['simtools/simtools.ini']},
+          zip_safe=False)
 
 
 def handle_init():

@@ -218,4 +218,4 @@ class OptimToolPlotter(BasePlotter):
 
 
     def cleanup_plot(self, calib_manager):
-        print 'CLEANUP_PLOT?'
+        pass

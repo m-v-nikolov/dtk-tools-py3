@@ -64,7 +64,7 @@ class GitHub(object):
         import getpass
         import github3
         # Asks user for username/password
-        user = raw_input("Please enter your GitHub username: ")
+        user = input("Please enter your GitHub username: ")
         password = getpass.getpass(prompt="Please enter your GitHub password: ")
 
         # Info for the GitHub token
