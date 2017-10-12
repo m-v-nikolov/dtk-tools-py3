@@ -5,10 +5,8 @@ from collections import defaultdict
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 
-from group import group_by_name
-from plot import plot_by_channel, plot_lines
+from dtk.utils.analyzers import TimeseriesAnalyzer, group_by_name, plot_lines
 from simtools.SetupParser import SetupParser
-from timeseries import TimeseriesAnalyzer
 
 
 class RegressionTestAnalyzer(TimeseriesAnalyzer):

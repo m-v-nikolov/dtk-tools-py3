@@ -57,7 +57,7 @@ class SetupParserMeta(type):
         cls.initialized = False
 
 
-class SetupParser(object):
+class SetupParser(metaclass=SetupParserMeta):
     """
     Parse user settings and directory locations
     from setup configuration file: simtools.ini
@@ -65,8 +65,6 @@ class SetupParser(object):
     SetupParser is a singleton whose values can only be set once. It should be accessed directly as a class and never
     instantiated. This is to provide a homogeneous, unchanging view of its configuration.
     """
-
-    __metaclass__ = SetupParserMeta
 
     class MissingIniFile(Exception):
         pass
@@ -173,7 +171,7 @@ class SetupParser(object):
               "exactly once. You may then use familiar SetupParser methods on the class, " + \
               "e.g. SetupParser.get('some_item')"
         logger.warning(msg)
-        print msg
+        print(msg)
 
         if not selected_block:
             raise Exception("Use of deprecated initializer of SetupParser too generic. Please specify which block"

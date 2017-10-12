@@ -3,9 +3,8 @@ import os
 
 import pandas as pd
 
-from dtk.utils.analyzers import default_select_fn, default_group_fn, default_filter_fn
+from dtk.utils.analyzers import default_select_fn, default_group_fn, default_filter_fn, plot_by_channel
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
-from plot import plot_by_channel
 
 logger = logging.getLogger(__name__)
 

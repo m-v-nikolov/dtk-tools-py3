@@ -47,8 +47,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
             self.monitor()
         except Exception as e:
-            print "Error encountered while running the simulation."
-            print e
+            print("Error encountered while running the simulation.")
+            print(e)
         finally:
             # Allow another different thread to run now that this one is done.
             self.queue.get()

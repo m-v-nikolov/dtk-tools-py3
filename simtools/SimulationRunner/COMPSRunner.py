@@ -4,7 +4,8 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id, get_simulation_by_id
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id, get_simulation_by_id, \
+    COMPS_login
 from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.General import init_logging
 logger = init_logging('Runner')
@@ -16,6 +17,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
         super(COMPSSimulationRunner, self).__init__(experiment, states, success)
 
         # Check if we need to commission
+        COMPS_login(experiment.endpoint)
         e = get_experiment_by_id(self.experiment.exp_id)
 
         if experiment_needs_commission(e):
@@ -30,7 +32,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
 
     def update_simulations_statuses(self,simids,states):
         for sim_id in simids:
-            self.states.put({'sid':sim_id, 'status':states[sim_id], 'message':None, 'pid':None})
+            self.states.put({'sid': sim_id, 'status':states[sim_id], 'message':None, 'pid':None})
 
     def monitor(self):
         logger.debug('COMPS - Start Monitoring for experiment %s' % self.experiment.id)

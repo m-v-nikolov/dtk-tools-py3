@@ -1,6 +1,8 @@
 import os
 
 from COMPS.Data import Experiment, Configuration, Priority, Suite
+from multiprocessing import Process
+
 from simtools.DataAccess.Schema import Simulation
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
@@ -113,11 +115,10 @@ class CompsExperimentManager(BaseExperimentManager):
         :param states: a multiprocessing.Queue() object for simulations to use for updating their status
         :return: The number of simulations commissioned.
         """
-        import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
         if not self.runner_thread or not self.runner_thread.is_alive():
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            self.runner_thread = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
             self.runner_thread.daemon = True
             self.runner_thread.start()
             return len(self.experiment.simulations)

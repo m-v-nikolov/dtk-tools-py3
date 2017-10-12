@@ -255,4 +255,4 @@ def delete_suite(suite_id):
         s = Suite.get(suite_id)
         s.delete()
     except Exception as e:
-        print "Could not delete suite %s" % suite_id
+        print("Could not delete suite %s" % suite_id)

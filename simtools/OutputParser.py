@@ -1,10 +1,10 @@
-from StringIO import StringIO
 import gc  # for garbage collection
 import json  # to read JSON output files
 import logging
 import os  # mkdir, path, etc.
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
+from io import StringIO, BytesIO
 
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
@@ -39,8 +39,8 @@ class SimulationOutputParser(threading.Thread):
         try:
             # list of output files needed by any analysis
             filenames = set()
-            map(lambda a: filenames.update(a.filenames), self.analyzers)
-            filenames = list(filenames)
+            for a in self.analyzers:
+                filenames.update(a.filenames)
 
             # parse output files for analysis
             self.load_all_files(filenames)
@@ -74,11 +74,8 @@ class SimulationOutputParser(threading.Thread):
 
     def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
-        if content and file_extension not in ['bin', 'csv']:
-            content = StringIO(content).getvalue()
-
-        if content and file_extension == 'csv' and self.parse:
-            content = StringIO(content)
+        if self.parse:
+            content = BytesIO(content)
 
         if not content:
             mode = 'rb' if file_extension in ('bin', 'json') else 'r'
@@ -105,7 +102,7 @@ class SimulationOutputParser(threading.Thread):
             print(filename + ' is of an unknown type.  Skipping...')
 
     def load_json_file(self, filename, content):
-        self.raw_data[filename] = json.loads(content)
+        self.raw_data[filename] = json.load(content)
 
     def load_raw_file(self, filename, content):
         self.raw_data[filename] = content

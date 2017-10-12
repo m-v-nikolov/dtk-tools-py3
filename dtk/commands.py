@@ -5,8 +5,8 @@ import os
 import subprocess
 import sys
 
-import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
+from dtk import commands_args
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers import sample_selection
@@ -161,14 +161,14 @@ def kill(args, unknownArgs):
     else:
         logger.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
         return
 
     exp_manager.kill(args, unknownArgs)
-    print "'Kill' has been executed successfully."
+    print("'Kill' has been executed successfully.")
 
 
 def exterminate(args, unknownArgs):
@@ -185,7 +185,7 @@ def exterminate(args, unknownArgs):
 
     logger.info('%s experiments found.' % len(exp_managers))
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
@@ -194,7 +194,7 @@ def exterminate(args, unknownArgs):
     for exp_manager in exp_managers:
         exp_manager.cancel_experiment()
 
-    print "'Exterminate' has been executed successfully."
+    print("'Exterminate' has been executed successfully.")
 
 
 def delete(args, unknownArgs):
@@ -313,7 +313,7 @@ def log(args, unknownArgs):
                                          extrasaction='ignore')
             dict_writer.writeheader()
             dict_writer.writerows(records)
-        print "Complete log written to dtk_tools_log.csv."
+        print("Complete log written to dtk_tools_log.csv.")
         return
 
     # Create the level
@@ -325,17 +325,17 @@ def log(args, unknownArgs):
 
     modules = args.module if args.module else LoggingDataStore.get_all_modules()
 
-    print "Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level)
+    print("Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level))
     records = LoggingDataStore.get_records(level,modules,args.number)
 
     records_str = "\n".join(map(str, records))
-    print records_str
+    print(records_str)
 
     if args.export:
         with open(args.export, 'w') as fp:
             fp.write(records_str)
 
-        print "Log written to %s" % args.export
+        print("Log written to %s" % args.export)
 
 
 def sync(args, unknownArgs):
@@ -461,16 +461,16 @@ def db_list(args, unknownArgs):
 
     if len(experiments) > 0:
         for exp in experiments:
-            print format_string % (exp.date_created.strftime('%m/%d/%Y %H:%M:%S'), exp.exp_id, exp.location,
-                                   len(exp.simulations), "Completed" if exp.is_done() else "Not Completed")
+            print(format_string % (exp.date_created.strftime('%m/%d/%Y %H:%M:%S'), exp.exp_id, exp.location,
+                                   len(exp.simulations), "Completed" if exp.is_done() else "Not Completed"))
     else:
-        print "No experiments to display."
+        print("No experiments to display.")
 
 def list_packages(args, unknownArgs):
     package_names = DTKGitHub.get_package_list()
     package_names.remove(DTKGitHub.TEST_DISEASE_PACKAGE_NAME) # don't show the test package/repo!
     if not hasattr(args, 'quiet'):
-        print "\n".join(package_names)
+        print("\n".join(package_names))
     return package_names
 
 def list_package_versions(args, unknownArgs):
@@ -479,7 +479,8 @@ def list_package_versions(args, unknownArgs):
         github = DTKGitHub(disease=package_name)
         versions = github.get_versions()
         if not hasattr(args, 'quiet'):
-            print "\n".join([str(v) for v in versions]); sys.stdout.flush()
+            print("\n".join([str(v) for v in versions]))
+            sys.stdout.flush()
     except GitHub.AuthorizationError:
         versions = []
     return versions
@@ -506,7 +507,7 @@ def get_package(args, unknownArgs):
             version = None
 
         if version is None:
-            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+            print("Requested version: %s for package: %s does not exist. No changes made." % (args.package_version, package_name))
             return
 
         tempdir = tempfile.mkdtemp()
@@ -696,7 +697,6 @@ def main():
 
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
-
     args.func(args, unknownArgs)
 
 if __name__ == '__main__':
