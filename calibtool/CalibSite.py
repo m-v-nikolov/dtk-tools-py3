@@ -38,6 +38,7 @@ class CalibSite(object):
 
     def __init__(self, name):
         self.name = name
+        self.a_type = None
         self.setup_fn = SiteFunctions(self.name, self.get_setup_functions()).set_calibration_site
         self.analyzers = self.get_analyzers()
 
@@ -45,7 +46,7 @@ class CalibSite(object):
             raise Exception('Each CalibSite must enable at least one analyzer.')
 
         logger.info('Setting up %s CalibSite:', name)
-        logger.info('  Analyzers = %s', [a.name for a in self.analyzers])
+        # logger.info('  Analyzers = %s', [a.name for a in self.analyzers])
 
     @abstractmethod
     def get_reference_data(self, reference_type):
