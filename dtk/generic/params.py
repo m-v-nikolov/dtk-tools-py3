@@ -1,7 +1,4 @@
-import climate
-import demographics
-import migration
-import disease
+from dtk.generic import climate, demographics, disease, migration
 
 params = {
     "Config_Name": "", ###,

@@ -25,10 +25,10 @@ class COMPSSimulationCreator(BaseSimulationCreator):
         with nostdout(stderr=True):
             Simulation.save_all(lambda *args: None, save_semaphore=self.save_semaphore)
 
-    def add_files_to_simulation(self,s,cb):
+    def add_files_to_simulation(self, s, cb):
         files = cb.dump_files_to_string()
-        for name, content in files.iteritems():
-            s.add_file(simulationfile=SimulationFile(name, 'input'), data=content)
+        for name, content in files.items():
+            s.add_file(simulationfile=SimulationFile(name, 'input'), data=str.encode(content, 'utf-8'))
 
     def set_tags_to_simulation(self, s, tags, cb):
         # Also add the environment

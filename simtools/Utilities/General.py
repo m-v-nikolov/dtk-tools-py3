@@ -170,7 +170,7 @@ def caller_name(skip=2):
 
 def remove_null_values(null_dict):
     ret = {}
-    for key, value in null_dict.iteritems():
+    for key, value in null_dict.items():
         if value:
             ret[key] = value
     return ret

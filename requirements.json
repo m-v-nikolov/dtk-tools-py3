@@ -30,6 +30,11 @@
     "test": "==",
     "wheel": "psutil-5.3.1-cp36-cp36m-win_amd64.whl"
   },
+  "lz4": {
+    "version": "0.10.1",
+    "test": ">=",
+    "wheel": "lz4-0.10.1-cp36-cp36m-win_amd64.whl"
+  },
   "python-snappy": {
     "platform": [
       "win",
@@ -67,7 +72,6 @@
   "validators": null,
   "networkx": null,
   "patsy": null,
-  "dill": null,
   "numpy": {
     "version": "1.13.3+mkl",
     "test": ">=",

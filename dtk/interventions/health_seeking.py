@@ -177,7 +177,7 @@ def add_health_seeking_by_chw( config_builder,
 def get_drug_config(drug, dosing, receiving_drugs_event, drug_ineligibility_duration, expire_recent_drugs) :
 
     # if drug variable is a list, let's use MultiInterventionDistributor
-    if isinstance(drug, basestring):
+    if isinstance(drug, str):
         # print('Just a single drug: ' + drug)
         drug_config = {"Cost_To_Consumer": 1,
                        "Drug_Type": drug,

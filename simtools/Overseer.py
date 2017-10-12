@@ -2,6 +2,8 @@ import os
 import gc
 import multiprocessing
 import sys
+# Add the tools to the path
+sys.path.append(os.path.abspath('..'))
 import threading
 import time
 import traceback
@@ -45,6 +47,7 @@ def LogCleaner():
         DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup', value=datetime.today()))
 
 if __name__ == "__main__":
+
     logger.debug('Start Overseer pid: %d' % os.getpid())
     
     # we technically don't care about full consistency of SetupParser with the original dtk command, as experiments

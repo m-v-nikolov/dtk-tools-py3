@@ -49,7 +49,7 @@ class LoggingDataStore:
             limit_date = date.today() - timedelta(days=30)
             engine_logs.execute("DELETE FROM Logs WHERE created < '%s'" % limit_date)
         except Exception as e:
-            print "Could not clean the logs.\n%s" % e
+            print("Could not clean the logs.\n%s" % e)
 
     @classmethod
     def get_all_records(cls):

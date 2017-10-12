@@ -53,12 +53,12 @@ class IterationState(object):
 
         if 'calibration_start' in kwargs:
             cs = kwargs.pop('calibration_start')
-            if isinstance(cs, unicode): self.calibration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
+            if not isinstance(cs, datetime): self.calibration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
             else: self.calibration_start = cs
 
         if 'iteration_start' in kwargs:
             cs = kwargs.pop('iteration_start')
-            if isinstance(cs, unicode): self.iteration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
+            if not isinstance(cs, datetime): self.iteration_start = datetime.strptime(cs, '%Y-%m-%d %H:%M:%S')
             else: self.iteration_start = cs
 
         self._status = None

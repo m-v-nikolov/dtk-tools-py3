@@ -96,8 +96,8 @@ class BaseCalibrationAnalyzer(BaseComparisonAnalyzer):
 
         """
 
-        samples = sorted(df.columns.levels[0].tolist())
-        output = {'samples': [df[sample].reset_index().to_dict(orient='list') for sample in samples if sample != 'ref']}
+        samples = sorted([str(e) for e in df.columns.levels[0]])
+        output = {'samples': [df[int(sample)].reset_index().to_dict(orient='list') for sample in samples if sample != 'ref']}
         if 'ref' in samples:
             output['ref'] = df['ref'].reset_index().to_dict(orient='list')
         return output

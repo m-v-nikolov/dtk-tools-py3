@@ -10,8 +10,6 @@ class NumpyEncoder(json.JSONEncoder):
         holding dtype, shape and the data, base64 encoded.
         """
         if isinstance(obj, np.int64):
-            return long(obj)
-        elif isinstance(obj, np.int64):
             return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
         elif isinstance(obj, np.ndarray):
             if obj.flags['C_CONTIGUOUS']:
