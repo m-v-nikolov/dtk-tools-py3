@@ -273,7 +273,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames')):
+    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames', 'Custom_Reports_Filename')):
         params_dict = self.config['parameters']
         ignored = ignored
         input_files = []
@@ -434,38 +434,14 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         Returns the custom events listed in the campaign along with user-defined ones in the Listed_Events (config.json)
         """
-        campaign_str = json.dumps(self.campaign)
-
         # Retrieve all the events in the campaign file
-        events_from_campaign = re.findall(
-            r"['\"](?:Blackout_Event_Trigger|Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str,
-            re.DOTALL)
-
-        # Get all the Trigger condition list too and add them to the campaign events
-        trigger_lists = re.findall(r"['\"]Trigger_Condition_List['\"]:\s(\[.*?\])", campaign_str, re.DOTALL)
-
-        for tlist in trigger_lists:
-            events_from_campaign.extend(json.loads(tlist))
+        events_from_campaign = re.findall(r"['\"](?:Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", json.dumps(self.campaign), re.DOTALL)
 
         # Add them with the events already listed in the config file
         event_set = set(events_from_campaign + self.config['parameters']['Listed_Events'])
 
         # Remove the built in events and return
-        builtin_events = set((
-                             "NoTrigger", "Births", "EveryUpdate", "EveryTimeStep", "NewInfectionEvent", "TBActivation",
-                             "NewClinicalCase", "NewSevereCase", "DiseaseDeaths", "NonDiseaseDeaths",
-                             "TBActivationSmearPos", "TBActivationSmearNeg", "TBActivationExtrapulm",
-                             "TBActivationPostRelapse", "TBPendingRelapse", "TBActivationPresymptomatic",
-                             "TestPositiveOnSmear", "ProviderOrdersTBTest", "TBTestPositive", "TBTestNegative",
-                             "TBTestDefault", "TBRestartHSB", "TBMDRTestPositive", "TBMDRTestNegative",
-                             "TBMDRTestDefault", "TBFailedDrugRegimen", "TBRelapseAfterDrugRegimen",
-                             "TBStartDrugRegimen", "TBStopDrugRegimen", "PropertyChange", "STIDebut", "StartedART",
-                             "StoppedART", "InterventionDisqualified", "HIVNewlyDiagnosed", "GaveBirth", "Pregnant",
-                             "Emigrating", "Immigrating", "HIVTestedNegative", "HIVTestedPositive", "HIVSymptomatic",
-                             "HIVPreARTToART", "HIVNonPreARTToART", "TwelveWeeksPregnant", "FourteenWeeksPregnant",
-                             "SixWeeksOld", "EighteenMonthsOld", "STIPreEmigrating", "STIPostImmigrating",
-                             "STINewInfection", "NodePropertyChange", "HappyBirthday", "EnteredRelationship",
-                             "ExitedRelationship", "FirstCoitalAct"))
+        builtin_events = set(("NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct"))
         return list(event_set - builtin_events)
 
     def file_writer(self, write_fn):
