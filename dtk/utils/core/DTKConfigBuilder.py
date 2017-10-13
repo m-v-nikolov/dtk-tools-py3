@@ -273,7 +273,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames')):
+    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames', 'Custom_Reports_Filename')):
         params_dict = self.config['parameters']
         ignored = ignored
         input_files = []
@@ -431,18 +431,18 @@ class DTKConfigBuilder(SimConfigBuilder):
         return [os.path.join(dll_type, dll_name) for dll_type, dll_name in self.dlls]
 
     def check_custom_events(self):
-        # Return difference between config and campaign
-        broadcast_events_from_campaign = re.findall(r"['\"]Broadcast_Event['\"]:\s['\"](.*?)['\"]",
-                                                    str(json.dumps(self.campaign)), re.DOTALL)
+        """
+        Returns the custom events listed in the campaign along with user-defined ones in the Listed_Events (config.json)
+        """
+        # Retrieve all the events in the campaign file
+        events_from_campaign = re.findall(r"['\"](?:Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", json.dumps(self.campaign), re.DOTALL)
 
-        event_triggers_from_campaign = re.findall(r"['\"]Event_Trigger['\"]:\s['\"](.*?)['\"]",
-                                                  str(json.dumps(self.campaign)), re.DOTALL)
+        # Add them with the events already listed in the config file
+        event_set = set(events_from_campaign + self.config['parameters']['Listed_Events'])
 
-        event_set = set(event_triggers_from_campaign + broadcast_events_from_campaign + self.config['parameters']['Listed_Events'])
-
-        # Remove the built in events
-        builtin_events = set(["NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct",])
-        return [event for event in event_set if event not in builtin_events]
+        # Remove the built in events and return
+        builtin_events = set(("NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct"))
+        return event_set - builtin_events
 
     def file_writer(self, write_fn):
         """
