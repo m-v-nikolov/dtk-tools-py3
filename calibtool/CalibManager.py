@@ -8,8 +8,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from IterationState import IterationState
-from ResumeIterationState import ResumeIterationState
+from calibtool.IterationState import IterationState
 from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
@@ -168,7 +167,7 @@ class CalibManager(object):
             logger.info("Calibration with name %s already exists in current directory" % self.name)
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
+                var = input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
 
             # Abort
             if var == 'A':
@@ -216,7 +215,7 @@ class CalibManager(object):
                  'selected_block': SetupParser.selected_block,
                  'calibration_start':self.calibration_start}
         state.update(kwargs)
-        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
+        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'w'), indent=4, cls=NumpyEncoder)
 
     def backup_calibration(self):
         """
@@ -322,8 +321,7 @@ class CalibManager(object):
             traceback.print_exc()
 
         if not exp:
-            var = raw_input(
-                "Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
+            var = input("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
             # force to resume from commission
             if var.upper() == 'Y':
                 iteration_state.resume_point = StatusPoint.commission
@@ -334,8 +332,7 @@ class CalibManager(object):
         # If location has been changed, will double check user for a special case before proceed...
         if self.location != exp.location:
             location = SetupParser.get('type')
-            var = raw_input(
-                "Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (
+            var = input("Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (
                 exp.location, location))
             if var.upper() == 'Y':
                 self.current_iteration.resume_point = StatusPoint.commission

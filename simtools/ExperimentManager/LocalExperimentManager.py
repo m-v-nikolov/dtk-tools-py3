@@ -1,3 +1,5 @@
+from multiprocessing import Process
+
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
@@ -65,7 +67,7 @@ class LocalExperimentManager(BaseExperimentManager):
                 break
             else:
                 logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status.name))
-                t1 = threading.Thread(target=LocalSimulationRunner,
+                t1 = Process(target=LocalSimulationRunner,
                                       args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
                 t1.daemon = True
                 t1.start()
@@ -140,7 +142,7 @@ class LocalExperimentManager(BaseExperimentManager):
             try:
                 os.kill(int(simulation.pid), signal.SIGTERM)
             except Exception as e:
-                print e
+                print(e)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         return LocalSimulationCreator(config_builder=self.config_builder,

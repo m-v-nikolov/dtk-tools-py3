@@ -136,7 +136,7 @@ class AssetCollection(object):
                 collection.add_asset(af, file_path=af.absolute_path)
 
         # Calculate MD5 of the collection
-        collection_md5 = hashlib.md5(json.dumps(json.loads(str(collection)), sort_keys=True)).hexdigest()
+        collection_md5 = hashlib.md5(json.dumps(json.loads(str(collection)), sort_keys=True).encode('utf-8')).hexdigest()
 
         # The collection was already there -> returns it
         if collection_md5 in AssetCollection.comps_collection_cache:

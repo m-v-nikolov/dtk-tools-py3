@@ -18,25 +18,25 @@ class OutputMessage:
             func(msg)
 
     def bold(self, msg):
-        print
-        print "=================================================="
-        print msg.upper()
-        print "=================================================="
-        print
+        print()
+        print( "==================================================")
+        print( msg.upper())
+        print( "==================================================")
+        print()
 
     def deprecate(self, msg):
-        print "/!\\ DEPRECATION WARNING /!\\"
-        print msg
+        print( "/!\\ DEPRECATION WARNING /!\\")
+        print( msg)
 
     def regular(self, msg):
-        print
-        print msg
-        print
+        print()
+        print( msg)
+        print()
 
     def warning(self, msg):
-        print
-        print "/!\\ %s /!\\" % msg
-        print
+        print()
+        print( "/!\\ %s /!\\" % msg)
+        print()
 
     def flushed(self, msg):
         sys.stdout.write('\r')

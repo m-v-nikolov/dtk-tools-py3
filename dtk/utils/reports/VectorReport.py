@@ -1,4 +1,4 @@
-from CustomReport import BaseReport
+from .CustomReport import BaseReport
 
 
 def add_habitat_report(cb):

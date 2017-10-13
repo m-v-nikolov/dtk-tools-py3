@@ -1,11 +1,11 @@
 import copy
 
-from species import set_params_by_species
-import larval_habitat
 
 # --------------------------------------------------------------
 # Cohort model parameters
 # --------------------------------------------------------------
+from dtk.vector import larval_habitat
+from dtk.vector.species import set_params_by_species
 
 disease_params = {
     "Incubation_Period_Distribution": "FIXED_DURATION",

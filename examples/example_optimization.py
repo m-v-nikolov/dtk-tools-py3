@@ -33,7 +33,7 @@ cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 sites = [DielmoCalibSite(), NdiopCalibSite()]
 
 # For now we will only use Dielmo
-print 'Dielmo only for now'
+print('Dielmo only for now')
 sites = [sites[0]]
 
 # The default plotters used in an Optimization with OptimTool
@@ -134,17 +134,16 @@ def map_sample_to_model_input(cb, sample):
     for p in params:
         if 'MapTo' in p:
             if p['Name'] not in sample:
-                print 'Warning: %s not in sample, perhaps resuming previous iteration' % p['Name']
+                print('Warning: %s not in sample, perhaps resuming previous iteration' % p['Name'])
                 continue
             value = sample.pop( p['Name'] )
             tags.update(cb.set_param(p['Name'], value))
 
-    for name,value in sample.iteritems():
-        print 'UNUSED PARAMETER:', name
+    for name,value in sample.items():
+        print('UNUSED PARAMETER:'+name)
     assert( len(sample) == 0 ) # All params used
 
-    # Run for 10 years with a random random number seed
-    tags.update(cb.set_param('Simulation_Duration', 3650))      # 10*365
+    # Run with random seed
     tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags

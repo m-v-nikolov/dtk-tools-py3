@@ -38,4 +38,4 @@ class StdoutAnalyzer(BaseAnalyzer):
         self.data = combined
 
     def finalize(self):
-        print self.data
+        print(self.data)

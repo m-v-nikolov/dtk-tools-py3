@@ -3,8 +3,7 @@ from itertools import cycle, islice, repeat, chain
 
 import pandas as pd
 
-from dtk.utils.analyzers import default_filter_fn, default_select_fn, default_group_fn
-from timeseries import TimeseriesAnalyzer
+from dtk.utils.analyzers import default_filter_fn, default_select_fn, default_group_fn, TimeseriesAnalyzer
 
 
 def default_vectorplot_fn(df, ax):
