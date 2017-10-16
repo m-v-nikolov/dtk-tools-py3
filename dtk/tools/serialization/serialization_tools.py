@@ -42,12 +42,22 @@ def zero_vector_infections(vectors, remove=False):
 
     for vector_population in vectors:
         class_name = vector_population['__class__']
-        if class_name == 'VectorPopulation' or class_name == 'VectorPopulationAging':
+        if class_name == 'VectorPopulation':
             if not remove:
                 vector_population.AdultQueues.extend(vector_population.InfectedQueues)
                 vector_population.AdultQueues.extend(vector_population.InfectiousQueues)
+                for cohort in vector_population.AdultQueues:
+                    assert(cohort['__class__'] == 'VectorCohort')
+                    state = cohort.state
+                    if state == STATE_INFECTED or state == STATE_INFECTIOUS:
+                        cohort.state = STATE_ADULT
             vector_population.InfectedQueues = []
             vector_population.InfectiousQueues = []
+            vector_population.infected = 0
+            vector_population.infectious = 0
+            vector_population.infectivity = 0
+            vector_population.indoorinfectiousbites = 0
+            vector_population.outdoorinfectiousbites = 0
         elif class_name == 'VectorPopulationIndividual':
             if not remove:
                 for cohort in vector_population.AdultQueues:
