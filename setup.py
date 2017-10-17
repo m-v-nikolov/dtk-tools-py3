@@ -16,14 +16,18 @@ from urllib.request import Request, urlopen
 
 import pip
 
-from simtools.Utilities.General import nostdout, timestamp_filename
+from simtools.Utilities.General import timestamp_filename
 from simtools.Utilities.GitHub.MultiPartFile import GitHubFile
 from simtools.Utilities.LocalOS import LocalOS
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
 
-installed_packages = dict()
+# Force writing a new simtools
+force_new_simtools = False
+
+# Force a new database ?
+force_new_db = False
 
 # This lets us guarantee a consistent time to be used for timestamped backup files
 this_time = datetime.utcnow()
@@ -111,7 +115,7 @@ def test_package(package, version, test):
     return PackageStatus.VALID
 
 
-def get_requirements_by_os(my_os):
+def get_requirements_by_os():
     """
     Update requirements based on OS
     """
@@ -119,13 +123,13 @@ def get_requirements_by_os(my_os):
 
     for name, val in requirements.items():
         # If no platform specified or the os is in the platforms, add it
-        if not val or 'platform' not in val or my_os in val['platform']:
+        if not val or 'platform' not in val or LocalOS.name in val['platform']:
             # OS: Mac or Linux. No wheel needed
-            if my_os in (LocalOS.MAC, LocalOS.LINUX) and 'wheel' in val:
+            if LocalOS.name in (LocalOS.MAC, LocalOS.LINUX) and 'wheel' in val:
                 val.pop('wheel')
 
             # OS: Linux. No version for some packages
-            if my_os == LocalOS.LINUX and name in ('numpy', 'scipy'):
+            if LocalOS.name == LocalOS.LINUX and name in ('numpy', 'scipy'):
                 if 'version' in val: val.pop('version')
                 if 'test' in val: val.pop('test')
 
@@ -171,11 +175,11 @@ def install_linux_pre_requisites():
             check_call(['apt-get', 'install', '-y', req], stdout=open(os.devnull, 'wb'), stderr=STDOUT)
 
 
-def install_packages(my_os, reqs):
+def install_packages(reqs):
     """
     Install required packages
     """
-    if my_os == LocalOS.LINUX:
+    if LocalOS.name == LocalOS.LINUX:
         # Doing the apt-get install pre-requisites
         install_linux_pre_requisites()
 
@@ -286,7 +290,7 @@ def handle_init():
     if not os.path.exists(current_simtools):
         default_config.write(open(current_simtools, 'w'))
     else:
-        print ("\nA previous simtools.ini configuration file is present.")
+        print("\nA previous simtools.ini global configuration file is present.")
 
         # Backup copy the current
         dest_filename = timestamp_filename(filename=current_simtools, time=this_time)
@@ -296,14 +300,6 @@ def handle_init():
         # Write new one
         print("Writing new simtools.ini")
         default_config.write(open(current_simtools, 'wb'))
-
-        # Write the merged one
-        # The merge is in place so make a copy of the defaults
-        # default_config_merge = deepcopy(default_config)
-        # current_config = ConfigObj(current_simtools)
-        # default_config_merge.merge(current_config)
-        # default_config_merge.write(open(current_simtools, 'w'))
-        # print ("Merged simtools.ini written!\n")
 
     # ALso write the default_cp in the examples
     example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
@@ -332,24 +328,24 @@ def handle_init():
     default_config.write(open(am_examples_simtools, 'wb'))
 
 
-def upgrade_pip(my_os):
+def upgrade_pip():
     """
     Upgrade pip before install other packages
     """
     import subprocess
 
-    if my_os in [LocalOS.MAC, LocalOS.LINUX]:
+    if LocalOS.name in (LocalOS.MAC, LocalOS.LINUX):
         subprocess.call("pip install -U pip", shell=True)
-    elif my_os in [LocalOS.WINDOWS]:
+    elif LocalOS.name == LocalOS.WINDOWS:
         subprocess.call("python -m pip install --upgrade pip", shell=True)
 
 
-def verify_matplotlibrc(my_os):
+def verify_matplotlibrc():
     """
     on MAC: make sure file matplotlibrc has content
     backend: Agg
     """
-    if my_os not in [LocalOS.MAC]:
+    if LocalOS.name not in [LocalOS.MAC]:
         return
 
     import matplotlib as mpl
@@ -413,27 +409,23 @@ def backup_db():
 
 
 def main():
-    # Check OS
-    my_os = LocalOS.name
-    print ('os: %s' % my_os)
-
     # Upgrade pip before install other packages
-    upgrade_pip(my_os)
+    upgrade_pip()
 
     # Get OS-specific requirements
-    reqs = get_requirements_by_os(my_os)
+    reqs = get_requirements_by_os()
 
     # Install required packages
-    install_packages(my_os, reqs)
+    install_packages(reqs)
 
     # Consider config file
-    handle_init()
+    if force_new_simtools: handle_init()
 
     # Create new db
-    backup_db()
+    if force_new_db: backup_db()
 
     # Make sure matplotlibrc file is valid
-    verify_matplotlibrc(my_os)
+    verify_matplotlibrc()
 
     cleanup_locks()
 
@@ -445,8 +437,9 @@ def main():
 
 if __name__ == "__main__":
     # check os first
-    if ctypes.sizeof(ctypes.c_voidp) != 8:
-        print("""\nFATAL ERROR: dtk-tools only supports Python 2.7 x64. Please download and install a x86-64 version of python at:
+    if ctypes.sizeof(ctypes.c_voidp) != 8 or sys.version_info < (3,6):
+        print("""\nFATAL ERROR: dtk-tools only supports Python 3.6 x64 and above.\n
+         Please download and install a x86-64 version of python at:\n
         - Windows: https://www.python.org/downloads/windows/
         - Mac OSX: https://www.python.org/downloads/mac-osx/
         - Linux: https://www.python.org/downloads/source/\n

@@ -20,7 +20,7 @@ def run(args, unknownArgs):
 def resume(args, unknownArgs):
     if args.iter_step:
         if args.iter_step not in ['commission', 'analyze', 'plot', 'next_point']:
-            print "Invalid iter_step '%s', ignored.", args.iter_step
+            print("Invalid iter_step '%s', ignored." % args.iter_step)
             exit()
     manager = get_calib_manager(args, unknownArgs, force_metadata=True)
     manager.resume_calibration(args.iteration, iter_step=args.iter_step)
@@ -33,7 +33,7 @@ def cleanup(args, unknownArgs):
     manager = args.loaded_module.calib_manager
     # If no result present -> just exit
     if not os.path.exists(os.path.join(os.getcwd(), manager.name)):
-        print 'No calibration to delete. Exiting...'
+        print('No calibration to delete. Exiting...')
         exit()
     manager.cleanup()
 

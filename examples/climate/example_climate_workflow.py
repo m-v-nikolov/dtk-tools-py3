@@ -76,5 +76,5 @@ cfc = ClimateFileCreator(nodes=nodes,
                          idref='Household-Scenario-Small')
 
 cfc.generate_climate_files(output_path)
-print "--------------------------------------"
-print "Climate generated in %s" % output_path
+print("--------------------------------------")
+print("Climate generated in %s" % output_path)
