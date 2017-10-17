@@ -3,7 +3,7 @@ from __future__ import print_function
 from simtools.DataAccess.DataStore import DataStore
 from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, COMPS_login, get_experiments_by_name
 from simtools.Utilities.Encoding import cast_number
 from simtools.Utilities.General import init_logging, utc_to_local
 
@@ -80,7 +80,7 @@ def retrieve_experiment(exp_id, sync_if_missing=True, verbose=False, force_updat
     if isinstance(exp_id,UUID): exp_id = str(exp_id)
 
     # If we dont force the update -> look first in the DB
-    exp = DataStore.get_experiment(exp_id)
+    exp = DataStore.get_experiment(exp_id) or DataStore.get_most_recent_experiment(exp_id)
     if exp:
         # If we have an experiment and we want to force the update -> delete it
         if not force_update:
@@ -168,7 +168,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
 
     from COMPS.Data import QueryCriteria
     try:
-        exp_comps = get_experiment_by_id(exp_id)
+        exp_comps = get_experiment_by_id(exp_id) or get_experiments_by_name(exp_id)[-1]
     except:
         if verbose:
             print("The experiment ('%s') doesn't exist in COMPS." % exp_id)

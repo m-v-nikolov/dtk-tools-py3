@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class StdoutAnalyzer(BaseAnalyzer):
     def __init__(self, simIds=None, error=False):
         super(StdoutAnalyzer, self).__init__()
-        self.filenames = [ 'StdOut.txt', 'StdErr.txt' ]
+        self.filenames = ['StdOut.txt', 'StdErr.txt' ]
         self.simIds = simIds
         self.error = error
 

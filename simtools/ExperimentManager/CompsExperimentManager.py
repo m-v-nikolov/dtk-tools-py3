@@ -1,14 +1,14 @@
 import os
-
-from COMPS.Data import Experiment, Configuration, Priority, Suite
 from multiprocessing import Process
 
-from simtools.DataAccess.Schema import Simulation
+from COMPS.Data import Experiment, Configuration, Priority, Suite
+
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore, \
+    get_simulation_by_id
 from simtools.Utilities.General import init_logging, timestamp
 
 logger = init_logging("COMPSExperimentManager")
@@ -133,18 +133,14 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def hard_delete(self):
         """
-        Delete local cache data for experiment and marks the server entity for deletion.
+        Delete data for experiment and marks the server entity for deletion.
         """
-        # Perform soft delete cleanup.
-        self.soft_delete()
-
         # Mark experiment for deletion in COMPS.
         COMPS_login(self.endpoint)
         self.comps_experiment.delete()
 
     def kill_simulation(self, simulation):
-        COMPS_login(self.endpoint)
-        s = Simulation.get(simulation.id)
+        s = get_simulation_by_id(simulation)
         s.cancel()
 
     def merge_tags(self, additional_tags):

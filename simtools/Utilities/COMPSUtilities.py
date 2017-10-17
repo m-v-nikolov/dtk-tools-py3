@@ -170,7 +170,6 @@ def download_asset_collection(collection, output_folder):
 def get_experiment_by_id(exp_id, query_criteria=None):
     return Experiment.get(exp_id, query_criteria=query_criteria)
 
-
 @retry_function
 def get_simulation_by_id(sim_id, query_criteria=None):
     return Simulation.get(id=sim_id, query_criteria=query_criteria)
@@ -180,9 +179,11 @@ def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
     return Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (user, limit_date_str)))
 
-
-def get_experiments_by_name(name, user):
-    return Experiment.get(query_criteria=QueryCriteria().where(['name~%s' % name, 'owner=%s' % user]))
+@retry_function
+def get_experiments_by_name(name, user=None):
+    filters = ["name~{}".format(name)]
+    if user: filters.append("owner={}".format(user))
+    return Experiment.get(query_criteria=QueryCriteria().where(filters))
 
 
 def sims_from_experiment(e):

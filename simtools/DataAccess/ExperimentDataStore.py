@@ -81,7 +81,7 @@ class ExperimentDataStore:
         return experiments
 
     @classmethod
-    def get_experiments(cls, id_or_name, current_dir=None):
+    def get_experiments(cls, id_or_name=None, current_dir=None):
         logger.debug("Get experiments")
         id_or_name = '' if not id_or_name else id_or_name
         with session_scope() as session:
@@ -103,7 +103,7 @@ class ExperimentDataStore:
         """
         logger.debug("Get experiments by options")
 
-        if id_or_name:
+        if id_or_name or current_dir:
             return cls.get_experiments(id_or_name, current_dir)
         else:
             return cls.get_active_experiments(location)

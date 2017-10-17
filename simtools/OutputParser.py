@@ -70,17 +70,18 @@ class SimulationOutputParser(threading.Thread):
             return file.read()
 
     def load_all_files(self, filenames):
-        map(self.load_single_file, filenames)
+        for filename in filenames:
+            self.load_single_file(filename)
 
     def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
-        if self.parse:
+
+        if content:
             content = BytesIO(content)
 
         if not content:
-            mode = 'rb' if file_extension in ('bin', 'json') else 'r'
-            with open(self.get_path(filename), mode) as output_file:
-                content = output_file.read()
+            with open(self.get_path(filename), 'rb') as output_file:
+                content = BytesIO(output_file.read())
 
         if not self.parse:
             self.load_raw_file(filename, content)
@@ -120,7 +121,7 @@ class SimulationOutputParser(threading.Thread):
                                    for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, content):
-        self.raw_data[filename] = content
+        self.raw_data[filename] = str(content.getvalue().decode())
 
     def load_bin_file(self, filename, content):
         n_nodes, = struct.unpack('i', content[0:4])

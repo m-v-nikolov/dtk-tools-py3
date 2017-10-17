@@ -110,7 +110,6 @@ def run(args, unknownArgs):
                           "exp_builder": "Optional builder"}, indent=3))
         exit()
 
-
     # Assess arguments.
     mod.run_sim_args['blocking'] = True if args.blocking else False
     mod.run_sim_args['quiet']    = True if args.quiet    else False
@@ -126,21 +125,18 @@ def status(args, unknownArgs):
     BaseExperimentManager.check_overseer()
 
     if args.active:
-        logger.info('Getting status of all active experiments.')
+        print('Getting status of all active dtk experiments.')
         active_experiments = DataStore.get_active_experiments()
 
         for exp in active_experiments:
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
-            states, msgs = exp_manager.get_simulation_status()
-            exp_manager.print_status(states, msgs)
+            exp_manager.print_status()
         return
-
     exp_manager = reload_experiment(args)
     if args.repeat:
         exp_manager.wait_for_finished(verbose=True, sleep_time=20)
     else:
-        states, msgs = exp_manager.get_simulation_status()
-        exp_manager.print_status(states, msgs)
+        exp_manager.print_status()
 
 
 def kill(args, unknownArgs):
@@ -152,8 +148,7 @@ def kill(args, unknownArgs):
     exp_manager.print_status(states, msgs, verbose=False)
 
     if exp_manager.status_finished(states):
-        logger.warn(
-            "The Experiment %s is already finished and therefore cannot be killed. Exiting..." % exp_manager.experiment.id)
+        logger.warn("The Experiment %s is already finished and therefore cannot be killed. Exiting..." % exp_manager.experiment.id)
         return
 
     if args.simIds:
@@ -167,23 +162,24 @@ def kill(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    exp_manager.kill(args, unknownArgs)
-    print("'Kill' has been executed successfully.")
+    exp_manager.kill(args.simIds)
+    logger.info("'Kill' has been executed successfully.")
 
 
 def exterminate(args, unknownArgs):
-    with nostdout():
-        exp_managers = reload_experiments(args)
+    exp_managers = reload_experiments(args)
 
     if args.expId:
         for exp_manager in exp_managers:
             states, msgs = exp_manager.get_simulation_status()
             exp_manager.print_status(states, msgs)
-        logger.info('Killing ALL experiments matched by ""' + args.expId + '".')
+        ('Killing ALL experiments matched by ""' + args.expId + '".')
     else:
-        logger.info('Killing ALL experiments.')
+        logger.info('Killing ALL running experiments.')
 
     logger.info('%s experiments found.' % len(exp_managers))
+    for manager in exp_managers:
+        print(manager.experiment)
 
     choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
@@ -191,8 +187,8 @@ def exterminate(args, unknownArgs):
         logger.info('No action taken.')
         return
 
-    for exp_manager in exp_managers:
-        exp_manager.cancel_experiment()
+    for manager in exp_managers:
+        manager.cancel_experiment()
 
     print("'Exterminate' has been executed successfully.")
 
@@ -206,43 +202,41 @@ def delete(args, unknownArgs):
     states, msgs = exp_manager.get_simulation_status()
     exp_manager.print_status(states, msgs)
 
-    if args.hard:
-        logger.info('Hard deleting selected experiment.')
-    else:
-        logger.info('Deleting selected experiment.')
+    print("The following experiment will be deleted:")
+    print(exp_manager.experiment)
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
         return
 
-    exp_manager.delete_experiment(args.hard)
+    exp_manager.delete_experiment()
     logger.info("Experiment '%s' has been successfully deleted.", exp_manager.experiment.exp_id)
 
 
 def clean(args, unknownArgs):
-    with nostdout():
-        # Store the current directory to let the reload knows that we want to
-        # only retrieve simulations in this directory
-        args.current_dir = os.getcwd()
-        exp_managers = reload_experiments(args)
+
+    # Store the current directory to let the reload knows that we want to
+    # only retrieve simulations in this directory
+    args.current_dir = os.getcwd()
+    exp_managers = reload_experiments(args)
 
     if len(exp_managers) == 0:
-        logger.warn("No experiments matched by '%s'. Exiting..." % args.expId)
+        logger.warn("No experiments matched. Exiting...")
         return
 
     if args.expId:
         logger.info("Hard deleting ALL experiments matched by '%s' ran from the current directory.\n%s experiments total." % (args.expId, len(exp_managers)))
         for exp_manager in exp_managers:
             logger.info(exp_manager.experiment)
-            states, msgs = exp_manager.get_simulation_status()
-            exp_manager.print_status(states, msgs, verbose=False)
-            logger.info("")
     else:
         logger.info("Hard deleting ALL experiments ran from the current directory.\n%s experiments total." % len(exp_managers))
 
-    choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
+    for exp_manager in exp_managers:
+        print(exp_manager.experiment)
+
+    choice = input("Are you sure you want to continue with the selected action (Y/n)? ")
 
     if choice != "Y":
         logger.info("No action taken.")
@@ -250,27 +244,30 @@ def clean(args, unknownArgs):
 
     for exp_manager in exp_managers:
         logger.info("Deleting %s" % exp_manager.experiment)
-        exp_manager.hard_delete()
+        exp_manager.delete_experiment()
 
 
 def stdout(args, unknownArgs):
-    logger.info('Getting stdout...')
-
     exp_manager = reload_experiment(args)
     states, msgs = exp_manager.get_simulation_status()
-
-    if args.succeeded:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Succeeded][:1]
-    elif args.failed:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Failed][:1]
-    else:
-        args.simIds = [states.keys()[0]]
 
     if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
 
-    am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error), force_analyze=True)
-    am.analyze()
+    found = False
+    for sim_id, state in states.items():
+        if (state is SimulationState.Succeeded and args.succeeded) or\
+               (state is SimulationState.Failed and args.failed) or \
+               (not args.succeeded and not args.failed):
+            found = True
+            break
+    if not found:
+        print("No simulations found...")
+    else:
+        am = AnalyzeManager(exp_list=[exp_manager.experiment],
+                            analyzers=StdoutAnalyzer([sim_id], args.error),
+                            force_analyze=True)
+        am.analyze()
 
 
 def analyze(args, unknownArgs):
@@ -430,41 +427,39 @@ def version(args, unknownArgs):
 
 # List experiments from local database
 def db_list(args, unknownArgs):
-    format_string = "%s - %s (%s) - %d simulations - %s"
-    experiments = []
-
     # Filter by location
+    selected_block = None
+    num = 20
+    is_all = False
+    name = None
+
     if len(unknownArgs) > 0:
         if len(unknownArgs) == 1:
-            experiments = DataStore.get_recent_experiment_by_filter(location=unknownArgs[0][2:].upper())
+            selected_block = unknownArgs[0][2:].upper()
         else:
             raise Exception('Too many unknown arguments: please see help.')
 
     # Limit number of experiments to display
-    elif args.limit:
+    if args.limit:
         if args.limit.isdigit():
-            experiments = DataStore.get_recent_experiment_by_filter(num=args.limit)
-
+            num = args.limit
         elif args.limit == '*':
-            experiments = DataStore.get_recent_experiment_by_filter(is_all=True)
-
+            is_all=True
         else:
             raise Exception('Invalid limit: please see help.')
 
     # Filter by experiment name like
-    elif args.exp_name:
-        experiments = DataStore.get_recent_experiment_by_filter(name=args.exp_name)
+    if args.exp_name: name=args.exp_name
 
-    # No args given
-    else:
-        experiments = DataStore.get_recent_experiment_by_filter()
+    # Execute query
+    experiments = DataStore.get_recent_experiment_by_filter(num=num, name=name, is_all=is_all, location=selected_block)
 
     if len(experiments) > 0:
         for exp in experiments:
-            print(format_string % (exp.date_created.strftime('%m/%d/%Y %H:%M:%S'), exp.exp_id, exp.location,
-                                   len(exp.simulations), "Completed" if exp.is_done() else "Not Completed"))
+            print(exp)
     else:
         print("No experiments to display.")
+
 
 def list_packages(args, unknownArgs):
     package_names = DTKGitHub.get_package_list()
@@ -472,6 +467,7 @@ def list_packages(args, unknownArgs):
     if not hasattr(args, 'quiet'):
         print("\n".join(package_names))
     return package_names
+
 
 def list_package_versions(args, unknownArgs):
     try:
@@ -547,6 +543,7 @@ def get_package(args, unknownArgs):
         pass
     return release_dir
 
+
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
     mod = init.load_config_module(args.config_name)
@@ -555,13 +552,15 @@ def analyze_from_script(args, sim_manager):
     for analyzer in mod.analyzers:
         sim_manager.add_analyzer(analyzer)
 
+
 def reload_experiment(args=None, try_sync=True):
     """
     Return the experiment (for given expId) or most recent experiment
     """
     exp_id = args.expId if args else None
-    exp = DataStore.get_most_recent_experiment(exp_id)
-    if not exp and try_sync and exp_id:
+    if not exp_id:
+        exp = DataStore.get_most_recent_experiment(exp_id)
+    elif try_sync:
         try:
             exp = retrieve_experiment(exp_id,verbose=False)
         except:
@@ -571,26 +570,21 @@ def reload_experiment(args=None, try_sync=True):
         logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
         exit()
 
-    # make sure the SetupParser is configured properly for this experiment
-    try:
-        SetupParser.override_block(block=exp.selected_block)
-    except:
-        SetupParser.override_block(block=exp.location)
-
     return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
-    id = args.expId if args else None
-    current_dir = args.current_dir if 'current_dir' in args else None
+    exp_id = args.expId if hasattr(args, 'expId') else None
+    current_dir = args.current_dir if hasattr(args, 'current_dir') else None
 
     managers = []
-    for exp in DataStore.get_experiments_with_options(id, current_dir):
-        # make sure the SetupParser is configured properly for this experiment
-        SetupParser.override_block(block=exp.selected_block)
-        managers.append(ExperimentManagerFactory.from_experiment(exp))
+    experiments = DataStore.get_experiments_with_options(exp_id, current_dir)
+    for exp in experiments:
+        try:
+            managers.append(ExperimentManagerFactory.from_experiment(exp))
+        except RuntimeError:
+            print("Could not create manager... Bypassing...")
     return managers
-    #return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
 
 
 def main():
@@ -598,39 +592,31 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = commands_args.populate_run_arguments(subparsers, run)
+    commands_args.populate_run_arguments(subparsers, run)
 
     # 'dtk status' options
-    parser_status = commands_args.populate_status_arguments(subparsers)
-    parser_status.set_defaults(func=status)
+    commands_args.populate_status_arguments(subparsers, status)
 
     # 'dtk list' options
-    parser_list = commands_args.populate_list_arguments(subparsers)
-    parser_list.set_defaults(func=db_list)
+    commands_args.populate_list_arguments(subparsers, db_list)
 
     # 'dtk kill' options
-    parser_kill = commands_args.populate_kill_arguments(subparsers)
-    parser_kill.set_defaults(func=kill)
+    commands_args.populate_kill_arguments(subparsers, kill)
 
     # 'dtk exterminate' options
-    parser_exterminate = commands_args.populate_exterminate_arguments(subparsers)
-    parser_exterminate.set_defaults(func=exterminate)
+    commands_args.populate_exterminate_arguments(subparsers, exterminate)
 
     # 'dtk delete' options
-    parser_delete = commands_args.populate_delete_arguments(subparsers)
-    parser_delete.set_defaults(func=delete)
+    commands_args.populate_delete_arguments(subparsers, delete)
 
     # 'dtk clean' options
-    parser_clean = commands_args.populate_clean_arguments(subparsers)
-    parser_clean.set_defaults(func=clean)
+    commands_args.populate_clean_arguments(subparsers, clean)
 
     # 'dtk stdout' options
-    parser_stdout = commands_args.populate_stdout_arguments(subparsers)
-    parser_stdout.set_defaults(func=stdout)
+    commands_args.populate_stdout_arguments(subparsers, stdout)
 
     # 'dtk analyze' options
-    parser_analyze = commands_args.populate_analyze_arguments(subparsers)
-    parser_analyze.set_defaults(func=analyze)
+    commands_args.populate_analyze_arguments(subparsers, analyze)
 
     # 'dtk create_batch' options
     parser_createbatch = commands_args.populate_createbatch_arguments(subparsers)
@@ -697,7 +683,11 @@ def main():
 
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
-    args.func(args, unknownArgs)
+
+    try:
+        args.func(args, unknownArgs)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()
