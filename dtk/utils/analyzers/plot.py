@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 try:
     import seaborn as sns
-
     palette = sns.color_palette()
 except:
     print('Install seaborn package for more pleasing aesthetics.')
@@ -63,7 +62,7 @@ def plot_grouped_lines(df, ax):
 
 # Subplots by channel
 def plot_by_channel(plot_name, channels, plot_fn):
-    ncol = 1 + len(channels) / 4
+    ncol = int(1 + len(channels) / 4)
     nrow = int(np.ceil(float(len(channels)) / ncol))
 
     fig, axs = plt.subplots(num=plot_name,
