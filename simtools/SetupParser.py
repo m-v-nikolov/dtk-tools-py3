@@ -20,9 +20,7 @@ class SetupParserMeta(type):
         if cls.initialized:
             return getattr(cls.singleton, item)
         else:
-            if item == '__test__':  # fix for nosetests...
-                return None
-            raise SetupParser.NotInitialized("Missing attribute: %s" % item)
+            return None
 
     @classmethod
     @fasteners.interprocess_locked(os.path.join(current_dir, '.setup_parser_init_lock'))

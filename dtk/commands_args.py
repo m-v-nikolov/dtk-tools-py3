@@ -1,82 +1,87 @@
 # 'dtk run' options
-def populate_run_arguments(subparsers, func=None):
+def populate_run_arguments(subparsers, func):
     parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
     parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
     parser_run.add_argument('-b', '--blocking', action='store_true', help='Block the thread until the simulations are done.')
     parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
-    parser_run.add_argument('-a', '--analyzer', default=None, help='Specify an analyzer name or configuration to run upon completion (this operation is blocking) (see dtk analyze-list).')
-    if func: parser_run.set_defaults(func=func)
+    parser_run.set_defaults(func=func)
     return parser_run
 
 
 # 'dtk status' options
-def populate_status_arguments(subparsers, func=None):
+def populate_status_arguments(subparsers, func):
     parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID or name.')
     parser_status.add_argument(dest='expId', default=None, nargs='?', help='Experiment ID or name.')
     parser_status.add_argument('-r', '--repeat', action='store_true', help='Repeat status check until job is done processing.')
     parser_status.add_argument('-a', '--active', action='store_true', help='Get the status of all active experiments (mutually exclusive to all other options).')
+    parser_status.set_defaults(func=func)
     return parser_status
 
 
 # 'dtk list' options
-def populate_list_arguments(subparsers, func=None):
+def populate_list_arguments(subparsers, func):
     parser_list = subparsers.add_parser('list', help='Report recent 20 list of simulations in experiment.')
     parser_list.add_argument(dest='exp_name', default=None, nargs='?', help='Experiment name.')
     parser_list.add_argument('-n', '--number', help='Get given number recent experiment list', dest='limit')
+    parser_list.set_defaults(func=func)
     return parser_list
 
 
 # 'dtk kill' options
-def populate_kill_arguments(subparsers, func=None):
+def populate_kill_arguments(subparsers, func):
     parser_kill = subparsers.add_parser('kill', help='Kill most recent running experiment specified by ID or name.')
     parser_kill.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     parser_kill.add_argument('-id', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to kill.')
+    parser_kill.set_defaults(func=func)
     return parser_kill
 
 
 # 'dtk exterminate' options
-def populate_exterminate_arguments(subparsers, func=None):
+def populate_exterminate_arguments(subparsers, func):
     parser_exterminate = subparsers.add_parser('exterminate', help='Kill ALL experiments matched by ID or name.')
     parser_exterminate.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_exterminate.set_defaults(func=func)
     return parser_exterminate
 
 
- # 'dtk delete' options
-def populate_delete_arguments(subparsers, func=None):
-    parser_delete = subparsers.add_parser('delete', help='Delete the most recent experiment (tracking objects only, e.g., local cache) specified by ID or name.')
+# 'dtk delete' options
+def populate_delete_arguments(subparsers, func):
+    parser_delete = subparsers.add_parser('delete', help='Delete the most recent experiment specified by ID or name.')
     parser_delete.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_delete.add_argument('--hard', action='store_true', help='Additionally delete working directory or server entities for experiment.')
+    parser_delete.set_defaults(func=func)
     return parser_delete
 
 
 # 'dtk clean' options
-def populate_clean_arguments(subparsers, func=None):
+def populate_clean_arguments(subparsers, func):
     parser_clean = subparsers.add_parser('clean', help='Hard deletes ALL experiments in {current_dir}\simulations matched by ID or name.')
     parser_clean.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
+    parser_clean.set_defaults(func=func)
     return parser_clean
 
 
 # 'dtk stdout' options
-def populate_stdout_arguments(subparsers, func=None):
+def populate_stdout_arguments(subparsers, func):
     parser_stdout = subparsers.add_parser('stdout', help='Print stdout from first simulation in selected experiment.')
     parser_stdout.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
     parser_stdout.add_argument('-id', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to print.')
-    parser_stdout.add_argument('-c', '--comps', action='store_true', help='Use COMPS asset service to read output files (default is direct file access).')
     parser_stdout.add_argument('-e', '--error', action='store_true', help='Print stderr instead of stdout.')
     parser_stdout.add_argument('--failed', action='store_true', help='Get the stdout for the first failed simulation in the selected experiment.')
     parser_stdout.add_argument('--succeeded', action='store_true', help='Get the stdout for the first succeeded simulation in the selected experiment.')
+    parser_stdout.set_defaults(func=func)
     return parser_stdout
 
 
 # 'dtk analyze' options
-def populate_analyze_arguments(subparsers, func=None):
+def populate_analyze_arguments(subparsers, func):
     parser_analyze = subparsers.add_parser('analyze', help='Analyze finished simulations in experiment according to analyzers.')
     parser_analyze.add_argument('-bn', '--batch_name', dest='batch_name', default=None, help='Use Batch Name for analyze.')
     parser_analyze.add_argument('-id', '--id', dest='itemids', default=None, nargs='+', help='IDs of the items to analyze (can be suites, batches, experiments, simulations)')
     parser_analyze.add_argument('-a', '--analyzer', default=None, help='Python script or builtin analyzer name for custom analysis of simulations (see dtk analyze-list).')
     parser_analyze.add_argument('-f', '--force', action='store_true', help='Force analyzer to run even if jobs are not all finished.')
+    parser_analyze.set_defaults(func=func)
     return parser_analyze
 
 

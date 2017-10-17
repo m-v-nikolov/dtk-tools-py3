@@ -7,6 +7,8 @@ class ErrorRaisingArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message)
 
+def dummy_function():
+    pass
 
 class CommandsArgsTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -16,12 +18,12 @@ class CommandsArgsTest(unittest.TestCase):
         self.parser = ErrorRaisingArgumentParser(prog='dtk')
         self.flags = []
         self.subparsers = self.parser.add_subparsers(parser_class=ErrorRaisingArgumentParser)
-        run_parser = CMDarg.populate_run_arguments(self.subparsers)
-        status_parser = CMDarg.populate_status_arguments(self.subparsers)
+        run_parser = CMDarg.populate_run_arguments(self.subparsers, dummy_function)
+        status_parser = CMDarg.populate_status_arguments(self.subparsers, dummy_function)
 
     def getArgs(self, debug=False):
         if debug:
-            print self.flags
+            print(self.flags)
         args = self.parser.parse_args(self.flags, namespace=None)
         return args
 
@@ -94,7 +96,6 @@ class CommandsArgsTest(unittest.TestCase):
         self.assertIsNone(args.node_group)
         self.assertFalse(args.blocking)
         self.assertFalse(args.quiet)
-        self.assertIsNone(args.analyzer)
 
     def test_run_quiet(self):
         config_file = "cornycornfig.json"
@@ -123,8 +124,6 @@ class CommandsArgsTest(unittest.TestCase):
 
         with self.assertRaises(ValueError) as cm:
             self.getArgs()
-
-        self.assertIn("too few arguments", cm.exception)
 
     def test_run_blocking(self):
         config = "config.json"
