@@ -105,7 +105,12 @@ class ClimateFileCreator:
                 offset_string = "%s%08x%08x" % (offset_string, node.id, data[key])
 
             if len(data) > 0:
-                self.write_files(output_path, len(data.keys()[0]), offset_string, len(data), list(itertools.chain.from_iterable(data.keys())), data_set)
+                self.write_files(output_path=output_path,
+                                 count=len(list(data)[0]),
+                                 offset_string=offset_string,
+                                 available_nodes_count=len(data),
+                                 data_to_save=list(itertools.chain.from_iterable(list(data))),
+                                 data_name=data_set)
 
     def write_files(self, output_path, count, offset_string, available_nodes_count, data_to_save, data_name):
         dump = lambda content: json.dumps(content, sort_keys=True, indent=4).strip('"')

@@ -159,11 +159,7 @@ class CalibManager(object):
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
         """
-        try:
-            os.mkdir(self.name)
-            self.cache_calibration()
-        except OSError:
-            from time import sleep
+        if os.path.exists(self.name):
             logger.info("Calibration with name %s already exists in current directory" % self.name)
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
@@ -185,6 +181,9 @@ class CalibManager(object):
             elif var == "P":
                 self.replot_calibration(iteration=None)
                 exit()  # avoid calling self.run_iterations(**kwargs)
+        else:
+            os.mkdir(self.name)
+            self.cache_calibration()
 
     def finalize_calibration(self):
         """ Get the final samples (and any associated information like weights) from algo. """
@@ -590,7 +589,7 @@ class CalibManager(object):
         """
         exp_orphan_list = self.list_orphan_experiments()
         for experiment in exp_orphan_list:
-            ExperimentManagerFactory.from_experiment(experiment).delete_experiment(hard=True)
+            ExperimentManagerFactory.from_experiment(experiment).delete_experiment()
 
         if len(exp_orphan_list) > 0:
             orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
