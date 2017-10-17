@@ -33,11 +33,11 @@ class MigrationFile(BaseInputFile):
         max_size = max([len(dest) for dest in matrix_id.values()])
 
         # Add a fake node destinations in nodes to make sure the destinations are all same size
-        for source, dests in self.matrix.iteritems():
+        for source, dests in self.matrix.items():
             self.get_filler_nodes(source, dests, max_size, matrix_id.keys())
 
         with open(name, 'wb') as migration_file:
-            for nodeid, destinations in matrix_id.iteritems():
+            for nodeid, destinations in matrix_id.items():
                 destinations_id = pack('I' * len(destinations.keys()), *destinations.keys())
                 destinations_rate = pack('d' * len(destinations.values()), *destinations.values())
 
@@ -52,12 +52,12 @@ class MigrationFile(BaseInputFile):
                 offset += 12 * len(destinations)
 
         # Write the headers
-        meta = self.generate_headers({"NodeCount": len(matrix_id), "DatavalueCount": len(matrix_id.itervalues().next()) })
+        meta = self.generate_headers({"NodeCount": len(matrix_id), "DatavalueCount": len(matrix_id.values()) })
         headers = {
             "Metadata": meta,
             "NodeOffsets": offset_str
         }
-        json.dump(headers, open("%s.json" % name, 'wb'), indent=3)
+        json.dump(headers, open("%s.json" % name, 'w'), indent=3)
 
     def get_filler_nodes(self, source, dests, n, available_nodes):
         """
@@ -76,7 +76,7 @@ class MigrationFile(BaseInputFile):
         """
         return {
             node.id:{
-                dest.id:v for dest, v in dests.iteritems()
-            } for node, dests in self.matrix.iteritems()
+                dest.id:v for dest, v in dests.items()
+            } for node, dests in self.matrix.items()
         }
 

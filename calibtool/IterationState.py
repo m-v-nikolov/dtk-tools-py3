@@ -12,7 +12,7 @@ from core.utils.time import verbose_timedelta
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.Utilities.Encoding import json_numpy_obj_hook, NumpyEncoder
+from simtools.Utilities.Encoding import NumpyEncoder, json_numpy_obj_hook
 from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.Utilities.General import init_logging
 
@@ -401,7 +401,7 @@ class IterationState(object):
 
     @classmethod
     def from_file(cls, filepath):
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             return cls(**json.load(f, object_hook=json_numpy_obj_hook))
 
     def to_file(self, filepath):

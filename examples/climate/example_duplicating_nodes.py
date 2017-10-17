@@ -70,6 +70,6 @@ dg = DemographicsFile(nodes, base_file=base_demog_path)
 dg.generate_file(os.path.join(output_path, 'demographics.json'))
 
 # The files should be created -> display a message
-print "The output files have been created in the %s folder!" % output_path
+print("The output files have been created in the %s folder!" % output_path)
 
 
