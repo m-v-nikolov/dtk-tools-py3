@@ -130,6 +130,11 @@ def retry_function(func, wait=1.5, max_retries=5):
         for i in range(max_retries):
             try:
                 return func(*args, **kwargs)
+            except RuntimeError as r:
+                # Immediately raise if this is an error.
+                # COMPS is reachable so let's be clever and trust COMPS
+                if str(r) == "404 NotFound - Failed to retrieve experiment for given id":
+                    raise r
             except Exception as e:
                 retExc = e
                 time.sleep(wait)

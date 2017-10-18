@@ -65,6 +65,7 @@ class CalibManager(object):
         self.latest_iteration = 0
         self.current_iteration = None
         self._location = None
+        self.resume = False
 
     @property
     def location(self):
@@ -109,12 +110,6 @@ class CalibManager(object):
         """
         self.calibration_start = datetime.now().replace(microsecond=0)
 
-        # resume case
-        if self.current_iteration:
-            self.current_iteration.run()
-            self.post_iteration()
-            iteration += 1
-
         # normal run
         for i in range(iteration, self.max_iterations):
             self.current_iteration = self.create_iteration_state(i)
@@ -141,6 +136,10 @@ class CalibManager(object):
         )
 
     def create_iteration_state(self, iteration):
+        if self.resume:
+            self.resume = False
+            return self.current_iteration
+
         return IterationState(iteration=iteration,
                               calibration_name=self.name,
                               location=self.location,
@@ -159,11 +158,7 @@ class CalibManager(object):
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
         """
-        try:
-            os.mkdir(self.name)
-            self.cache_calibration()
-        except OSError:
-            from time import sleep
+        if os.path.exists(self.name):
             logger.info("Calibration with name %s already exists in current directory" % self.name)
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
@@ -185,6 +180,9 @@ class CalibManager(object):
             elif var == "P":
                 self.replot_calibration(iteration=None)
                 exit()  # avoid calling self.run_iterations(**kwargs)
+        else:
+            os.mkdir(self.name)
+            self.cache_calibration()
 
     def finalize_calibration(self):
         """ Get the final samples (and any associated information like weights) from algo. """
@@ -242,6 +240,8 @@ class CalibManager(object):
         return data.to_dict(orient='list')
 
     def resume_calibration(self, iteration=None, iter_step=None):
+        self.resume = True
+
         # load and validate calibration
         self.load_calibration(iteration, iter_step)
 
@@ -308,8 +308,8 @@ class CalibManager(object):
 
     def check_location(self, iteration_state):
         """
-            - Handle the case: process got interrupted but it still runs on remote
-            - Handle location change case: may resume from commission instead
+        - Handle the case: process got interrupted but it still runs on remote
+        - Handle location change case: may resume from commission instead
         """
         # Step 1: Checking possible location changes
         try:
@@ -590,7 +590,7 @@ class CalibManager(object):
         """
         exp_orphan_list = self.list_orphan_experiments()
         for experiment in exp_orphan_list:
-            ExperimentManagerFactory.from_experiment(experiment).delete_experiment(hard=True)
+            ExperimentManagerFactory.from_experiment(experiment).delete_experiment()
 
         if len(exp_orphan_list) > 0:
             orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]

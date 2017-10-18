@@ -121,11 +121,13 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         Delete experiment and output data.
         """
-        # Perform soft delete cleanup.
-        self.soft_delete()
-
         # Delete local simulation data.
-        shutil.rmtree(self.experiment.get_path())
+        exp_path = self.experiment.get_path()
+        if os.path.exists(exp_path):
+            try:
+                shutil.rmtree(exp_path)
+            except Exception as e:
+                print("Could not delete path: {}\nReason: {}".format(exp_path,e))
 
     def cancel_experiment(self):
         super(LocalExperimentManager, self).cancel_experiment()

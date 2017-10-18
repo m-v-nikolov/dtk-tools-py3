@@ -37,7 +37,7 @@ class AnalyzeManager:
 
         # Initial adding of experiments
         if exp_list:
-            exp_list = exp_list if isinstance(exp_list, collections.Iterable) and not isinstance(exp_list, basestring) else [exp_list]
+            exp_list = exp_list if isinstance(exp_list, collections.Iterable) and not isinstance(exp_list, str) else [exp_list]
             for exp in exp_list: self.add_experiment(exp)
 
         # Initial adding of the simulations
@@ -227,6 +227,6 @@ class AnalyzeManager:
                 logger.error("Experiments list {}".format(self.experiments))
                 logger.error(e)
 
-        map(lambda p: p.join(), plotting_processes)
-
+        for p in plotting_processes:
+            p.join()
 

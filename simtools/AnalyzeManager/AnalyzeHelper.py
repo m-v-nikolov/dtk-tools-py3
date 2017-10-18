@@ -14,10 +14,10 @@ logger = init_logging('Commands')
 
 
 def analyze(args, unknownArgs, builtinAnalyzers):
-    # logger.info('Analyzing results...')
-
     # validate parameters
-    validate_parameters(args, unknownArgs)
+    if args.config_name is None:
+        logger.error('Please provide Analyzer (-a or --config_name).')
+        exit()
 
     # collect all experiments and simulations
     exp_dict, sim_dict = collect_experiments_simulations(args)
@@ -64,12 +64,6 @@ def analyze(args, unknownArgs, builtinAnalyzers):
 
     # remove empty batches
     clean_batch()
-
-
-def validate_parameters(args, unknownArgs):
-    if args.config_name is None:
-        logger.info('Please provide Analyzer (-a or --config_name).')
-        exit()
 
 
 def check_existing_batch(exp_dict, sim_dict):
@@ -129,7 +123,7 @@ def save_batch(args, exp_list=None, sim_list=None):
 
 def create_batch(args, unknownArgs):
     """
-        create or use existing batch
+    create or use existing batch
     """
     # collect all experiments
     exp_dict, sim_dict = collect_experiments_simulations(args)
@@ -167,7 +161,7 @@ def consolidate_experiments_with_options(args, exp_dict, sim_dict):
                 logger.info('\n'.join([' - %s' % sim_id for sim_id in batch_sim_id_list]))
 
             if exp_dict or sim_dict:
-                var = raw_input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
+                var = input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
                 # print "You selected '%s'" % var
                 if var == 'O':
                     # clear existing experiments associated with this Batch
@@ -261,14 +255,10 @@ def collect_experiments_simulations(args):
 
 def check_status(exp_list):
     for exp in exp_list:
-        exp_manager = ExperimentManagerFactory.from_experiment(exp)
-        exp_manager.analyzers = []
-        states, msgs = exp_manager.get_simulation_status()
-        if not exp_manager.status_succeeded(states):
-            logger.warning('Not all jobs have finished successfully yet...')
-            logger.info('Job states:')
-            from simtools.Utilities.Encoding import GeneralEncoder
-            logger.info(json.dumps(states, sort_keys=True, indent=4, cls=GeneralEncoder))
+        if not exp.is_successful():
+            logger.warning('Not all experiments have finished successfully yet...')
+            exp_manager = ExperimentManagerFactory.from_experiment(exp)
+            exp_manager.print_status()
             exit()
 
 

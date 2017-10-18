@@ -96,7 +96,11 @@ class Experiment(Base):
     analyzers = relationship("Analyzer", back_populates='experiment', cascade="all, delete-orphan")
 
     def __repr__(self):
-        return "Experiment %s" % self.id
+        format_string = "{date} - {name} : {id} ({location}) - {sim_count} simulations - {state}"
+        return format_string.format(date=self.date_created.strftime('%m/%d/%Y %H:%M:%S'),
+                                       name=self.exp_name, id=self.exp_id, location=self.location,
+                                       sim_count=len(self.simulations),
+                                       state="Completed" if self.is_done() else "Not Completed")
 
     @hybrid_property
     def id(self):
@@ -125,6 +129,18 @@ class Experiment(Base):
             if sim.status not in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
                 return False
         return True
+
+    def is_successful(self):
+        for sim in self.simulations:
+            if sim.status != SimulationState.Succeeded:
+                return False
+        return True
+
+    def any_failed_or_cancelled(self):
+        for sim in self.simulations:
+            if sim.status in (SimulationState.Failed, SimulationState.Canceled):
+                return True
+        return False
 
     def toJSON(self):
         ret = {}

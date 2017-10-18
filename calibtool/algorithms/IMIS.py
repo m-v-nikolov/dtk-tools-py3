@@ -294,7 +294,7 @@ class IMIS(NextPointAlgorithm):
         self.gaussian_covariances.append(weighted_covariance)
 
     def get_param_names(self):
-        return self.prior_fn.params
+        return list(self.prior_fn.params)
 
     def verify_valid_samples(self, next_samples):
         """
@@ -464,7 +464,3 @@ class IMIS(NextPointAlgorithm):
         self.gaussian_probs = {}
         self.gaussian_covariances = []
         self.gaussian_centers = []
-
-    def restore(self, iteration_state):
-        self.gaussian_covariances = iteration_state.next_point['gaussian_covariances']
-        self.gaussian_centers = iteration_state.next_point['gaussian_centers']

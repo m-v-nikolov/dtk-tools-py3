@@ -76,7 +76,7 @@ class DemographicsFile(BaseInputFile):
 
         # Update node count
         self.content['Metadata']['NodeCount'] = len(self.nodes)
-        with open(name, 'wb') as output:
+        with open(name, 'w') as output:
             json.dump(self.content, output, indent=3)
 
     def get_node(self, nodeid):
@@ -85,7 +85,7 @@ class DemographicsFile(BaseInputFile):
         :param nodeid: 
         :return: 
         """
-        if self.nodes.has_key(nodeid): return self.nodes[nodeid]
+        if nodeid in self.nodes: return self.nodes[nodeid]
         for node in self.nodes.values():
             if node.name == nodeid: return node
         raise ValueError("No nodes available with the id: %s. Available nodes (%s)" % (nodeid, ", ".join(self.nodes.keys())))

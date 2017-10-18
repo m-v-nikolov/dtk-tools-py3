@@ -277,8 +277,12 @@ class BaseExperimentManager:
         # Refresh the experiment
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
-    def print_status(self, states, msgs, verbose=True):
+    def print_status(self, states=None, msgs=None, verbose=True):
+        if not states:
+            states, msgs = self.get_simulation_status()
+
         long_states = copy.deepcopy(states)
+
         for jobid, state in states.items():
             long_states[jobid] = long_states[jobid].name
             if state is SimulationState.Running:
@@ -296,20 +300,13 @@ class BaseExperimentManager:
         # Display the counter no matter the number of simulations
         print(dict(Counter([st.name for st in states.values()])))
 
-    def delete_experiment(self, hard=False):
-        """
-        Delete experiment
-        """
-        if hard:
-            self.hard_delete()
-        else:
-            self.soft_delete()
+    def delete_experiment(self):
+        # Delete on COMPS/local files
+        self.hard_delete()
 
-    def soft_delete(self):
-        """
-        Delete experiment in the DB
-        """
+        # Delete in the DB
         DataStore.delete_experiment(self.experiment)
+
 
     def wait_for_finished(self, verbose=False, sleep_time=5):
         timeout = 3600 * 24 # 48 hours timeout
@@ -341,9 +338,9 @@ class BaseExperimentManager:
         # Refresh the experiment
         self.refresh_experiment()
 
-    def kill(self, args, unknownArgs):
-        if args.simIds:
-            self.cancel_simulations([DataStore.get_simulation(id) for id in args.simIds])
+    def kill(self, sim_ids=None):
+        if sim_ids:
+            self.cancel_simulations([DataStore.get_simulation(id) for id in sim_ids])
         else:
             self.cancel_experiment()
 
@@ -374,29 +371,21 @@ class BaseExperimentManager:
         return all(v in [SimulationState.Succeeded] for v in states.values())
 
     def succeeded(self):
-        return self.status_succeeded(self.get_simulation_status()[0])
+        return self.experiment.is_successful()
 
     @staticmethod
     def status_failed(states):
         return all(v in [SimulationState.Failed] for v in states.values())
 
-    @staticmethod
-    def any_failed(states):
-        return any(v in [SimulationState.Failed] for v in states.values())
-
-    @staticmethod
-    def any_canceled(states):
-        return any(v in [SimulationState.Canceled] for v in states.values())
-
-    def failed(self):
-        return self.status_failed(self.get_simulation_status()[0])
+    def any_failed_or_cancelled(self):
+        return self.experiment.any_failed_or_cancelled()
 
     @staticmethod
     def status_finished(states):
         return all(v in [SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled] for v in states.values())
 
     def finished(self):
-        return self.status_finished(self.get_simulation_status()[0])
+        return self.experiment.is_done()
 
     def clean_experiment_name(self, experiment_name):
         """

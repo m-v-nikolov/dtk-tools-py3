@@ -1,6 +1,5 @@
 import base64
 import json
-
 import numpy as np
 
 
@@ -18,7 +17,7 @@ class NumpyEncoder(json.JSONEncoder):
                 cont_obj = np.ascontiguousarray(obj)
                 assert(cont_obj.flags['C_CONTIGUOUS'])
                 obj_data = cont_obj.data
-            data_b64 = base64.b64encode(obj_data)
+            data_b64 = base64.b64encode(obj_data).decode('utf-8')
             return dict(__ndarray__=data_b64,
                         dtype=str(obj.dtype),
                         shape=obj.shape)
