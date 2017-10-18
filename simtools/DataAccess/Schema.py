@@ -136,6 +136,12 @@ class Experiment(Base):
                 return False
         return True
 
+    def any_failed_or_cancelled(self):
+        for sim in self.simulations:
+            if sim.status in (SimulationState.Failed, SimulationState.Canceled):
+                return True
+        return False
+
     def toJSON(self):
         ret = {}
         for name in dir(self):

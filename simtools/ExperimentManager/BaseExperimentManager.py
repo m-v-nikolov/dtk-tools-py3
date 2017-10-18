@@ -377,23 +377,15 @@ class BaseExperimentManager:
     def status_failed(states):
         return all(v in [SimulationState.Failed] for v in states.values())
 
-    @staticmethod
-    def any_failed(states):
-        return any(v in [SimulationState.Failed] for v in states.values())
-
-    @staticmethod
-    def any_canceled(states):
-        return any(v in [SimulationState.Canceled] for v in states.values())
-
-    def failed(self):
-        return self.status_failed(self.get_simulation_status()[0])
+    def any_failed_or_cancelled(self):
+        return self.experiment.any_failed_or_cancelled()
 
     @staticmethod
     def status_finished(states):
         return all(v in [SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled] for v in states.values())
 
     def finished(self):
-        return self.status_finished(self.get_simulation_status()[0])
+        return self.experiment.is_done()
 
     def clean_experiment_name(self, experiment_name):
         """

@@ -45,7 +45,7 @@ class OptimToolPlotter(BasePlotter):
         self.param_names = self.iteration_state.param_names
         self.site_analyzer_names = self.iteration_state.site_analyzer_names
 
-        self.npt = self.iteration_state.next_point
+        self.npt = self.iteration_state.next_point_algo.get_state()
         self.data = pd.DataFrame.from_dict(self.npt['data'])
         self.state = pd.DataFrame.from_dict(self.npt['state'])
         self.regression = pd.DataFrame.from_dict(self.npt['regression'])

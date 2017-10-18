@@ -45,6 +45,9 @@ class OptimTool(NextPointAlgorithm):
         self.Xmax = {p['Name']: p['Max'] for p in self.params}
         self.Dynamic = {p['Name']: p['Dynamic'] for p in self.params}
 
+        self.n_dimensions = 0
+        self.data = pd.DataFrame()
+
     def cleanup(self):
         pass
 
