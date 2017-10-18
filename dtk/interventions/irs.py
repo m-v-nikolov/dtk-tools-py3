@@ -106,9 +106,9 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=None, nodeIDs=[],
             IRS_event['Event_Coordinator_Config'].update(
                 {
                          "Intervention_Config": irs_housingmod_w_event,
-                         "Target_Residents_Only": 1
+                         "Target_Residents_Only": 1,
+                         "Demographic_Coverage": coverage_by_age["coverage"]
                      })
-            IRS_event["Intervention_Config"]["Demographic_Coverage"]= coverage_by_age["coverage"]
 
         if node_property_restrictions:
             if trigger_condition_list:
