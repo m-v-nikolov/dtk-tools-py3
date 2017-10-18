@@ -227,6 +227,6 @@ class AnalyzeManager:
                 logger.error("Experiments list {}".format(self.experiments))
                 logger.error(e)
 
-        map(lambda p: p.join(), plotting_processes)
-
+        for p in plotting_processes:
+            p.join()
 
