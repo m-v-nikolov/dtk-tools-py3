@@ -649,17 +649,6 @@ class TestIterationState(unittest.TestCase):
                                       next_point_old['latest_samples'])
         os.remove('tmp.json')
 
-    def test_reset_to_step(self):
-        self.example_settings()
-        self.assertEqual(self.state.results[0]['a1'], -13)
-        self.state.reset_to_step(iter_step='analyze')
-        self.assertEqual(self.state.results, [])
-        self.assertEqual(self.state.analyzers, {})
-        self.assertEqual(self.state.simulations['sims']['id1']['p1'], 1)
-        self.state.reset_to_step(iter_step='commission')
-        self.assertEqual(self.state.simulations, {})
-        self.assertEqual(self.state.parameters['values'][2][1], 5)
-
 
 class TestNumpyDecoder(unittest.TestCase):
     """
