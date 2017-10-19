@@ -277,11 +277,18 @@ def analyze(args, unknownArgs):
 
 
 def create_batch(args, unknownArgs):
-    AnalyzeHelper.create_batch(args, unknownArgs)
+    AnalyzeHelper.create_batch(args.batch_name, args.itemids)
 
 
 def list_batch(args, unknownArgs):
-    AnalyzeHelper.list_batch(args, unknownArgs)
+    id_or_name = None
+    if args.id_or_name and len(unknownArgs) > 0:
+        logger.warning("/!\\ BATCH WARNING /!\\")
+        logger.warning('More than one Batch Id/Name are provided. We will ignore both and list all batches in DB!\n')
+    else:
+        id_or_name = args.id_or_name
+
+    AnalyzeHelper.list_batch(id_or_name=id_or_name)
 
 
 def delete_batch(args, unknownArgs):
@@ -619,12 +626,10 @@ def main():
     commands_args.populate_analyze_arguments(subparsers, analyze)
 
     # 'dtk create_batch' options
-    parser_createbatch = commands_args.populate_createbatch_arguments(subparsers)
-    parser_createbatch.set_defaults(func=create_batch)
+    commands_args.populate_createbatch_arguments(subparsers, create_batch)
 
     # 'dtk list_batch' options
-    parser_listbatch = commands_args.populate_listbatch_arguments(subparsers)
-    parser_listbatch.set_defaults(func=list_batch)
+    commands_args.populate_listbatch_arguments(subparsers, list_batch)
 
     # 'dtk delete_batch' options
     parser_deletebatch = commands_args.populate_deletebatch_arguments(subparsers)
@@ -684,10 +689,12 @@ def main():
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
 
-    try:
-        args.func(args, unknownArgs)
-    except AttributeError:
-        parser.print_help()
+    args.func(args, unknownArgs)
+
+    # try:
+    #     args.func(args, unknownArgs)
+    # except AttributeError:
+    #     parser.print_help()
 
 if __name__ == '__main__':
     main()

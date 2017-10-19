@@ -1,10 +1,12 @@
+from sqlalchemy import all_
+from sqlalchemy.orm import joinedload
+
 from simtools.DataAccess import session_scope
-from simtools.DataAccess.Schema import Batch
-from operator import and_
+from simtools.DataAccess.Schema import Batch, BatchSimulation, BatchExperiment
+from operator import and_, or_
 
 
 class BatchDataStore:
-
     @classmethod
     def get_batch_by_id(cls, batch_id):
         if batch_id is None:
@@ -18,57 +20,42 @@ class BatchDataStore:
 
     @classmethod
     def get_batch_by_name(cls, batch_name):
-        if batch_name is None:
-            return None
-
         with session_scope() as session:
-            batch = session.query(Batch).filter(Batch.name == batch_name).one_or_none()
+            batch = session.query(Batch).filter(Batch.name == batch_name) \
+                .options(joinedload('simulations').joinedload('experiment')) \
+                .one_or_none()
             session.expunge_all()
 
         return batch
 
     @classmethod
     def save_batch(cls, batch):
-        existing = True if BatchDataStore.get_batch_by_name(batch.name) else False
-
-        batch_before = BatchDataStore.get_batch_list_by_id()
         with session_scope() as session:
-            session.merge(batch)
+            if not batch.id:
+                session.add(batch)
+                session.flush()
+                if not batch.name:
+                    batch.name = 'batch_%s' % batch.id
 
-        batch_after = BatchDataStore.get_batch_list_by_id()
-
-        if existing:
-            return batch.id
-        else:
-            batch_before = [b.id for b in batch_before]
-            batch_after = [b.id for b in batch_after]
-
-            batch_diff = set(batch_after) - set(batch_before)
-
-            if len(batch_diff) == 1:
-                return list(batch_diff)[0]
+                session.merge(batch)
+                session.expunge_all()
             else:
-                return None
+                session.merge(batch)
 
     @classmethod
-    def get_batch_list_by_id(cls, batch_id=None):
+    def get_batch_list(cls, id_or_name=None):
+        batches = None
         with session_scope() as session:
-            if batch_id:
-                batches = session.query(Batch).filter(Batch.id == batch_id).one_or_none()
-            else:
-                batches = session.query(Batch).all()
+            try:
+                batch_id = int(id_or_name)
+                batches = session.query(Batch).filter(Batch.id == batch_id) \
+                    .options(joinedload('simulations').joinedload('experiment')).all()
+            except: pass
 
-            session.expunge_all()
-
-        return batches
-
-    @classmethod
-    def get_batch_list_by_name(cls, batch_name=None):
-        with session_scope() as session:
-            if batch_name:
-                batches = session.query(Batch).filter(Batch.name == batch_name).one_or_none()
-            else:
-                batches = session.query(Batch).all()
+            if not batches:
+                batches = session.query(Batch) \
+                    .filter(Batch.name.like("%{}%".format(id_or_name or ""))) \
+                    .options(joinedload('simulations').joinedload('experiment')).all()
 
             session.expunge_all()
 
