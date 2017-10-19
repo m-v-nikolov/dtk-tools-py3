@@ -186,7 +186,19 @@ class Batch(Base):
                                order_by="Simulation.date_created")
 
     def __repr__(self):
-        return "%s (id=%s)" % (self.name, self.id)
+        string = "\n{s.name} (id={s.id}, exp_count={ec}, sim_count={sc})\n".format(s=self,
+                                                                                   ec=len(self.experiments),
+                                                                                   sc=len(self.simulations))
+        if self.experiments:
+            string += "Experiment(s):\n"
+            string += "\n".join([" - {e.exp_name} ({e.exp_id})".format(e=exp) for exp in self.experiments])
+            string += "\n"
+        if self.simulations:
+            string += "Simulation(s):\n"
+            string += "\n".join(
+                [" - {s.id} (exp: {s.experiment.exp_name})".format(s=sim) for sim in self.simulations])
+
+        return string
 
     # must be called from an instance
     def get_experiment_ids(self):
@@ -198,12 +210,10 @@ class Batch(Base):
         sim_ids = [sim.id for sim in self.simulations]
         return sim_ids
 
-
 class BatchExperiment(Base):
     __tablename__ = "batch_experiment"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
     exp_id = Column(String, ForeignKey('experiments.exp_id'), primary_key=True)
-    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
     def __repr__(self):
         return "batch_experiment"
@@ -213,7 +223,6 @@ class BatchSimulation(Base):
     __tablename__ = "batch_simulation"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
     sim_id = Column(String, ForeignKey('simulations.id'), primary_key=True)
-    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
     def __repr__(self):
         return "batch_simulation"
