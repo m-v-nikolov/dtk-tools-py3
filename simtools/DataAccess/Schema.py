@@ -186,7 +186,7 @@ class Batch(Base):
                                order_by="Simulation.date_created")
 
     def __repr__(self):
-        string = "\n{s.name} (id={s.id}, exp_count={ec}, sim_count={sc})\n".format(s=self,
+        string = "{s.name} (id={s.id}, exp_count={ec}, sim_count={sc})\n".format(s=self,
                                                                                    ec=len(self.experiments),
                                                                                    sc=len(self.simulations))
         if self.experiments:

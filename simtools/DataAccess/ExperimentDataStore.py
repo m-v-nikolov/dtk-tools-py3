@@ -10,6 +10,7 @@ from simtools.Utilities.General import init_logging, remove_null_values
 logger = init_logging('DataAccess')
 from COMPS.Data.Simulation import SimulationState
 
+
 class ExperimentDataStore:
     @classmethod
     def create_experiment(cls, **kwargs):
@@ -112,23 +113,7 @@ class ExperimentDataStore:
     def delete_experiment(cls, experiment):
         logger.debug("Delete experiment %s" % experiment.id)
         with session_scope() as session:
-            session.delete(session.query(Experiment).filter(Experiment.exp_id == experiment.exp_id).one())
-
-    @classmethod
-    def delete_experiments_by_suite(cls, suite_ids, verbose=False):
-        """
-        Delete those experiments which are associated with suite_ids
-        suite_ids: list of suite ids
-        """
-        with session_scope() as session:
-            # New approach: it will delete related simulations
-            exps = session.query(Experiment).filter(Experiment.suite_id.in_(suite_ids))
-            num = 0
-            for exp in exps:
-                session.delete(exp)
-                num += 1
-            if verbose:
-                logger.info('%s experiment(s) deleted.' % num)
+            session.delete(experiment)
 
     @classmethod
     def get_experiments_by_suite(cls, suite_ids):
@@ -136,7 +121,6 @@ class ExperimentDataStore:
         Get the experiments which are associated with suite_id
         suite_ids: list of suite ids
         """
-        exp_list = None
         with session_scope() as session:
             exp_ids = session.query(Experiment.exp_id).filter(Experiment.suite_id.in_(suite_ids)).all()
             # Retrieve the individual experiments
@@ -145,21 +129,6 @@ class ExperimentDataStore:
 
         return exp_list
 
-    @classmethod
-    def delete_experiments(cls, exp_list, verbose=False):
-        """
-        Delete experiments given from input
-        exp_list: list of experiments
-        """
-        exp_ids = [exp.exp_id for exp in exp_list]
-        with session_scope() as session:
-            exps = session.query(Experiment).filter(Experiment.exp_id.in_(exp_ids))
-            num = 0
-            for exp in exps:
-                session.delete(exp)
-                num += 1
-            if verbose:
-                logger.info('%s experiment(s) deleted.' % num)
 
     @classmethod
     def get_recent_experiment_by_filter(cls, num=20, is_all=False, name=None, location=None):
