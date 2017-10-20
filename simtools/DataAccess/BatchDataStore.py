@@ -62,37 +62,30 @@ class BatchDataStore:
         return batches
 
     @classmethod
-    def delete_batch(cls, batch_id=None):
+    def delete_batch(cls, batch=None):
         with session_scope() as session:
-            if batch_id:
-                batches = session.query(Batch).filter(Batch.id == batch_id).one_or_none()
-                if batches:
-                    session.delete(batches)
+            if batch:
+                session.query(BatchSimulation).filter(BatchSimulation.batch_id == batch.id).delete(synchronize_session=False)
+                session.query(BatchExperiment).filter(BatchExperiment.batch_id == batch.id).delete(synchronize_session=False)
+                session.delete(batch)
             else:
-                batches = session.query(Batch).all()
-                for batch in batches:
-                    session.delete(batch)
+                session.query(Batch).delete(synchronize_session=False)
+                session.query(BatchSimulation).delete(synchronize_session=False)
+                session.query(BatchExperiment).delete(synchronize_session=False)
 
     @classmethod
     def remove_empty_batch(cls):
-        cnt = 0
         with session_scope() as session:
-            batches = session.query(Batch).filter(and_(~Batch.experiments.any(), ~Batch.simulations.any())).all()
-
-            for batch in batches:
-                session.delete(batch)
-                cnt += 1
-
+            cnt = session.query(Batch).filter(and_(~Batch.experiments.any(), ~Batch.simulations.any())).delete(synchronize_session=False)
         return cnt
 
     @classmethod
-    def clear_batch(cls, batch=None):
-        if batch is None:
+    def clear_batch(cls, batches=None):
+        if batches is None:
             return
 
         with session_scope() as session:
-            batch = session.query(Batch).filter(Batch.id == batch.id).one_or_none()
-            if batch:
+            for batch in batches:
                 batch.experiments = []
                 batch.simulations = []
                 session.merge(batch)

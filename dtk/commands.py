@@ -292,7 +292,11 @@ def list_batch(args, unknownArgs):
 
 
 def delete_batch(args, unknownArgs):
-    AnalyzeHelper.delete_batch(args, unknownArgs)
+    if args.batch_id and len(unknownArgs) > 0:
+        logger.warning("/!\\ BATCH WARNING /!\\")
+        logger.warning('More than one Batch Id/Name are provided. Exiting...\n')
+        exit()
+    AnalyzeHelper.delete_batch(args.batch_id)
 
 
 def clean_batch(args, unknownArgs):
@@ -300,7 +304,7 @@ def clean_batch(args, unknownArgs):
 
 
 def clear_batch(args, unknownArgs):
-    AnalyzeHelper.clear_batch(ask=True)
+    AnalyzeHelper.clear_batch(id_or_name=args.id_or_name,ask=True)
 
 
 def analyze_list(args, unknownArgs):
@@ -632,16 +636,13 @@ def main():
     commands_args.populate_listbatch_arguments(subparsers, list_batch)
 
     # 'dtk delete_batch' options
-    parser_deletebatch = commands_args.populate_deletebatch_arguments(subparsers)
-    parser_deletebatch.set_defaults(func=delete_batch)
+    commands_args.populate_deletebatch_arguments(subparsers, delete_batch)
 
     # 'dtk clear_batch' options
-    parser_clearbatch = commands_args.populate_clearbatch_arguments(subparsers)
-    parser_clearbatch.set_defaults(func=clear_batch)
+    commands_args.populate_clearbatch_arguments(subparsers, clear_batch)
 
     # 'dtk clean_batch' options
-    parser_cleanbatch = commands_args.populate_cleanbatch_arguments(subparsers)
-    parser_cleanbatch.set_defaults(func=clean_batch)
+    commands_args.populate_cleanbatch_arguments(subparsers, clean_batch)
 
     # 'dtk analyze-list' options
     parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')

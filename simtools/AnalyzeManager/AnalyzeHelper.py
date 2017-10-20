@@ -1,12 +1,10 @@
 import os
-import sys
-from importlib import import_module
 
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.DataAccess.Schema import Batch, Experiment, Simulation
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from simtools.Utilities.Experiments import retrieve_experiment, retrieve_object, retrieve_simulation
+from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
 from simtools.Utilities.General import init_logging, retrieve_item
 from simtools.Utilities.Initialization import load_config_module
 
@@ -89,10 +87,6 @@ def compare_two_ids_list(ids_1, ids_2):
 
 
 def save_batch(batch_name=None, exp_list=None, sim_list=None):
-    if not exp_list and not sim_list:
-        logger.info('Please provide some experiment(s)/simulation(s) to analyze.')
-        exit()
-
     # Try to get the batch based on name if provided
     batch = DataStore.get_batch_by_name(batch_name) if batch_name else None
 
@@ -259,68 +253,63 @@ def list_batch(id_or_name=None):
         print('There is no Batch records in DB.')
 
 
-def delete_batch(args, unknownArgs):
+def delete_batch(id_or_name=None):
     """
-        Delete a particular batch or all batches in DB
+    Delete a particular batch or all batches in DB
     """
-    if args.batch_id and len(unknownArgs) > 0:
-        logger.warning("/!\\ BATCH WARNING /!\\")
-        logger.warning('It takes only 1 batch_id but more are provided.\n')
-        exit()
-
-    msg = ''
-    if args.batch_id:
-        msg = 'Are you sure you want to delete the Batch %s (Y/n)? ' % args.batch_id
+    batches = DataStore.get_batch_list(id_or_name)
+    if id_or_name:
+        print("Batch to delete:")
+        for batch in batches: print(batch)
     else:
-        msg = 'Are you sure you want to delete all Batches (Y/n)? '
+        print("ALL the batches present in the database ({} batches total) will be deleted...".format(len(batches)))
 
-    choice = raw_input(msg)
+    choice = input("Are you sure you want to proceed? (Y/n)")
 
     if choice != 'Y':
-        logger.warning('No action taken.')
+        print('No action taken.')
         return
     else:
-        DataStore.delete_batch(args.batch_id)
-        logger.info('The Batch(s) have been deleted.')
+        if not id_or_name:
+            DataStore.delete_batch() # Wipe all
+        else:
+            for batch in batches:
+                DataStore.delete_batch(batch)
+
+        print('The Batch(s) have been deleted.')
 
 
-def clear_batch(args, unknownArgs, ask=False):
+def clear_batch(id_or_name, ask=False):
     """
-        de-attach all associated experiments from the given batch
+    de-attach all associated experiments from the given batch
     """
-    batch = DataStore.get_batch_by_id(args.id_or_name)
+    batches = DataStore.get_batch_list(id_or_name)
 
-    if batch is None:
-        batch = DataStore.get_batch_by_name(args.id_or_name)
-
-    if batch is None:
-        logger.info("The Batch given by '%s' doesn't exist! ." % args.id_or_name)
+    if not batches:
+        print("No batches identified by '%s' were found in the DB." % id_or_name)
         exit()
 
     if ask:
-        msg = 'Are you sure you want to detach all associated experiments (Y/n)? '
-        choice = raw_input(msg)
-
-        if choice != 'Y':
-            logger.warning('No action taken.')
+        for batch in batches:
+            print(batch)
+        if input("Are you sure you want to detach all associated experiments from those batches (Y/n)? ") != 'Y':
+            print('No action taken.')
             return
 
-    DataStore.clear_batch(batch)
-    logger.info('The associated experiments have been detached.')
+    DataStore.clear_batch(batches)
+    print('The associated experiments/simulations were detached.')
 
 
 def clean_batch(ask=False):
     """
-        remove all empty batches
+    remove all empty batches
     """
     if ask:
-        msg = 'Are you sure you want to remove all empty Batches (Y/n)? '
-        choice = raw_input(msg)
+        choice = input("Are you sure you want to remove all empty Batches (Y/n)?")
 
         if choice != 'Y':
-            logger.warning('No action taken.')
+            print('No action taken.')
             return
 
     cnt = DataStore.remove_empty_batch()
-    if cnt > 0:
-        logger.info('The Total %s empty Batch(s) have been removed.' % cnt)
+    print("%s empty Batch(s) have been removed." % cnt)
