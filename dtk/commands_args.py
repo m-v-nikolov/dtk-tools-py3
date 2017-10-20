@@ -92,23 +92,23 @@ def populate_listbatch_arguments(subparsers, func):
 
 
 # 'dtk clean_batch' options
-def populate_cleanbatch_arguments(subparsers, func=None):
-    parser_cleanbatch = subparsers.add_parser('clean_batch', help='Remove all Batches with empty experiments.')
-    return parser_cleanbatch
+def populate_cleanbatch_arguments(subparsers, func):
+    parser_cleanbatch = subparsers.add_parser('clean_batch', help='Remove all empty Batches.')
+    parser_cleanbatch.set_defaults(func=func)
 
 
 # 'dtk clear_batch' options
-def populate_clearbatch_arguments(subparsers, func=None):
+def populate_clearbatch_arguments(subparsers, func):
     parser_clearbatch = subparsers.add_parser('clear_batch', help='Remove all associated experiments from Batch given id or name.')
     parser_clearbatch.add_argument('-id', dest='id_or_name', required=True, help='Batch id or name.')
-    return parser_clearbatch
+    parser_clearbatch.set_defaults(func=func)
 
 
 # 'dtk delete_batch' options
-def populate_deletebatch_arguments(subparsers, func=None):
-    parser_deletebatch = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID.')
+def populate_deletebatch_arguments(subparsers, func):
+    parser_deletebatch = subparsers.add_parser('delete_batch', help='Delete all Batches or Batch with given Batch ID/name.')
     parser_deletebatch.add_argument('-id', '--batch_id', dest='batch_id', help='Batch ID.')
-    return parser_deletebatch
+    parser_deletebatch.set_defaults(func=func)
 
 
 # 'dtk sync' options
