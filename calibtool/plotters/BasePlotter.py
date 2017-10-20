@@ -27,9 +27,6 @@ class BasePlotter:
     def visualize(self, iteration_state):
         pass
 
-    @abstractmethod
-    def cleanup(self):
-        pass
 
     @staticmethod
     def combine_by_site(site_name, analyzer_names, results):

@@ -1,14 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
-try:
-    import seaborn as sns
-    palette = sns.color_palette()
-except:
-    print('Install seaborn package for more pleasing aesthetics.')
-    palette = ['navy', 'green', 'firebrick', 'black']
-
 
 # Plot functions
 def no_plots(df, ax):
@@ -22,6 +13,7 @@ def plot_CI_bands(df, ax):
     Also, an issue with the tsplot keyword argument 'time'
     as(float) not datetime: https://github.com/mwaskom/seaborn/issues/242
     """
+    import seaborn as sns
     groups = df.keys().levels[0]
     n_groups = len(groups)
     values = df.values
@@ -33,6 +25,9 @@ def plot_CI_bands(df, ax):
 
 
 def plot_std_bands(df, ax):
+    import seaborn as sns
+    palette = sns.color_palette()
+    import matplotlib.pyplot as plt
     grouped = df.groupby(level=['group'], axis=1)
     m = grouped.mean()
     m.plot(ax=ax, legend=True)
@@ -50,6 +45,9 @@ def plot_lines(df, ax):
 
 
 def plot_grouped_lines(df, ax):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    palette = sns.color_palette()
     grouped = df.groupby(level=['group'], axis=1)
     leg = []
     for i, (g, dfg) in enumerate(grouped):
@@ -62,6 +60,7 @@ def plot_grouped_lines(df, ax):
 
 # Subplots by channel
 def plot_by_channel(plot_name, channels, plot_fn):
+    import matplotlib.pyplot as plt
     ncol = int(1 + len(channels) / 4)
     nrow = int(np.ceil(float(len(channels)) / ncol))
 

@@ -43,7 +43,7 @@ class SimulationDataStore:
             session.execute(stmt, simulation_batch)
 
     @classmethod
-    def bulk_insert_simulations(cls,simulations):
+    def bulk_insert_simulations(cls, simulations):
         with session_scope() as session:
             session.bulk_save_objects(simulations)
 
@@ -85,4 +85,4 @@ class SimulationDataStore:
     def delete_simulation(cls, simulation):
         logger.debug("Delete simulation %s" % simulation.id)
         with session_scope() as session:
-            session.delete(session.query(Simulation).filter(Simulation.id == simulation.id).one())
+            session.query(Simulation).filter(Simulation.id == simulation.id).delete(synchronize_session=False)

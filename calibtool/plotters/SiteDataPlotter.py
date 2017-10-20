@@ -1,14 +1,16 @@
 import logging
 import os
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 from calibtool.IterationState import IterationState
-from simtools.OutputParser import CompsDTKOutputParser
-from calibtool.utils import StatusPoint
 from calibtool.plotters.BasePlotter import BasePlotter
+from calibtool.utils import StatusPoint
+from simtools.OutputParser import CompsDTKOutputParser
 
 sns.set_style('white', {'axes.linewidth': 0.5})
 
