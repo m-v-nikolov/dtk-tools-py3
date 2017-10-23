@@ -2,8 +2,8 @@ import argparse
 import csv
 import datetime
 import os
+import shutil
 import subprocess
-import sys
 
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
 from dtk import commands_args
@@ -18,8 +18,8 @@ from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
-    get_experiments_by_name, COMPS_login
+from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiments_by_name, COMPS_login, \
+    get_experiment_ids_for_user
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
 
@@ -27,6 +27,7 @@ logger = init_logging('Commands')
 from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
 import simtools.Utilities.Initialization as init
+
 
 def builtinAnalyzers():
     analyzers = {
@@ -37,9 +38,11 @@ def builtinAnalyzers():
 
     return analyzers
 
+
 class objectview(object):
     def __init__(self, d):
         self.__dict__ = d
+
 
 def test(args, unknownArgs):
     # Get to the test dir
@@ -52,43 +55,6 @@ def test(args, unknownArgs):
 
     # Run
     subprocess.Popen(command, cwd=test_dir).wait()
-
-
-# def setup2(args, unknownArgs):
-#     """
-#     Backup of setupui
-#     """
-#     if os.name == "nt":
-#         # Get the current console size
-#         output = subprocess.check_output("mode con", shell=True)
-#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
-#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
-#
-#         # Resize only if needed
-#         if int(original_cols) < 300 or int(original_rows) < 110:
-#             os.system("mode con: cols=100 lines=35")
-#     else:
-#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-#
-#     SetupApplication().run()
-
-# def setup(args, unknownArgs):
-#     """
-#     New Setup Configuraiton Editor
-#     """
-#     if os.name == "nt":
-#         # Get the current console size
-#         output = subprocess.check_output("mode con", shell=True)
-#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
-#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
-#
-#         # Resize only if needed
-#         if int(original_cols) < 300 or int(original_rows) < 110:
-#             os.system("mode con: cols=100 lines=35")
-#     else:
-#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-#
-#     SetupApplication2().run()
 
 
 def run(args, unknownArgs):
@@ -308,7 +274,7 @@ def clear_batch(args, unknownArgs):
 
 
 def analyze_list(args, unknownArgs):
-    logger.info('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
+    print('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
 
 
 def log(args, unknownArgs):
@@ -359,12 +325,13 @@ def sync(args, unknownArgs):
     exp_to_save = list()
     exp_deleted = 0
 
+    # Retrieve all the experiment id from COMPS for the current user
+    exp_ids = get_experiment_ids_for_user(user)
+
     # Test the experiments present in the local DB to make sure they still exist in COMPS
-    for exp in DataStore.get_experiments(None):
+    for exp in DataStore.get_experiments():
         if exp.location == "HPC":
-            try:
-                _ = get_experiment_by_id(exp.exp_id)
-            except:
+            if exp.exp_id not in exp_ids:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
                 exp_deleted += 1
@@ -473,10 +440,14 @@ def db_list(args, unknownArgs):
 
 
 def list_packages(args, unknownArgs):
+    print("The following packages are available to install:")
     package_names = DTKGitHub.get_package_list()
     package_names.remove(DTKGitHub.TEST_DISEASE_PACKAGE_NAME) # don't show the test package/repo!
-    if not hasattr(args, 'quiet'):
-        print("\n".join(package_names))
+    for package in package_names:
+        print(" - {}".format(package))
+
+    print("\nYou can install them with the following command:\n"
+          "`dtk get_package <PACKAGE_NAME>`")
     return package_names
 
 
@@ -484,13 +455,16 @@ def list_package_versions(args, unknownArgs):
     try:
         package_name = args.package_name
         github = DTKGitHub(disease=package_name)
+        print("The following versions are available for the package {}".format(package_name))
         versions = github.get_versions()
-        if not hasattr(args, 'quiet'):
-            print("\n".join([str(v) for v in versions]))
-            sys.stdout.flush()
+        for v in versions:
+            print(" - {}".format(v))
+        print("\nYou can install a specific version with the following command:\n"
+              "`dtk get_package <PACKAGE_NAME> -v <VERSION>`")
     except GitHub.AuthorizationError:
         versions = []
     return versions
+
 
 def get_package(args, unknownArgs):
     import pip
@@ -550,8 +524,10 @@ def get_package(args, unknownArgs):
         # update the local DB with the version
         db_key = github.disease_package_db_key
         DataStore.save_setting(DataStore.create_setting(key=db_key, value=str(version)))
+        shutil.rmtree(tempdir)
     except GitHub.AuthorizationError:
         pass
+
     return release_dir
 
 
@@ -645,44 +621,28 @@ def main():
     commands_args.populate_cleanbatch_arguments(subparsers, clean_batch)
 
     # 'dtk analyze-list' options
-    parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
-    parser_analyze_list.set_defaults(func=analyze_list)
+    commands_args.populate_analyzer_list_arguments(subparsers, analyze_list)
 
     # 'dtk sync' options
-    parser_sync = commands_args.populate_sync_arguments(subparsers)
-    parser_sync.set_defaults(func=sync)
+    commands_args.populate_sync_arguments(subparsers, sync)
 
     # 'dtk version' options
-    parser_version = subparsers.add_parser('version', help='Display the current dtk-tools version.')
-    parser_version.set_defaults(func=version)
-
-    # 'dtk setup' options
-    # parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
-    # parser_setup.set_defaults(func=setup)
-
-    # Testing: 'dtk setup' options
-    # parser_setup = subparsers.add_parser('setup2', help='Launch the setup UI allowing to edit ini configuration files.')
-    # parser_setup.set_defaults(func=setup2)
+    commands_args.populate_version_arguments(subparsers, version)
 
     # 'dtk test' options
-    parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
-    parser_test.set_defaults(func=test)
+    commands_args.populate_test_arguments(subparsers, test)
 
     # 'dtk log' options
-    parser_log = commands_args.populate_log_arguments(subparsers)
-    parser_log.set_defaults(func=log)
+    commands_args.populate_log_arguments(subparsers, log)
 
     # 'dtk list_packages' options
-    parser_list_packages = commands_args.populate_list_packages_arguments(subparsers)
-    parser_list_packages.set_defaults(func=list_packages)
+    commands_args.populate_list_packages_arguments(subparsers, list_packages)
 
     # 'dtk list_package_versions' options
-    parser_list_package_versions = commands_args.populate_list_package_versions_arguments(subparsers)
-    parser_list_package_versions.set_defaults(func=list_package_versions)
+    commands_args.populate_list_package_versions_arguments(subparsers, list_package_versions)
 
     # 'dtk get_package' options
-    parser_get_package = commands_args.populate_get_package_arguments(subparsers)
-    parser_get_package.set_defaults(func=get_package)
+    commands_args.populate_get_package_arguments(subparsers, get_package)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
@@ -690,12 +650,10 @@ def main():
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
 
-    args.func(args, unknownArgs)
-
-    # try:
-    #     args.func(args, unknownArgs)
-    # except AttributeError:
-    #     parser.print_help()
+    try:
+        args.func(args, unknownArgs)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()
