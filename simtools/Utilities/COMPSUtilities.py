@@ -166,6 +166,10 @@ def download_asset_collection(collection, output_folder):
         os.remove(zip_path)
 
 
+def get_experiment_ids_for_user(user):
+    exps = Experiment.get(query_criteria=QueryCriteria().select(['id']).where(['owner={}'.format(user)]))
+    return [str(exp.id) for exp in exps]
+
 @retry_function
 def get_experiment_by_id(exp_id, query_criteria=None):
     return Experiment.get(exp_id, query_criteria=query_criteria)

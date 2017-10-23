@@ -191,7 +191,7 @@ def get_tools_revision():
         file_dir = os.path.dirname(os.path.abspath(__file__))
         revision = subprocess.check_output(["git", "describe", "--tags"], cwd=file_dir).replace("\n", "")
     except:
-        revision = "Unknown"
+        revision = "1.0b3"
 
     return revision
 
