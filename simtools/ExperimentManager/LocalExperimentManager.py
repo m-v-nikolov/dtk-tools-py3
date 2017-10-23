@@ -1,6 +1,5 @@
 from multiprocessing import Process
 
-from simtools.SetupParser import SetupParser
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
@@ -8,9 +7,7 @@ import os
 import re
 import shutil
 import signal
-import threading
 from datetime import datetime
-from simtools.SetupParser import SetupParser
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
