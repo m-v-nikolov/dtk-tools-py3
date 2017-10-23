@@ -111,41 +111,62 @@ def populate_deletebatch_arguments(subparsers, func):
     parser_deletebatch.set_defaults(func=func)
 
 
+# 'dtk analyze-list` options
+def populate_analyzer_list_arguments(subparsers, func):
+    parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
+    parser_analyze_list.set_defaults(func=func)
+
+
 # 'dtk sync' options
-def populate_sync_arguments(subparsers, func=None):
+def populate_sync_arguments(subparsers, func):
     parser_sync = subparsers.add_parser('sync', help='Synchronize the COMPS database with the local database.')
     parser_sync.add_argument('-d', '--days',  help='Limit the sync to a certain number of days back', dest='days')
     parser_sync.add_argument('-id', help='Sync a specific experiment from COMPS.', dest='exp_id')
     parser_sync.add_argument('-n', '--name', help='Sync a specific experiment from COMPS (use %% for wildcard character).', dest='exp_name')
     parser_sync.add_argument('-u', '--user', help='Sync experiments belonging to a particular user', dest='user')
-    return parser_sync
+    parser_sync.set_defaults(func=func)
+
+
+# 'dtk version' options
+def populate_version_arguments(subparsers, func):
+    parser_version = subparsers.add_parser('version', help='Display the current dtk-tools version.')
+    parser_version.set_defaults(func=func)
+
+
+# 'dtk test' options
+def populate_test_arguments(subparsers, func):
+    parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
+    parser_test.set_defaults(func=func)
 
 
 # 'dtk log' options
-def populate_log_arguments(subparsers, func=None):
+def populate_log_arguments(subparsers, func):
     parser_log = subparsers.add_parser('log', help="Allow to query and export the logs.")
     parser_log.add_argument('-l', '--level', help="Only display logs for a certain level and above (DEBUG,INFO,ERROR)", dest="level", default="DEBUG")
     parser_log.add_argument('-m', '--module', help="Only display logs for a given module.", dest="module", nargs='+')
     parser_log.add_argument('-n', '--number', help="Limit the number of entries returned (default is 100).", dest="number", default=100)
     parser_log.add_argument('-e', '--export', help="Export the log to the given file.", dest="export")
     parser_log.add_argument('-c', '--complete', help="Export the complete log to a CSV file (dtk_tools_log.csv).", action='store_true')
-    return parser_log
+    parser_log.set_defaults(func=func)
+
 
 # 'dtk list_packages' options
-def populate_list_packages_arguments(subparsers, func=None):
-    parser = subparsers.add_parser('list_packages', help="List the packages available to get_package command.")
-    return parser
+def populate_list_packages_arguments(subparsers, func):
+    parser_list_packages = subparsers.add_parser('list_packages', help="List the packages available to get_package command.")
+    parser_list_packages.set_defaults(func=func)
+
 
 # 'dtk list_package_versions' options
-def populate_list_package_versions_arguments(subparsers, func=None):
+def populate_list_package_versions_arguments(subparsers, func):
     parser = subparsers.add_parser('list_package_versions', help="List the versions available for this particular package.")
     parser.add_argument('package_name', help='The package to list versions of.')
-    return parser
+    parser.set_defaults(func=func)
+
 
 # 'dtk get_package' options
-def populate_get_package_arguments(subparsers, func=None):
+def populate_get_package_arguments(subparsers, func):
     parser = subparsers.add_parser('get_package', help="Obtain the specified disease configuration package for use.")
     parser.add_argument('package_name', help='The package name to obtain.')
     parser.add_argument('-v', '--version', help="Obtain a specific package version (Default: latest)", dest="package_version",
                         default='latest')
-    return parser
+    parser.set_defaults(func=func)
