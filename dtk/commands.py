@@ -650,12 +650,10 @@ def main():
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
 
-    args.func(args, unknownArgs)
-
-    # try:
-    #     args.func(args, unknownArgs)
-    # except AttributeError:
-    #     parser.print_help()
+    try:
+        args.func(args, unknownArgs)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()
