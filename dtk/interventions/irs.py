@@ -48,8 +48,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
             triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
     """
     Add an IRS intervention to the config_builder passed.
-    Please note that using trigger_condition_list is mutually exclusive with birthtriggered irs.
-
+    Please note that using trigger_condition_list does not work for birth-triggered. Birth triggered irs will start independently on the start day
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the IRS event
     :param start: The start day of the spraying
     :param coverage_by_ages: a list of dictionaries defining the coverage per age group or birth-triggered intervention
@@ -61,6 +60,8 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
     :param waning: a dictionary defining the durability of the nets. if empty the default ``DECAYDURABILITY`` with 1 year primary and 1 year secondary will be used.
     :param ind_property_restrictions: Restricts irs based on list of individual properties in format [{"BitingRisk":"High"}, {"IsCool":"Yes}]
     :param node_property_restrictions: restricts irs based on list of node properties in format [{"Place":"RURAL"}, {"ByALake":"Yes}]
+    :param triggered_campaign_delay: how many time steps after receiving the trigger will the campaign start.
+    Eligibility of people or nodes for campaign is evaluated on the start day, not the triggered day.
     :param trigger_condition_list: when not empty,  the start day is the day to start listening for the trigger conditions listed, distributing the spraying
         when the trigger is heard. This does not distribute the BirthTriggered intervention.
     :param listening_duration: how long the distributed event will listen for the trigger for, default is -1, which is indefinitely
@@ -104,10 +105,6 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                                    "Trigger_Condition_List": trigger_condition_list,
                                    "Duration": listening_duration,
                                    "Node_Property_Restrictions": [],
-                                   "Blackout_Event_Trigger": "TBActivation",
-                               # we don't care about this, just need something to be here so the blackout works at all
-                                   "Blackout_Period": 1,  # so we only distribute the node event(s) once
-                                   "Blackout_On_First_Occurrence": 1,
                                    "Target_Residents_Only": 1,
                                    "Actual_IndividualIntervention_Config": {
                                        "class": "DelayedIntervention",
@@ -127,7 +124,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
         config_builder.add_event(triggered_delay)
 
     for coverage_by_age in coverage_by_ages:
-        if trigger_condition_list:
+        if trigger_condition_list and 'birth' not in coverage_by_age.keys():
             IRS_event = {"class": "CampaignEvent",
                          "Start_Day": int(start),
                          "Nodeset_Config": nodeset_config,
