@@ -15,7 +15,7 @@ class FileList:
         self.ignore_missing = ignore_missing
 
         # Make sure we have correct separator
-        if files_in_root:
+        if files_in_root is not None:
             files_in_root = [os.path.normpath(f) for f in files_in_root]
 
         if root:
@@ -55,12 +55,12 @@ class FileList:
             raise RuntimeError("add_path() requires a directory. '%s' is not." % path)
 
         if not recursive:
-            if not files_in_dir:
+            if files_in_dir is None:
                 files_in_dir = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
             for file_name in files_in_dir:
                 file_path = os.path.join(path, file_name)
-                f_relative_path = os.path.normpath(file_path.replace(path, '').replace(os.path.basename(file_path), ''))
+                f_relative_path = os.path.normpath(file_path.replace(path+"\\", '').replace(os.path.basename(file_path), ''))
                 if relative_path is not None:
                     f_relative_path = os.path.join(relative_path, f_relative_path)
                 self.add_file(file_path, relative_path=f_relative_path)
