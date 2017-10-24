@@ -87,11 +87,17 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
         "class" : "MultiInterventionDistributor"
         }
 
+    if not nodeIDs:
+        nodeset_config = {"class": "NodeSetAll"}
+    else:
+        nodeset_config = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
+
     triggered_campaign_delay_trigger = random.randrange(100000)  # initiating in case there is a campaign delay.
     if triggered_campaign_delay:
         triggered_delay = {"class": "CampaignEvent",
                            "Start_Day": int(start),
-                           "Event_Coordinator_Config": {
+                           "Nodeset_Config": nodeset_config,
+                            "Event_Coordinator_Config": {
                                "class": "StandardInterventionDistributionEventCoordinator",
                                "Intervention_Config": {
                                    "class": "NodeLevelHealthTriggeredIV",
@@ -118,17 +124,13 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                                }
                            }
                            }
-        if not nodeIDs:
-            triggered_delay["Nodeset_Config"] = {"class": "NodeSetAll"}
-        else:
-            triggered_delay["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
-
         config_builder.add_event(triggered_delay)
 
     for coverage_by_age in coverage_by_ages:
         if trigger_condition_list:
             IRS_event = {"class": "CampaignEvent",
                          "Start_Day": int(start),
+                         "Nodeset_Config": nodeset_config,
                          "Event_Coordinator_Config": {
                              "class": "StandardInterventionDistributionEventCoordinator",
                              "Intervention_Config":{
@@ -151,11 +153,6 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
             if triggered_campaign_delay:
                 IRS_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = triggered_campaign_delay_trigger
 
-            if not nodeIDs:
-                IRS_event["Nodeset_Config"] = {"class": "NodeSetAll"}
-            else:
-                IRS_event["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
-
             if ind_property_restrictions:
                 IRS_event["Event_Coordinator_Config"]["Intervention_Config"][
                     "Property_Restrictions_Within_Node"] = ind_property_restrictions
@@ -169,6 +166,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
         else:
             IRS_event = {"class": "CampaignEvent",
                          "Start_Day": int(start),
+                         "Nodeset_Config": nodeset_config,
                          "Event_Coordinator_Config": {
                              "class": "StandardInterventionDistributionEventCoordinator",
                              "Demographic_Coverage": coverage_by_age["coverage"],
@@ -182,11 +180,6 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": coverage_by_age["min"],
                     "Target_Age_Max": coverage_by_age["max"]})
-
-            if not nodeIDs:
-                IRS_event["Nodeset_Config"] = {"class": "NodeSetAll"}
-            else:
-                IRS_event["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
             if 'birth' in coverage_by_age.keys() and coverage_by_age['birth']:
                 birth_triggered_intervention = {
@@ -229,6 +222,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
         if irs_ineligibility_duration:
             triggered_ineligibility ={"class": "CampaignEvent",
                          "Start_Day": int(start),
+                         "Nodeset_Config": nodeset_config,
                          "Event_Coordinator_Config": {
                              "class": "StandardInterventionDistributionEventCoordinator",
                              "Intervention_Config": {
@@ -251,11 +245,6 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                              }
                          }
 
-            if not nodeIDs:
-                triggered_ineligibility["Nodeset_Config"] = { "class": "NodeSetAll" }
-            else:
-                triggered_ineligibility["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
-
             # adding "AND" SprayStatus: None to all the Node Property Restrictions.
             for item in node_property_restrictions:
                 item.update({"SprayStatus": "None"})
@@ -269,6 +258,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
         if triggered_campaign_delay:
             triggered_delay = {"class": "CampaignEvent",
              "Start_Day": int(start),
+            "Nodeset_Config": nodeset_config,
              "Event_Coordinator_Config": {
                  "class": "StandardInterventionDistributionEventCoordinator",
                  "Intervention_Config": {
@@ -295,15 +285,11 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                  }
              }
              }
-            if not nodeIDs:
-                triggered_delay["Nodeset_Config"] = {"class": "NodeSetAll"}
-            else:
-                triggered_delay["Nodeset_Config"] = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
-
             config_builder.add_event(triggered_delay)
 
         IRS_event = {"class": "CampaignEvent",
                      "Start_Day": int(start),
+                     "Nodeset_Config": nodeset_config,
                      "Event_Coordinator_Config": {
                          "class": "StandardInterventionDistributionEventCoordinator",
                          "Intervention_Config": {
@@ -319,10 +305,6 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                          }
                      }
                      }
-        if not nodeIDs:
-            IRS_event["Nodeset_Config"] = { "class": "NodeSetAll" }
-        else:
-            IRS_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
 
         # if irs_ineligibility, addition restrictions have been added above.
         if node_property_restrictions:
@@ -339,18 +321,12 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                 'Node_Property_Restrictions': [],
                 "class": "NodeEventCoordinator"
             },
-            "Nodeset_Config": {
-                "class": "NodeSetAll"
-            },
+            "Nodeset_Config": nodeset_config,
             "Start_Day": int(start),
             "Event_Name": "Node Level IRS",
             "class": "CampaignEvent"
         }
 
-        if not nodeIDs:
-            IRS_event["Nodeset_Config"] = { "class": "NodeSetAll" }
-        else:
-            IRS_event["Nodeset_Config"] = { "class": "NodeSetNodeList", "Node_List": nodeIDs }
 
         IRS_cfg = copy.copy(IRS_event)
         if irs_ineligibility_duration > 0:

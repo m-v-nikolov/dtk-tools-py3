@@ -2,14 +2,10 @@ import numpy as np
 import sys
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
-                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, trigger_condition_list=[]):
+                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, triggered_campaign_delay=0, trigger_condition_list=[]):
 
     """
     Add an ITN intervention to the config_builder passed.
-    You will need to add the following custom events:
-        "Bednet_Discarded",
-        "Bednet_Got_New_One",
-        "Bednet_Using"
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bed net distribution
     :param coverage_all: Fraction of the population receiving bed nets in a given distribution event
@@ -20,7 +16,7 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
     :param cost: Set the ``Cost_To_Consumer`` parameter
     :param nodeIDs: If empty, all nodes will get the intervention. If set, only the nodeIDs specified will receive the intervention.
     :param as_birth: If true, event is specified as a birth-triggered intervention.
-    :param duration: If run as a birth-triggered event, specifies the duration for the distribution to continue. Default
+    :param duration: If run as a birth-triggered event or a trigger_condition_list, specifies the duration for the distribution to continue. Default
     is to continue until the end of the simulation.
     :param trigger_condition_list: sets up a NodeLevelHealthTriggeredIV that listens for the defined trigger string event before giving out the intervention,
     "as_birth" and "trigger_condition_list" options are mutually exclusive, if "as_birth" is true, trigger_condition_list will be ignored.
@@ -169,11 +165,49 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
 
     else:
         if trigger_condition_list:
+            triggered_campaign_delay_trigger = random.randrange(100000)  # initiating in case there is a campaign delay.
+            if triggered_campaign_delay:
+                triggered_delay = {"class": "CampaignEvent",
+                                   "Start_Day": int(start),
+                                   "Nodeset_Config": nodeset_config,
+                                   "Event_Coordinator_Config": {
+                                       "class": "StandardInterventionDistributionEventCoordinator",
+                                       "Intervention_Config": {
+                                           "class": "NodeLevelHealthTriggeredIV",
+                                           "Trigger_Condition_List": trigger_condition_list,
+                                           "Duration": listening_duration,
+                                           "Node_Property_Restrictions": [],
+                                           "Blackout_Event_Trigger": "TBActivation",
+                                       # we don't care about this, just need something to be here so the blackout works at all
+                                           "Blackout_Period": 1,  # so we only distribute the node event(s) once
+                                           "Blackout_On_First_Occurrence": 1,
+                                           "Target_Residents_Only": 1,
+                                           "Actual_IndividualIntervention_Config": {
+                                               "class": "DelayedIntervention",
+                                               "Delay_Distribution": "FIXED_DURATION",
+                                               "Delay_Period": triggered_campaign_delay,
+                                               "Actual_IndividualIntervention_Configs":
+                                                   [
+                                                       {
+                                                           "class": "BroadcastEvent",
+                                                           "Broadcast_Event": str(triggered_campaign_delay_trigger)
+                                                       }
+                                                   ]
+                                           }
+                                       }
+                                   }
+                                   }
+                config_builder.add_event(triggered_delay)
+
             itn_event = {
                 "Event_Coordinator_Config": {
                     "Intervention_Config": {
+                        "Blackout_Event_Trigger": "TBActivation",
+                    # we don't care about this, just need something to be here so the blackout works at all
+                        "Blackout_Period": 1,  # so we only distribute the node event(s) once
                         "Blackout_On_First_Occurrence": 1,
                         "Demographic_Coverage": 1,
+                        "Duration": duration,
                         "Target_Residents_Only": 1,
                         "Trigger_Condition_List":trigger_condition_list,
                         "class": "NodeLevelHealthTriggeredIV",
@@ -188,6 +222,10 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
                 "Start_Day": start,
                 "class": "CampaignEvent"
             }
+            if triggered_campaign_delay:
+                itn_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = triggered_campaign_delay_trigger
+
+
         else:
             itn_event = {
                 "Event_Coordinator_Config": {
