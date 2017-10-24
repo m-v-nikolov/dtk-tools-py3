@@ -69,7 +69,6 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                             "Intervention_Config":
                                 {
                                     "class": "NodeLevelHealthTriggeredIV",
-                                    "Blackout_On_First_Occurrence": 1,
                                     "Duration": listening_duration,
                                     "Trigger_Condition_List": [trigger],
                                     "Target_Demographic": target,
@@ -87,16 +86,16 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                     "Target_Age_Max": target['agemax']})
 
             if node_property_restrictions:
-                ITN_event['Event_Coordinator_Config']["Intervention_Config"][
+                event['Event_Coordinator_Config']["Intervention_Config"][
                     'Node_Property_Restrictions'] = node_property_restrictions
-                
+
             # Add IP restriction on who gets to travel
             if ind_property_restrictions:
                 event["Event_Coordinator_Config"]["Intervention_Config"][
                     "Property_Restrictions_Within_Node"] = ind_property_restrictions
+           cb.add_event(event)
 
-            cb.add_event(trigger_event)
-            cb.add_event(event)
+        cb.add_event(trigger_event) #adding the trigger event separately at the end when all the delayed Broadcast Events are added.
     else:
         event = { "Event_Name": "Migration Event",
                             "class": "CampaignEvent",
@@ -121,7 +120,7 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                     "Target_Age_Max": target['agemax'] })
 
         if node_property_restrictions:
-            ITN_event['Event_Coordinator_Config'][
+            event['Event_Coordinator_Config'][
                 'Node_Property_Restrictions'] = node_property_restrictions
         # Add IP restriction on who gets to travel
         if ind_property_restrictions:
