@@ -1,5 +1,3 @@
-from io import StringIO
-
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 
