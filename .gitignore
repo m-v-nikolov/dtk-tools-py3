@@ -36,7 +36,6 @@ StdOut.txt
 StdErr.txt
 simIDs
 dtk/calibration/calib_example/*test*/
-examples/calibration/
 examples/ExampleCalibration/
 examples/FullCalibrationExample/
 test/tmp/

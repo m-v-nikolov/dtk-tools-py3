@@ -44,16 +44,15 @@ class OptimToolSPSAPlotter(BasePlotter):
         self.directory = self.iteration_state.iteration_directory
         self.param_names = self.iteration_state.param_names
         self.site_analyzer_names = self.iteration_state.site_analyzer_names
-
-        self.npt = self.iteration_state.next_point
-        self.data = pd.DataFrame.from_dict(self.npt['data'])
-        self.state = pd.DataFrame.from_dict(self.npt['state'])
-        # self.regression = pd.DataFrame.from_dict(self.npt['regression'])
-
+        self.npt = self.iteration_state.next_point_algo.get_state()
         if iteration_status == StatusPoint.commission:
             if self.iteration_state.iteration > 0:
+                self.data = pd.DataFrame.from_dict(self.npt['data'])
+                self.state = pd.DataFrame.from_dict(self.npt['state'])
                 self.visualize_optimtool_diagnoistics()
         elif iteration_status == StatusPoint.plot:
+            self.data = pd.DataFrame.from_dict(self.npt['data'])
+            self.state = pd.DataFrame.from_dict(self.npt['state'])
             self.visualize_results()
         else:
             raise Exception('Unknown stage %s' % iteration_status.name)
@@ -219,6 +218,3 @@ class OptimToolSPSAPlotter(BasePlotter):
 
             del h1, ax, fig # h2, h4, h5, h6, h3 
 
-
-    def cleanup_plot(self, calib_manager):
-        print 'CLEANUP_PLOT?'

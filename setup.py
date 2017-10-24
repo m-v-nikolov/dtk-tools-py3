@@ -288,8 +288,8 @@ def handle_init():
     default_config["HPC"]["base_collection_id_input"] = ''
 
     if not os.path.exists(current_simtools):
-        default_config.write(open(current_simtools, 'w'))
-    else:
+        default_config.write(open(current_simtools, 'wb'))
+    elif force_new_simtools:
         print("\nA previous simtools.ini global configuration file is present.")
 
         # Backup copy the current
@@ -302,30 +302,32 @@ def handle_init():
         default_config.write(open(current_simtools, 'wb'))
 
     # ALso write the default_cp in the examples
-    example_simtools = os.path.join(current_directory, 'examples', 'simtools.ini')
-    am_examples_simtools = os.path.join(current_directory, 'examples', 'AssetManagement', 'simtools.ini')
-
-    if os.path.exists(example_simtools):
-        dest_filename = timestamp_filename(filename=example_simtools, time=this_time)
-        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (example_simtools, dest_filename))
-        shutil.move(example_simtools, dest_filename)
-
     # Smoe specific examples modifications
     example_config = deepcopy(default_config)
     example_config['HPC']['exe_path'] = default_eradication
     example_config['HPC']['dll_root'] = default_dlls
     example_config['HPC']['base_collection_id_exe'] = ''
     example_config['HPC']['base_collection_id_dll'] = ''
-    example_config.write(open(example_simtools, 'wb'))
 
-    if os.path.exists(am_examples_simtools):
-        dest_filename = timestamp_filename(filename=am_examples_simtools, time=this_time)
-        print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (am_examples_simtools, dest_filename))
-        shutil.move(am_examples_simtools, dest_filename)
+    # Collect all the places we should write the simtools.ini
+    example_folder = os.path.join(current_directory, "examples")
+    dirs = [os.path.join(example_folder, d) for d in os.listdir(example_folder)
+            if os.path.isdir(os.path.join(example_folder, d)) and d not in ("inputs", "Templates", "notebooks")]
 
-    # Remove LOCAL section for the AM simtools.ini
-    del default_config["LOCAL"]
-    default_config.write(open(am_examples_simtools, 'wb'))
+    dirs.append(example_folder)
+
+    for example_dir in dirs:
+        simtools = os.path.join(example_dir, "simtools.ini")
+
+        if os.path.exists(simtools):
+            if force_new_simtools:
+                dest_filename = timestamp_filename(filename=simtools, time=this_time)
+                print("Example simtools.ini already exists: (%s) -> backing up to: %s" % (simtools, dest_filename))
+                shutil.move(simtools, dest_filename)
+            else:
+                continue
+
+        example_config.write(open(simtools, 'wb'))
 
 
 def upgrade_pip():
@@ -419,7 +421,7 @@ def main():
     install_packages(reqs)
 
     # Consider config file
-    if force_new_simtools: handle_init()
+    handle_init()
 
     # Create new db
     if force_new_db: backup_db()
