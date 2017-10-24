@@ -1,14 +1,12 @@
+import copy
+import math
+
 import numpy as np
 import pandas as pd
 import scipy.stats
-import math
-import copy
 from scipy.stats import binom
-from c_SubRegion import c_SubRegion
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pickle
-import os
+
+from .c_SubRegion import c_SubRegion
 
 """
 This function uniformly sampling i_n_samp sample points with i_n_rep replication in the subregions c_subregion and generate the df that used to sent to calibtool
@@ -444,6 +442,8 @@ def fun_reg_branching(c_subr, i_n_branching, params, s_branching_dim):
 
 
 def fun_plot2D(l_subr, l_initial_coordinate_lower, l_initial_coordinate_upper, params, str_k, s_running_file_name, i_iteration):
+    import matplotlib.patches as patches
+    import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(l_initial_coordinate_upper[0], l_initial_coordinate_upper[1])

@@ -2,9 +2,13 @@ import logging
 import operator
 import sys
 
+import pickle
+
+import os
+
 from calibtool.algorithms.NextPointAlgorithm import NextPointAlgorithm
-from fun_PBnB_support_functions import *
-import m_intial_paramters_setting as par
+from .fun_PBnB_support_functions import *
+import calibtool.algorithms.PBnB.m_intial_paramters_setting as par
 
 logger = logging.getLogger('PBnB_application')
 fh = logging.FileHandler('PBnB_running'+'-debug.log')
@@ -76,7 +80,7 @@ class OptimTool_PBnB(NextPointAlgorithm):
     def get_samples_for_iteration(self, iteration):
         df_samples = self.fun_probability_branching_and_bound(iteration)
         if len(df_samples) >= self.i_max_num_simulation_per_run:
-            print 'simulation per run sent to COMPS is exceeded the limitation ' + str(self.i_max_num_simulation_per_run)
+            print("simulation per run sent to COMPS is exceeded the limitation {}".format(self.i_max_num_simulation_per_run))
             sys.exit()
         # return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]+['Run_Number']])
         return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]])

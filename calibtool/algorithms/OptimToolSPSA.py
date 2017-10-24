@@ -38,6 +38,8 @@ class OptimToolSPSA(NextPointAlgorithm):
         self.Xmin = {p['Name']: p['Min'] for p in self.params}
         self.Xmax = {p['Name']: p['Max'] for p in self.params}
         self.Dynamic = {p['Name']: p['Dynamic'] for p in self.params}
+        self.n_dimensions = None
+        self.data = pd.DataFrame()
 
     def resolve_args(self, iteration):
         # Have args from user and from set_state.
@@ -118,7 +120,7 @@ class OptimToolSPSA(NextPointAlgorithm):
 
     def clamp(self, X):
 
-        print 'X.before:\n', X
+        print("X.before:\n{}".format(X))
 
         # X should be a data frame
         for pname in X.columns:
@@ -265,8 +267,8 @@ class OptimToolSPSA(NextPointAlgorithm):
         # User may have added or removed params
         param_names = [p['Name'] for p in self.params]
         # Remove -
-        new_center_df = {k: v for k, v in new_center_dict.iteritems() if k in param_names}
-        new_Hessian_df = {k: v for k, v in new_Hessian_dict.iteritems() if k in param_names}
+        new_center_df = {k: v for k, v in new_center_dict.items() if k in param_names}
+        new_Hessian_df = {k: v for k, v in new_Hessian_dict.items() if k in param_names}
         # Add -
         new_params = {p['Name']: p['Guess'] for p in self.params if p['Name'] not in new_center_dict}
         new_center_dict.update(new_params)
@@ -379,17 +381,17 @@ class OptimToolSPSA(NextPointAlgorithm):
         return samples
 
     def end_condition(self):
-        print "end_condition"
+        print("end_condition")
         # Stopping Criterion: good rsqared with small norm?
         # Return True to stop, False to continue
         logger.info('Continuing iterations ...')
         return False
 
     def get_final_samples(self):
-        print "get_final_samples"
-        '''
+        """
         Resample Stage:
-        '''
+        """
+        print("get_final_samples")
         state_by_iteration = self.state.set_index('Iteration')
         last_iter = sorted(state_by_iteration.index.unique())[-1]
 
@@ -411,7 +413,6 @@ class OptimToolSPSA(NextPointAlgorithm):
         return df.where(~df.isnull(), other=None).to_dict(orient='list')
 
     def get_state(self):
-
         optimtool_state = dict(
             n_dimensions=self.n_dimensions,
             params=self.params,
