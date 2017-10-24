@@ -15,11 +15,11 @@ cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 cb.set_input_collection('Namawala')
 
 # Configure the simulation to point to the input files of the default collection
-cb.set_param('Air_Temperature_Filename','Namawala_single_node_air_temperature_daily.bin')
+cb.set_param('Air_Temperature_Filename', 'Namawala_single_node_air_temperature_daily.bin')
 cb.set_param('Land_Temperature_Filename', 'Namawala_single_node_land_temperature_daily.bin')
 cb.set_param('Demographics_Filenames', ['Namawala_single_node_demographics.json'])
-cb.set_param('Rainfall_Filename','Namawala_single_node_rainfall_daily.bin')
-cb.set_param('Relative_Humidity_Filename','Namawala_single_node_relative_humidity_daily.bin')
+cb.set_param('Rainfall_Filename', 'Namawala_single_node_rainfall_daily.bin')
+cb.set_param('Relative_Humidity_Filename', 'Namawala_single_node_relative_humidity_daily.bin')
 
 # Override the temperature files
 # To override files in a collection, it is important to use the exact same name and relative path

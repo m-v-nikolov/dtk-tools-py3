@@ -12,11 +12,11 @@ exp_name = 'Example with custom set of input files'
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 
 # Configure the simulation to point to our input files
-cb.set_param('Air_Temperature_Filename','Namawala_temperature.bin')
+cb.set_param('Air_Temperature_Filename', 'Namawala_temperature.bin')
 cb.set_param('Land_Temperature_Filename', 'Namawala_temperature.bin')
 cb.set_param('Demographics_Filenames', ['Namawala_demog.json'])
-cb.set_param('Rainfall_Filename','Namawala_rainfall.bin')
-cb.set_param('Relative_Humidity_Filename','Namawala_humidity.bin')
+cb.set_param('Rainfall_Filename', 'Namawala_rainfall.bin')
+cb.set_param('Relative_Humidity_Filename', 'Namawala_humidity.bin')
 
 # Point to the folder containing the local files
 # We can either set it through the code as shown below, or in the simtools.ini by setting:
