@@ -14,6 +14,9 @@ class NextPointAlgorithm:
     def set_state(self, state, iteration):
         pass
 
+    def restore(self, iteration_state):
+        pass
+
     @abstractmethod
     def cleanup(self):
         pass
