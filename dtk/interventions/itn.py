@@ -125,7 +125,7 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
                     "Target_Age_Max": coverage_by_age["max"]})
 
             if triggered_campaign_delay:
-                ITN_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] =[triggered_campaign_delay_trigger]
+                ITN_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = [str(triggered_campaign_delay_trigger)]
 
             if ind_property_restrictions:
                 ITN_event["Event_Coordinator_Config"]["Intervention_Config"][

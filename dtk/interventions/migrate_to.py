@@ -9,7 +9,8 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         duration_before_leaving_distr_type='FIXED_DURATION', 
                         duration_before_leaving=0, duration_before_leaving_2=0, 
                         target='Everyone', nodesfrom={"class": "NodeSetAll"},
-                        ind_property_restrictions=[], triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1) :
+                        ind_property_restrictions=[], node_property_restrictions=[], triggered_campaign_delay=0,
+                        trigger_condition_list=[], listening_duration=-1) :
     migration_event ={
                 "class": "MigrateIndividuals",
                 "NodeID_To_Migrate_To": nodeto,
@@ -85,6 +86,10 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                     "Target_Age_Min": target['agemin'],
                     "Target_Age_Max": target['agemax']})
 
+            if node_property_restrictions:
+                ITN_event['Event_Coordinator_Config']["Intervention_Config"][
+                    'Node_Property_Restrictions'] = node_property_restrictions
+                
             # Add IP restriction on who gets to travel
             if ind_property_restrictions:
                 event["Event_Coordinator_Config"]["Intervention_Config"][
@@ -115,7 +120,9 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                     "Target_Age_Min": target['agemin'],
                     "Target_Age_Max": target['agemax'] })
 
-
+        if node_property_restrictions:
+            ITN_event['Event_Coordinator_Config'][
+                'Node_Property_Restrictions'] = node_property_restrictions
         # Add IP restriction on who gets to travel
         if ind_property_restrictions:
             event["Event_Coordinator_Config"]["Property_Restrictions_Within_Node"] = ind_property_restrictions
