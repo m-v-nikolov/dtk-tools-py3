@@ -93,7 +93,7 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
             if ind_property_restrictions:
                 event["Event_Coordinator_Config"]["Intervention_Config"][
                     "Property_Restrictions_Within_Node"] = ind_property_restrictions
-           cb.add_event(event)
+            cb.add_event(event)
 
         cb.add_event(trigger_event) #adding the trigger event separately at the end when all the delayed Broadcast Events are added.
     else:

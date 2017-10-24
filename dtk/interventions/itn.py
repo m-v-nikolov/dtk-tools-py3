@@ -1,5 +1,5 @@
 import copy
-import random
+from triggered_campaign_delay_event import triggered_campaign_delay_event
 
 # new campaign format : need to fix some add_itn() functionalities
 itn_bednet = { "class": "SimpleBednet",
@@ -70,35 +70,10 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
     else:
         nodeset_config = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
-    triggered_campaign_delay_trigger = random.randrange(100000)  # initiating in case there is a campaign delay.
     if triggered_campaign_delay:
-        triggered_delay = {"class": "CampaignEvent",
-                           "Start_Day": int(start),
-                           "Nodeset_Config": nodeset_config,
-                            "Event_Coordinator_Config": {
-                               "class": "StandardInterventionDistributionEventCoordinator",
-                               "Intervention_Config": {
-                                   "class": "NodeLevelHealthTriggeredIV",
-                                   "Trigger_Condition_List": trigger_condition_list,
-                                   "Duration": listening_duration,
-                                   "Node_Property_Restrictions": [],
-                                   "Target_Residents_Only": 1,
-                                   "Actual_IndividualIntervention_Config": {
-                                       "class": "DelayedIntervention",
-                                       "Delay_Distribution": "FIXED_DURATION",
-                                       "Delay_Period": triggered_campaign_delay,
-                                       "Actual_IndividualIntervention_Configs":
-                                           [
-                                               {
-                                                   "class": "BroadcastEvent",
-                                                   "Broadcast_Event": str(triggered_campaign_delay_trigger)
-                                               }
-                                           ]
-                                   }
-                               }
-                           }
-                           }
-        config_builder.add_event(triggered_delay)
+        trigger_condition_list = [str(triggered_campaign_delay_event(config_builder, start,  nodeIDs,
+                                                                   triggered_campaign_delay, trigger_condition_list,
+                                                                                             listening_duration))]
 
     for coverage_by_age in coverage_by_ages:
         if trigger_condition_list and 'birth' not in coverage_by_age.keys():
@@ -123,9 +98,6 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": coverage_by_age["min"],
                     "Target_Age_Max": coverage_by_age["max"]})
-
-            if triggered_campaign_delay:
-                ITN_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = [str(triggered_campaign_delay_trigger)]
 
             if ind_property_restrictions:
                 ITN_event["Event_Coordinator_Config"]["Intervention_Config"][

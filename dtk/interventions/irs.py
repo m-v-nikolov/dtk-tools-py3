@@ -10,7 +10,7 @@ irs_housingmod = {"class": "IRSHousingModification",
                   }
 '''
 import copy
-import random
+from triggered_campaign_delay_event import triggered_campaign_delay_event
 
 irs_housingmod = { "class": "IRSHousingModification",
                 "Killing_Config": {
@@ -93,35 +93,10 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
     else:
         nodeset_config = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
-    triggered_campaign_delay_trigger = random.randrange(100000)  # initiating in case there is a campaign delay.
     if triggered_campaign_delay:
-        triggered_delay = {"class": "CampaignEvent",
-                           "Start_Day": int(start),
-                           "Nodeset_Config": nodeset_config,
-                            "Event_Coordinator_Config": {
-                               "class": "StandardInterventionDistributionEventCoordinator",
-                               "Intervention_Config": {
-                                   "class": "NodeLevelHealthTriggeredIV",
-                                   "Trigger_Condition_List": trigger_condition_list,
-                                   "Duration": listening_duration,
-                                   "Node_Property_Restrictions": [],
-                                   "Target_Residents_Only": 1,
-                                   "Actual_IndividualIntervention_Config": {
-                                       "class": "DelayedIntervention",
-                                       "Delay_Distribution": "FIXED_DURATION",
-                                       "Delay_Period": triggered_campaign_delay,
-                                       "Actual_IndividualIntervention_Configs":
-                                           [
-                                               {
-                                                   "class": "BroadcastEvent",
-                                                   "Broadcast_Event": str(triggered_campaign_delay_trigger)
-                                               }
-                                           ]
-                                   }
-                               }
-                           }
-                           }
-        config_builder.add_event(triggered_delay)
+        trigger_condition_list = [str(triggered_campaign_delay_event(config_builder, start,  nodeIDs,
+                                                                     triggered_campaign_delay, trigger_condition_list,
+                                                                     listening_duration))]
 
     for coverage_by_age in coverage_by_ages:
         if trigger_condition_list and 'birth' not in coverage_by_age.keys():
@@ -146,9 +121,6 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": coverage_by_age["min"],
                     "Target_Age_Max": coverage_by_age["max"]})
-
-            if triggered_campaign_delay:
-                IRS_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = triggered_campaign_delay_trigger
 
             if ind_property_restrictions:
                 IRS_event["Event_Coordinator_Config"]["Intervention_Config"][
@@ -214,8 +186,17 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
     irs_config['Killing_Config']['Initial_Effect'] = initial_killing
     irs_config['Cost_To_Consumer'] = cost
 
+    if not nodeIDs:
+        nodeset_config = {"class": "NodeSetAll"}
+    else:
+        nodeset_config = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
+
     if trigger_condition_list:
-        triggered_campaign_delay_trigger = random.randrange(100000) #initiating in case there is a campaign delay.
+        if triggered_campaign_delay:
+            trigger_condition_list = [str(triggered_campaign_delay_event(config_builder, start, nodeIDs,
+                                                                         triggered_campaign_delay,
+                                                                         trigger_condition_list,
+                                                                         listening_duration))]
         if irs_ineligibility_duration:
             triggered_ineligibility ={"class": "CampaignEvent",
                          "Start_Day": int(start),
@@ -227,7 +208,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                                  "Trigger_Condition_List": trigger_condition_list,
                                  "Duration": listening_duration,
                                  "Node_Property_Restrictions": [],
-                                 "Blackout_Event_Trigger": "TBActivation", #we don't care about this, just need something to be here so the blackout works at all
+                                 "Blackout_Event_Trigger": "IRS_Ineligibility_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
                                  "Blackout_Period": 1, # so we only distribute the node event(s) once
                                  "Blackout_On_First_Occurrence": 1,
                                  "Target_Residents_Only": 1,
@@ -246,43 +227,8 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
             for item in node_property_restrictions:
                 item.update({"SprayStatus": "None"})
             triggered_ineligibility['Event_Coordinator_Config']["Intervention_Config"]['Node_Property_Restrictions'].extend(node_property_restrictions)
-            if triggered_campaign_delay:
-                triggered_ineligibility["Event_Coordinator_Config"]["Intervention_Config"][
-                    "Trigger_Condition_List"] = [str(triggered_campaign_delay_trigger)]  # if delayed, we're waiting for delayed trigger
-
             config_builder.add_event(triggered_ineligibility)
 
-        if triggered_campaign_delay:
-            triggered_delay = {"class": "CampaignEvent",
-             "Start_Day": int(start),
-            "Nodeset_Config": nodeset_config,
-             "Event_Coordinator_Config": {
-                 "class": "StandardInterventionDistributionEventCoordinator",
-                 "Intervention_Config": {
-                     "class": "NodeLevelHealthTriggeredIV",
-                     "Trigger_Condition_List": trigger_condition_list,
-                     "Duration": listening_duration,
-                     "Node_Property_Restrictions": [],
-                     "Blackout_Event_Trigger": "TBActivation", # we don't care about this, just need something to be here so the blackout works at all
-                     "Blackout_Period": 1,  # so we only distribute the node event(s) once
-                     "Blackout_On_First_Occurrence": 1,
-                     "Target_Residents_Only": 1,
-                     "Actual_IndividualIntervention_Config": {
-                        "class": "DelayedIntervention",
-                        "Delay_Distribution": "FIXED_DURATION",
-                        "Delay_Period": triggered_campaign_delay,
-                        "Actual_IndividualIntervention_Configs":
-                            [
-                                {
-                                    "class": "BroadcastEvent",
-                                    "Broadcast_Event": str(triggered_campaign_delay_trigger)
-                                }
-                            ]
-                     }
-                 }
-             }
-             }
-            config_builder.add_event(triggered_delay)
 
         IRS_event = {"class": "CampaignEvent",
                      "Start_Day": int(start),
@@ -294,7 +240,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                              "Trigger_Condition_List": trigger_condition_list,
                              "Duration": listening_duration,
                              "Node_Property_Restrictions": [],
-                             "Blackout_Event_Trigger": "TBActivation", #we don't care about this, just need something to be here so the blackout works at all
+                             "Blackout_Event_Trigger": "IRS_Blackout_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
                              "Blackout_Period": 1, # so we only distribute the node event(s) once
                              "Blackout_On_First_Occurrence": 1,
                              "Target_Residents_Only": 1,
@@ -306,8 +252,6 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
         # if irs_ineligibility, addition restrictions have been added above.
         if node_property_restrictions:
             IRS_event['Event_Coordinator_Config']["Intervention_Config"]['Node_Property_Restrictions'].extend(node_property_restrictions)
-        if triggered_campaign_delay:
-            IRS_event['Event_Coordinator_Config']["Intervention_Config"]["Trigger_Condition_List"] = [str(triggered_campaign_delay_trigger)] #if delayed, we're waiting for delayed trigger
 
         config_builder.add_event(IRS_event)
 
@@ -339,7 +283,8 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                 recent_irs]
             del IRS_cfg['Event_Coordinator_Config']['Intervention_Config']
 
-            IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend([{ 'SprayStatus' : 'None'}])
+            for item in node_property_restrictions:
+                item.update({"SprayStatus": "None"})
 
         if node_property_restrictions:
             IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend(node_property_restrictions)

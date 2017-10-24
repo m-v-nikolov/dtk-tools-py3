@@ -438,11 +438,12 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         # Retrieve all the events in the campaign file
         events_from_campaign = re.findall(
-            r"['\"](?:Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str,
+            r"['\"](?:Blackout_Event_Trigger|Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str,
             re.DOTALL)
 
         # Get all the Trigger condition list too and add them to the campaign events
         trigger_lists = re.findall(r"['\"]Trigger_Condition_List['\"]:\s(\[.*?\])", campaign_str, re.DOTALL)
+
         for tlist in trigger_lists:
             events_from_campaign.extend(json.loads(tlist))
 
@@ -465,7 +466,6 @@ class DTKConfigBuilder(SimConfigBuilder):
                              "SixWeeksOld", "EighteenMonthsOld", "STIPreEmigrating", "STIPostImmigrating",
                              "STINewInfection", "NodePropertyChange", "HappyBirthday", "EnteredRelationship",
                              "ExitedRelationship", "FirstCoitalAct"))
-
         return list(event_set - builtin_events)
 
     def file_writer(self, write_fn):

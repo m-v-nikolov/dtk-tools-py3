@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from triggered_campaign_delay_event import triggered_campaign_delay_event
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
                        age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, triggered_campaign_delay=0, trigger_condition_list=[]):
@@ -165,47 +166,15 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
 
     else:
         if trigger_condition_list:
-            triggered_campaign_delay_trigger = random.randrange(100000)  # initiating in case there is a campaign delay.
             if triggered_campaign_delay:
-                triggered_delay = {"class": "CampaignEvent",
-                                   "Start_Day": int(start),
-                                   "Nodeset_Config": nodeset_config,
-                                   "Event_Coordinator_Config": {
-                                       "class": "StandardInterventionDistributionEventCoordinator",
-                                       "Intervention_Config": {
-                                           "class": "NodeLevelHealthTriggeredIV",
-                                           "Trigger_Condition_List": trigger_condition_list,
-                                           "Duration": listening_duration,
-                                           "Node_Property_Restrictions": [],
-                                           "Blackout_Event_Trigger": "TBActivation",
-                                       # we don't care about this, just need something to be here so the blackout works at all
-                                           "Blackout_Period": 1,  # so we only distribute the node event(s) once
-                                           "Blackout_On_First_Occurrence": 1,
-                                           "Target_Residents_Only": 1,
-                                           "Actual_IndividualIntervention_Config": {
-                                               "class": "DelayedIntervention",
-                                               "Delay_Distribution": "FIXED_DURATION",
-                                               "Delay_Period": triggered_campaign_delay,
-                                               "Actual_IndividualIntervention_Configs":
-                                                   [
-                                                       {
-                                                           "class": "BroadcastEvent",
-                                                           "Broadcast_Event": str(triggered_campaign_delay_trigger)
-                                                       }
-                                                   ]
-                                           }
-                                       }
-                                   }
-                                   }
-                config_builder.add_event(triggered_delay)
+                trigger_condition_list = [str(triggered_campaign_delay_event(config_builder, start, nodeIDs,
+                                                                             triggered_campaign_delay,
+                                                                             trigger_condition_list,
+                                                                             listening_duration))]
 
             itn_event = {
                 "Event_Coordinator_Config": {
                     "Intervention_Config": {
-                        "Blackout_Event_Trigger": "TBActivation",
-                    # we don't care about this, just need something to be here so the blackout works at all
-                        "Blackout_Period": 1,  # so we only distribute the node event(s) once
-                        "Blackout_On_First_Occurrence": 1,
                         "Demographic_Coverage": 1,
                         "Duration": duration,
                         "Target_Residents_Only": 1,
@@ -222,9 +191,6 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
                 "Start_Day": start,
                 "class": "CampaignEvent"
             }
-            if triggered_campaign_delay:
-                itn_event["Event_Coordinator_Config"]["Intervention_Config"]["Trigger_Condition_List"] = triggered_campaign_delay_trigger
-
 
         else:
             itn_event = {
