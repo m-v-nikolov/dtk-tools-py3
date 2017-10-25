@@ -289,7 +289,9 @@ class BaseExperimentManager:
                 steps_complete = [int(s) for s in msgs[jobid].split() if s.isdigit()]
                 # convert the state value to a human-readable value
                 if len(steps_complete) == 2:
-                    long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
+                    # long_states[jobid] += " (" + str(100 * steps_complete[0] / steps_complete[1]) + "% complete)"
+                    long_states[jobid] += " (" + "{0:.2f}".format(
+                        100 * steps_complete[0] / steps_complete[1]) + "% complete)"
 
         print("%s ('%s') states:" % (self.experiment.exp_name, self.experiment.exp_id))
 
