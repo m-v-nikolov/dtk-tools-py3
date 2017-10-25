@@ -1,6 +1,7 @@
 import argparse
 import os
-
+# from calibtool import commands_args
+from calibtool import commands_args
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
 
@@ -50,44 +51,22 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'calibtool run' options
-    parser_run = subparsers.add_parser('run', help='Run a calibration configured by run-options')
-    parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_run.set_defaults(func=run)
+    commands_args.populate_run_arguments(subparsers, run)
 
     # 'calibtool resume' options
-    parser_resume = subparsers.add_parser('resume', help='Resume a calibration configured by resume-options')
-    parser_resume.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_resume.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')
-    parser_resume.add_argument('--iter_step', default=None, help="Resume calibration on specified iteration step ['commission', 'analyze', 'plot', 'next_point'].")
-    parser_resume.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_resume.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_resume.set_defaults(func=resume)
+    commands_args.populate_resume_arguments(subparsers, resume)
 
     # 'calibtool reanalyze' options
-    parser_reanalyze = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
-    parser_reanalyze.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_reanalyze.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')
-    parser_reanalyze.set_defaults(func=reanalyze)
+    commands_args.populate_reanalyze_arguments(subparsers, reanalyze)
 
     # 'calibtool cleanup' options
-    parser_cleanup = subparsers.add_parser('cleanup', help='Cleanup a calibration')
-    parser_cleanup.add_argument(dest='config_name', default=None,
-                               help='Name of configuration python script for custom running of calibration.')
-    parser_cleanup.set_defaults(func=cleanup)
+    commands_args.populate_cleanup_arguments(subparsers, cleanup)
 
     # 'calibtool kill' options
-    parser_cleanup = subparsers.add_parser('kill', help='Kill a calibration')
-    parser_cleanup.add_argument(dest='config_name', default=None,
-                               help='Name of configuration python script.')
-    parser_cleanup.set_defaults(func=kill)
+    commands_args.populate_kill_arguments(subparsers, kill)
 
     # 'calibtool plotter' options
-    parser_replot = subparsers.add_parser('replot', help='Re-plot a calibration configured by plotter-options')
-    parser_replot.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_replot.add_argument('--iteration', default=None, type=int, help='Replot calibration for one iteration (default is to iterate over all).')
-    parser_replot.set_defaults(func=replot)
+    commands_args.populate_replot_arguments(subparsers, replot)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
