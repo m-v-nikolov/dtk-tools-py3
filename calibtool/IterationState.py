@@ -107,8 +107,8 @@ class IterationState:
                 iteration_state = IterationState.restore_state(self.calibration_name, self.iteration)
                 self.next_point_algo.set_state(iteration_state.next_point, self.iteration)
 
-                iteration_state = IterationState.restore_state(self.calibration_name, self.iteration - 1)
-                self.next_point_algo.restore(iteration_state)
+                # For IMIS ONLY!
+                self.next_point_algo.restore(IterationState.restore_state(self.calibration_name, self.iteration - 1))
         else:
             self.next_point_algo.set_state(self.next_point, self.iteration)
 
