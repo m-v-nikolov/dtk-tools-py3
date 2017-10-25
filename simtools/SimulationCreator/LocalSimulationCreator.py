@@ -1,12 +1,6 @@
-import multiprocessing
 import os
 import random
-import re
 import string
-import time
-from datetime import datetime
-
-from multiprocessing import Lock
 
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 
