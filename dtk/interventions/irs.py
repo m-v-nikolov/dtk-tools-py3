@@ -180,7 +180,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                  irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[],
                  triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
     # when triggered_campaign_delay, the node property restrictions are evaluated at the time of the campaign, not the at the time of the trigger
-
+    # please note if triggered campaign delay is later than the end of listening_duration - the event will not happen.
     irs_config = copy.deepcopy(node_irs_config)
     irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
     irs_config['Killing_Config']['Initial_Effect'] = initial_killing
