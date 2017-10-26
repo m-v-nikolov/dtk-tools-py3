@@ -335,8 +335,8 @@ geographies = {
                   "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive',
                                     'Give_Drugs', 'Spray_IRS', 'Drug_Campaign_Blackout', 'IRS_Blackout', 'Node_Sprayed',
                                     'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle',
-                                    'Received_Test', 'Received_RCD_Drugs', 'Received_Survey'] + ["Diagnostic_Survey_%d" % x for x in
-                                                                              range(5)],
+                                    'Received_Test', 'Received_RCD_Drugs', 'Received_Survey',
+                                    'Property_Change_Blackout'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
                   "Report_Event_Recorder_Events": ["NewClinicalCase", 'Received_Campaign_Drugs', 'Received_RCD_Drugs',
                                                    'Received_Treatment', 'TestedPositive', 'Received_ITN',
                                                    'Received_Test', 'Node_Sprayed', 'Received_Survey'],
