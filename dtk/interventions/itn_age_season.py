@@ -3,10 +3,11 @@ import sys
 from triggered_campaign_delay_event import triggered_campaign_delay_event
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
-                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, triggered_campaign_delay=0, trigger_condition_list=[]):
-
+                       age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, triggered_campaign_delay=0, trigger_condition_list=[],
+                       ind_property_restrictions=[], node_property_restrictions=[]):
     """
     Add an ITN intervention to the config_builder passed.
+    "as_birth" and "triggered_condition_list" are nutually exlusive with "as_birth" trumping the trigger
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bed net distribution
     :param coverage_all: Fraction of the population receiving bed nets in a given distribution event
@@ -21,6 +22,8 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
     is to continue until the end of the simulation.
     :param trigger_condition_list: sets up a NodeLevelHealthTriggeredIV that listens for the defined trigger string event before giving out the intervention,
     "as_birth" and "trigger_condition_list" options are mutually exclusive, if "as_birth" is true, trigger_condition_list will be ignored.
+    :param ind_property_restrictions: Restricts irs based on list of individual properties in format [{"BitingRisk":"High"}, {"IsCool":"Yes}]
+    :param node_property_restrictions: restricts irs based on list of node properties in format [{"Place":"RURAL"}, {"ByALake":"Yes}]
     :return: Nothing
     """
 
@@ -163,6 +166,13 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
             "Start_Day": start,
             "class": "CampaignEvent"
         }
+        if ind_property_restrictions:
+            itn_event["Event_Coordinator_Config"]["Intervention_Config"][
+                "Property_Restrictions_Within_Node"] = ind_property_restrictions
+
+        if node_property_restrictions:
+            itn_event['Event_Coordinator_Config']["Intervention_Config"][
+                'Node_Property_Restrictions'] = node_property_restrictions
 
     else:
         if trigger_condition_list:
@@ -175,7 +185,7 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
             itn_event = {
                 "Event_Coordinator_Config": {
                     "Intervention_Config": {
-                        "Demographic_Coverage": 1,
+                        "Demographic_Coverage": coverage_all,
                         "Duration": duration,
                         "Target_Residents_Only": 1,
                         "Trigger_Condition_List":trigger_condition_list,
@@ -183,14 +193,18 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
                         "Actual_IndividualIntervention_Config":itn_campaign
                     },
                     "class": "StandardInterventionDistributionEventCoordinator",
-                    "Target_Demographic": "Everyone",
-                    "Demographic_Coverage": coverage_all,
-                    "Duration": duration
                 },
                 "Nodeset_Config": nodeset_config,
                 "Start_Day": start,
                 "class": "CampaignEvent"
             }
+            if ind_property_restrictions:
+                itn_event["Event_Coordinator_Config"]["Intervention_Config"][
+                    "Property_Restrictions_Within_Node"] = ind_property_restrictions
+
+            if node_property_restrictions:
+                itn_event['Event_Coordinator_Config']["Intervention_Config"][
+                    'Node_Property_Restrictions'] = node_property_restrictions
 
         else:
             itn_event = {
@@ -205,5 +219,12 @@ def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, disca
                 "Start_Day": start,
                 "class": "CampaignEvent"
             }
+            if ind_property_restrictions:
+                itn_event["Event_Coordinator_Config"][
+                    "Property_Restrictions_Within_Node"] = ind_property_restrictions
+
+            if node_property_restrictions:
+                itn_event['Event_Coordinator_Config'][
+                    'Node_Property_Restrictions'] = node_property_restrictions
 
     config_builder.add_event(itn_event)

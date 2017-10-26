@@ -28,11 +28,12 @@ receiving_itn_event = {
 }
 
 
-def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeIDs=[], node_property_restrictions=[],
+def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=0, nodeIDs=[], node_property_restrictions=[],
             ind_property_restrictions=[], triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1 ):
     """
     Add an ITN intervention to the config_builder passed.
-    birth-triggered will not be triggered by trigger_condition_list and will run independently starting on the start day
+    birth-triggered(in coverage_by_age) and triggered_condition_list are mututally exclusive. "birth" option will be ingnored if you're
+    using trigger_condition_list
 
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the ITN event
     :param start: The start day of the bednet distribution
@@ -76,36 +77,37 @@ def add_ITN(config_builder, start, coverage_by_ages, waning={}, cost=None, nodeI
                                                                                              listening_duration))]
 
     for coverage_by_age in coverage_by_ages:
-        if trigger_condition_list and 'birth' not in coverage_by_age.keys():
-            ITN_event = {"class": "CampaignEvent",
-                         "Start_Day": int(start),
-                         "Nodeset_Config": nodeset_config,
-                         "Event_Coordinator_Config": {
-                             "class": "StandardInterventionDistributionEventCoordinator",
-                             "Intervention_Config":{
-                                 "class": "NodeLevelHealthTriggeredIV",
-                                 "Trigger_Condition_List": trigger_condition_list,
-                                 "Duration": listening_duration,
-                                 "Demographic_Coverage": coverage_by_age["coverage"],
-                                 "Target_Residents_Only": 1,
-                                 "Actual_IndividualIntervention_Config": itn_bednet_w_event #itn_bednet
+        if trigger_condition_list:
+            if not 'birth' in coverage_by_age.keys():
+                ITN_event = {"class": "CampaignEvent",
+                             "Start_Day": int(start),
+                             "Nodeset_Config": nodeset_config,
+                             "Event_Coordinator_Config": {
+                                 "class": "StandardInterventionDistributionEventCoordinator",
+                                 "Intervention_Config":{
+                                     "class": "NodeLevelHealthTriggeredIV",
+                                     "Trigger_Condition_List": trigger_condition_list,
+                                     "Duration": listening_duration,
+                                     "Demographic_Coverage": coverage_by_age["coverage"],
+                                     "Target_Residents_Only": 1,
+                                     "Actual_IndividualIntervention_Config": itn_bednet_w_event #itn_bednet
+                                }
+                             }
                             }
-                         }
-                        }
 
-            if all([k in coverage_by_age.keys() for k in ['min', 'max']]):
-                ITN_event["Event_Coordinator_Config"]["Intervention_Config"].update({
-                    "Target_Demographic": "ExplicitAgeRanges",
-                    "Target_Age_Min": coverage_by_age["min"],
-                    "Target_Age_Max": coverage_by_age["max"]})
+                if all([k in coverage_by_age.keys() for k in ['min', 'max']]):
+                    ITN_event["Event_Coordinator_Config"]["Intervention_Config"].update({
+                        "Target_Demographic": "ExplicitAgeRanges",
+                        "Target_Age_Min": coverage_by_age["min"],
+                        "Target_Age_Max": coverage_by_age["max"]})
 
-            if ind_property_restrictions:
-                ITN_event["Event_Coordinator_Config"]["Intervention_Config"][
-                    "Property_Restrictions_Within_Node"] = ind_property_restrictions
+                if ind_property_restrictions:
+                    ITN_event["Event_Coordinator_Config"]["Intervention_Config"][
+                        "Property_Restrictions_Within_Node"] = ind_property_restrictions
 
-            if node_property_restrictions:
-                ITN_event['Event_Coordinator_Config']["Intervention_Config"][
-                    'Node_Property_Restrictions'] = node_property_restrictions
+                if node_property_restrictions:
+                    ITN_event['Event_Coordinator_Config']["Intervention_Config"][
+                        'Node_Property_Restrictions'] = node_property_restrictions
 
         else:
             ITN_event = { "class" : "CampaignEvent",

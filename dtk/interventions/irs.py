@@ -48,7 +48,8 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
             triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
     """
     Add an IRS intervention to the config_builder passed.
-    Please note that using trigger_condition_list does not work for birth-triggered. Birth triggered irs will start independently on the start day
+    Please note that using trigger_condition_list does not work for birth-triggered ("birth" in coverage_by_ages).
+    when using trigger_condition_list, the "birth" option will be ignored.
     :param config_builder: The :py:class:`DTKConfigBuilder <dtk.utils.core.DTKConfigBuilder>` holding the campaign that will receive the IRS event
     :param start: The start day of the spraying
     :param coverage_by_ages: a list of dictionaries defining the coverage per age group or birth-triggered intervention
@@ -99,38 +100,39 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                                                                      listening_duration))]
 
     for coverage_by_age in coverage_by_ages:
-        if trigger_condition_list and 'birth' not in coverage_by_age.keys():
-            IRS_event = {"class": "CampaignEvent",
-                         "Start_Day": int(start),
-                         "Nodeset_Config": nodeset_config,
-                         "Event_Coordinator_Config": {
-                             "class": "StandardInterventionDistributionEventCoordinator",
-                             "Intervention_Config":{
-                                 "class": "NodeLevelHealthTriggeredIV",
-                                 "Trigger_Condition_List": trigger_condition_list,
-                                 "Duration": listening_duration,
-                                 "Demographic_Coverage": coverage_by_age["coverage"],
-                                 "Target_Residents_Only": 1,
-                                 "Actual_IndividualIntervention_Config": irs_housingmod_w_event
+        if trigger_condition_list:
+            if 'birth' not in coverage_by_age.keys():
+                IRS_event = {"class": "CampaignEvent",
+                             "Start_Day": int(start),
+                             "Nodeset_Config": nodeset_config,
+                             "Event_Coordinator_Config": {
+                                 "class": "StandardInterventionDistributionEventCoordinator",
+                                 "Intervention_Config":{
+                                     "class": "NodeLevelHealthTriggeredIV",
+                                     "Trigger_Condition_List": trigger_condition_list,
+                                     "Duration": listening_duration,
+                                     "Demographic_Coverage": coverage_by_age["coverage"],
+                                     "Target_Residents_Only": 1,
+                                     "Actual_IndividualIntervention_Config": irs_housingmod_w_event
+                                }
+                             }
                             }
-                         }
-                        }
 
-            if all([k in coverage_by_age.keys() for k in ['min', 'max']]):
-                IRS_event["Event_Coordinator_Config"]["Intervention_Config"].update({
-                    "Target_Demographic": "ExplicitAgeRanges",
-                    "Target_Age_Min": coverage_by_age["min"],
-                    "Target_Age_Max": coverage_by_age["max"]})
+                if all([k in coverage_by_age.keys() for k in ['min', 'max']]):
+                    IRS_event["Event_Coordinator_Config"]["Intervention_Config"].update({
+                        "Target_Demographic": "ExplicitAgeRanges",
+                        "Target_Age_Min": coverage_by_age["min"],
+                        "Target_Age_Max": coverage_by_age["max"]})
 
-            if ind_property_restrictions:
-                IRS_event["Event_Coordinator_Config"]["Intervention_Config"][
-                    "Property_Restrictions_Within_Node"] = ind_property_restrictions
+                if ind_property_restrictions:
+                    IRS_event["Event_Coordinator_Config"]["Intervention_Config"][
+                        "Property_Restrictions_Within_Node"] = ind_property_restrictions
 
-            if node_property_restrictions:
-                IRS_event['Event_Coordinator_Config']["Intervention_Config"][
-                    'Node_Property_Restrictions'] = node_property_restrictions
+                if node_property_restrictions:
+                    IRS_event['Event_Coordinator_Config']["Intervention_Config"][
+                        'Node_Property_Restrictions'] = node_property_restrictions
 
-            config_builder.add_event(IRS_event)
+                config_builder.add_event(IRS_event)
 
         else:
             IRS_event = {"class": "CampaignEvent",
@@ -176,7 +178,7 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
             config_builder.add_event(IRS_event)
 
 
-def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, cost=1,
+def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, cost=0,
                  irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[],
                  triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
     # when triggered_campaign_delay, the node property restrictions are evaluated at the time of the campaign, not the at the time of the trigger
