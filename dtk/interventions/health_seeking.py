@@ -18,6 +18,7 @@ def add_health_seeking(config_builder,
                        nodes={"class": "NodeSetAll"},
                        node_property_restrictions=[],
                        ind_property_restrictions=[],
+                       disqualifying_properties=[],
                        drug_ineligibility_duration=0,
                        duration=-1,
                        repetitions=1,
@@ -64,6 +65,8 @@ def add_health_seeking(config_builder,
     for t in targets:
 
         actual_config = build_actual_treatment_cfg(t['rate'], drug_config, drugs)
+        if disqualifying_properties :
+            actual_config['Disqualifying_Properties'] = disqualifying_properties
 
         health_seeking_config = {
             "class": "StandardInterventionDistributionEventCoordinator",
