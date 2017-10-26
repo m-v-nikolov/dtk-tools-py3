@@ -138,6 +138,7 @@ class CalibManager(object):
     def create_iteration_state(self, iteration):
         if self.resume:
             self.resume = False
+            self.current_iteration.calibration_start = self.calibration_start
             return self.current_iteration
 
         return IterationState(iteration=iteration,
@@ -211,7 +212,7 @@ class CalibManager(object):
                  'results': self.serialize_results(),
                  'setup_overlay_file': SetupParser.setup_file,
                  'selected_block': SetupParser.selected_block,
-                 'calibration_start':self.calibration_start}
+                 'calibration_start': self.calibration_start}
         state.update(kwargs)
         json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'w'), indent=4, cls=NumpyEncoder)
 
@@ -261,7 +262,6 @@ class CalibManager(object):
         self.location = calib_data.get('location')
         self.latest_iteration = int(calib_data.get('iteration', 0))
         self.suites = calib_data['suites']
-        self.calibration_start = datetime.strptime(calib_data['calibration_start'], '%Y-%m-%d %H:%M:%S') if 'calibration_start' in calib_data else datetime.now()
 
         # step 3: validate inputs
         self.current_iteration, resume_point = self.retrieve_iteration(iteration, iter_step)
@@ -694,7 +694,7 @@ class CalibManager(object):
                     'analyzer_list': self.analyzer_list,
                     'plotters': self.plotters,
                     'all_results': self.all_results,
-                    'calibration_start':self.calibration_start,
+                    'calibration_start': self.calibration_start,
                     'site_analyzer_names': self.site_analyzer_names()
                 }
         return kwargs
