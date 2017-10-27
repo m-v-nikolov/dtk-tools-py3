@@ -143,7 +143,8 @@ def map_sample_to_model_input(cb, sample):
         print('UNUSED PARAMETER:'+name)
     assert( len(sample) == 0 ) # All params used
 
-    # Run with random seed
+    # For testing only, the duration should be handled by the site !! Please remove before running in prod!
+    tags.update(cb.set_param("Simulation_Duration", 3650 + 1))
     tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags
