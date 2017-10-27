@@ -194,9 +194,6 @@ class CalibManager(object):
         # remove any leftover experiments
         self.cleanup_orphan_experiments()
 
-        # delete all backup file for CalibManger and each of iterations
-        self.cleanup_backup_files()
-
     def cache_calibration(self, **kwargs):
         """
         Cache information about the CalibManager that is needed to resume after an interruption.
@@ -340,49 +337,6 @@ class CalibManager(object):
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
 
-    def replot_calibration(self, iteration):
-        logger.info('Start Re-Plot Process!')
-
-        # make sure data exists for plotting
-        if not os.path.isdir(self.name):
-            raise Exception('Unable to find existing calibration in directory: %s' % self.name)
-
-        # restore the existing calibration data
-        calib_data = self.read_calib_data()
-        self.latest_iteration = int(calib_data.get('iteration', 0))
-        self.suites = calib_data.get('suites')
-
-        # restore calibration results
-        results = calib_data.get('results')
-        if not results:
-            logger.info('No iteration cached results to reload from CalibManager.')
-            return
-
-        # restore results as DataFrame
-        local_all_results = pd.DataFrame.from_dict(results, orient='columns')
-        logger.info('latest_iteration = %s' % self.latest_iteration)
-
-        if iteration is not None:
-            assert (iteration <= self.latest_iteration)
-            self.replot_iteration(iteration, local_all_results)
-            logger.info("Iteration %s got replotted." % iteration)
-            return
-
-        # replot for each iteration up to latest
-        logger.info("Replot will go through %s iterations." % (self.latest_iteration + 1))
-        for i in range(0, self.latest_iteration + 1):
-            self.replot_iteration(i, local_all_results)
-
-        logger.info("Calibration got replotted.")
-
-    def replot_iteration(self, iteration, local_all_results):
-        logger.info('Re-plotting for iteration: %d' % iteration)
-
-        # Create the state for the current iteration
-        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
-        self.current_iteration.update(**self.required_components)
-        self.current_iteration.replot(local_all_results)
-
     def load_experiment_from_iteration(self, iteration=None):
         """
         Load experiment for a given or the latest iteration
@@ -477,61 +431,6 @@ class CalibManager(object):
                 logger.error("Failed to delete %s" % calib_dir)
                 logger.error("Try deleting the folder manually before retrying the calibration.")
 
-    def reanalyze_calibration(self, iteration):
-        """
-        Reanalyze the current calibration
-        """
-        calib_data = self.read_calib_data()
-
-        with SetupParser.TemporaryBlock(calib_data['selected_block']):
-            self.location = SetupParser.get('type')
-            self.latest_iteration = int(calib_data.get('iteration', 0))
-            self.suites = calib_data['suites']
-
-            if calib_data['location'] == 'HPC':
-                COMPS_login(SetupParser.get('server_endpoint'))
-
-            # load all_results
-            results = calib_data.get('results')
-            if isinstance(results, dict):
-                self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-            elif isinstance(results, list):
-                self.all_results = results
-
-            # Cleanup the LL_all.csv
-            if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
-                os.remove(os.path.join(self.name, 'LL_all.csv'))
-
-            if iteration is not None:
-                assert (iteration <= self.latest_iteration)
-                self.reanalyze_iteration(iteration)
-                logger.info("Iteration %s got reanalyzed." % iteration)
-                return
-
-            # Get the count of iterations and save the suite_id
-            iter_count = calib_data.get('iteration')
-            logger.info("Reanalyze will go through %s iterations." % (iter_count + 1))
-
-            # Go through each already ran iterations
-            for i in range(0, iter_count + 1):
-                self.reanalyze_iteration(i)
-
-            # Before leaving -> set back the suite_id
-            self.suites = calib_data['suites']
-            self.location = calib_data['location']
-
-            # Also finalize
-            self.finalize_calibration()
-            logger.info("Calibration got reanalyzed.")
-
-    def reanalyze_iteration(self, iteration):
-        logger.info("\nReanalyze Iteration %s" % iteration)
-
-        # Create the state for the current iteration
-        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
-        self.current_iteration.update(**self.required_components)
-        self.current_iteration.reanalyze()
-
     def read_calib_data(self, force=False):
         try:
             return json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
@@ -598,47 +497,6 @@ class CalibManager(object):
             logger.info('\n'.join(orphan_str_list))
             logger.info('\n')
             logger.info('Note: the detected orphan experiment(s) have been deleted.')
-
-    def cleanup_backup_files(self):
-        """
-        Cleanup the backup files for current calibration
-        """
-
-        def delete_files(file_list):
-            # print '\n'.join(file_list)
-            for f in file_list:
-                if os.path.exists(f):
-                    try:
-                        os.remove(f)
-                    except OSError:
-                        logger.error("Failed to delete %s" % f)
-
-        iter_count = self.current_iteration.iteration
-        if iter_count is None:
-            try:
-                calib_data = self.read_calib_data()
-                iter_count = calib_data.get('iteration', 0)
-            except Exception:
-                logger.info('Calib data cannot be read, no backup files are deleted.')
-                return
-
-        # Step 1: delete backup files for each of the iterations
-        for i in range(0, iter_count + 1):
-            # Get the iteration backup files
-            iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState_backup_*.json')
-            backup_files = glob.glob(iteration_cache)
-            if backup_files is None or len(backup_files) == 0:
-                continue
-
-            delete_files(backup_files)
-
-        # Step 2: delete backup files for CalibManger.json
-        calib_manager_cache = os.path.join(self.name, 'CalibManager_backup_*.json')
-        backup_files = glob.glob(calib_manager_cache)
-        if backup_files is None or len(backup_files) == 0:
-            return
-
-        delete_files(backup_files)
 
     def list_orphan_experiments(self):
         """

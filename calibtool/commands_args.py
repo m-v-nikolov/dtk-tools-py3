@@ -19,14 +19,6 @@ def populate_resume_arguments(subparsers, func):
     parser_resume.set_defaults(func=func)
 
 
-# 'calibtool reanalyze' options
-def populate_reanalyze_arguments(subparsers, func):
-    parser_reanalyze = subparsers.add_parser('reanalyze', help='Rerun the analyzers of a calibration')
-    parser_reanalyze.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_reanalyze.add_argument('--iteration', default=None, type=int, help='Resume calibration from iteration number (default is last cached state).')
-    parser_reanalyze.set_defaults(func=func)
-
-
 # 'calibtool cleanup' options
 def populate_cleanup_arguments(subparsers, func):
     parser_cleanup = subparsers.add_parser('cleanup', help='Cleanup a calibration')
@@ -41,11 +33,3 @@ def populate_kill_arguments(subparsers, func):
     parser_cleanup.add_argument(dest='config_name', default=None,
                                help='Name of configuration python script.')
     parser_cleanup.set_defaults(func=func)
-
-
-# 'calibtool replot' options
-def populate_replot_arguments(subparsers, func):
-    parser_replot = subparsers.add_parser('replot', help='Re-plot a calibration configured by plotter-options')
-    parser_replot.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of calibration.')
-    parser_replot.add_argument('--iteration', default=None, type=int, help='Replot calibration for one iteration (default is to iterate over all).')
-    parser_replot.set_defaults(func=func)

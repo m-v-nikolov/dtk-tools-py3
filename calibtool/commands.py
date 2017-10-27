@@ -14,9 +14,11 @@ def get_calib_manager(args, unknownArgs, force_metadata=False):
         SetupParser.override_block(exp.selected_block)
     return manager
 
+
 def run(args, unknownArgs):
     manager = get_calib_manager(args, unknownArgs)
     manager.run_calibration()
+
 
 def resume(args, unknownArgs):
     if args.iter_step:
@@ -26,9 +28,6 @@ def resume(args, unknownArgs):
     manager = get_calib_manager(args, unknownArgs, force_metadata=True)
     manager.resume_calibration(args.iteration, iter_step=args.iter_step)
 
-def reanalyze(args, unknownArgs):
-    manager = get_calib_manager(args, unknownArgs, force_metadata=True)
-    manager.reanalyze_calibration(args.iteration)
 
 def cleanup(args, unknownArgs):
     manager = args.loaded_module.calib_manager
@@ -38,13 +37,11 @@ def cleanup(args, unknownArgs):
         exit()
     manager.cleanup()
 
+
 def kill(args, unknownArgs):
     manager = args.loaded_module.calib_manager
     manager.kill()
 
-def replot(args, unknownArgs):
-    manager = get_calib_manager(args, unknownArgs, force_metadata=True)
-    manager.replot_calibration(args.iteration)
 
 def main():
     parser = argparse.ArgumentParser(prog='calibtool')
@@ -56,17 +53,11 @@ def main():
     # 'calibtool resume' options
     commands_args.populate_resume_arguments(subparsers, resume)
 
-    # 'calibtool reanalyze' options
-    commands_args.populate_reanalyze_arguments(subparsers, reanalyze)
-
     # 'calibtool cleanup' options
     commands_args.populate_cleanup_arguments(subparsers, cleanup)
 
     # 'calibtool kill' options
     commands_args.populate_kill_arguments(subparsers, kill)
-
-    # 'calibtool plotter' options
-    commands_args.populate_replot_arguments(subparsers, replot)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
