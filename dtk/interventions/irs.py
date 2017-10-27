@@ -111,6 +111,8 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                                      "class": "NodeLevelHealthTriggeredIV",
                                      "Trigger_Condition_List": trigger_condition_list,
                                      "Duration": listening_duration,
+                                     "Property_Restrictions_Within_Node": ind_property_restrictions,
+                                     "Node_Property_Restrictions": node_property_restrictions,
                                      "Demographic_Coverage": coverage_by_age["coverage"],
                                      "Target_Residents_Only": 1,
                                      "Actual_IndividualIntervention_Config": irs_housingmod_w_event
@@ -123,14 +125,6 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
                         "Target_Demographic": "ExplicitAgeRanges",
                         "Target_Age_Min": coverage_by_age["min"],
                         "Target_Age_Max": coverage_by_age["max"]})
-
-                if ind_property_restrictions:
-                    IRS_event["Event_Coordinator_Config"]["Intervention_Config"][
-                        "Property_Restrictions_Within_Node"] = ind_property_restrictions
-
-                if node_property_restrictions:
-                    IRS_event['Event_Coordinator_Config']["Intervention_Config"][
-                        'Node_Property_Restrictions'] = node_property_restrictions
 
                 config_builder.add_event(IRS_event)
 
@@ -181,7 +175,8 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=1, nodeIDs=[],
 def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, cost=0,
                  irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[],
                  triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
-    # when triggered_campaign_delay, the node property restrictions are evaluated at the time of the campaign, not the at the time of the trigger
+    # when triggered_campaign_delay, the node property restrictions are evaluated at the time of the campaign,
+    #  not the at the time of the trigger
     # please note if triggered campaign delay is later than the end of listening_duration - the event will not happen.
     irs_config = copy.deepcopy(node_irs_config)
     irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
@@ -193,6 +188,13 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
     else:
         nodeset_config = {"class": "NodeSetNodeList", "Node_List": nodeIDs}
 
+    if irs_ineligibility_duration:
+        if node_property_restrictions:
+            for item in node_property_restrictions:
+                item.update({"SprayStatus": "None"})
+        else:
+            node_property_restrictions = [{"SprayStatus": "None"}]
+
     if trigger_condition_list:
         if triggered_campaign_delay:
             trigger_condition_list = [str(triggered_campaign_delay_event(config_builder, start, nodeIDs,
@@ -200,37 +202,19 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                                                                          trigger_condition_list,
                                                                          listening_duration))]
         if irs_ineligibility_duration:
-            triggered_ineligibility ={"class": "CampaignEvent",
-                         "Start_Day": int(start),
-                         "Nodeset_Config": nodeset_config,
-                         "Event_Coordinator_Config": {
-                             "class": "StandardInterventionDistributionEventCoordinator",
-                             "Intervention_Config": {
-                                 "class": "NodeLevelHealthTriggeredIV",
-                                 "Trigger_Condition_List": trigger_condition_list,
-                                 "Duration": listening_duration,
-                                 "Node_Property_Restrictions": [],
-                                 "Blackout_Event_Trigger": "IRS_Ineligibility_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
-                                 "Blackout_Period": 1, # so we only distribute the node event(s) once
-                                 "Blackout_On_First_Occurrence": 1,
-                                 "Target_Residents_Only": 1,
-                                 "Actual_IndividualIntervention_Config": {
-                                      "class": "NodePropertyValueChanger",
-                                      "Target_NP_Key_Value": "SprayStatus:RecentSpray",
-                                      "Daily_Probability": 1.0,
-                                      "Maximum_Duration": 0,
-                                      'Revert': irs_ineligibility_duration
-                                        }
-                                 }
-                             }
-                         }
-
-            # adding "AND" SprayStatus: None to all the Node Property Restrictions.
-            for item in node_property_restrictions:
-                item.update({"SprayStatus": "None"})
-            triggered_ineligibility['Event_Coordinator_Config']["Intervention_Config"]['Node_Property_Restrictions'].extend(node_property_restrictions)
-            config_builder.add_event(triggered_ineligibility)
-
+            # wrap the value changer and the irs event together.
+            irs_config =  { "class": "MultiInterventionDistributor",
+                                      "Intervention_List": [
+                                        {
+                                            "class": "NodePropertyValueChanger",
+                                            "Target_NP_Key_Value": "SprayStatus:RecentSpray",
+                                            "Daily_Probability": 1.0,
+                                            "Maximum_Duration": 0,
+                                            'Revert': irs_ineligibility_duration
+                                        },
+                                          irs_config
+                                    ]
+                            }
 
         IRS_event = {"class": "CampaignEvent",
                      "Start_Day": int(start),
@@ -241,7 +225,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                              "class": "NodeLevelHealthTriggeredIV",
                              "Trigger_Condition_List": trigger_condition_list,
                              "Duration": listening_duration,
-                             "Node_Property_Restrictions": [],
+                             "Node_Property_Restrictions": node_property_restrictions,
                              "Blackout_Event_Trigger": "IRS_Blackout_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
                              "Blackout_Period": 1, # so we only distribute the node event(s) once
                              "Blackout_On_First_Occurrence": 1,
@@ -251,17 +235,13 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                      }
                      }
 
-        # if irs_ineligibility, addition restrictions have been added above.
-        if node_property_restrictions:
-            IRS_event['Event_Coordinator_Config']["Intervention_Config"]['Node_Property_Restrictions'].extend(node_property_restrictions)
-
         config_builder.add_event(IRS_event)
 
     else:
         IRS_event = {
             "Event_Coordinator_Config": {
                 "Intervention_Config": irs_config,
-                'Node_Property_Restrictions': [],
+                'Node_Property_Restrictions': node_property_restrictions,
                 "class": "NodeEventCoordinator"
             },
             "Nodeset_Config": nodeset_config,
@@ -269,7 +249,6 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
             "Event_Name": "Node Level IRS",
             "class": "CampaignEvent"
         }
-
 
         IRS_cfg = copy.copy(IRS_event)
         if irs_ineligibility_duration > 0:
@@ -285,10 +264,5 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                 recent_irs]
             del IRS_cfg['Event_Coordinator_Config']['Intervention_Config']
 
-            for item in node_property_restrictions:
-                item.update({"SprayStatus": "None"})
-
-        if node_property_restrictions:
-            IRS_cfg['Event_Coordinator_Config']['Node_Property_Restrictions'].extend(node_property_restrictions)
         config_builder.add_event(IRS_cfg)
 

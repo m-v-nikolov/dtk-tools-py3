@@ -1,6 +1,7 @@
 # the old MigrateTo has now been split into MigrateIndividuals and MigrateFamily.
 # add_migration_event adds a MigrateIndividuals event.
 import random
+from triggered_campaign_delay_event import triggered_campaign_delay_event
 
 
 def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365,
@@ -24,43 +25,14 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                                            leaving_or_at='leaving')
 
     if trigger_condition_list:
-        sorta_unique_id = random.randrange(10000)
-        trigger_event = {
-                "class": "CampaignEvent",
-                "Start_Day": start_day,
-                "Nodeset_Config": nodesfrom,
-                "Event_Coordinator_Config": {
-                    "class": "StandardInterventionDistributionEventCoordinator",
-                    "Intervention_Config": {
-                        "class": "NodeLevelHealthTriggeredIV",
-                        "Trigger_Condition_List": trigger_condition_list,
-                        "Duration": listening_duration,
-                        "Target_Residents_Only": 1,
-                        "Actual_IndividualIntervention_Config": {
-                            "class": "MultiInterventionDistributor",
-                            "Intervention_List": []
-                        }
-                    }
-                }
-            }
-        for x in range(repetitions):
-            trigger = str(sorta_unique_id) + "_" + str(x)
-            delayed_later_event_trigger = {
-                    "class": "DelayedIntervention",
-                    "Delay_Distribution": "FIXED_DURATION",
-                    "Delay_Period": triggered_campaign_delay + tsteps_btwn * x,
-                    "Actual_IndividualIntervention_Configs":
-                        [
-                            {
-                                "class": "BroadcastEvent",
-                                "Broadcast_Event": trigger
-                            }
-                        ]
-                }
-            trigger_event['Event_Coordinator_Config']['Intervention_Config'][
-                    "Actual_IndividualIntervention_Config"]["Intervention_List"].append(delayed_later_event_trigger)
-
-            event= {
+            event_to_send_out = random.randrange(100000)
+            for x in range(repetitions):
+                # create a trigger for each of the delays.
+                trigger_condition_list = [str(triggered_campaign_delay_event(cb, start_day, nodesfrom,
+                                                                                 triggered_campaign_delay + x * tsteps_btwn,
+                                                                                 trigger_condition_list,
+                                                                                 listening_duration, event_to_send_out))]
+            event = {
                         "Event_Name": "Migration Event Triggered",
                         "class": "CampaignEvent",
                         "Start_Day": start_day,
@@ -70,38 +42,34 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                                 {
                                     "class": "NodeLevelHealthTriggeredIV",
                                     "Duration": listening_duration,
-                                    "Trigger_Condition_List": [trigger],
+                                    "Trigger_Condition_List": trigger_condition_list,
                                     "Target_Demographic": target,
                                     "Target_Residents_Only": 1,
+                                    "Node_Property_Restrictions": node_property_restrictions,
+                                    "Property_Restrictions_Within_Node": ind_property_restrictions,
                                     "Demographic_Coverage": coverage,
                                     "Actual_IndividualIntervention_Config":migration_event
                                  }
                             },
                         "Nodeset_Config": nodesfrom
                         }
+
             if isinstance(target, dict) and all([k in target.keys() for k in ['agemin', 'agemax']]):
                 event["Event_Coordinator_Config"]["Intervention_Config"].update({
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": target['agemin'],
                     "Target_Age_Max": target['agemax']})
 
-            if node_property_restrictions:
-                event['Event_Coordinator_Config']["Intervention_Config"][
-                    'Node_Property_Restrictions'] = node_property_restrictions
-
-            # Add IP restriction on who gets to travel
-            if ind_property_restrictions:
-                event["Event_Coordinator_Config"]["Intervention_Config"][
-                    "Property_Restrictions_Within_Node"] = ind_property_restrictions
             cb.add_event(event)
 
-        cb.add_event(trigger_event) #adding the trigger event separately at the end when all the delayed Broadcast Events are added.
     else:
         event = { "Event_Name": "Migration Event",
                             "class": "CampaignEvent",
                             "Start_Day": start_day,
                             "Event_Coordinator_Config": {
                                 "class": "StandardInterventionDistributionEventCoordinator",
+                                "Property_Restrictions_Within_Node": ind_property_restrictions,
+                                "Node_Property_Restrictions": node_property_restrictions,
                                 "Number_Distributions": -1,
                                 "Number_Repetitions": repetitions,
                                 "Target_Residents_Only" : 1,
@@ -118,13 +86,6 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": target['agemin'],
                     "Target_Age_Max": target['agemax'] })
-
-        if node_property_restrictions:
-            event['Event_Coordinator_Config'][
-                'Node_Property_Restrictions'] = node_property_restrictions
-        # Add IP restriction on who gets to travel
-        if ind_property_restrictions:
-            event["Event_Coordinator_Config"]["Property_Restrictions_Within_Node"] = ind_property_restrictions
 
         cb.add_event(event)
 

@@ -1,16 +1,21 @@
 import random
 
 
-def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1):
-    node_cfg = {'class': 'NodeSetAll'}
-    if nodeIDs:
-        node_cfg = {'class': 'NodeSetNodeList',
+def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered_campaign_delay=0,
+                                   trigger_condition_list=[], listening_duration=-1, event_to_send_out=None):
+    if not isinstance(nodeIDs, dict):
+        if nodeIDs:
+            nodeIDs = {'class': 'NodeSetNodeList',
                     'Node_List': nodeIDs}
+        else:
+            nodeIDs = {'class': 'NodeSetAll'}
 
-    triggered_campaign_delay_trigger = random.randrange(100000)
+    if not event_to_send_out:
+        event_to_send_out = random.randrange(100000)
+
     triggered_delay = {"class": "CampaignEvent",
                        "Start_Day": int(start),
-                       "Nodeset_Config": node_cfg,
+                       "Nodeset_Config": nodeIDs,
                        "Event_Coordinator_Config": {
                            "class": "StandardInterventionDistributionEventCoordinator",
                            "Intervention_Config": {
@@ -26,7 +31,7 @@ def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered
                                        [
                                            {
                                                "class": "BroadcastEvent",
-                                               "Broadcast_Event": str(triggered_campaign_delay_trigger)
+                                               "Broadcast_Event": str(event_to_send_out)
                                            }
                                        ]
                                }
@@ -34,4 +39,4 @@ def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered
                        }
                        }
     config_builder.add_event(triggered_delay)
-    return triggered_campaign_delay_trigger
+    return event_to_send_out

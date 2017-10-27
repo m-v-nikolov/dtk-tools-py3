@@ -148,6 +148,12 @@ def change_individual_property(cb, target_property_name, target_property_value, 
                         "Intervention_Config":
                         {
                             "class": "NodeLevelHealthTriggeredIV",
+                            "Blackout_Event_Trigger": "Ind_Property_Blackout",
+                            # we don't care about this, just need something to be here so the blackout works at all
+                            "Blackout_Period": 1,
+                            # so we only distribute the node event(s) once
+                            "Blackout_On_First_Occurrence": 1,
+                            "Target_Residents_Only": 1,
                             "Duration": listening_duration,
                             "Trigger_Condition_List": trigger_condition_list,
                             "Target_Residents_Only": 1,
