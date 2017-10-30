@@ -1,31 +1,69 @@
+from triggered_campaign_delay_event import triggered_campaign_delay_event
+
+
 def change_node_property(cb, target_property_name, target_property_value, start_day=0, daily_prob=1,
-                         max_duration=0, revert=0, nodeIDs=[], node_property_restrictions=[]):
+                         max_duration=0, revert=0, nodeIDs=[], node_property_restrictions=[], triggered_campaign_delay=0,
+                        trigger_condition_list=[], listening_duration=-1):
 
-    prop_ch_config = { 'class' : 'StandardInterventionDistributionEventCoordinator',
-                       "Intervention_Config":
-                       {
-                           "class": "NodePropertyValueChanger",
-                           "Target_NP_Key_Value": "%s:%s" % (target_property_name, target_property_value),
-                           "Daily_Probability" : daily_prob,
-                           "Maximum_Duration" : max_duration,
-                           "Revert" : revert
+    node_cfg = {'class': 'NodeSetAll'}
+    if nodeIDs:
+        node_cfg = {'class': 'NodeSetNodeList',
+                    'Node_List': nodeIDs}
+
+    node_property_value_changer =  {
+                                   "class": "NodePropertyValueChanger",
+                                   "Target_NP_Key_Value": "%s:%s" % (target_property_name, target_property_value),
+                                   "Daily_Probability" : daily_prob,
+                                   "Maximum_Duration" : max_duration,
+                                   "Revert" : revert
+                                    }
+
+    if trigger_condition_list:
+        if triggered_campaign_delay:
+            trigger_condition_list = [str(triggered_campaign_delay_event(cb, start_day, nodeIDs, triggered_campaign_delay,
+                        trigger_condition_list, listening_duration))]
+
+        changer_event = {
+                "class": "CampaignEvent",
+                "Start_Day": int(start_day),
+                "Nodeset_Config": node_cfg,
+                "Event_Coordinator_Config":
+                    {
+                        "class": "StandardInterventionDistributionEventCoordinator",
+                        "Intervention_Config":
+                        {
+                                "class": "NodeLevelHealthTriggeredIV",
+                                "Blackout_Event_Trigger": "Node_Property_Change_Blackout",
+                            # we don't care about this, just need something to be here so the blackout works at all
+                                "Blackout_Period": 1,  # so we only distribute the node event(s) once
+                                "Blackout_On_First_Occurrence": 1,
+                                "Duration": listening_duration,
+                                "Trigger_Condition_List": trigger_condition_list,
+                                "Actual_IndividualIntervention_Config": node_property_value_changer
+                           }
+                    }
+        }
+
+        if node_property_restrictions:
+            changer_event["Event_Coordinator_Config"]["Intervention_Config"]['Node_Property_Restrictions'] = node_property_restrictions
+
+        cb.add_event(changer_event)
+
+    else:
+        prop_ch_config = {
+                           'class' : 'StandardInterventionDistributionEventCoordinator',
+                           "Intervention_Config": node_property_value_changer
                        }
-                   }
 
-    if node_property_restrictions:
-        prop_ch_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+        if node_property_restrictions:
+            prop_ch_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
 
-    node_cfg = {'class' : 'NodeSetAll'}
-    if nodeIDs :
-        node_cfg = { 'class': 'NodeSetNodeList',
-                     'Node_List': nodeIDs}
+        event = {"class": "CampaignEvent",
+                 "Start_Day": start_day,
+                 "Event_Coordinator_Config": prop_ch_config,
+                 "Nodeset_Config": node_cfg}
 
-    event = {"class": "CampaignEvent",
-             "Start_Day": start_day,
-             "Event_Coordinator_Config": prop_ch_config,
-             "Nodeset_Config": node_cfg}
-
-    cb.add_event(event)
+        cb.add_event(event)
 
 
 def change_individual_property_at_age(cb, target_property_name, target_property_value, change_age_in_days, start_day=0,
@@ -77,43 +115,96 @@ def change_individual_property_at_age(cb, target_property_name, target_property_
 
 def change_individual_property(cb, target_property_name, target_property_value, target='Everyone', start_day=0,
                                coverage=1, daily_prob=1, max_duration=0, revert=0, nodeIDs=[],
-                               node_property_restrictions=[]
+                               node_property_restrictions=[], ind_property_restrictions=[], triggered_campaign_delay=0, trigger_condition_list=[], listening_duration=-1
                                ):
 
-    actual_config = {
-        "class": "PropertyValueChanger",
-        "Target_Property_Key": target_property_name,
-        "Target_Property_Value": target_property_value,
-        "Daily_Probability" : daily_prob,
-        "Maximum_Duration" : max_duration,
-        "Revert" : revert
-    }
+    node_cfg = {'class': 'NodeSetAll'}
+    if nodeIDs:
+        node_cfg = {'class': 'NodeSetNodeList',
+                    'Node_List': nodeIDs}
 
-    prop_ch_config = { 'class' : 'StandardInterventionDistributionEventCoordinator',
-                       "Demographic_Coverage": coverage,
-                       "Intervention_Config": actual_config
-                   }
+    property_value_changer = {
+            "class": "PropertyValueChanger",
+            "Target_Property_Key": target_property_name,
+            "Target_Property_Value": target_property_value,
+            "Daily_Probability": daily_prob,
+            "Maximum_Duration": max_duration,
+            "Revert": revert
+        }
 
-    if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
-        prop_ch_config.update({
-                "Target_Demographic": "ExplicitAgeRanges",
-                "Target_Age_Min": target['agemin'],
-                "Target_Age_Max": target['agemax'] })
-    else :
-        prop_ch_config.update({
-                "Target_Demographic": target } ) # default is Everyone
+    if trigger_condition_list:
+        if triggered_campaign_delay:
+            trigger_condition_list = [str(triggered_campaign_delay_event(cb, start_day, nodeIDs,
+                                                                              triggered_campaign_delay,
+                                                                              trigger_condition_list,
+                                                                              listening_duration))]
+        changer_event = {
+                "class": "CampaignEvent",
+                "Start_Day": start_day,
+                "Nodeset_Config": node_cfg,
+                "Event_Coordinator_Config":
+                    {
+                        "class": "StandardInterventionDistributionEventCoordinator",
+                        "Intervention_Config":
+                        {
+                            "class": "NodeLevelHealthTriggeredIV",
+                            "Blackout_Event_Trigger": "Ind_Property_Blackout",
+                            # we don't care about this, just need something to be here so the blackout works at all
+                            "Blackout_Period": 1,
+                            # so we only distribute the node event(s) once
+                            "Blackout_On_First_Occurrence": 1,
+                            "Target_Residents_Only": 1,
+                            "Duration": listening_duration,
+                            "Trigger_Condition_List": trigger_condition_list,
+                            "Target_Residents_Only": 1,
+                            "Demographic_Coverage": coverage,
+                            "Actual_IndividualIntervention_Config":property_value_changer
+                        }
+                    }
+         }
 
-    if node_property_restrictions:
-        prop_ch_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+        if isinstance(target, dict) and all([k in target.keys() for k in ['agemin', 'agemax']]):
+             changer_event["Event_Coordinator_Config"]["Intervention_Config"].update({
+                 "Target_Demographic": "ExplicitAgeRanges",
+                 "Target_Age_Min": target['agemin'],
+                 "Target_Age_Max": target['agemax']})
+        else:
+             changer_event["Event_Coordinator_Config"]["Intervention_Config"].update({
+                 "Target_Demographic": target})  # default is Everyone
 
-    node_cfg = {'class' : 'NodeSetAll'}
-    if nodeIDs :
-        node_cfg = { 'class': 'NodeSetNodeList',
-                     'Node_List': nodeIDs}
+        if node_property_restrictions:
+             changer_event["Event_Coordinator_Config"]["Intervention_Config"]['Node_Property_Restrictions'] = node_property_restrictions
 
-    event = {"class": "CampaignEvent",
-             "Start_Day": start_day,
-             "Event_Coordinator_Config": prop_ch_config,
-             "Nodeset_Config": node_cfg}
+        if ind_property_restrictions:
+             changer_event['Event_Coordinator_Config']['Intervention_Config'][
+                 "Property_Restrictions_Within_Node"] = ind_property_restrictions
+        cb.add_event(changer_event)
 
-    cb.add_event(event)
+
+    else:
+        prop_ch_config = { 'class' : 'StandardInterventionDistributionEventCoordinator',
+                           "Demographic_Coverage": coverage,
+                           "Intervention_Config": property_value_changer
+                       }
+
+        if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
+            prop_ch_config.update({
+                    "Target_Demographic": "ExplicitAgeRanges",
+                    "Target_Age_Min": target['agemin'],
+                    "Target_Age_Max": target['agemax'] })
+        else :
+            prop_ch_config.update({
+                    "Target_Demographic": target } ) # default is Everyone
+
+        if node_property_restrictions:
+            prop_ch_config['Intervention_Config']['Node_Property_Restrictions'] = node_property_restrictions
+
+        if ind_property_restrictions:
+            prop_ch_config['Intervention_Config']["Property_Restrictions_Within_Node"] = ind_property_restrictions
+
+        event = {"class": "CampaignEvent",
+                 "Start_Day": start_day,
+                 "Event_Coordinator_Config": prop_ch_config,
+                 "Nodeset_Config": node_cfg}
+
+        cb.add_event(event)
