@@ -98,8 +98,8 @@ cpn_outbreak.set_params(static_campaign_params)   # <-- Set static campaign para
 # - the key (Relationship_Parameters__KP_TRANSITORY_and_INFORMAL.Coital_Act_Rate)
 # - the value (0.5)
 # from the static_demog_params
-demo_key = static_demog_params.keys()[0]
-demo_value = static_demog_params.values()[0]
+demo_key = next(iter(static_demog_params))
+demo_value = static_demog_params[demo_key]
 # Then we are using get_param to get the paths and the current values in the template
 # In this example, the current value is set to 0.33
 paths, before = demog_pfa.get_param(demo_key)

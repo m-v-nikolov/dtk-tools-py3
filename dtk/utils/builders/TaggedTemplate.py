@@ -101,7 +101,8 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
             for expanded_param in expanded_tag:
                 tag = super(TaggedTemplate, self).set_param(expanded_param, value)
                 assert (len(tag) == 1)
-                sim_tags[tag.keys()[0]] = tag.values()[0]
+                key = next(iter(tag))
+                sim_tags[key] = tag[key]
                 sim_tags["[BUILDER] " + param] = value
         else:
             # If we try to set something other than a tag -> use the old method
@@ -169,11 +170,11 @@ class TaggedTemplate(BaseTemplate.BaseTemplate):
             key_fragment = tmp[0]
 
         if isinstance(search_obj, dict):
-            for k, v in search_obj.iteritems():
+            for k, v in search_obj.items():
                 if key_fragment in k:
                     paths_found.append(partial_path + [k])
 
-            for k in search_obj.iterkeys():
+            for k in search_obj:
                 paths = self.__recurseKeyPaths(search_obj[k], key_fragment, partial_path + [k])
                 for p in paths:
                     paths_found.append(p)
@@ -198,7 +199,7 @@ class CampaignTemplate(TaggedTemplate):
         template_filename = os.path.basename(template_filepath)
 
         for additional_filepath in additional_filepaths_list:
-            print additional_filepath
+            print(additional_filepath)
             logger.info("Reading additional events from file:" + additional_filepath)
             additional_content = json2dict(additional_filepath)
             content['Events'] += additional_content['Events']
