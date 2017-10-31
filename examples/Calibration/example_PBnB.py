@@ -74,9 +74,10 @@ def map_sample_to_model_input(cb, sample):
 
     return tags
 
+name = "Example_Optimization_PBnB" # <-- Please customize this name
 
 optimtool_PBnB = OptimTool_PBnB(params,
-                                s_running_file_name="Example_Optimization_PBnB",
+                                s_running_file_name=name,
                                 s_problem_type="deterministic",  # deterministic or noise
                                 f_delta=par.f_delta,  # <-- to determine the quantile for the target level set
                                 f_alpha=par.f_alpha,  # <-- to determine the quality of the level set approximation
@@ -89,7 +90,7 @@ optimtool_PBnB = OptimTool_PBnB(params,
                                 # <-- maximum number of simulations per iteration
                                 f_elite_worst_sampling_para=par.f_elite_worst_sampling_para)  # <-- parameters that determine the number of simulation runs for elite and worst subregions
 
-calib_manager = CalibManager(name="Example_Optimization_PBnB",  # <-- Please customize this name
+calib_manager = CalibManager(name=name,
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,

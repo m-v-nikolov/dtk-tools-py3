@@ -192,7 +192,7 @@ class AnalyzeManager:
             self.create_parsers_for_experiment(exp)
 
         # Create the parsers for the experiments of the standalone simulations
-        for exp in self.experiments_simulations.keys():
+        for exp in list(self.experiments_simulations.keys()):
             self.create_parsers_for_experiment_from_simulation(exp)
 
         if len(self.parsers) == 0:

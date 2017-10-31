@@ -13,27 +13,20 @@ from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulat
 
 SetupParser.default_block = 'LOCAL'
 
-cb = DTKConfigBuilder.from_defaults('VECTOR_SIM',Simulation_Duration=10000)
+cb = DTKConfigBuilder.from_defaults('VECTOR_SIM', Simulation_Duration=3650)
 configure_site(cb, 'Namawala')
 
 # run_sim_args is what the `dtk run` command will look for
-run_sim_args =  {
+run_sim_args = {
     'exp_name': 'ExampleSim',
     'config_builder': cb
 }
 
 # If you prefer running with `python example_sim.py`, you will need the following block
 if __name__ == "__main__":
-    # SetupParser.init()
-    # exp_manager = ExperimentManagerFactory.init()
-    # exp_manager.run_simulations(**run_sim_args)
-    # # Wait for the simulations to be done
-    # exp_manager.wait_for_finished(verbose=True)
-    # assert(exp_manager.succeeded())
-
-    COMPS_login('https://comps2.idmod.org')
-    print(get_experiment_ids_for_user('braybaud'))
-
-
-
-    # print(DataStore.delete_experiment(retrieve_experiment('13948fa4-81b3-e711-80c3-f0921c167860')))
+    SetupParser.init()
+    exp_manager = ExperimentManagerFactory.init()
+    exp_manager.run_simulations(**run_sim_args)
+    # Wait for the simulations to be done
+    exp_manager.wait_for_finished(verbose=True)
+    assert (exp_manager.succeeded())

@@ -142,8 +142,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             try:
                 import malaria.params as malaria_params # must have the malaria disease package installed!
             except ImportError as e:
-                message = 'The malaria disease package must be installed via the \'dtk get_package malaria -v HEAD\' command' + \
-                            'before the MALARIA_SIM simulation type can be used.'
+                message = 'The malaria disease package must be installed via the \'dtk get_package malaria -v HEAD\' ' \
+                          'command before the MALARIA_SIM simulation type can be used.'
                 raise ImportError(message)
 
             config["parameters"].update(vector_params.params)
@@ -448,7 +448,20 @@ class DTKConfigBuilder(SimConfigBuilder):
         event_set = set(events_from_campaign + self.config['parameters']['Listed_Events'])
 
         # Remove the built in events and return
-        builtin_events = set(("NoTrigger","Births","EveryUpdate","EveryTimeStep","NewInfectionEvent","TBActivation","NewClinicalCase","NewSevereCase","DiseaseDeaths","NonDiseaseDeaths","TBActivationSmearPos","TBActivationSmearNeg","TBActivationExtrapulm","TBActivationPostRelapse","TBPendingRelapse","TBActivationPresymptomatic","TestPositiveOnSmear","ProviderOrdersTBTest","TBTestPositive","TBTestNegative","TBTestDefault","TBRestartHSB","TBMDRTestPositive","TBMDRTestNegative","TBMDRTestDefault","TBFailedDrugRegimen","TBRelapseAfterDrugRegimen","TBStartDrugRegimen","TBStopDrugRegimen","PropertyChange","STIDebut","StartedART","StoppedART","InterventionDisqualified","HIVNewlyDiagnosed","GaveBirth","Pregnant","Emigrating","Immigrating","HIVTestedNegative","HIVTestedPositive","HIVSymptomatic","HIVPreARTToART","HIVNonPreARTToART","TwelveWeeksPregnant","FourteenWeeksPregnant","SixWeeksOld","EighteenMonthsOld","STIPreEmigrating","STIPostImmigrating","STINewInfection","NodePropertyChange","HappyBirthday","EnteredRelationship","ExitedRelationship","FirstCoitalAct"))
+        builtin_events = {"NoTrigger", "Births", "EveryUpdate", "EveryTimeStep", "NewInfectionEvent", "TBActivation",
+                          "NewClinicalCase", "NewSevereCase", "DiseaseDeaths", "NonDiseaseDeaths",
+                          "TBActivationSmearPos", "TBActivationSmearNeg", "TBActivationExtrapulm",
+                          "TBActivationPostRelapse", "TBPendingRelapse", "TBActivationPresymptomatic",
+                          "TestPositiveOnSmear", "ProviderOrdersTBTest", "TBTestPositive", "TBTestNegative",
+                          "TBTestDefault", "TBRestartHSB", "TBMDRTestPositive", "TBMDRTestNegative", "TBMDRTestDefault",
+                          "TBFailedDrugRegimen", "TBRelapseAfterDrugRegimen", "TBStartDrugRegimen", "TBStopDrugRegimen",
+                          "PropertyChange", "STIDebut", "StartedART", "StoppedART", "InterventionDisqualified",
+                          "HIVNewlyDiagnosed", "GaveBirth", "Pregnant", "Emigrating", "Immigrating",
+                          "HIVTestedNegative", "HIVTestedPositive", "HIVSymptomatic", "HIVPreARTToART",
+                          "HIVNonPreARTToART", "TwelveWeeksPregnant", "FourteenWeeksPregnant", "SixWeeksOld",
+                          "EighteenMonthsOld", "STIPreEmigrating", "STIPostImmigrating", "STINewInfection",
+                          "NodePropertyChange", "HappyBirthday", "EnteredRelationship", "ExitedRelationship",
+                          "FirstCoitalAct"}
 
         return list(event_set - builtin_events)
 

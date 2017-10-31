@@ -1,29 +1,29 @@
+from malaria.interventions.malaria_drugs import add_drug_campaign
+
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from malaria.reports.MalariaReport import add_summary_report, add_immunity_report, add_survey_report
+from malaria.reports.MalariaReport import add_patient_report
 
-from simtools.SetupParser import SetupParser
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from simtools.SetupParser import SetupParser
 
-exp_name = 'CustomReports'
+
+SetupParser.default_block = 'HPC'
+exp_name = 'DrugCampaign'
+
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 configure_site(cb, 'Namawala')
-
-nyears = 2
 cb.update_params({'Num_Cores': 1,
                   'Base_Population_Scale_Factor': 0.1,
                   'x_Temporary_Larval_Habitat': 0.05,
-                  'Simulation_Duration': 365 * nyears})
+                  'Simulation_Duration': 365})
 
-add_summary_report(cb, description='Monthly', interval=30)
-add_summary_report(cb, description='Annual', interval=365)
-add_immunity_report(cb, start=365 * (nyears - 1), interval=365, nreports=1, description="FinalYearAverage")
-add_survey_report(cb, survey_days=[100, 200], reporting_interval=21, nreports=1)
+add_drug_campaign(cb, 'ALP', start_days=[10])
+add_patient_report(cb)
 
 run_sim_args = {'config_builder': cb,
                 'exp_name': exp_name}
 
-# If you prefer running with `python custom_reports.py`, you will need the following block
 if __name__ == "__main__":
     SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()

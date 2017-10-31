@@ -318,7 +318,7 @@ class BaseExperimentManager:
                 states, msgs = self.get_simulation_status()
             except Exception as e:
                 print("Exception occurred while retrieving status")
-                print (e)
+                print(e)
                 return
 
             if timeout < 0:
@@ -328,7 +328,9 @@ class BaseExperimentManager:
             if self.status_finished(states): break
 
             # Display if verbose
-            if verbose: self.print_status(states, msgs)
+            if verbose:
+                self.print_status(states, msgs)
+                print("")
 
             # Wait before going through the loop again
             time.sleep(sleep_time)

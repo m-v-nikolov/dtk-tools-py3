@@ -34,5 +34,6 @@ if __name__ == "__main__":
     exp_manager.wait_for_finished(verbose=True)
 
     am = AnalyzeManager(exp_manager.experiment)
-    map(am.add_analyzer, analyzers)
+    for a in analyzers:
+        am.add_analyzer(a)
     am.analyze()

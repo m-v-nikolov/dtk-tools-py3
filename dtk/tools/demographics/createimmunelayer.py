@@ -172,7 +172,7 @@ def immune_init_from_custom_output(demog_json, custom_output_file, ConfigName, B
             CompileDemographics(output_file_name, forceoverwrite=True)
     else:
         print(json.dumps(demog_json,sort_keys=True,indent=4))
-'''        
+'''
 
 def immune_init_from_custom_output_for_spatial(demog_json, custom_output_file):
 
