@@ -12,7 +12,6 @@ from simtools.SetupParser import SetupParser
 
 try:
     from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
-    from malaria.study_sites.NdiopCalibSite import NdiopCalibSite
 except ImportError as e:
     message = "The malaria package needs to be installed before running this example...\n" \
               "Please run `dtk get_package malaria -v HEAD` to install"
@@ -82,14 +81,6 @@ def constrain_sample(sample):
     if 'Min Days Between Clinical Incidents' in sample:
         sample['Min Days Between Clinical Incidents'] = int(round(sample['Min Days Between Clinical Incidents']))
 
-    '''
-    # Can do much more here, e.g. for
-    # Clinical Fever Threshold High <  MSP1 Merozoite Kill Fraction
-    if 'Clinical Fever Threshold High' and 'MSP1 Merozoite Kill Fraction' in sample:
-        sample['Clinical Fever Threshold High'] = \
-            min( sample['Clinical Fever Threshold High'], sample['MSP1 Merozoite Kill Fraction'] )
-    '''
-
     return sample
 
 
@@ -104,17 +95,17 @@ def map_sample_to_model_input(cb, sample):
     for p in params:
         if 'MapTo' in p:
             if p['Name'] not in sample:
-                print 'Warning: %s not in sample, perhaps resuming previous iteration' % p['Name']
+                print("Warning: {} not in sample, perhaps resuming previous iteration".format(p['Name']))
                 continue
             value = sample.pop(p['Name'])
             tags.update(cb.set_param(p['Name'], value))
 
-    for name, value in sample.iteritems():
-        print 'UNUSED PARAMETER:', name
+    for name, value in sample.items():
+        print("UNUSED PARAMETER: {}".format(name))
     assert (len(sample) == 0)  # All params used
 
     # Run for 10 years with a random random number seed
-    tags.update(cb.set_param('Simulation_Duration', 3650))  # 10*365
+    tags.update(cb.set_param('Simulation_Duration', 3650+1))  # 10*365
     tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags

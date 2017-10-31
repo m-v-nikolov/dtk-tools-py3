@@ -35,6 +35,8 @@ def retrieve_item(itemid):
     from simtools.DataAccess.DataStore import DataStore
     from simtools.Utilities.COMPSUtilities import exps_for_suite_id
     from simtools.Utilities.Experiments import retrieve_simulation
+
+    # Try experiments first
     try:
         return retrieve_experiment(itemid)
     except: pass
@@ -50,7 +52,7 @@ def retrieve_item(itemid):
     exps = DataStore.get_experiments_by_suite(itemid)
     if exps: return exps
 
-    # Still no item found -> test the suites
+    # Still no item found -> test the simulations
     sim = DataStore.get_simulation(itemid)
     if sim: return sim
 
@@ -59,8 +61,9 @@ def retrieve_item(itemid):
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
 
     # Nothing, consider COMPS simulation
-    sim = retrieve_simulation(itemid)
-    if sim: return sim
+    try:
+        return retrieve_simulation(itemid)
+    except: pass
 
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
@@ -138,7 +141,7 @@ def retry_function(func, wait=1.5, max_retries=5):
             except Exception as e:
                 retExc = e
                 time.sleep(wait)
-        raise retExc
+        raise retExc if retExc else Exception()
     return wrapper
 
 
@@ -188,7 +191,7 @@ def get_tools_revision():
         file_dir = os.path.dirname(os.path.abspath(__file__))
         revision = subprocess.check_output(["git", "describe", "--tags"], cwd=file_dir).replace("\n", "")
     except:
-        revision = "Unknown"
+        revision = "1.0b3"
 
     return revision
 

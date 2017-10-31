@@ -1,6 +1,6 @@
 import os
 import unittest
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 from COMPS.Data.AssetCollectionFile import AssetCollectionFile as COMPSAssetCollectionFile
 from COMPS.Data.QueryCriteria import QueryCriteria as COMPSQueryCriteria
@@ -70,7 +70,7 @@ class TestSimulationAssets(unittest.TestCase):
                 'files': [
                     'Namawala_single_node_air_temperature_daily.bin',
                     'Namawala_single_node_air_temperature_daily.bin.json',
-                    'Namawala_single_node_demographics.compiled.json',
+                    'Namawala_single_node_demographics.json',
                     'Namawala_single_node_land_temperature_daily.bin',
                     'Namawala_single_node_land_temperature_daily.bin.json',
                     'Namawala_single_node_rainfall_daily.bin',
@@ -83,16 +83,16 @@ class TestSimulationAssets(unittest.TestCase):
         sa = SimulationAssets()
         for collection_type in SimulationAssets.COLLECTION_TYPES:
             expected = regressions[collection_type]
-            expected_files = sorted([ os.path.join(expected['relative_path'], file) for file in expected['files'] ])
-            file_list = sorted(sa._gather_files(self.config_builder, collection_type).files)
+            expected_files = [ os.path.join(expected['relative_path'], file) for file in expected['files'] ]
+            file_list = sa._gather_files(self.config_builder, collection_type).files
             self.assertEqual(len(file_list),    len(expected_files))
-            self.assertEqual(sorted([os.path.join(f.relative_path, f.file_name) for f in file_list]), sorted(expected_files))
+            self.assertCountEqual([os.path.join(f.relative_path or '', f.file_name) for f in file_list], expected_files)
 
     def test_prepare_existing_master_collection(self):
         """
         A regression test to verify we get back the same collection id for the same selected files.
         """
-        expected_collection_id = '786f0e24-c64b-e711-80c1-f0921c167860'
+        expected_collection_id = 'e05d3535-dab8-e711-80c3-f0921c167860'
         assets = SimulationAssets()
         assets.prepare(self.config_builder)
         self.assertEqual(str(assets.collection_id), expected_collection_id)
@@ -103,7 +103,7 @@ class TestSimulationAssets(unittest.TestCase):
         the 'master' asset collection id (id for all asset files together in one collection) is stored properly
         on the simulations as well.
         """
-        expected_asset_collection = '786f0e24-c64b-e711-80c1-f0921c167860' # master collection
+        expected_asset_collection = 'e05d3535-dab8-e711-80c3-f0921c167860' # master collection
 
         run_sim_args = {'exp_name': 'AssetCollectionTestSim'}
         exp_manager = ExperimentManagerFactory.from_cb(config_builder=self.config_builder)

@@ -1,8 +1,7 @@
-import multiprocessing
 import os
-import re
-import time
-from datetime import datetime
+import random
+import string
+
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
 
 
@@ -15,16 +14,23 @@ class LocalSim:
 
 
 class LocalSimulationCreator(BaseSimulationCreator):
-
-    def create_simulation(self, cb):
-        sim_id = re.sub('[ :.-]', '_', str(datetime.now()))
+    def create_simulation(self, cb, error=0):
+        sim_id = "Simulation_{}".format(self.generate_UUID())
         sim_dir = os.path.join(self.experiment.get_path(), sim_id)
+
         try:
             os.makedirs(sim_dir)
         except OSError:
-            raise RuntimeError('Cannot create simulation directory: %s' % sim_dir)
+            if error < 5:
+                return self.create_simulation(cb, error+1)
+            else:
+                raise RuntimeError('Cannot create simulation directory: %s' % sim_dir)
 
         return LocalSim(sim_dir=sim_dir, sim_id=sim_id)
+
+    @staticmethod
+    def generate_UUID():
+        return ''.join(random.choice(string.digits+string.ascii_uppercase) for _ in range(5))
 
     def save_batch(self):
         pass

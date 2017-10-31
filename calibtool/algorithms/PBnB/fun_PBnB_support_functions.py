@@ -1,14 +1,12 @@
+import copy
+import math
+import os
 import numpy as np
 import pandas as pd
 import scipy.stats
-import math
-import copy
 from scipy.stats import binom
-from c_SubRegion import c_SubRegion
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pickle
-import os
+
+from .c_SubRegion import c_SubRegion
 
 """
 This function uniformly sampling i_n_samp sample points with i_n_rep replication in the subregions c_subregion and generate the df that used to sent to calibtool
@@ -444,6 +442,8 @@ def fun_reg_branching(c_subr, i_n_branching, params, s_branching_dim):
 
 
 def fun_plot2D(l_subr, l_initial_coordinate_lower, l_initial_coordinate_upper, params, str_k, s_running_file_name, i_iteration):
+    import matplotlib.patches as patches
+    import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(l_initial_coordinate_upper[0], l_initial_coordinate_upper[1])
@@ -493,7 +493,13 @@ def fun_plot2D(l_subr, l_initial_coordinate_lower, l_initial_coordinate_upper, p
     ax.set_xlabel([p['Name'] for p in params][0])
     ax.set_ylabel([p['Name'] for p in params][1])
 
-    fig.savefig(s_running_file_name+'/iter'+str(i_iteration)+'/Region_Status ' + str(str_k) + '.pdf')
+    # make sure file directory exists
+    fig_file = s_running_file_name+'/iter'+str(i_iteration)+'/Region_Status ' + str(str_k) + '.pdf'
+    d_file = os.path.dirname(fig_file)
+    if not os.path.exists(d_file):
+        os.makedirs(d_file)
+
+    fig.savefig(fig_file)
     #with open('l_subr_all_simulations_iteration' + str(str_k) + '.dat', "wb") as f:
     #    pickle.dump(l_subr, f)
     plt.close(fig)
