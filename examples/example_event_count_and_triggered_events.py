@@ -21,16 +21,9 @@ add_incidence_counter(cb,
                           start_day=20,
                           count_duration=30,
                           count_triggers=['HappyBirthday'],
-                          threshold_type='COUNT',
+                          threshold_type='COUNT', #this is the default, we can also look at % per eligible population
                           thresholds=[13, 254],
-                          triggered_events=['Party', 'PartyHarder'],
-                          coverage=1,
-                          repetitions=1,
-                          tsteps_btwn_repetitions=365,
-                          target_group='Everyone',
-                          nodeIDs=[],
-                          node_property_restrictions=[],
-                          ind_property_restrictions=[]
+                          triggered_events=['Party', 'PartyHarder']
                           )
 
 
@@ -38,44 +31,32 @@ add_incidence_counter(cb,
                           start_day=50,
                           count_duration=30,
                           count_triggers=['HappyBirthday'],
-                          threshold_type='COUNT',
                           thresholds=[1, 9],
-                          triggered_events=['Party', 'PartyHarder'],
-                          coverage=1,
-                          repetitions=1,
-                          tsteps_btwn_repetitions=365,
-                          target_group='Everyone',
-                          nodeIDs=[],
-                          node_property_restrictions=[],
-                          ind_property_restrictions=[]
+                          triggered_events=['Party', 'PartyHarder']
                           )
 
 # adding an intervention node IRS intervention that starts listening for Action1 trigger and when/if it hears it,
-#  it sprays the node with IRS, which costs 1 and marks node as not eligible for sptraying for 30 days,
 # listening_duration of -1 indicates that this intervention will listen forever and perform the tasks whenever Action1 is sent out
-add_node_IRS(cb, 30, initial_killing=0.5, box_duration=90, cost=1,
-            trigger_condition_list=["Party"], listening_duration=-1)
+add_node_IRS(cb, 30,  trigger_condition_list=["Party"], listening_duration=-1)
 
-# this campaign starts listening on day 60, but runs the campaign 1000 days after it is triggered
-# please note if the listening duration was less than triggered day + camaign delay, the intervention would not run.
-add_node_IRS(cb, 60, initial_killing=0.5, box_duration=90, cost=1, triggered_campaign_delay=1000,
-            trigger_condition_list=["PartyHarder"])
+# this intervention is distributed and starts listening on day 60, but distributes the IRS 1000 days after it is triggered
+# please note if the listening duration was less than triggered day + campaign delay, the intervention would not run.
+add_node_IRS(cb, 60, triggered_campaign_delay=1000, trigger_condition_list=["PartyHarder"])
 
-# listens for 10 days and, as the result, hears nothing and does nothing.
-add_node_IRS(cb, 60, initial_killing=0.5, box_duration=90, cost=1,
-            trigger_condition_list=["PartyHarder"], listening_duration=15)
+# listens for 15 days and, as the result, hears nothing and does nothing.
+add_node_IRS(cb, 60, trigger_condition_list=["PartyHarder"], listening_duration=15)
 
 
 
 # run_sim_args is what the `dtk run` command will look for
 run_sim_args =  {
-    'exp_name': 'ExampleSim',
+    'exp_name': 'Example Event Counter and Triggered and Delayed IRS',
     'config_builder': cb
 }
 
 
 
-# If you prefer running with `python example_sim.py`, you will need the following block
+# If you prefer running with `python example_example_event_count_and_triggered_events.py`, you will need the following block
 if __name__ == "__main__":
     SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()
