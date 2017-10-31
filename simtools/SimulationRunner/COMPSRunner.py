@@ -30,9 +30,8 @@ class COMPSSimulationRunner(BaseSimulationRunner):
     def run(self):
         pass
 
-    def update_simulations_statuses(self,simids,states):
-        for sim_id in simids:
-            self.states.put({'sid': sim_id, 'status':states[sim_id], 'message':None, 'pid':None})
+    def update_simulations_statuses(self, simids, states):
+        self.states.update(states)
 
     def monitor(self):
         logger.debug('COMPS - Start Monitoring for experiment %s' % self.experiment.id)
