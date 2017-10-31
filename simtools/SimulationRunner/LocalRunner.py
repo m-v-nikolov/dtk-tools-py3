@@ -87,10 +87,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        self.states.put({'sid':     self.simulation.id,
-                         'status':  self.simulation.status,
-                         'message': self.simulation.message,
-                         'pid':     self.simulation.pid})
+        self.states.update({self.simulation.id: self.simulation})
 
     def last_status_line(self):
         """
