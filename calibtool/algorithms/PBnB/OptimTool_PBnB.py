@@ -336,7 +336,8 @@ class OptimTool_PBnB(NextPointAlgorithm):
         self.logging_saver(iteration)
 
         if iteration == 0:
-            os.makedirs(self.s_running_file_name+'/All_region_sampling_record/')
+            if not os.path.exists(self.s_running_file_name+'/All_region_sampling_record/'):
+                os.makedirs(self.s_running_file_name+'/All_region_sampling_record/')
         if self.s_problem_type is 'deterministic':
             self.l_subr = fun_results_organizer_deterministic(self.l_subr, self.df_testing_samples, self.params)  # <-- Update the self.l_subr based on df_testing_samples
         elif self.s_problem_type is 'noise':

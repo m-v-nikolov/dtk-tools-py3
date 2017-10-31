@@ -431,6 +431,8 @@ class IMIS(NextPointAlgorithm):
             for c in self.data.columns:  # Argh
                 self.data[c] = self.data[c].astype(data_dtypes[c])
 
+        self.generate_variables_from_data()
+
         self.n_initial_samples = state.get('n_initial_samples', 0)
         self.gaussian_probs = state.get('gaussian_probs', {})
         self.gaussian_centers = state.get('gaussian_centers', [])

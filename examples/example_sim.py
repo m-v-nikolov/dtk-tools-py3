@@ -1,9 +1,16 @@
+from COMPS.Data import Experiment, QueryCriteria
+
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
+from simtools.AnalyzeManager.AnalyzeHelper import consolidate_experiments_with_options, list_batch
+from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
+from simtools.Utilities.COMPSUtilities import COMPS_login, get_experiment_ids_for_user
+from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
+
 SetupParser.default_block = 'LOCAL'
 
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM', Simulation_Duration=3650)
