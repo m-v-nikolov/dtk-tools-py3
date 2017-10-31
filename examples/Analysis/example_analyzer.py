@@ -18,7 +18,8 @@ class PopulationAnalyzer(BaseAnalyzer):
 
     def plot(self):
         import matplotlib.pyplot as plt
-        map(plt.plot, self.pop_data.values())
+        for pop in self.pop_data.values():
+            plt.plot(pop)
         plt.legend(self.pop_data.keys())
         plt.show()
 

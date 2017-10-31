@@ -309,7 +309,6 @@ class BaseExperimentManager:
         # Delete in the DB
         DataStore.delete_experiment(self.experiment)
 
-
     def wait_for_finished(self, verbose=False, sleep_time=5):
         timeout = 3600 * 24 # 48 hours timeout
         while True:
@@ -318,7 +317,7 @@ class BaseExperimentManager:
                 states, msgs = self.get_simulation_status()
             except Exception as e:
                 print("Exception occurred while retrieving status")
-                print (e)
+                print(e)
                 return
 
             if timeout < 0:
@@ -328,7 +327,9 @@ class BaseExperimentManager:
             if self.status_finished(states): break
 
             # Display if verbose
-            if verbose: self.print_status(states, msgs)
+            if verbose:
+                self.print_status(states, msgs)
+                print("")
 
             # Wait before going through the loop again
             time.sleep(sleep_time)

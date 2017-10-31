@@ -1,4 +1,4 @@
-from triggered_campaign_delay_event import triggered_campaign_delay_event
+from dtk.interventions.triggered_campaign_delay_event import triggered_campaign_delay_event
 
 
 def change_node_property(cb, target_property_name, target_property_value, start_day=0, daily_prob=1,
@@ -163,7 +163,7 @@ def change_individual_property(cb, target_property_name, target_property_value, 
                     }
          }
 
-        if isinstance(target, dict) and all([k in target.keys() for k in ['agemin', 'agemax']]):
+        if isinstance(target, dict) and all([k in target for k in ['agemin', 'agemax']]):
              changer_event["Event_Coordinator_Config"]["Intervention_Config"].update({
                  "Target_Demographic": "ExplicitAgeRanges",
                  "Target_Age_Min": target['agemin'],
@@ -187,7 +187,7 @@ def change_individual_property(cb, target_property_name, target_property_value, 
                            "Intervention_Config": property_value_changer
                        }
 
-        if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
+        if isinstance(target, dict) and all([k in target for k in ['agemin','agemax']]) :
             prop_ch_config.update({
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": target['agemin'],

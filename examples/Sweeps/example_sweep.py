@@ -12,25 +12,25 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 SetupParser.default_block = "HPC"
 
 # Configure a default 5 years simulation
-cb = DTKConfigBuilder.from_defaults('MALARIA_SIM', Simulation_Duration=365*5)
+cb = DTKConfigBuilder.from_defaults('MALARIA_SIM', Simulation_Duration=365 * 5)
 
 # Set it in Namawala
-configure_site(cb,'Namawala')
+configure_site(cb, 'Namawala')
 
 # Name of the experiment
-exp_name  = 'ExampleSweep'
+exp_name = 'ExampleSweep'
 
 # Create a builder to sweep over the birth rate multiplier
 builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1, 1.5, .1)})
 
-
-run_sim_args =  {
+run_sim_args = {
     'exp_name': exp_name,
     'exp_builder': builder,
-    'config_builder':cb
+    'config_builder': cb
 }
 
 if __name__ == "__main__":
     SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**run_sim_args)
+    exp_manager.wait_for_finished(verbose=True)

@@ -1,9 +1,9 @@
+import random
+
+from dtk.interventions.triggered_campaign_delay_event import triggered_campaign_delay_event
+
 # the old MigrateTo has now been split into MigrateIndividuals and MigrateFamily.
 # add_migration_event adds a MigrateIndividuals event.
-import random
-from triggered_campaign_delay_event import triggered_campaign_delay_event
-
-
 def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tsteps_btwn=365,
                         duration_at_node_distr_type='FIXED_DURATION', 
                         duration_of_stay=100, duration_of_stay_2=0, 
@@ -54,7 +54,7 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                         "Nodeset_Config": nodesfrom
                         }
 
-            if isinstance(target, dict) and all([k in target.keys() for k in ['agemin', 'agemax']]):
+            if isinstance(target, dict) and all([k in target for k in ['agemin', 'agemax']]):
                 event["Event_Coordinator_Config"]["Intervention_Config"].update({
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": target['agemin'],
@@ -81,7 +81,7 @@ def add_migration_event(cb, nodeto, start_day=0, coverage=1, repetitions=1, tste
                             "Nodeset_Config": nodesfrom
                             }
 
-        if isinstance(target, dict) and all([k in target.keys() for k in ['agemin','agemax']]) :
+        if isinstance(target, dict) and all([k in target for k in ['agemin','agemax']]) :
             event["Event_Coordinator_Config"].update({
                     "Target_Demographic": "ExplicitAgeRanges",
                     "Target_Age_Min": target['agemin'],
@@ -115,7 +115,7 @@ def update_duration_type(migration_event, duration_at_node_distr_type, dur_param
         migration_event["Duration_" + trip_end + "_Distribution_Type"] = "POISSON_DURATION"
         migration_event["Duration_" + trip_end + "_Poisson_Mean"] = dur_param_1
     else :
-        print "warning: unsupported duration distribution type, reverting to fixed duration"
+        print("warning: unsupported duration distribution type, reverting to fixed duration")
         migration_event["Duration_" + trip_end + "_Distribution_Type"] = "FIXED_DURATION"
         migration_event["Duration_" + trip_end + "_Fixed"] = dur_param_1
 

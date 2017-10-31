@@ -10,8 +10,8 @@ from simtools.SetupParser import SetupParser
 SetupParser.default_block = 'HPC'
 
 # Create a config builder from set of input files
-input_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),"input")
-cb = DTKConfigBuilder.from_files(os.path.join(input_dir,'config.json'), os.path.join(input_dir,'campaign.json'))
+input_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "inputs", "Sweeps")
+cb = DTKConfigBuilder.from_files(os.path.join(input_dir, 'config.json'), os.path.join(input_dir, 'campaign.json'))
 
 # Change the duration of the simulations to 5 years
 cb.set_param('Simulation_Duration', 5*365)
@@ -75,5 +75,6 @@ analyzers = [
 
 if __name__ == "__main__":
     SetupParser.init()
-    em = ExperimentManagerFactory.from_cb(cb)
-    em.run_simulations(exp_name='Sample larvicides epxeriment', exp_builder=builder)
+    em = ExperimentManagerFactory.init()
+    em.run_simulations(**run_sim_args)
+    em.wait_for_finished(verbose=True)
