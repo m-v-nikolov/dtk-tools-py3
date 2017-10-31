@@ -309,6 +309,7 @@ class BaseExperimentManager:
         # Delete in the DB
         DataStore.delete_experiment(self.experiment)
 
+
     def wait_for_finished(self, verbose=False, sleep_time=5):
         timeout = 3600 * 24 # 48 hours timeout
         while True:
