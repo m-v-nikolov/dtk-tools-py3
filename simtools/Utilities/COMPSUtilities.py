@@ -125,6 +125,50 @@ def get_asset_collection_by_id(collection_id, query_criteria=None):
     except (RuntimeError, ValueError):
         return None
 
+def get_asset_collection_id_for_simulation_id(sim_id):
+    query_criteria = QueryCriteria().select_children('configuration')
+    simulation = Simulation.get(id=sim_id, query_criteria=query_criteria)
+    collection_id = simulation.configuration.asset_collection_id
+    return collection_id
+
+def get_asset_files_for_simulation_id(sim_id, file_paths, output_directory):
+    """
+    Obtains AssetManager-contained files from a given simulation. Leading dir pathing on file_paths will be ignored
+    during writing (but obtained using them for proper finding).
+    :param sim_id: A simulation id to retrieve files from
+    :param file_paths: relative to the Assets folder
+    :param output_directory: Write requested files into this directory
+    :return: Nothing
+    """
+    from simtools.AssetManager.AssetFile import AssetFile
+
+    collection_id = get_asset_collection_id_for_simulation_id(sim_id=sim_id)
+    query_criteria = QueryCriteria().select_children('assets')
+    asset_collection = AssetCollection.get(id=collection_id, query_criteria=query_criteria)
+
+    for path in file_paths:
+        relative_path, file_name = AssetFile.split_path(file_path=path)
+
+        af = None
+        for asset_file in asset_collection.assets:
+            if asset_file.file_name == file_name and\
+                    ((asset_file.relative_path is None and relative_path == '') or (asset_file.relative_path == relative_path)):
+                af = asset_file
+                break
+        if af is None:
+            print('Available assets:\n%s %s \n%s' % (relative_path, file_name, str(asset_collection.assets)))
+            raise Exception("Asset not found for this simulation: %s" % path)
+        result = af.retrieve()
+
+        # write the file - result is written as output_directory/file_name, where file_name (with no pathing)
+        output_file = os.path.normpath(os.path.join(output_directory, os.path.split(path)[1]))
+        dirname = os.path.dirname(output_file)
+        try:
+            os.makedirs(dirname)
+        except:
+            pass
+        with open(output_file, 'wb') as f:
+            f.write(result)
 
 def is_comps_alive(endpoint):
     import requests

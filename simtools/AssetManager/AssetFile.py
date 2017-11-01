@@ -24,3 +24,13 @@ class AssetFile:
             AssetFile.cache[self.absolute_path] = get_md5(self.absolute_path)
 
         return AssetFile.cache[self.absolute_path]
+
+    @classmethod
+    def split_path(cls, file_path):
+        """
+        Cannonical method for splitting a file path into relative/absolute values for creating an AssetFile object.
+        :param file_path: a relative file path
+        :return: a 2-tuple containing (relative_path, file_name)
+        """
+        relative_path, file_name = os.path.split(file_path)
+        return (relative_path, file_name)
