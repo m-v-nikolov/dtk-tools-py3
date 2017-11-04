@@ -1,12 +1,33 @@
+def in_common_run_and_catalyst_arguments(subparser):
+    subparser.add_argument(dest='config_name', default=None,
+                           help='Name of configuration python script for custom running of simulation.')
+    subparser.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
+    subparser.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
+    subparser.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
+    return subparser
+
 # 'dtk run' options
 def populate_run_arguments(subparsers, func):
     parser_run = subparsers.add_parser('run', help='Run one or more simulations configured by run-options.')
-    parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script for custom running of simulation.')
-    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
+    parser_run = in_common_run_and_catalyst_arguments(parser_run)
     parser_run.add_argument('-b', '--blocking', action='store_true', help='Block the thread until the simulations are done.')
-    parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
     parser_run.set_defaults(func=func)
+
+
+# 'dtk run' options for catalyst, after all, it runs and then does a set-piece analysis
+def populate_catalyst_arguments(subparsers, func):
+    parser_catalyst = subparsers.add_parser('catalyst', help='Run a timestep or population-scaling sweep to evaluate '
+                                                        'model performance.')
+    parser_catalyst = in_common_run_and_catalyst_arguments(parser_catalyst)
+    parser_catalyst.add_argument('-s', '--sweep_type', dest='sweep_type', required=True, choices=['timestep', 'popscaling'],
+                            help='The type of performance sweep to run and report on.')
+    parser_catalyst.add_argument('-m', '--sweep_method', dest='sweep_method', required=True,
+                            help='The sweeping method to use.')
+    parser_catalyst.add_argument('-r', '--report', dest='report_type', required=True, # ck4, should be a choices list here
+                            help='The type of report to generate.')
+    parser_catalyst.add_argument('-id', '--id', dest='experiment_id', default=None,
+                                help='Experiment ID to generate a report for. No new simulations are run if provided.')
+    parser_catalyst.set_defaults(func=func)
 
 
 # 'dtk status' options

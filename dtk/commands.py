@@ -1,6 +1,7 @@
 import argparse
 import csv
 import datetime
+import json
 import os
 import shutil
 import subprocess
@@ -70,7 +71,6 @@ def run(args, unknownArgs):
                   "`calibtool run` command.")
             exit()
 
-        import json
         print("You are trying to run a module without the required run_sim_args dictionary.")
         print("The run_sim_args is expected to be of the format:")
         print(json.dumps({"config_builder": "cb",
@@ -85,6 +85,7 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
+    return exp_manager.experiment
 
 
 def status(args, unknownArgs):
@@ -593,6 +594,84 @@ def get_package(args, unknownArgs):
     return release_dir
 
 
+def catalyst(args, unknownArgs):     # ck4, incomplete so far
+    from dtk.utils.builders.sweep import GenericSweepBuilder
+    from simtools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
+    from simtools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+
+    # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
+    # to get the run part to do the desired parameter sweep.
+
+    mod = args.loaded_module
+
+    # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.
+    # ck4, modify the original exp_name as-per orig catalyst script
+    mod.run_sim_args['exp_name'] = mod.run_sim_args['exp_name'] + '-development'
+
+    # lining up the arguments expected by FidelityReportExperimentDefinition
+    args.mode = 'prod' # 'prod' # ck4, settable by command-line? Or perhaps hidden arg for programmatic 'def catalyst' calls?
+    args.sweep = args.sweep_method
+    args.report = args.report_type
+
+    # Create and set a builder to sweep over population scaling or model timestep
+    if args.sweep_type == 'popscaling':
+        # ck4, fix this ugly pathing
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst','pop_sampling.json')
+        catalyst_config = json.loads(open(catalyst_config_file, 'r').read())
+        defn = FidelityReportExperimentDefinition(catalyst_config, args) # ck4, make sure the args in THIS method line up with what is used by this class
+
+        # define the sweep to perform
+        sweep_dict = {
+            'Run_Number': range(1, int(defn['nruns']) + 1),
+            defn['sweep_param']: defn['sweep_values']
+        }
+        mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
+
+    elif args.sweep_type == 'timestep':
+        raise Exception('Not currently supported in the ported code. But it will be!') # ck4
+    else:
+        raise ValueError('Invalid sweep type: %s' % args.sweep_type)
+
+    print('running catalyst method! 4')
+
+    # overwrite spatial output channels to those used in the catalyst report
+    spatial_channel_names = defn['spatial_channel_names']
+    if len(spatial_channel_names) > 0:
+        mod.run_sim_args['config_builder'].enable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = spatial_channel_names
+    else:
+        mod.run_sim_args['config_builder'].disable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = []
+
+    # now run if no preexisting experiment id was provided
+    if not args.experiment_id:
+        # we must always block so that we can run the analysis at the end; run and analyze!
+        args.blocking = True
+        experiment = run(args, unknownArgs)
+        print('done running experiment: %s!' % experiment.exp_id)
+    else:
+        experiment = retrieve_experiment(args.experiment_id)
+
+    # Create an analyze manager
+    am = AnalyzeManager(exp_list=[experiment])
+
+    # Add the TimeSeriesAnalyzer to the manager and do analysis
+    # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer
+    analyzer = FidelityReportAnalyzer('output',
+                                      'config.json',
+                                      'campaign.json',
+                                      mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
+                                      experiment_definition = defn,
+                                      label='testingReport', # ck4 restore choice args.report_label,
+                                      # ck4, restore time_series_step_from=exp_def['step_from'],
+                                      # ck4, restore time_series_step_to=exp_def['step_to'],
+                                      time_series_equal_step_count=True,
+                                      raw_data=True, #args.raw_data, # ck4, restore choice
+                                      debug=False) # ck4, restore choice? args.debug))
+    am.add_analyzer(analyzer)
+    am.analyze()
+
+
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
     mod = init.load_config_module(args.config_name)
@@ -642,6 +721,9 @@ def main():
 
     # 'dtk run' options
     commands_args.populate_run_arguments(subparsers, run)
+
+    # 'dtk catalyst' options
+    commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # 'dtk status' options
     commands_args.populate_status_arguments(subparsers, status)
@@ -708,6 +790,9 @@ def main():
 
     # 'dtk get_package' options
     commands_args.populate_get_package_arguments(subparsers, get_package)
+
+    # # 'dtk catalyst' options
+    # commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
