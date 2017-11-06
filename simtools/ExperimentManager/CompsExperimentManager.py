@@ -52,7 +52,8 @@ class CompsExperimentManager(BaseExperimentManager):
                                       experiment=self.experiment,
                                       callback=callback,
                                       return_list=return_list,
-                                      save_semaphore=self.save_semaphore)
+                                      save_semaphore=self.save_semaphore,
+                                      comps_experiment=self.comps_experiment)
 
     @staticmethod
     def create_suite(suite_name):
@@ -118,7 +119,7 @@ class CompsExperimentManager(BaseExperimentManager):
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
         if not self.runner_thread or not self.runner_thread.is_alive():
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, self.comps_experiment, states, self.success_callback))
             self.runner_thread.daemon = True
             self.runner_thread.start()
             return len(self.experiment.simulations)

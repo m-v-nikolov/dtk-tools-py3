@@ -1,37 +1,35 @@
 import time
 
+from COMPS.Data.Simulation import SimulationState
+
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_experiment_by_id, get_simulation_by_id, \
-    COMPS_login
-from COMPS.Data.Simulation import SimulationState
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_simulation_by_id, COMPS_login
 from simtools.Utilities.General import init_logging
+
 logger = init_logging('Runner')
 
 
 class COMPSSimulationRunner(BaseSimulationRunner):
-    def __init__(self, experiment, states, success):
+    def __init__(self, experiment, comps_experiment, states, success):
         logger.debug('Create COMPSSimulationRunner with experiment: %s' % experiment.id)
         super(COMPSSimulationRunner, self).__init__(experiment, states, success)
 
         # Check if we need to commission
         COMPS_login(experiment.endpoint)
-        e = get_experiment_by_id(self.experiment.exp_id)
+        self.comps_experiment = comps_experiment
 
-        if experiment_needs_commission(e):
+        if experiment_needs_commission(self.comps_experiment):
             logger.debug('COMPS - Start Commissioning for experiment %s' % self.experiment.id)
             # Commission the experiment
-            e.commission()
+            self.comps_experiment.commission()
 
         self.monitor()
 
     def run(self):
         pass
-
-    def update_simulations_statuses(self, simids, states):
-        self.states.update(states)
 
     def monitor(self):
         logger.debug('COMPS - Start Monitoring for experiment %s' % self.experiment.id)
@@ -66,7 +64,7 @@ class COMPSSimulationRunner(BaseSimulationRunner):
             if len(diff_list) > 0:
                 try:
                     # Update the simulation status first
-                    self.update_simulations_statuses(diff_list, states)
+                    self.states.update(states)
 
                     # loop again to take care of success if needed
                     for key in diff_list:
