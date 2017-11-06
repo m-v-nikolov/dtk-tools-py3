@@ -2,18 +2,19 @@ from COMPS.Data import Simulation, Configuration
 from COMPS.Data import SimulationFile
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.BaseSimulationCreator import BaseSimulationCreator
-from simtools.Utilities.COMPSUtilities import COMPS_login
+from simtools.Utilities.COMPSUtilities import COMPS_login, get_experiment_by_id
 from simtools.Utilities.General import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list, save_semaphore):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list, save_semaphore, comps_experiment):
         super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list)
 
         # Store the environment and endpoint
         self.environment = SetupParser.get('environment')
         self.server_endpoint = SetupParser.get('server_endpoint')
         self.save_semaphore = save_semaphore
+        self.comps_experiment = comps_experiment
 
     def create_simulation(self, cb):
         name = cb.get_param('Config_Name') if cb.get_param('Config_Name') else self.experiment.exp_name
@@ -24,6 +25,12 @@ class COMPSSimulationCreator(BaseSimulationCreator):
         # Batch save after all sims in list have been added
         with nostdout(stderr=True):
             Simulation.save_all(lambda *args: None, save_semaphore=self.save_semaphore)
+
+        # We may encounter 400 Bad Request if already commissioned but still we want to try commissioning every time
+        try:
+            self.comps_experiment.commission()
+        except RuntimeError:
+            pass
 
     def add_files_to_simulation(self, s, cb):
         files = cb.dump_files_to_string()
