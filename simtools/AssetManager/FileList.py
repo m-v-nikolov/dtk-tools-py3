@@ -4,7 +4,7 @@ from simtools.AssetManager.AssetFile import AssetFile
 
 
 class FileList:
-    def __init__(self, root=None, files_in_root=None, recursive=False, ignore_missing=False):
+    def __init__(self, root=None, files_in_root=None, recursive=False, ignore_missing=False, relative_path=None):
         """
         Represents a set of files that are specified RELATIVE to root.
         e.g. /a/b/c.json could be : root: '/a' files_in_root: ['b/c.json']
@@ -19,7 +19,7 @@ class FileList:
             files_in_root = [os.path.normpath(f) for f in files_in_root]
 
         if root:
-            self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
+            self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive, relative_path=relative_path)
 
     def add_asset_file(self, af):
         self.files.append(af)

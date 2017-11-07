@@ -82,6 +82,7 @@ class TestSimulationAssets(unittest.TestCase):
         }
         sa = SimulationAssets()
         for collection_type in SimulationAssets.COLLECTION_TYPES:
+            if collection_type == SimulationAssets.PYTHON:continue
             expected = regressions[collection_type]
             expected_files = [ os.path.join(expected['relative_path'], file) for file in expected['files'] ]
             file_list = sa._gather_files(self.config_builder, collection_type).files
@@ -113,6 +114,7 @@ class TestSimulationAssets(unittest.TestCase):
         sim = exp_manager.comps_experiment.get_simulations(query_criteria=COMPSQueryCriteria().select_children(children=['tags', 'configuration']))[0]
         tags = sim.tags
         for asset_type in SimulationAssets.COLLECTION_TYPES:
+            if asset_type == SimulationAssets.PYTHON:continue
             tag = "%s_collection_id" % asset_type
             self.assertTrue(exp_manager.assets.collections.get(asset_type, None) is not None)
             self.assertTrue(tags.get(tag, None) is not None)
