@@ -152,7 +152,13 @@ class BaseExperimentManager:
         self.assets = self.config_builder.get_assets()
 
         # Check input files existence
-        if not self.config_builder.ignore_missing and not self.validate_input_files(): exit()
+        if not self.config_builder.ignore_missing:
+            if not self.validate_input_files(needed_file_paths=self.config_builder.get_input_file_paths(),
+                                             message="config.json"):
+                exit()
+            if not self.validate_input_files(needed_file_paths=self.config_builder.get_dll_paths_for_asset_manager(),
+                                             message="emodules_map.json"):
+                exit()
 
         # Set the appropriate command line
         self.commandline = self.config_builder.get_commandline()
@@ -169,23 +175,18 @@ class BaseExperimentManager:
         if blocking:
             self.wait_for_finished(verbose=not quiet)
 
-    def validate_input_files(self):
+    def validate_input_files(self, needed_file_paths, message="experiment configuration"):
         """
         Check input files and make sure they exist
-        Note: we by pass the 'Campaign_Filename'
-        This method only verifies local files, not (current) AssetManager-contained files
         """
-        # Get the needed file paths
-        needed_file_paths = self.config_builder.get_input_file_paths()
-
         missing_files = []
         for needed_file in needed_file_paths:
             if os.path.basename(needed_file) not in self.assets:
                 missing_files.append(needed_file)
 
         if len(missing_files) > 0:
-            print('The following files are specified in the config.json file but not present in the available assets:')
-            map(lambda f: print("- %s" % f), missing_files)
+            print("The following files are specified in the %s but not present in the available assets:" % message)
+            list(map(lambda f: print("- %s" % f), missing_files))
 
             var = input("The simulation may not run, do you want to continue? [Y/N]:  ")
             if var.upper() == 'Y':

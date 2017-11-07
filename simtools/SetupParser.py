@@ -299,7 +299,7 @@ class SetupParser(metaclass=SetupParserMeta):
         return cls.singleton.setup.set(section, parameter, value)
 
     @classmethod
-    def _get_guts(cls, parameter, get_method, default=None, block=None):
+    def _get_guts(cls, parameter, get_method, default="default_value", block=None):
         """
         An in-common access method for get() and getboolean()
         :param parameter: The parameter value to get
@@ -319,7 +319,7 @@ class SetupParser(metaclass=SetupParserMeta):
             value = override
         else:
             if not cls.singleton.has_option(parameter):
-                if default is not None:
+                if default is not "default_value":
                     return default
                 else:
                     raise ValueError("%s block does not have the option %s" % (block, parameter))
