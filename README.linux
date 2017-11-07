@@ -1,0 +1,39 @@
+Linux Installation
+==================
+
+Installation of Python 3.6
+---------------------------
+
+Update the system and download some pre-requisites:
+# yum update
+# yum install yum-utils
+# yum groupinstall development
+
+Install Python:
+# yum install https://centos7.iuscommunity.org/ius-release.rpm
+# yum install python36u
+
+Make sure Python is installed by issuing a:
+# python3.6 -V
+
+Install pip and other dev packages:
+# yum install python36u-pip
+# yum install python36u-devel
+
+Create a virtual environment:
+# python3.6 -m venv idm
+
+Activate the idm environment:
+# source idm/bin/activate
+
+Installation of dtk-tools
+-------------------------
+
+Clone the repository:
+# git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+
+Install the tools:
+# cd dtk-tools
+# python setup.py
+
+

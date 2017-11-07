@@ -125,11 +125,11 @@ def get_requirements_by_os():
         # If no platform specified or the os is in the platforms, add it
         if not val or 'platform' not in val or LocalOS.name in val['platform']:
             # OS: Mac or Linux. No wheel needed
-            if LocalOS.name in (LocalOS.MAC, LocalOS.LINUX) and 'wheel' in val:
+            if LocalOS.name in (LocalOS.MAC, LocalOS.LINUX) and val and 'wheel' in val:
                 val.pop('wheel')
 
             # OS: Linux. No version for some packages
-            if LocalOS.name == LocalOS.LINUX and name in ('numpy', 'scipy'):
+            if LocalOS.name == LocalOS.LINUX and name in ('numpy', 'scipy') and val:
                 if 'version' in val: val.pop('version')
                 if 'test' in val: val.pop('test')
 
