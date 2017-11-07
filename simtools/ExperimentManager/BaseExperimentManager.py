@@ -147,8 +147,8 @@ class BaseExperimentManager:
         # Store the config_builder if passed
         self.config_builder = config_builder or self.config_builder
 
-        # Get the assets from the config builde
-        # #e just want to check the input files at this point even though it may change laterr
+        # Get the assets from the config builder
+        # We just want to check the input files at this point even though it may change later
         self.assets = self.config_builder.get_assets()
 
         # Check input files existence

@@ -236,16 +236,16 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         eradication_options = {'--config': 'config.json'}
 
-        python_path = SetupParser.get('python_path', default=None)
-        if python_path:
-            eradication_options['--python-script-path'] = python_path
-
         if SetupParser.get('type') == 'LOCAL':
             exe_path = self.stage_executable(self.assets.exe_path, SetupParser.get('bin_staging_root'))
             eradication_options['--input-path'] = self.assets.input_root
+            if self.assets.python_path:
+                eradication_options['--python-script-path'] = self.assets.python_path
         else:
             exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'Eradication.exe'))
             eradication_options['--input-path'] = './Assets'
+            if self.assets.PYTHON in self.assets.collections:
+                eradication_options['--python-script-path'] = 'Assets\\python'
 
         return CommandlineGenerator(exe_path, eradication_options, [])
 
