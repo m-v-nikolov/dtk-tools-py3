@@ -76,10 +76,9 @@ class SimulationOutputParser(threading.Thread):
     def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
 
-        if content:
+        if content is not None:
             content = BytesIO(content)
-
-        if not content:
+        else:
             with open(self.get_path(filename), 'rb') as output_file:
                 content = BytesIO(output_file.read())
 
