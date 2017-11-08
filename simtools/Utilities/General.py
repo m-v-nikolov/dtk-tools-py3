@@ -284,6 +284,8 @@ def is_running(pid, name_part):
     :return: True/False
     """
     import psutil
+    from simtools.Utilities.LocalOS import LocalOS
+
     # ck4, This should be refactored to use a common module containing a dict of Process objects
     #      This way, we don't need to do the name() checking, just use the method process.is_running(),
     #      since this method checks for pid number being active AND pid start time.
@@ -299,14 +301,16 @@ def is_running(pid, name_part):
         logger.debug("is_running: No such process with pid: %d" % pid)
         return False
 
+    # Retrieve info on the process
     running = process.is_running()
+    zombie = process.status() == "zombie" if LocalOS.name != LocalOS.WINDOWS else False
     process_name = process.name()
     valid_name = name_part in process_name
 
     logger.debug("is_running: pid %s running? %s valid_name (%s)? %s. name: %s" %
                  (pid, running, name_part, valid_name, process_name))
 
-    if is_running and valid_name:
+    if is_running and not zombie and valid_name:
         logger.debug("is_running: pid %s is running and process name is valid." % pid)
         return True
 

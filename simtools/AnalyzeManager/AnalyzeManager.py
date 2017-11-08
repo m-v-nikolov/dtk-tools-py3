@@ -18,7 +18,7 @@ logger = init_logging('AnalyzeManager')
 
 class AnalyzeManager:
     def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True,
-                 create_dir_map=True):
+                 create_dir_map=False):
         self.experiments = []
         self.simulations = []
         self.experiments_simulations = {}
