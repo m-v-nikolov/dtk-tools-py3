@@ -1,6 +1,7 @@
 import os
-
+import re
 from simtools.AssetManager.AssetFile import AssetFile
+from simtools.Utilities.LocalOS import LocalOS
 
 
 class FileList:
@@ -15,8 +16,12 @@ class FileList:
         self.ignore_missing = ignore_missing
 
         # Make sure we have correct separator
+        # os.path.normpath(f) would be best but is not working the same way on UNIX systems
         if files_in_root is not None:
-            files_in_root = [os.path.normpath(f) for f in files_in_root]
+            if LocalOS.name == LocalOS.WINDOWS:
+                files_in_root = [os.path.normpath(f) for f in files_in_root]
+            else:
+                files_in_root = [re.sub(r"[\\/]", os.sep, os.path.normpath(f)) for f in files_in_root]
 
         if root:
             self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive, relative_path=relative_path)
