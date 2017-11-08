@@ -55,6 +55,13 @@ def populate_clean_arguments(subparsers, func):
     parser_clean.set_defaults(func=func)
 
 
+# 'dtk link' options
+def populate_link_arguments(subparsers, func):
+    parser_exterminate = subparsers.add_parser('link', help='Open browser to COPMS experiment matched by ID or name.')
+    parser_exterminate.add_argument(dest='Id', default=None, nargs='?', help=' Experiment ID (or name) or Simulation ID.')
+    parser_exterminate.set_defaults(func=func)
+
+
 # 'dtk stdout' options
 def populate_stdout_arguments(subparsers, func):
     parser_stdout = subparsers.add_parser('stdout', help='Print stdout from first simulation in selected experiment.')

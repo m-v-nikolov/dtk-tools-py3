@@ -21,12 +21,14 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiments_by_name, COMPS_login, \
     get_experiment_ids_for_user
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
-
-logger = init_logging('Commands')
+from simtools.Utilities.General import nostdout, get_tools_revision, retrieve_item
 from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
 import simtools.Utilities.Initialization as init
+from simtools.DataAccess.Schema import Experiment, Simulation
+
+from simtools.Utilities.General import init_logging
+logger = init_logging('Commands')
 
 
 def builtinAnalyzers():
@@ -157,6 +159,66 @@ def exterminate(args, unknownArgs):
         manager.cancel_experiment()
 
     print("'Exterminate' has been executed successfully.")
+
+
+def link(args, unknownArgs):
+    """
+    Open browser to the COMPS Experiment/Simulation with ID or name provided
+    :param args:
+    :param unknownArgs:
+    :return:
+    """
+
+    # get input from commands line
+    input_id = args.Id
+
+    # default: consider the latest experiment
+    if input_id is None:
+        latest = DataStore.get_most_recent_experiment()
+        input_id = latest.exp_id
+
+    try:
+        comps_item = retrieve_item(input_id)
+    except:
+        print('Nothing was found for {}'.format(input_id))
+        exit()
+
+    # check item type
+    id_type = ''
+    location = 'LOCAL'
+    if isinstance(comps_item, Experiment):
+        item_id = comps_item.exp_id
+        id_type = 'exp'
+        location = comps_item.location
+    elif isinstance(comps_item, Simulation):
+        item_id = comps_item.id
+        exp_id = comps_item.experiment_id
+        id_type = 'sim'
+        # retrieve location
+        exp = DataStore.get_experiment(exp_id)
+        location = exp.location
+    else:
+        print('No Experiment or Simulation was found on COMPS for {}'.format(input_id))
+        exit()
+
+    # make sure it exists on COMPS
+    if location == 'LOCAL':
+        print('Item is on LOCAL not on COMPS.')
+        exit()
+
+    # open browser to COMPS Experiment/Simulation
+    import webbrowser
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+
+    url = ''
+    if id_type == 'exp':
+        url = '%s/#explore/Experiments?filters=Id=%s&offset=0&selectedId=%s' % (endpoint, item_id, item_id)
+    elif id_type == 'sim':
+        url = '%s/#explore/Simulations?filters=Id=%s&mode=list&orderby=DateCreated+desc&count=50&offset=0&layout=512C56&selectedId=%s' % (endpoint, item_id, item_id)
+
+    # Open URL in new browser window
+    webbrowser.open_new(url)  # opens in default browser
 
 
 def delete(args, unknownArgs):
@@ -592,6 +654,9 @@ def main():
 
     # 'dtk exterminate' options
     commands_args.populate_exterminate_arguments(subparsers, exterminate)
+
+    # 'dtk link' options
+    commands_args.populate_link_arguments(subparsers, link)
 
     # 'dtk delete' options
     commands_args.populate_delete_arguments(subparsers, delete)
