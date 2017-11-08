@@ -115,7 +115,7 @@ if __name__ == "__main__":
                         else:
                             # COMPS is alive, sync this particular experiment
                             try:
-                                exp = retrieve_experiment(experiment.id, force_update=True)
+                                exp = retrieve_experiment(experiment.exp_id, force_update=True)
                                 manager = ExperimentManagerFactory.from_experiment(exp)
                             except:
                                 logger.debug("Experiment %s deleted from local DB!" % experiment.id)
