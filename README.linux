@@ -1,5 +1,7 @@
 Linux Installation
 ==================
+Note: This install guide assumes you are running CentOS 7.
+Also it assumes you have a desktop environment (pyCOMPS require a display in order to allow COMPS login box to appear).
 
 Installation of Python 3.6
 ---------------------------
@@ -19,6 +21,7 @@ Make sure Python is installed by issuing a:
 Install pip and other dev packages:
 # yum install python36u-pip
 # yum install python36u-devel
+# yum install python36u-tkinter
 
 Create a virtual environment:
 # python3.6 -m venv idm
@@ -36,4 +39,7 @@ Install the tools:
 # cd dtk-tools
 # python setup.py
 
+Download and install pyCOMPS:
+# curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+# pip install pyCOMPS-2.1-py2.py3-none-any.whl
 
