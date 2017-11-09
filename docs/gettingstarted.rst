@@ -40,49 +40,51 @@ Installation of Python 3.6
 
 Update the system and download some pre-requisites::
 
-# yum update
-# yum install yum-utils
-# yum groupinstall development
+    yum update -y
+    yum install yum-utils -y
+    yum groupinstall development -y
+    yum install snappy-devel -y
+    yum install openssl-devel -y
 
 Install Python::
 
-# yum install https://centos7.iuscommunity.org/ius-release.rpm
-# yum install python36u
+    yum install https://centos7.iuscommunity.org/ius-release.rpm
+    yum install python36u
 
 Make sure Python is installed by issuing a::
 
-# python3.6 -V
+    python3.6 -V
 
 Install pip and other dev packages::
 
-# yum install python36u-pip
-# yum install python36u-devel
-# yum install python36u-tkinter
+    yum install python36u-pip
+    yum install python36u-devel
+    yum install python36u-tkinter
 
 Create a virtual environment::
 
-# python3.6 -m venv idm
+    python3.6 -m venv idm
 
 Activate the idm environment::
 
-# source idm/bin/activate
+    source idm/bin/activate
 
 Installation of dtk-tools
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Clone the repository::
 
-# git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+    git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 
 Install the tools::
 
-# cd dtk-tools
-# python setup.py
+    cd dtk-tools
+    python setup.py
 
 Download and install pyCOMPS::
 
-# curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
-# pip install pyCOMPS-2.1-py2.py3-none-any.whl
+    curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+    pip install pyCOMPS-2.1-py2.py3-none-any.whl
 
 MAC OSX installation
 ````````````````````
