@@ -66,7 +66,6 @@ def populate_link_arguments(subparsers, func):
 def populate_stdout_arguments(subparsers, func):
     parser_stdout = subparsers.add_parser('stdout', help='Print stdout from first simulation in selected experiment.')
     parser_stdout.add_argument(dest='expId', default=None, nargs='?', help=' Experiment ID or name.')
-    parser_stdout.add_argument('-id', dest='simIds', default=None, nargs='+', help='Process or job IDs of simulations to print.')
     parser_stdout.add_argument('-e', '--error', action='store_true', help='Print stderr instead of stdout.')
     parser_stdout.add_argument('--failed', action='store_true', help='Get the stdout for the first failed simulation in the selected experiment.')
     parser_stdout.add_argument('--succeeded', action='store_true', help='Get the stdout for the first succeeded simulation in the selected experiment.')
