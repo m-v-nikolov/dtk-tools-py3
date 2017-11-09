@@ -15,7 +15,7 @@ To install the dtk-tools, first clone the repository:
 git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
 ```
 
-Make sure you have **Python 2.7 x64** installed (available [here](https://www.python.org/downloads/)).
+Make sure you have **Python 3.6 x64** installed (available [here](https://www.python.org/downloads/)).
 
 From a command-prompt, run the following from the **dtk-tools** directory:
 ```
@@ -33,6 +33,9 @@ If the command succeed and present you with the details of the dtk command you a
 
 
 #### MAC users ####
+
+Please refer to [MacOS install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#id6) for more information.
+
 Tested with macOS Sierra (Version 10.12)
 
 Make sure you have the Xcode Command Line Tools installed:
@@ -89,41 +92,7 @@ brew install python --with-brewed-tk
 ```
 
 #### CentOS7 users
-You need to install the following system dependencies:
-```
-yum groupinstall -y development
-yum install snappy-devel -y
-yum install openssl-devel -y
-yum install python-devel -y
-yum install tkinter -y
-```
-
-Install pip and create a virtual environment:
-```
-wget --no-check-certificate https://bootstrap.pypa.io/get-pip.py
-python get-pip.py
-pip install virtualenv
-virtualenv dtktools
-source dtktools/bin/activate
-```
-
-Clone the tools:
-```
-yum install git -y
-git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
-```
-
-Install pyCOMPS manually:
-```
-wget https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
-pip install pyCOMPS-2.1-py2.py3-none-any.whl
-```
-
-Install the tools:
-```
-cd dtk-tools
-python setup.py
-```
+Please refer to [CentOS install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#id3) for more information.
 
 
 #### Setup
