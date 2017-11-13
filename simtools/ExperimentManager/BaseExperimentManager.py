@@ -107,7 +107,7 @@ class BaseExperimentManager:
             logger.debug("A valid Overseer was not detected for stored pid %s." % overseer_pid)
             current_dir = os.path.dirname(os.path.realpath(__file__))
             runner_path = os.path.abspath(os.path.join(current_dir, '..', 'Overseer.py'))
-            if LocalOS.name in (LocalOS.WINDOWS, LocalOS.MAC):
+            if LocalOS.name == LocalOS.WINDOWS:
                 p = subprocess.Popen([sys.executable, runner_path], shell=False, creationflags=512)
             else:
                 p = subprocess.Popen([sys.executable, runner_path], shell=False)
