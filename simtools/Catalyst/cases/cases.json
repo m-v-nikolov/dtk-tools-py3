@@ -1,0 +1,23 @@
+[
+  {
+    "directory": "Malaria/sandbox",
+    "args": "example_catalyst.py -s popscaling -m fixed -r malaria --step_from 150 --MALARIA",
+    "run": "False"
+  },
+  {
+    "directory": "SIR/Seattle_1Core_ByNode",
+    "args": "example_catalyst.py -s popscaling -m fixed_sir -r generic --step_to 150 --SIR"
+  },
+  {
+    "directory": "HINT/WAPertussis/Baseline",
+    "args": "example_catalyst.py -s timestep -m timestep -r generic --step_from 3600 --step_to 4400 --PERTUSSIS"
+  },
+  {
+    "directory": "Typhoid/149",
+    "args": "example_catalyst.py -s popscaling -m fixed -r typhoid --step_from 6570 --TYPHOID"
+  },
+  {
+    "directory": "",
+    "args": ""
+  }
+]

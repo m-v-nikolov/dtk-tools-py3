@@ -1,0 +1,149 @@
+{
+    "__NOTE__": "this is a report config which defines mode of execution (test or prod), experiement sweep, and report channel list",
+    "default": {
+        "mode": "test",
+        "sweep": "timestep",
+        "report": "generic"
+    }, 
+    "modes": {
+        "test": {
+            "nruns": 2,
+            "duration": null,
+            "sweep_values_max_items": 3,
+            "inset_channel_names_max_items": 5
+        },     
+        "prod": {
+            "nruns": 50,
+            "duration": null,     
+            "sweep_values_max_items": null,
+            "inset_channel_names_max_items": null
+        }
+    },        
+    "sweeps": {
+        "test": {
+            "init": {},
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 2, 5, 10, 20],
+            "sweep_base_value": 1
+        },
+        "timestep": {
+            "init": {},
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 2, 3, 4, 5, 10, 20],
+            "sweep_base_value": 1
+        },
+        "timestep-tb-basic": {
+            "init": {
+                "Custom_Reports_Filename": "",
+                "Individual_Sampling_Type": "FIXED_SAMPLING",
+                "Base_Individual_Sample_Rate": 0.5
+            },
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 2, 3, 4, 5, 10, 20],
+            "sweep_base_value": 1
+        },
+        "timestep-tb": {
+            "init": {
+                "Custom_Reports_Filename": "",
+                "Individual_Sampling_Type": "FIXED_SAMPLING",
+                "Base_Individual_Sample_Rate": 0.5
+            },
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 5, 10, 20, 60, 90],
+            "sweep_base_value": 1
+        },
+        "timestep-tb-20-60": {
+            "init": {
+                "Custom_Reports_Filename": "",
+                "Individual_Sampling_Type": "FIXED_SAMPLING",
+                "Base_Individual_Sample_Rate": 0.5
+            },
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 20, 30, 40, 50, 60],
+            "sweep_base_value": 1
+        },
+        "timestep-tb-100p": {
+            "init": {
+                "Custom_Reports_Filename": ""
+            },
+            "sweep_param": "Simulation_Timestep",
+            "sweep_values": [1, 20, 60, 90, 180],
+            "sweep_base_value": 1
+        }
+    },
+    "reports": {
+        "generic": {
+            "inset_channel_names": [
+                "Log Prevalence",
+                "New Infections",
+                "Cumulative Infections",
+                "Infected",
+                "Infectious Population",
+                "Cumulative Reported Infections",
+                "New Reported Infections",
+                "Human Infectious Reservoir",
+                "Daily (Human) Infection Rate",
+                "Waning Population",
+                "Exposed Population",
+                "Susceptible Population",
+                "Recovered Population",
+                "Statistical Population",
+                "Births",
+                "Disease Deaths",
+                "Campaign Cost"
+            ],
+            "inset_cumulative_channel_names": ["New Infections", "New Reported Infections"]
+        },
+        "tb": {
+            "inset_channel_names": [
+                "Active Presymptomatic Prevalence",
+                "Active Smear neg Prevalence",
+                "Active Sx Extrapulm Prevalence",
+                "Active TB Prevalence",
+                "Cumulative Infections",
+                "Daily (Human) Infection Rate",
+                "Disease Deaths",
+                "Exposed Population" ,
+                "Human Infectious Reservoir" ,
+                "Infected" ,
+                "Infectious Population" ,
+                "Latent TB Prevalence" ,
+                "Log Prevalence" ,
+                "New Active TB Infections" ,
+                "New Infections" ,
+                "New Reported Infections" ,
+                "Newly Cleared TB Infections" ,
+                "Statistical Population",
+                "Susceptible Population",
+                "TB Immune Fraction",
+                "Campaign Cost"
+            ],
+            "inset_cumulative_channel_names": ["New Active TB Infections", "New Infections", "Newly Cleared TB Infections"],
+            "_other_inset_channel_names": [
+                "Active MDR TB Prevalence",
+                "Active Sx Smear neg Prevalence",
+                "Active Sx Smear pos Prevalence",
+                "Active Symptomatic Prevalence",
+                "Births",
+                "Campaign Cost",
+                "Cumulative Reported Infections",
+                "Disease Deaths MDR",
+                "Fraction Smear pos that is MDR" ,
+                "Fraction Sx MDR that is evolved" ,
+                "Fraction Sx that is MDR" ,
+                "Infectiousness Fast Progressors" ,
+                "Latent Fast TB Prevalence",
+                "MDR TB Prevalence" ,
+                "New Active Fast TB Infections",
+                "New Active Slow TB Infections",
+                "New MDR active infections",
+                "New MDR evolved active infections" ,
+                "New MDR fast active infections",
+                "New Reported Infections",
+                "New Smear Positive Infections" ,
+                "Recovered Population" ,
+                "Waning Population"
+            ]
+        }
+    }
+}

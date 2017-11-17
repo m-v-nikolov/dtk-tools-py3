@@ -614,23 +614,29 @@ def catalyst(args, unknownArgs):     # ck4, incomplete so far
     args.report = args.report_type
 
     # Create and set a builder to sweep over population scaling or model timestep
-    if args.sweep_type == 'popscaling':
+    # ck4, combine pop_sampling.json and time_steps.json into one.
+    # ck4, add a per-sweep mode field: 'allowed_reports': ['malaria', 'tb', ...] to reject invalid combos BEFORE they
+    # are run.
+    if args.sweep_type == 'popscaling': # or args.sweep_type == 'timestep':
         # ck4, fix this ugly pathing
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst','pop_sampling.json')
-        catalyst_config = json.loads(open(catalyst_config_file, 'r').read())
-        defn = FidelityReportExperimentDefinition(catalyst_config, args) # ck4, make sure the args in THIS method line up with what is used by this class
-
-        # define the sweep to perform
-        sweep_dict = {
-            'Run_Number': range(1, int(defn['nruns']) + 1),
-            defn['sweep_param']: defn['sweep_values']
-        }
-        mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
-
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst',
+                                            'pop_sampling.json')
     elif args.sweep_type == 'timestep':
-        raise Exception('Not currently supported in the ported code. But it will be!') # ck4
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst',
+                                            'time_steps.json')
     else:
         raise ValueError('Invalid sweep type: %s' % args.sweep_type)
+
+    catalyst_config = json.loads(open(catalyst_config_file, 'r').read())
+    defn = FidelityReportExperimentDefinition(catalyst_config,
+                                              args)  # ck4, make sure the args in THIS method line up with what is used by this class
+
+    # define the sweep to perform
+    sweep_dict = {
+        'Run_Number': range(1, int(defn['nruns']) + 1),
+        defn['sweep_param']: defn['sweep_values']
+    }
+    mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
 
     print('running catalyst method! 4')
 
@@ -656,15 +662,16 @@ def catalyst(args, unknownArgs):     # ck4, incomplete so far
     am = AnalyzeManager(exp_list=[experiment])
 
     # Add the TimeSeriesAnalyzer to the manager and do analysis
-    # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer
+    # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer.
+    # After all, the names COULD be different
     analyzer = FidelityReportAnalyzer('output',
                                       'config.json',
                                       'campaign.json',
                                       mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
                                       experiment_definition = defn,
                                       label='testingReport', # ck4 restore choice args.report_label,
-                                      # ck4, restore time_series_step_from=exp_def['step_from'],
-                                      # ck4, restore time_series_step_to=exp_def['step_to'],
+                                      time_series_step_from=defn['step_from'],
+                                      time_series_step_to=defn['step_to'],
                                       time_series_equal_step_count=True,
                                       raw_data=True, #args.raw_data, # ck4, restore choice
                                       debug=False) # ck4, restore choice? args.debug))

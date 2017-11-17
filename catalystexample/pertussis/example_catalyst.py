@@ -10,7 +10,7 @@ from simtools.SetupParser import SetupParser
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
 # Run on HPC
-SetupParser.default_block = "HPC"
+SetupParser.default_block = "HPCPertussis"
 
 # Configure a default 5 years simulation
 # sim_duration = None if exp_def['duration'] is None or exp_def['duration'] == 'all' else int(exp_def['duration']) # ck4, pasted
@@ -19,20 +19,19 @@ SetupParser.default_block = "HPC"
 input_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "input")
 config_file = os.path.join(input_dir, 'config.json')
 campaign_file = os.path.join(input_dir, 'campaign.json')
+
 kwargs = { # ck4, need any kwargs for catalyst test script?
     # 'Simulation_Duration': sim_duration
 }
 cb = DTKConfigBuilder.from_files(config_name=config_file, campaign_name=campaign_file, **kwargs)
-
-# ck4, may be entirely unnecessary OR entirely rewritten for catalyst
-# configure_site(cb,'Namawala') # ck4 edit; read from some config or hard code, depending on the exact config
+# cb.set_experiment_executable(exe_file)
 
 # Name of the experiment
 # exp_name  = 'ExampleSweep' # ck4, read from some config? duplicate fidelity_report somehow:
 
 # ck4, block pasted
 # Case name is used as an experiment name. Experiment name is then used as a prefix of the output dir (set in the analyzer).
-exp_name = 'example_catalyst-MalariaSandbox' #'{}-{}_{}'.format(args.case_name or case_name_default, args.build_label, exp_def['def_name'])
+exp_name = 'example_catalyst-WAPertussis' #'{}-{}_{}'.format(args.case_name or case_name_default, args.build_label, exp_def['def_name'])
 exp_name = exp_name.replace('-_', '_')
 
 # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.

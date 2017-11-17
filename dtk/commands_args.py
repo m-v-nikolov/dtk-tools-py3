@@ -27,6 +27,9 @@ def populate_catalyst_arguments(subparsers, func):
                             help='The type of report to generate.')
     parser_catalyst.add_argument('-id', '--id', dest='experiment_id', default=None,
                                 help='Experiment ID to generate a report for. No new simulations are run if provided.')
+    parser_catalyst.add_argument('--step_from', default=None, type=int, help="From step number.") # ck4 make this more descriptive
+    parser_catalyst.add_argument('--step_to', default=None, type=int, help="To step number") # ck4 make this more descriptive
+
     parser_catalyst.set_defaults(func=func)
 
 
