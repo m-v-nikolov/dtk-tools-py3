@@ -65,7 +65,7 @@ class FileList:
 
             for file_name in files_in_dir:
                 file_path = os.path.join(path, file_name)
-                f_relative_path = os.path.normpath(file_path.replace(path, '').replace(os.path.basename(file_path), ''))
+                f_relative_path = os.path.normpath(file_path.replace(path, '').strip(os.sep).replace(os.path.basename(file_path), ''))
                 if relative_path is not None:
                     f_relative_path = os.path.join(relative_path, f_relative_path)
                 self.add_file(file_path, relative_path=f_relative_path)
