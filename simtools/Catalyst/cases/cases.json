@@ -1,23 +1,32 @@
 [
   {
     "directory": "Malaria/sandbox",
-    "args": "example_catalyst.py -s popscaling -m fixed -r malaria --step_from 150 --MALARIA",
+    "args": "example_catalyst.py -s popscaling -m fixed -r malaria --start_step 150 --MALARIA",
+    "run": "False"
+  },
+  {
+    "directory": "Malaria/Haiti_grid_hh/3k",
+    "args": "example_catalyst.py -s popscaling -m fixed -r malaria --start_step 30 --MALARIAHAITI",
     "run": "False"
   },
   {
     "directory": "SIR/Seattle_1Core_ByNode",
-    "args": "example_catalyst.py -s popscaling -m fixed_sir -r generic --step_to 150 --SIR"
+    "args": "example_catalyst.py -s popscaling -m fixed_sir -r generic --end_step 150 --SIR"
   },
   {
     "directory": "HINT/WAPertussis/Baseline",
-    "args": "example_catalyst.py -s timestep -m timestep -r generic --step_from 3600 --step_to 4400 --PERTUSSIS"
+    "args": "example_catalyst.py -s timestep -m timestep -r generic --start_step 3600 --end_step 4400 --PERTUSSIS"
   },
   {
     "directory": "Typhoid/149",
-    "args": "example_catalyst.py -s popscaling -m fixed -r typhoid --step_from 6570 --TYPHOID"
+    "args": "example_catalyst.py -s popscaling -m fixed -r typhoid --start_step 6570 --TYPHOID"
   },
   {
-    "directory": "",
-    "args": ""
+    "directory": "TBHIV/1_TBSpeedUp",
+    "args": "example_catalyst.py -s popscaling -m fixed -r tb --start_step 18000 --TBHIVPOP"
+  },
+    {
+    "directory": "TBHIV/1_TBSpeedUp",
+    "args": "example_catalyst.py -s timestep -m timestep-tb -r tb --start_step 18000 --TBHIVTIMESTEP"
   }
 ]

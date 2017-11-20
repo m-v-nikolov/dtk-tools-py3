@@ -17,7 +17,7 @@ kwargs = {
 cb = DTKConfigBuilder.from_files(config_name=config_file, campaign_name=campaign_file, **kwargs)
 
 # Name of the experiment
-exp_name = 'catalyst_comparision-SIR-Seattle_1Core_ByNode'
+exp_name = 'catalyst_comparison-Malaria-Haiti_grid_hh-3k'
 
 # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.
 run_sim_args =  {

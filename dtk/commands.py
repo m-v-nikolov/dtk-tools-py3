@@ -31,7 +31,6 @@ from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.Utilities.General import init_logging
 logger = init_logging('Commands')
 
-
 def builtinAnalyzers():
     analyzers = {
         'time_series': TimeseriesAnalyzer(select_function=sample_selection(), group_function=group_by_name('_site_'),
@@ -594,7 +593,17 @@ def get_package(args, unknownArgs):
     return release_dir
 
 
-def catalyst(args, unknownArgs):     # ck4, incomplete so far
+def catalyst(args, unknownArgs):
+    """
+    Catalyst run-and-analyze process as ported from the test team.
+    Programmatic-only arguments:
+        args.mode : used by FidelityReportExperimentDefinition, default: 'prod'
+        args.report_label : attached to the experiment name
+        args.debug : True/False, passed into FidelityReportAnalyzer, default: False
+    :param args:
+    :param unknownArgs:
+    :return:
+    """
     from dtk.utils.builders.sweep import GenericSweepBuilder
     from simtools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
     from simtools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
@@ -609,9 +618,14 @@ def catalyst(args, unknownArgs):     # ck4, incomplete so far
     mod.run_sim_args['exp_name'] = mod.run_sim_args['exp_name'] + '-development'
 
     # lining up the arguments expected by FidelityReportExperimentDefinition
-    args.mode = 'prod' # 'prod' # ck4, settable by command-line? Or perhaps hidden arg for programmatic 'def catalyst' calls?
     args.sweep = args.sweep_method
     args.report = args.report_type
+
+    # hidden, programmatic arguments
+    args.mode         = args.mode         if hasattr(args, 'mode')         else 'prod'
+    args.report_label = args.report_label if hasattr(args, 'report_label') else None
+    args.debug =        args.debug        if hasattr(args, 'debug')        else False
+
 
     # Create and set a builder to sweep over population scaling or model timestep
     # ck4, combine pop_sampling.json and time_steps.json into one.
@@ -628,8 +642,10 @@ def catalyst(args, unknownArgs):     # ck4, incomplete so far
         raise ValueError('Invalid sweep type: %s' % args.sweep_type)
 
     catalyst_config = json.loads(open(catalyst_config_file, 'r').read())
-    defn = FidelityReportExperimentDefinition(catalyst_config,
-                                              args)  # ck4, make sure the args in THIS method line up with what is used by this class
+    defn = FidelityReportExperimentDefinition(catalyst_config, args)
+
+    # redefine the experiment name so it doesn't conflict with the likely follow-up non-catalyst experiment
+    mod.run_sim_args['exp_name'] = 'Catalyst-' + mod.run_sim_args['exp_name']
 
     # define the sweep to perform
     sweep_dict = {
@@ -669,12 +685,12 @@ def catalyst(args, unknownArgs):     # ck4, incomplete so far
                                       'campaign.json',
                                       mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
                                       experiment_definition = defn,
-                                      label='testingReport', # ck4 restore choice args.report_label,
+                                      label=args.report_label,
                                       time_series_step_from=defn['step_from'],
                                       time_series_step_to=defn['step_to'],
                                       time_series_equal_step_count=True,
                                       raw_data=True, #args.raw_data, # ck4, restore choice
-                                      debug=False) # ck4, restore choice? args.debug))
+                                      debug=args.debug)
     am.add_analyzer(analyzer)
     am.analyze()
 

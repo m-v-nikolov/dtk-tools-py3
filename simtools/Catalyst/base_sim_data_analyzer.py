@@ -16,19 +16,6 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
     # def __init__(self, out_root_dir_path, demog_path, stdout_filename=None, stdout_filters = [],config_name = 'config.json', campaign_name = 'campaign.json', spatial_channel_names = [], inset_channel_names = [], label = None):
     def __init__(self, output_path, config_file, campaign_file, demographics_file, stdout_filename=None, stdout_filters = [],
                  spatial_channel_names=[], inset_channel_names=[], label=None):
-        # ck4, might need some of these args
-        #, demog_path, stdout_filename=None, stdout_filters=[],
-        #         config_name='config.json', campaign_name='campaign.json', spatial_channel_names=[],
-        #         inset_channel_names=[], label=None):
-
-        # set all args to self
-        # import inspect
-        # frame = inspect.currentframe()
-        # args, _, _, values = inspect.getargvalues(frame)
-        # for key in args:
-        #     if key != 'self' and not hasattr(self, key):
-        #         setattr(self, key, values[key])
-        #         setattr(self, key, values[key])
         self.config_file = config_file
         self.campaign_file = campaign_file
         self.demographics_file = demographics_file
@@ -133,7 +120,6 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         # ck4, we need to fix up how the raw_data is read in; this is just bad to force the user to do this
         sd.config = json.loads(parser.raw_data[ os.path.basename(self.config_file) ].getvalue().decode('UTF-8'))['parameters']
         # print('************************ config data: %s' % sd.config)
-        # print('xyz')
 
         # output
 
