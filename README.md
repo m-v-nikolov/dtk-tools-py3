@@ -33,10 +33,10 @@ If the command succeed and present you with the details of the dtk command you a
 
 
 #### MAC users ####
-Please refer to [MacOSX install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#id6) for more information.
+Please refer to [MacOSX install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#mac-osx-installation) for more information.
 
 #### CentOS7 users
-Please refer to [CentOS install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#id3) for more information.
+Please refer to [CentOS install instructions](http://institutefordiseasemodeling.github.io/dtk-tools/gettingstarted.html#centos-7-installation) for more information.
 
 
 #### Setup
