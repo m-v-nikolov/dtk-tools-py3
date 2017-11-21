@@ -102,11 +102,11 @@ Refer to http://brew.sh/index.html
 
 Install Python with the command::
 
-    brew install python
+    brew install python3
 
 Install virtualenv::
 
-    pip install virtualenv
+    pip3 install virtualenv
 
 Then navigate inside the `dtk-tools` directory and create an IDM virtual environment::
 
@@ -120,9 +120,10 @@ Make sure you are in the virtual environment by checking if the prompt displays 
 
     (idm) my-computer:dtk-tools
 
-Install pyCOMPS (wheel available `here <https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0.1-py2.py3-none-any.whl>`_ )::
+Download and install pyCOMPS::
 
-    pip install pyCOMPS-1.0.1-py2.py3-none-any.whl
+    curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+    pip3 install pyCOMPS-2.1-py2.py3-none-any.whl
 
 Navigate inside the `dtk-tools` folder and install dtk-tools::
 
