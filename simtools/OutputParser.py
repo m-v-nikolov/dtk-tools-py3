@@ -108,7 +108,7 @@ class SimulationOutputParser(threading.Thread):
         self.raw_data[filename] = content
 
     def load_csv_file(self, filename, content):
-        if not isinstance(content, StringIO):
+        if not isinstance(content, StringIO) and not isinstance(content, BytesIO):
             content = StringIO(content)
 
         csv_read = pd.read_csv(content, skipinitialspace=True)
