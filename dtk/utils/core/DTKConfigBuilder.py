@@ -290,9 +290,9 @@ class DTKConfigBuilder(SimConfigBuilder):
             else:
                 input_files.append(filepath)
 
-            # If it is a .bin -> add the associated json
+            # If it is a .bin -> add the associated json (except for loadbalancing)
             base_filename, extension = os.path.splitext(filepath)
-            if extension == ".bin": input_files.append("%s.json" % filepath)
+            if extension == ".bin" and filename != "Load_Balance_Filename": input_files.append("%s.json" % filepath)
 
         # just in case we somehow have duplicates
         input_files = list(set(input_files))
