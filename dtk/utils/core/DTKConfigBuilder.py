@@ -438,7 +438,7 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         # Retrieve all the events in the campaign file
         events_from_campaign = re.findall(
-            r"['\"](?:Blackout_Event_Trigger|Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str,
+            r"['\"](?:Blackout_Event_Trigger|Broadcast_Event|Event_Trigger|Event_To_Broadcast|Took_Dose_Event)['\"]:\s['\"](.*?)['\"]", campaign_str,
             re.DOTALL)
 
         # Get all the Trigger condition list too and add them to the campaign events
