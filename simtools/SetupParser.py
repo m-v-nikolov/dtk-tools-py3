@@ -42,6 +42,7 @@ class SetupParserMeta(type):
                 kwargs['old_style_instantiation'] = False
             cls.singleton = SetupParser(selected_block=selected_block, **kwargs)
         cls.initialized = True
+        cls.singleton.validate()
 
     @classmethod
     @fasteners.interprocess_locked(os.path.join(current_dir, '.setup_parser_init_lock'))  # shared with .init()
@@ -147,6 +148,19 @@ class SetupParser(metaclass=SetupParserMeta):
         if self.setup.get(self.selected_block, 'type') == "HPC" and not is_testing:
             from simtools.Utilities.COMPSUtilities import COMPS_login
             COMPS_login(self.setup.get(self.selected_block, 'server_endpoint'))
+
+    def validate(self):
+        """
+        Validate the configuration.
+        """
+        # Make sure we dont have both collection and local path specified
+        from simtools.AssetManager.SimulationAssets import SimulationAssets
+        for ctype, local_path in SimulationAssets.SETUP_MAPPING.items():
+            if self.get("base_collection_id_{}".format(ctype)) and self.get(local_path):
+                print("Both the base_collection_id_{} and the {} attributes are specified in the simtools.ini file.".format(ctype, local_path))
+                print("Please empty the value of one or the other as the tools cannot determine which one to use.")
+                print("simtools.ini location: {}".format(self.overlay_path or self.default_file))
+                exit()
 
     def config_parser_from_file(self, ini_file):
         """

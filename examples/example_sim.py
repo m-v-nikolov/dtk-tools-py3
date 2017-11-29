@@ -4,7 +4,6 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
-
 SetupParser.default_block = 'HPC'
 
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM', Simulation_Duration=3650)
