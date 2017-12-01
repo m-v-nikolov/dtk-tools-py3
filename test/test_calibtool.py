@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shutil
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from scipy.stats import norm, uniform, multivariate_normal
 from calibtool.IterationState import IterationState
 from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContainer
@@ -20,6 +20,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.Initialization import load_config_module
+from simtools.Utilities.Experiments import validate_exp_name
 
 
 class TestCommands(unittest.TestCase):
@@ -122,7 +123,7 @@ class TestCommands(unittest.TestCase):
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
-        self.assertTrue(utils.validate_exp_name(manager.name))
+        self.assertTrue(validate_exp_name(manager.name))
 
     def test_missing_files(self):
         os.chdir(self.calibration_dir)
@@ -144,7 +145,7 @@ class TestCommands(unittest.TestCase):
 
         # Py-passing 'Campaign_Filename' for now.
         if 'Campaign_Filename' in missing_files:
-            print "By-passing file '%s'..." % missing_files['Campaign_Filename']
+            print("By-passing file '%s'..." % missing_files['Campaign_Filename'])
             missing_files.pop('Campaign_Filename')
 
         self.assertEqual(len(missing_files), 0)
@@ -294,7 +295,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(self.run_info[1], self.resume_info[1])
 
     def test_resume_point_black_box2(self):
-        print 'test_resume_point_black_box2'
+        print('test_resume_point_black_box2')
         self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
         self.run_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
                          os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
