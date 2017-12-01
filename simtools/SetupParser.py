@@ -135,8 +135,7 @@ class SetupParser(metaclass=SetupParserMeta):
         # Apply the overlay if one was found
         if self.overlay_path:
             overlay = self.config_parser_from_file(self.overlay_path)
-            # Overlay the overlay to itself for type inheritance (same as for the basic file few lines before)
-            self.setup = self._overlay_setup(overlay, self.setup)
+            self.setup = self._overlay_setup_and_resolve_inheritance(overlay, self.setup)
 
         # Verify that we have the requested block in our overlain result
         if not self.setup.has_section(self.selected_block):
@@ -173,8 +172,6 @@ class SetupParser(metaclass=SetupParserMeta):
         ret = BetterConfigParser()
         ret.read(ini_file)
         ret.set('DEFAULT', 'user', LocalOS.username)
-        self.resolves_type_inheritance(ret)
-
         return ret
 
     def old_style_instantiation(self, selected_block, setup_file, commissioning_directory, overrides, is_testing):
@@ -225,22 +222,32 @@ class SetupParser(metaclass=SetupParserMeta):
             raise self.InvalidBlock('All simtools.ini blocks must have a \'type\'. Missing in block: %s' % current_block)
 
         block_type = parser.get(current_block, 'type')
-        if current_block != block_type: # e.g. terminate recursion on block 'HPC' with type 'HPC'
+        is_root_block = (current_block == block_type)
+
+        if is_root_block:
+            merged_options = {}
+        else:
+            # e.g. terminate recursion on block 'HPC' with type 'HPC'
             # continue down the inheritance chain
             parent = block_type
             if not parser.has_section(parent):
                 raise self.InvalidBlock('simtools.ini block: %s is of type: %s, but there is no such block.'
                                         % (current_block, parent))
             block_type, merged_options = self._merge_inherited_options(parser, current_block=parent)
-        else:
-            merged_options = {}
 
         # merge this current block's info on top of any results from deeper recursion results
-        for item in parser.items(current_block):
+        #
+        # we absolutely must not let default values apply to any block EXCEPT 'name == type' blocks e.g. HPC/LOCAL
+        # Inheritance takes care of the rest.
+        # ... in other words ...
+        # root blocks are allowed to report default values here, and all blocks are allowed to report non-default
+        # values
+        exclusion = not is_root_block
+        for item in parser.items(section=current_block, exclude_default_value_items=exclusion):
             merged_options[item[0]] = item[1]
         return block_type, merged_options
 
-    def resolves_type_inheritance(self, parser):
+    def resolve_type_inheritance(self, parser):
         """
         Merges simtools.ini block inheritance chains for a given block, setting its parser values. The 'type'
         key/parameter is INVERSELY inherited from the deepest member of block's inheritance chain.
@@ -269,7 +276,7 @@ class SetupParser(metaclass=SetupParserMeta):
             parser.set(section, 'type', block_type)
         return parser
 
-    def _overlay_setup(self, master, slave):
+    def _overlay_setup_and_resolve_inheritance(self, master, slave):
         """
         Overlays the master ConfigParser on another the slave one and returns the result.
         Overlays all the blocks found there.
@@ -317,6 +324,11 @@ class SetupParser(metaclass=SetupParserMeta):
 
         # Overlays all sections of master on slave
         for section in master.sections():
+            if not master.has_option(section, 'type'):
+                raise self.InvalidBlock(
+                    'All simtools.ini blocks must have a \'type\'. Missing in block: %s' % section)
+            section_type = master.get(section, 'type')
+            is_root_section = (section == section_type)
 
             # The overlaid section doesnt exist in the setup -> create it
             if not slave.has_section(section):
@@ -324,11 +336,17 @@ class SetupParser(metaclass=SetupParserMeta):
                 slave.add_section(section)
 
             # Override the items
-            for item in master.items(section):
+            #
+            # we absolutely must not let default values apply to any block EXCEPT 'name == type' blocks e.g. HPC/LOCAL
+            # Inheritance takes care of the rest.
+            # ... in other words ...
+            # root blocks are allowed to report default values here, and all blocks are allowed to report non-default
+            # values
+            exclusion = not is_root_section
+            for item in master.items(section=section, exclude_default_value_items=exclusion):
                 slave.set(section, item[0], item[1])
 
-        slave = self.resolves_type_inheritance(slave)
-
+        slave = self.resolve_type_inheritance(slave)
         return slave
 
     @classmethod
