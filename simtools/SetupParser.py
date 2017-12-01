@@ -237,7 +237,6 @@ class SetupParser(metaclass=SetupParserMeta):
 
         # merge this current block's info on top of any results from deeper recursion results
         for item in parser.items(current_block):
-            print('merging options from block: %s' % current_block)
             merged_options[item[0]] = item[1]
         return block_type, merged_options
 
