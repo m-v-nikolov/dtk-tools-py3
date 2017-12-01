@@ -117,7 +117,7 @@ class Experiment(Base):
         return False
 
     def get_simulations_with_tag(self, tag, value):
-        return [sim for sim in self.simulations if sim.tags.has_key(tag) and sim.tags[tag] == value]
+        return [sim for sim in self.simulations if tag in sim.tags and sim.tags[tag] == value]
 
     def get_simulation_by_id(self, sim_id):
         for sim in self.simulations:

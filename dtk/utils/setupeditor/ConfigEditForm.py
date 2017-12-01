@@ -202,7 +202,7 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
         block_name = value.upper().replace(' ', '_')
 
         if block_name in ("", "DEFAULT", "NODE_GROUP", "PRIORITY"):
-            print "The block needs to have a valid name!"
+            print("The block needs to have a valid name!")
             return
 
         if self.block:

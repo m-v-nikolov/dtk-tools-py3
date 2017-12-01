@@ -183,7 +183,7 @@ class ConfigEditionForm(npyscreen.FormMultiPageAction):
         for field in definitions:
             type = field['type']
             # Retrieve the current value if present
-            value = self.block[field['name']] if self.block and self.block.has_key(field['name']) else None
+            value = self.block[field['name']] if self.block and field['name'] in self.block else None
 
             if type == "string" or type == "url":
                 # Simple text box for string and url
