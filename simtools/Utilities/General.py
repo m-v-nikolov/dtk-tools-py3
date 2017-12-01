@@ -273,7 +273,7 @@ def rmtree_f_on_error(func, path, exc_info):
         os.chmod(path, stat.S_IWUSR)
         func(path)
     else:
-        raise
+        raise NameError('os.access error!')
 
 
 def is_running(pid, name_part):
