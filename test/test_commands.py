@@ -119,7 +119,7 @@ class TestCommands(unittest.TestCase):
 
     def get_file_contents(self, filename):
         self.assertTrue(os.path.exists(filename))
-        with file(filename) as f:
+        with open(filename, "r") as f:
             text = f.read()
         return text
 # class TestCommands
