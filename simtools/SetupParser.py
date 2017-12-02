@@ -135,7 +135,9 @@ class SetupParser(metaclass=SetupParserMeta):
         # Apply the overlay if one was found
         if self.overlay_path:
             overlay = self.config_parser_from_file(self.overlay_path)
-            self.setup = self._overlay_setup_and_resolve_inheritance(overlay, self.setup)
+        else:
+            overlay = None
+        self.setup = self._overlay_setup_and_resolve_inheritance(overlay, self.setup)
 
         # Verify that we have the requested block in our overlain result
         if not self.setup.has_section(self.selected_block):
@@ -318,33 +320,34 @@ class SetupParser(metaclass=SetupParserMeta):
         :param slave: The ConfigParger to overlay on
         :return Resulting ConfigParser
         """
-        # Handle the defaults
-        for item in master.defaults():
-            slave.set('DEFAULT', item, master.get('DEFAULT', item))
+        if master is not None:
+            # Handle the defaults
+            for item in master.defaults():
+                slave.set('DEFAULT', item, master.get('DEFAULT', item))
 
-        # Overlays all sections of master on slave
-        for section in master.sections():
-            if not master.has_option(section, 'type'):
-                raise self.InvalidBlock(
-                    'All simtools.ini blocks must have a \'type\'. Missing in block: %s' % section)
-            section_type = master.get(section, 'type')
-            is_root_section = (section == section_type)
+            # Overlays all sections of master on slave
+            for section in master.sections():
+                if not master.has_option(section, 'type'):
+                    raise self.InvalidBlock(
+                        'All simtools.ini blocks must have a \'type\'. Missing in block: %s' % section)
+                section_type = master.get(section, 'type')
+                is_root_section = (section == section_type)
 
-            # The overlaid section doesnt exist in the setup -> create it
-            if not slave.has_section(section):
-                # Create the section
-                slave.add_section(section)
+                # The overlaid section doesnt exist in the setup -> create it
+                if not slave.has_section(section):
+                    # Create the section
+                    slave.add_section(section)
 
-            # Override the items
-            #
-            # we absolutely must not let default values apply to any block EXCEPT 'name == type' blocks e.g. HPC/LOCAL
-            # Inheritance takes care of the rest.
-            # ... in other words ...
-            # root blocks are allowed to report default values here, and all blocks are allowed to report non-default
-            # values
-            exclusion = not is_root_section
-            for item in master.items(section=section, exclude_default_value_items=exclusion):
-                slave.set(section, item[0], item[1])
+                # Override the items
+                #
+                # we absolutely must not let default values apply to any block EXCEPT 'name == type' blocks e.g. HPC/LOCAL
+                # Inheritance takes care of the rest.
+                # ... in other words ...
+                # root blocks are allowed to report default values here, and all blocks are allowed to report non-default
+                # values
+                exclusion = not is_root_section
+                for item in master.items(section=section, exclude_default_value_items=exclusion):
+                    slave.set(section, item[0], item[1])
 
         slave = self.resolve_type_inheritance(slave)
         return slave
