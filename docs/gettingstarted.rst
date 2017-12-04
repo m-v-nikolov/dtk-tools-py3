@@ -135,8 +135,8 @@ Navigate inside the `dtk-tools` folder and install dtk-tools::
     .. code-block:: bash
 
         brew install homebrew/dupes/tcl-tk
-        brew uninstall python
-        brew install python --with-brewed-tk
+        brew uninstall python3
+        brew install python3 --with-brewed-tk
 
 Testing your installation
 -------------------------
