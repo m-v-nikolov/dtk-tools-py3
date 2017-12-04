@@ -607,41 +607,48 @@ def catalyst(args, unknownArgs):
     from dtk.utils.builders.sweep import GenericSweepBuilder
     from simtools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
     from simtools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
-
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
 
     mod = args.loaded_module
 
     # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.
-    # ck4, modify the original exp_name as-per orig catalyst script
     mod.run_sim_args['exp_name'] = mod.run_sim_args['exp_name'] + '-development'
 
     # lining up the arguments expected by FidelityReportExperimentDefinition
     args.sweep = args.sweep_method
-    args.report = args.report_type
 
     # hidden, programmatic arguments
     args.mode         = args.mode         if hasattr(args, 'mode')         else 'prod'
     args.report_label = args.report_label if hasattr(args, 'report_label') else None
     args.debug =        args.debug        if hasattr(args, 'debug')        else False
 
-
     # Create and set a builder to sweep over population scaling or model timestep
     # ck4, combine pop_sampling.json and time_steps.json into one.
-    # ck4, add a per-sweep mode field: 'allowed_reports': ['malaria', 'tb', ...] to reject invalid combos BEFORE they
-    # are run.
-    if args.sweep_type == 'popscaling': # or args.sweep_type == 'timestep':
-        # ck4, fix this ugly pathing
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst',
-                                            'pop_sampling.json')
+    if args.report_definitions:
+        report_defn_file = args.report_definitions
+    else:
+        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'reports.json')
+
+    with open(report_defn_file, 'r') as f:
+        reports = json.loads(f.read())
+    if args.report_type in reports:
+        args.report_channel_list = reports[args.report_type]['inset_channel_names']
+    else:
+        raise Exception('Invalid report: %s. Available reports: %s' % (args.report_type, sorted(reports.keys())))
+
+    # ck4, fix this ugly pathing
+    if args.sweep_definitions:
+        catalyst_config_file = args.sweep_definitions
+    elif args.sweep_type == 'popscaling':
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'pop_sampling.json')
     elif args.sweep_type == 'timestep':
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst',
-                                            'time_steps.json')
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'time_steps.json')
     else:
         raise ValueError('Invalid sweep type: %s' % args.sweep_type)
 
-    catalyst_config = json.loads(open(catalyst_config_file, 'r').read())
+    with open(catalyst_config_file, 'r') as f:
+        catalyst_config = json.loads(f.read())
     defn = FidelityReportExperimentDefinition(catalyst_config, args)
 
     # redefine the experiment name so it doesn't conflict with the likely follow-up non-catalyst experiment
@@ -653,8 +660,6 @@ def catalyst(args, unknownArgs):
         defn['sweep_param']: defn['sweep_values']
     }
     mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
-
-    print('running catalyst method! 4')
 
     # overwrite spatial output channels to those used in the catalyst report
     spatial_channel_names = defn['spatial_channel_names']

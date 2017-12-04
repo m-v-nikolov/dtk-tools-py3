@@ -35,6 +35,14 @@ def populate_catalyst_arguments(subparsers, func):
                                  help="Saves raw simulation data into a raw_data.csv file. This option may noticeably increase the report generation time.")
     parser_catalyst.add_argument('-l', '--report_label', default=None, type=str,
                                  help='Additional descriptive label to attach to reporting directory (Default: None)')
+
+
+    parser_catalyst.add_argument('--sweep_definitions', default=None, type=str,
+                                 help='A JSON file that defines the available sweeps for use (Default: built-in JSON)')
+    parser_catalyst.add_argument('--report_definitions', default=None, type=str,
+                                 help='A JSON file that defines the available report types '
+                                      '(Default: simtools/Catalyst/reports.json)')
+
     parser_catalyst.set_defaults(func=func)
 
 
