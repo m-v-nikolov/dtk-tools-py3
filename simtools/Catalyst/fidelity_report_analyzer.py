@@ -52,9 +52,7 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         return True
 
     def apply(self, parser):
-        print('calling super apply')
         super(FidelityReportAnalyzer, self).apply(parser)
-        print('returned from super apply')
 
         sd = self.sim_data[parser.sim_id]
         result = sd.to_df(['Run_Number', self.sweep_param])
@@ -68,22 +66,7 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
             with open(exp_def_path, 'w') as exp_def_file:
                 json.dump(self.exp_def, exp_def_file, sort_keys=True, indent=4)
 
-        # Concatenate data from all sims
-        # for k in parsers:
-        #     print('*** parser selected data keys: %s' % parsers[k].selected_data.keys())
-
-        # print('parser keys: %s' % [p.selected_data.keys() for p in parsers)
-        from pprint import pprint
-        print('parsers is a: %s' % type(parsers))
-        print("parser keys (%d of them): %s" % (len(parsers.keys()), parsers.keys()))
-        # print('selected data keys (%d of them): %s' % (len()))
-        print('my id: %s' % id(self))
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
-        print('***** diagnostics: %s %s %s' % (len(parsers.values()), len(selected), id(self)))
-
-        print('*******')
-        for p in parsers.values():
-            print('ids in this parser: %s' % p.selected_data.keys())
 
         max_step_count = max([len(df) for df in selected])
         # in case of 'time step' sweep, inset chart time series will be shorter so we need to expand them to the original size
@@ -102,6 +85,8 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         self.result = pd.concat([df.iloc[step_from:step_to] for df in selected])
 
     def finalize(self):
+        import json
+
         self.exp_def['duration'] = list(self.sim_data.values())[0].sim_duration
 
         print('\nCreating reports...')
@@ -111,15 +96,20 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         if os.path.isfile(raw_path): os.remove(raw_path)
         if self.raw_data:
             self.result.to_csv(raw_path, index=False)
-        print('MAKING FIDELITYHTMLREPORT')
+
         # ck4, self.exp_path should use ... sim.experiment.some_path ?? must be a standard in dtk tools for this
         rpt = FidelityHTMLReport(self.result, self.exp_path, list(self.sim_data.values())[0].demog.node_count, debug = self.debug, **self.exp_def.get_report_instance_args())
-        print('MAKING SUMMARY PAGE')
         rpt.create_summary_page()
 
         # TODO: parallelize, requires some refactoring
         for channel in self.inset_channel_names:
             rpt.create_channel_detail_page(channel)
+
+        # write out some metadata that used to be part of a very long dir path
+        metadata = {'experiment_name': self.exp_name, 'experiment_id': self.exp_id, 'label': self.label}
+        metadata_filename = os.path.join(self.exp_path, 'experiment_metadata.json')
+        with open(metadata_filename, 'w') as f:
+            f.write(json.dumps(metadata))
 
         # This parallelization approach didn't work likely due to the shared _measure_cache.
         # from multiprocessing.dummy import Pool as ThreadPool

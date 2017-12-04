@@ -60,18 +60,9 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         self.asset_filenames = asset_filenames
 
         filenames = [os.path.normpath(f) for f in filenames]
-        print('filenames to get:\n%s' % filenames)
-        # exit()
+
         # init superclass now that filenames are assembled
         super(BaseSimDataAnalyzer, self).__init__(filenames=filenames, output_path=output_path)
-
-        # # output
-        # # self.filenames.append('status.txt')
-        # if self.inset_channel_names is not None and len(self.inset_channel_names) > 0:
-        #     self.filenames.append(os.path.join('output', 'InsetChart.json'))
-        # if self.stdout_filename is not None:
-        #     self.filenames.append(self.stdout_filename)
-        # self.filenames = [os.path.normpath(f) for f in self.filenames]
 
         self.sim_data = defaultdict(SimData)
 
@@ -91,17 +82,11 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
 
     def apply(self, parser):
         # download self.filenames
-        print('calling super apply (DownloadAnalyzer)...')
         super(BaseSimDataAnalyzer, self).apply(parser)
-        print('returned from DownloadAnalyzer apply')
-        # download self.asset_filenames
-        from COMPS.Data import AssetCollection
-        from COMPS.Data import QueryCriteria
 
         output_directory = self.get_sim_folder(parser)
         get_asset_files_for_simulation_id(sim_id=parser.sim_id, file_paths=self.asset_filenames,
                                           output_directory=output_directory)
-        print('GOT ASSET FILES')
         sd = SimData()
 
         sd.sim_id = parser.sim_id
@@ -112,14 +97,10 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
 
         # input
         # ck4, should use raw_data for demographics info, but not a huge deal since we downloaded it
-        # sd.demog = DemographicsFile( os.path.basename(self.demographics_file) )
-        print('Available keys:\n%s' % parser.raw_data.keys())
-        # sd.demog = DemographicsFile(data=parser.raw_data[ os.path.basename(self.demographics_file) ] )
         sd.demog = DemographicsFile(demog_path=os.path.join(output_directory, self.demographics_file_basename))
 
         # ck4, we need to fix up how the raw_data is read in; this is just bad to force the user to do this
         sd.config = json.loads(parser.raw_data[ os.path.basename(self.config_file) ].getvalue().decode('UTF-8'))['parameters']
-        # print('************************ config data: %s' % sd.config)
 
         # output
 
@@ -138,7 +119,6 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
 
         sd.spatial_channels = { name : SpatialChannel(parser, name) for name in  self.spatial_channel_names}
         sd.inset_channels = {name: InsetChannel(parser, name) for name in self.inset_channel_names}
-
         sd.serialized_files = SerializedFiles(parser, sd.step_count)
         if self.stdout_filename is not None:
             sd.stdout = StdOutFile(parser,self.stdout_filename, self.stdout_filters)
@@ -177,12 +157,10 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         if self.exp_name is None or self.exp_id is None:
             raise Exception('Experiment failed or missing. Cannot construct experiment dir path.')
 
-        exp_path = os.path.join(self.output_path, '{}-{}_{}'.format(self.exp_name, label, self.exp_id.replace('_', '-')))
-        exp_path = exp_path.replace('-_', '_')
-
+        # make the reporting directory if it doesn't exist + write out some experiment metadata
+        exp_path = os.path.join(self.output_path, 'catalyst_report')
         if not os.path.isdir(exp_path):
             os.makedirs(exp_path)
-
         return exp_path
 
     def get_result_path(self, name):
@@ -352,8 +330,6 @@ class SimData:
     @property
     def actual_step_count(self):
         actual = None
-        print('----------> inset_channels: is None? %s type: %s len: %s' %
-              (self.inset_channels is None, type(self.inset_channels), len(self.inset_channels.keys())))
         if self.inset_channels is not None and len(self.inset_channels.keys()) > 0:
             actual = list(self.inset_channels.values())[0].step_count
 
