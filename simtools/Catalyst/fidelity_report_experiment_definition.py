@@ -21,7 +21,7 @@ class FidelityReportExperimentDefinition(defaultdict):
             self.set_keys(xd_json)
         else:
             # 2. using input arguments and experiment definition from the specified fidelity report .json file (can be detected by the presence of the 'default' key )
-            self.init_experiment_definition(xd_json, args.mode, args.sweep, args.report)
+            self.init_experiment_definition(xd_json, args.mode, args.sweep, args.report_channel_list)
 
         # Override experiment definition with keys specified from command line
         for k in FidelityHTMLReport.all_keys():
@@ -59,11 +59,10 @@ class FidelityReportExperimentDefinition(defaultdict):
 
         self.init_spatial_channel_names(channel_map)
 
-    def init_experiment_definition(self, xd_json, mode, sweep, report):
+    def init_experiment_definition(self, xd_json, mode, sweep, report_channel_list):
         # default no longer allowed to better allow error distinction/handling
         run_mode_name = mode
         sweep_type_name = sweep
-        report_channel_list = report
 
         self['mode'] = run_mode_name
         self['sweep'] = sweep_type_name
@@ -91,11 +90,7 @@ class FidelityReportExperimentDefinition(defaultdict):
                                         (sweep_type_name, list(sweeps.keys())))
         self.set_keys(sweeps[sweep_type_name])
 
-        reports = xd_json['reports']
-        if report_channel_list not in reports:
-            raise self.InvalidSelection('Invalid report type: %s . Must be one of: %s' %
-                                        (report_channel_list, list(reports.keys())))
-        self.set_keys(reports[report_channel_list])
+        self.set_keys({'inset_channel_names': report_channel_list})
 
         # validate if required keys are present
         missing_keys = []
