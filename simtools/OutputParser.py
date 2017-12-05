@@ -177,12 +177,11 @@ class CompsDTKOutputParser(SimulationOutputParser):
             super(CompsDTKOutputParser, self).load_all_files(filenames)
             return
 
-        # can't open files locally... we have to go through the COMPS asset service
-        paths = [filename.replace('\\', '/') for filename in filenames]
+        filenames = [filename.replace("\\", os.sep).replace("/", os.sep) for filename in filenames]
 
         # Separate the path into asset collection and transient files
-        assets = [path for path in paths if path.lower().startswith("assets")]
-        transient = [path for path in paths if not path.lower().startswith("assets")]
+        assets = [path for path in filenames if path.lower().startswith("assets")]
+        transient = [path for path in filenames if not path.lower().startswith("assets")]
 
         byte_arrays = {}
 
@@ -196,7 +195,7 @@ class CompsDTKOutputParser(SimulationOutputParser):
 
         if assets:
             try:
-                byte_arrays.update(get_asset_files_for_simulation_id(self.sim_id, paths=assets, remove_prefix='Assets/'))
+                byte_arrays.update(get_asset_files_for_simulation_id(self.sim_id, paths=assets, remove_prefix='Assets'))
             except RuntimeError:
                 print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
                       .format(self.sim_id, assets))
