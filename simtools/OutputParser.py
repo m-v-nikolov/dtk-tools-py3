@@ -9,7 +9,8 @@ from io import StringIO, BytesIO
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
 
-from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
+from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id, \
+    get_asset_files_for_simulation_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
@@ -99,7 +100,7 @@ class SimulationOutputParser(threading.Thread):
         elif file_extension == 'bin' and 'SpatialReport' in filename:
             self.load_bin_file(filename, content)
         else:
-            print(filename + ' is of an unknown type.  Skipping...')
+            self.load_raw_file(filename, content)
 
     def load_json_file(self, filename, content):
         self.raw_data[filename] = json.load(content)
@@ -179,14 +180,29 @@ class CompsDTKOutputParser(SimulationOutputParser):
         # can't open files locally... we have to go through the COMPS asset service
         paths = [filename.replace('\\', '/') for filename in filenames]
 
-        try:
-            asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
-        except RuntimeError as ex:
-            print("Could not retrieve file for simulation {} - Requested files: {}. Parser exiting..."
-                  .format(self.sim_id, paths))
-            exit()
+        # Separate the path into asset collection and transient files
+        assets = [path for path in paths if path.lower().startswith("assets")]
+        transient = [path for path in paths if not path.lower().startswith("assets")]
 
-        for filename, byte_array in zip(filenames, asset_byte_arrays):
+        byte_arrays = {}
+
+        if transient:
+            try:
+                byte_arrays.update(dict(zip(transient, self.COMPS_simulation.retrieve_output_files(paths=transient))))
+            except RuntimeError:
+                print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
+                      .format(self.sim_id, transient))
+                exit()
+
+        if assets:
+            try:
+                byte_arrays.update(get_asset_files_for_simulation_id(self.sim_id, paths=assets, remove_prefix='Assets/'))
+            except RuntimeError:
+                print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
+                      .format(self.sim_id, assets))
+                exit()
+
+        for filename, byte_array in byte_arrays.items():
             self.load_single_file(filename, byte_array)
 
     def get_sim_dir(self):
