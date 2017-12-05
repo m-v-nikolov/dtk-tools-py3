@@ -216,7 +216,7 @@ def add_node_IRS(config_builder, start=0, initial_killing=0.5, box_duration=90, 
                              "Trigger_Condition_List": trigger_condition_list,
                              "Duration": listening_duration,
                              "Node_Property_Restrictions": node_property_restrictions,
-                             "Blackout_Event_Trigger": "IRS_Blackout_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
+                            # "Blackout_Event_Trigger": "IRS_Blackout_Event_Trigger", #we don't care about this, just need something to be here so the blackout works at all
                              "Blackout_Period": 1, # so we only distribute the node event(s) once
                              "Blackout_On_First_Occurrence": 1,
                              "Target_Residents_Only": 1,
