@@ -19,7 +19,7 @@ for config in configs:
         continue
     working_dir = os.path.abspath(config['directory'])
     os.chdir(working_dir)
-    print('cd: %s' % working_dir)
+    print('\n--------------------------------\ncd: %s' % working_dir)
     args = [arg for arg in command_root + config['args'].split(' ') if arg is not '']
     print('Calling: %s' % args)
     if not debug:
