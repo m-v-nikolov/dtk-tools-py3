@@ -9,6 +9,7 @@ Contents:
 
        intro
        gettingstarted
+       migration27
        dtk
        cli
        simtools
