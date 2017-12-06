@@ -22,4 +22,4 @@ def np2json(arr, output="data.json"):
                     f.write(",")
             f.write("]")
         else:
-            print "Unsupported array dimension " + str(arr.ndim) + ". Max. supported dimension 2"
+            print("Unsupported array dimension " + str(arr.ndim) + ". Max. supported dimension 2")
