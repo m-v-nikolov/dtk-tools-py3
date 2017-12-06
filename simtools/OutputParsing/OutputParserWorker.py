@@ -15,15 +15,15 @@ def get_experiment_by_id(exp_id, query_criteria=None):
 def get_simulation_by_id(sim_id, query_criteria=None):
     return Simulation.get(id=sim_id, query_criteria=query_criteria)
 
+
 def sims_from_experiment(e):
     return e.get_simulations(QueryCriteria().select(['id', 'state']).select_children('hpc_jobs'))
 
-class BaseAnalyzer(object):
+
+class BaseAnalyzer(object, metaclass=ABCMeta):
     """
     An abstract base class carrying the lowest level analyzer interfaces called by BaseExperimentManager
     """
-
-    __metaclass__ = ABCMeta
 
     filenames = []  # Files for which raw data should be parsed for apply() function
 

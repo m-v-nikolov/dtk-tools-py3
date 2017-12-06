@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-class NextPointAlgorithm:
-    __metaclass__ = ABCMeta
+class NextPointAlgorithm(metaclass=ABCMeta):
 
     def __init__(self):
         self.iteration = 0

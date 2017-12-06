@@ -6,12 +6,10 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-class BaseAnalyzer(object):
+class BaseAnalyzer(object, metaclass=ABCMeta):
     """
     An abstract base class carrying the lowest level analyzer interfaces called by BaseExperimentManager
     """
-
-    __metaclass__ = ABCMeta
 
     filenames = []  # Files for which raw data should be parsed for apply() function
 
