@@ -1,7 +1,7 @@
-from configparser import SafeConfigParser, DEFAULTSECT
+from configparser import ConfigParser, DEFAULTSECT
 
 
-class BetterConfigParser(SafeConfigParser):
+class BetterConfigParser(ConfigParser):
     """
     This ConfigParser provides a bypass_defaults flag in the has_option method to be able to check
     the config and ignore the eventual DEFAULT block.
