@@ -132,10 +132,10 @@ class TotalCasesAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
             # Not all sim_ids work, perhaps due to a failed job
             failed_sids = [sid for sid in self.sim_ids if str(sid) not in self.shelve]
             if failed_sids:
-                print 'WARNING ' * 5
-                print 'The following (%d) sim ids were not in the shelve, perhaps the jobs failed?'%len(failed_sids)
-                print '\n'.join(failed_sids)
-                print '-'*80
+                print('WARNING ' * 5)
+                print('The following (%d) sim ids were not in the shelve, perhaps the jobs failed?' % len(failed_sids))
+                print('\n'.join(failed_sids))
+                print('-' * 80)
             self.sim_ids = [sid for sid in self.sim_ids if str(sid) in self.shelve]
 
             # Not in shelve, need to combine and store in shelve

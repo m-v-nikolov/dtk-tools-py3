@@ -186,7 +186,7 @@ def LogL_func(X):
 p = 2
 global X0
 X0 = np.random.uniform(0.0, 2.0, (p, 1))
-print 'X0 =', X0
+print('X0 =', X0)
 X_min = 0
 X_max = 2
 M = 10
@@ -197,8 +197,8 @@ Fisher = FisherInfMatrix(X0, Perturb_size, M, N)
 # sigma = diag(inv(Fisher))**.5
 Covariance = np.linalg.inv(Fisher)
 
-print "eigs of fisher: ", np.linalg.eigvals(Fisher)
-print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
+print("eigs of fisher: ", np.linalg.eigvals(Fisher))
+print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
 
 print(Covariance)
 fig3 = plt.figure('CramerRao')

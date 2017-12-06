@@ -26,7 +26,7 @@ def kstest(duration, fun, alpha):
 def ztest(x, n, p, alpha):
     # print x, n, p, alpha
     if n*p < 10 or n*(1-p) < 10:
-        print "WARNING: not enough samples to use a Z-Test, marking as Fail!"
+        print("WARNING: not enough samples to use a Z-Test, marking as Fail!")
         return {'Valid': False, 'Test_Statistic': None, 'P_Value': None}
 
     p_hat = x / float(n)
