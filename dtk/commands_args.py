@@ -24,7 +24,7 @@ def populate_catalyst_arguments(subparsers, func):
     parser_catalyst.add_argument('-m', '--sweep_method', dest='sweep_method', type=str, default=None,
                                  help='The sweeping method to use (depends on sweep_type).')
     parser_catalyst.add_argument('-r', '--report', dest='report_type', type=str, default=None,
-                                 help='The type of report to generate.')
+                                 help='The type of report to generate (Default: determined by Simulation_Type in config.json).')
     parser_catalyst.add_argument('-id', '--id', dest='experiment_id', default=None,
                                 help='Experiment ID to generate a report for. No new simulations are run if provided.')
     parser_catalyst.add_argument('--start_step', default=None, type=int, dest='step_from',

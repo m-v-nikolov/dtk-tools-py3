@@ -623,6 +623,29 @@ def catalyst(args, unknownArgs):
     args.report_label = args.report_label if hasattr(args, 'report_label') else None
     args.debug =        args.debug        if hasattr(args, 'debug')        else False
 
+    # determine which report is being asked for. If not specified, default to what the config.json file says
+    # ck4, this should go somewhere else, on a Config object of some sort? (prob not the builder, though)
+    report_type_mapping = {
+        'DENGUE_SIM': 'dengue',
+        'GENERIC_SIM': 'generic',
+        'HIV_SIM': 'hiv',
+        'MALARIA_SIM': 'malaria',
+        'POLIO_SIM': 'polio',
+        'STI_SIM': 'sti',
+        'TB_SIM': 'tb',
+        'TYPHOID_SIM': 'typhoid',
+        'VECTOR_SIM': 'generic'
+    }
+    if args.report_type:
+        report_type = args.report_type
+    else:
+        sim_type = mod.run_sim_args['config_builder'].config['parameters']['Simulation_Type']
+        report_type = report_type_mapping.get(sim_type, None)
+        if not report_type:
+            raise KeyError('Default report type could not be determined for sim_type: %s. Report type must be specified'
+                           ' via -r flag.'
+                           % sim_type)
+
     # Create and set a builder to sweep over population scaling or model timestep
     # ck4, combine pop_sampling.json and time_steps.json into one.
     if args.report_definitions:
@@ -632,10 +655,10 @@ def catalyst(args, unknownArgs):
 
     with open(report_defn_file, 'r') as f:
         reports = json.loads(f.read())
-    if args.report_type in reports:
-        args.report_channel_list = reports[args.report_type]['inset_channel_names']
+    if report_type in reports:
+        args.report_channel_list = reports[report_type]['inset_channel_names']
     else:
-        raise Exception('Invalid report: %s. Available reports: %s' % (args.report_type, sorted(reports.keys())))
+        raise Exception('Invalid report: %s. Available reports: %s' % (report_type, sorted(reports.keys())))
 
     # ck4, fix this ugly pathing
     if args.sweep_definitions:
