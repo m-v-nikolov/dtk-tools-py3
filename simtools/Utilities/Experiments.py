@@ -168,7 +168,8 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
 
     from COMPS.Data import QueryCriteria
     try:
-        exp_comps = get_experiment_by_id(exp_id) or get_experiments_by_name(exp_id)[-1]
+        query_criteria = QueryCriteria().select_children('tags')
+        exp_comps = get_experiment_by_id(exp_id, query_criteria) or get_experiments_by_name(exp_id, query_criteria)[-1]
     except:
         if verbose:
             print("The experiment ('%s') doesn't exist in COMPS." % exp_id)
@@ -180,6 +181,7 @@ def COMPS_experiment_to_local_db(exp_id, endpoint, verbose=False, save_new_exper
         experiment = DataStore.create_experiment(exp_id=str(exp_comps.id),
                                                  suite_id=str(exp_comps.suite_id) if exp_comps.suite_id else None,
                                                  exp_name=exp_comps.name,
+                                                 tags=exp_comps.tags,
                                                  date_created=utc_to_local(exp_comps.date_created).replace(tzinfo=None),
                                                  location='HPC',
                                                  selected_block='HPC',

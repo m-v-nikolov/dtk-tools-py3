@@ -87,6 +87,7 @@ class Experiment(Base):
     setup_overlay_file = Column(String)
     sim_root = Column(String)
     sim_type = Column(String)
+    tags = Column(PickleType())
     command_line = Column(String)
     working_directory = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
