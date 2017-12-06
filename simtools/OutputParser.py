@@ -177,8 +177,6 @@ class CompsDTKOutputParser(SimulationOutputParser):
             super(CompsDTKOutputParser, self).load_all_files(filenames)
             return
 
-        filenames = [filename.replace("\\", os.sep).replace("/", os.sep) for filename in filenames]
-
         # Separate the path into asset collection and transient files
         assets = [path for path in filenames if path.lower().startswith("assets")]
         transient = [path for path in filenames if not path.lower().startswith("assets")]

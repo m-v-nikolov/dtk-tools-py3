@@ -27,9 +27,11 @@ from simtools.Utilities.LocalOS import LocalOS
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 from COMPS.Data.Simulation import SimulationState
+import sys
 
 def print_status_func():
     print(".", end="")
+    sys.stdout.flush()
 
 class BaseExperimentManager:
     __metaclass__ = ABCMeta
