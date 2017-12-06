@@ -85,7 +85,7 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         super(BaseSimDataAnalyzer, self).apply(parser)
 
         output_directory = self.get_sim_folder(parser)
-        get_asset_files_for_simulation_id(sim_id=parser.sim_id, file_paths=self.asset_filenames,
+        get_asset_files_for_simulation_id(sim_id=parser.sim_id, paths=self.asset_filenames,
                                           output_directory=output_directory)
         sd = SimData()
 
