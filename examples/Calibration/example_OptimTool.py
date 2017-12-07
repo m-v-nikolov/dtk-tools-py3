@@ -33,7 +33,6 @@ cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 sites = [DielmoCalibSite(), NdiopCalibSite()]
 
 # For now we will only use Dielmo
-print('Dielmo only for now')
 sites = [sites[0]]
 
 # The default plotters used in an Optimization with OptimTool

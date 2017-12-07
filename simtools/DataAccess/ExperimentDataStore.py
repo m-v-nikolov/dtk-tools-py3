@@ -6,6 +6,7 @@ from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
 from sqlalchemy.orm import joinedload
 
+from simtools.Utilities.Encoding import GeneralEncoder
 from simtools.Utilities.General import init_logging, remove_null_values
 logger = init_logging('DataAccess')
 from COMPS.Data.Simulation import SimulationState
@@ -47,8 +48,7 @@ class ExperimentDataStore:
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
-            from simtools.DataAccess.DataStore import dumper
-            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
+            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, cls=GeneralEncoder, sort_keys=True))
 
         with session_scope(session) as sess:
             sess.merge(experiment)
