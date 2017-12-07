@@ -7,30 +7,36 @@ from simtools.Utilities.General import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch,experiment, callback, return_list, save_semaphore, comps_experiment):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list, save_semaphore, comps_experiment):
         super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list)
 
         # Store the environment and endpoint
-        self.environment = SetupParser.get('environment')
         self.server_endpoint = SetupParser.get('server_endpoint')
         self.save_semaphore = save_semaphore
         self.comps_experiment = comps_experiment
 
     def create_simulation(self, cb):
-        name = cb.get_param('Config_Name') if cb.get_param('Config_Name') else self.experiment.exp_name
+        name = cb.get_param('Config_Name') or self.experiment.exp_name
         return Simulation(name=name, experiment_id=self.experiment.exp_id,
                           configuration=Configuration(asset_collection_id=cb.assets.collection_id))
 
     def save_batch(self):
         # Batch save after all sims in list have been added
         with nostdout(stderr=True):
-            Simulation.save_all(lambda *args: None, save_semaphore=self.save_semaphore)
+            Simulation.save_all(save_semaphore=self.save_semaphore)
 
+    def post_creation(self):
+        # Commission all the simulations created
+        for sim in self.created_simulations:
+            sim.commission()
+
+        # We have to do simulations one by one for now as commissioning the experiment may lead to some simulations
+        # being commission before the assets were sent successfully...
         # We may encounter 400 Bad Request if already commissioned but still we want to try commissioning every time
-        try:
-            self.comps_experiment.commission()
-        except RuntimeError:
-            pass
+        # try:
+        #     self.comps_experiment.commission()
+        # except RuntimeError:
+        #     pass
 
     def add_files_to_simulation(self, s, cb):
         files = cb.dump_files_to_string()
@@ -38,9 +44,6 @@ class COMPSSimulationCreator(BaseSimulationCreator):
             s.add_file(simulationfile=SimulationFile(name, 'input'), data=str.encode(content, 'utf-8'))
 
     def set_tags_to_simulation(self, s, tags, cb):
-        # Also add the environment
-        tags['environment'] = self.environment
-
         # And the collections ids if exits
         if cb.assets:
             for collection_type, collection in cb.assets.collections.items():
