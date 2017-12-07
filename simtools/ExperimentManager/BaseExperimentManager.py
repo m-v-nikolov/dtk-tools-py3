@@ -79,7 +79,6 @@ class BaseExperimentManager:
             exp_name=experiment_name,
             location=self.location,
             tags=self.experiment_tags,
-            analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=get_tools_revision(),
             selected_block=SetupParser.selected_block,

@@ -2,7 +2,6 @@ import datetime
 
 from simtools.DataAccess.BatchDataStore import BatchDataStore
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
-from simtools.DataAccess.Schema import Analyzer
 from simtools.DataAccess.SettingsDataStore import SettingsDataStore
 from simtools.DataAccess.SimulationDataStore import SimulationDataStore
 from simtools.Utilities.General import init_logging
@@ -33,10 +32,6 @@ class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore, Bat
     """
     Class holding static methods to abstract the access to the database.
     """
-
-    @classmethod
-    def create_analyzer(cls, **kwargs):
-        return Analyzer(**kwargs)
 
     @classmethod
     def list_leftover(cls, suite_ids, exp_ids):

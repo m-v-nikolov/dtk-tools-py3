@@ -27,7 +27,7 @@ class ExperimentDataStore:
             # Get the experiment
             # Also load the associated simulations eagerly
             experiment = session.query(Experiment).options(
-                joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                joinedload('simulations').joinedload('experiment')) \
                 .filter(Experiment.exp_id == exp_id).one_or_none()
 
             # Detach the object from the session
@@ -60,7 +60,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiment = session.query(Experiment) \
                 .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                .options(joinedload('simulations').joinedload('experiment')) \
                 .order_by(Experiment.date_created.desc()).first()
 
             session.expunge_all()
@@ -72,7 +72,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                .options(joinedload('simulations').joinedload('experiment')) \
                 .filter(~Simulation.status_s.in_((SimulationState.Succeeded.name, SimulationState.Failed.name, SimulationState.Canceled.name)))
             if location:
                 experiments = experiments.filter(Experiment.location == location)
@@ -88,7 +88,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiments = session.query(Experiment)\
                 .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers'))
+                .options(joinedload('simulations').joinedload('experiment'))
             if current_dir:
                 experiments = experiments.filter(Experiment.working_directory == current_dir)
 
