@@ -138,7 +138,7 @@ def pretty_display_assets_from_collection(assets):
         str = "Available assets for the collection:\n"
 
     for asset in assets:
-        relative_path = asset.relative_path + "\\" if asset.relative_path else ""
+        relative_path = asset.relative_path + os.sep if asset.relative_path else ""
         str += "- {}{}\n".format(relative_path, asset.file_name)
     return str
 
@@ -171,7 +171,7 @@ def get_asset_files_for_simulation_id(sim_id, paths, output_directory=None, flat
 
         # Retrieve the relative_path and the file_name for the given path
         relative_path, file_name = os.path.split(path)
-        relative_path = relative_path.strip(os.sep)
+        relative_path = relative_path.strip('\\').strip('/')
 
         # Look for the asset file in the collection
         af = None
