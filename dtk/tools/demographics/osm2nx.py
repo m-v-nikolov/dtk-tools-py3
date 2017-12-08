@@ -15,7 +15,7 @@ import networkx
  
 def download_osm(left,bottom,right,top):
     """ Return a filehandle to the downloaded data."""
-    from urllib import urlopen
+    from urllib.request import urlopen
     fp = urlopen( "http://api.openstreetmap.org/api/0.6/map?bbox=%f,%f,%f,%f"%(left,bottom,right,top) )
     return fp
  
