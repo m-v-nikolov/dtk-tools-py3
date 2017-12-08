@@ -474,9 +474,9 @@ Behave Changed
     Python 3.6, ::
 
         i = 1
-        print 'before: i =', i
-        print 'comprehension: ', [i for i in range(5)]
-        print 'after: i =', i
+        print('before: i =', i)
+        print('comprehension: ', [i for i in range(5)])
+        print('after: i =', i)
 
     .. note::
         results::
