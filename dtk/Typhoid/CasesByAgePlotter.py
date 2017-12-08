@@ -20,7 +20,7 @@ class CasesByAgePlotter(BasePlotter):
         self.fig_ext = 'png'
 
     def visualize(self, iteration_state):
-        print "CasesByAgePlotter::visualize"
+        print("CasesByAgePlotter::visualize")
         self.iteration_state = iteration_state
         self.site_analyzer_names = iteration_state.site_analyzer_names
         iteration_status = self.iteration_state.status
@@ -35,8 +35,8 @@ class CasesByAgePlotter(BasePlotter):
 
         reference = pd.DataFrame.from_dict(data_dict['reference'], orient='columns')
 
-        print 'REF:\n', reference.head()
-        print 'DATA:\n', data.head()
+        print('REF:\n', reference.head())
+        print('DATA:\n', data.head())
 
         # TODO:
         # * Error bars on barplot of data
@@ -62,7 +62,7 @@ class CasesByAgePlotter(BasePlotter):
         #plt.legend([h_bar[0], h_points[0]], [l_bar[0], l_points[0]], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
         plt.savefig(os.path.join(self.directory, 'Cases by Age.' + self.fig_ext)); plt.close()
-        print "CasesByAgePlotter::DONE"
+        print("CasesByAgePlotter::DONE")
 
     def cleanup_plot(self):
         """

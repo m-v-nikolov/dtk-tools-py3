@@ -227,9 +227,7 @@ class ImmunityOverlaysGenerator(object):
                             
                             # add overlay location to overlay list
                             overlays_list.append(overlay_file_name)
-                            
-                    
-                    
-                print str(len(overlays_list)) + " immune initialization overlay files processed successfully!"
-                        
+
+                print(str(len(overlays_list)) + " immune initialization overlay files processed successfully!")
+
         return overlays_list 

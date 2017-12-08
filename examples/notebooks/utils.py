@@ -13,7 +13,7 @@ from simtools.ExperimentManager import ExperimentManagerFactory
 def write_dtk_config(max_sims, sim_root, input_root, bin_path, exe_path):
     currentDir = os.path.dirname(os.path.abspath(__file__))
     conf_path = os.path.join(currentDir, '..', '..', 'simtools', 'simtools.cfg')
-    print conf_path
+    print(conf_path)
     config = ConfigParser.RawConfigParser()
     config.read(conf_path)
 
@@ -30,22 +30,22 @@ def write_dtk_config(max_sims, sim_root, input_root, bin_path, exe_path):
     if not os.path.exists(sim_root):
         os.mkdir(sim_root)
 
-    print "The simtools.cfg file has been successfully updated!"
+    print("The simtools.cfg file has been successfully updated!")
 
 
 def test_if_dtk_present():
     try:
         imp.find_module('dtk')
-        print "The DTK module is present and working!"
+        print("The DTK module is present and working!")
     except ImportError:
-        print "The DTK module is not present... Make sure it is properly installed and imported!"
+        print("The DTK module is not present... Make sure it is properly installed and imported!")
 
 
 def test_if_simulation_done(states):
     if states.values()[0] == "Finished":
-        print "The simulation completed successfully!"
+        print("The simulation completed successfully!")
     else:
-        print "A problem has been encountered. Please try to run the code block again."
+        print("A problem has been encountered. Please try to run the code block again.")
 
 
 def get_sim_manager():

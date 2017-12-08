@@ -18,7 +18,7 @@ def ping():
     """
     Method to validate that this script has been imported and is accessible
     """
-    print "File {0} is here!".format(__name__)
+    print("File {0} is here!".format(__name__))
 
 
 def define_arguments(parser=argparse.ArgumentParser()):
