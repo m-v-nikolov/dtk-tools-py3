@@ -39,7 +39,7 @@ def read_osm(filename_or_stream, only_roads=True):
     osm = OSM(filename_or_stream)
     G = networkx.Graph()
  
-    for w in osm.ways.itervalues():
+    for w in osm.ways.values():
         if only_roads and 'highway' not in w.tags:
             continue
         G.add_path(w.nds, id=w.id, data=w)
@@ -152,7 +152,7 @@ class OSM:
         
         #use that histogram to split all ways, replacing the member set of ways
         new_ways = {}
-        for id, way in self.ways.iteritems():
+        for id, way in self.ways.items():
             split_ways = way.split(node_histogram)
             for split_way in split_ways:
                 new_ways[split_way.id] = split_way
