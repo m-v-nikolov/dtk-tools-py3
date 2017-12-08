@@ -91,23 +91,36 @@ def FisherInfMatrix(X, Perturb_size, M=10000, N=1):
 
             [thetaPlusPlus, thetaPlusMinus, thetaMinusPlus, thetaMinusMinus] = X_perturbed[:, :, k].T
             [loglPP, loglPM, loglMP, loglMM] = Y_perturbed[:, k]
-            # print 'thetaPlusPlus=',thetaPlusPlus
-            # print 'loglPP=',loglPP
+            #print 'Y_perturbed[:, k] = ', Y_perturbed[:, k]
+            #print 'thetaPlusPlus=',thetaPlusPlus
+            #print 'thetaPlusMinus=',thetaPlusMinus
+            #print 'loglPP=',loglPP
+            #print 'loglPM=',loglPM
+            #print 'loglMP=',loglMP
+            #print 'loglMM=',loglMM
 
             G_p[:, k] = (loglPP - loglPM) / (thetaPlusPlus - thetaPlusMinus)
             G_m[:, k] = (loglMP - loglMM) / (thetaMinusPlus - thetaMinusMinus)
 
             # H_hat(n)
             S = np.dot((1 / (thetaPlusPlus - thetaMinusPlus))[:, None], (G_p[:, k] - G_m[:, k])[None, :])  # H_hat
-            # print 'S=',S
+            #print 'S=',S
             H_hat[:, :, k] = .5 * (S + S.T)
+            #print 'H_hat_%d:\n'%k, H_hat[:, :, k]
+
             H_hat_avg[:, :, k] = k / (k + 1) * H_hat_avg[:, :, k - 1] + 1 / (k + 1) * H_hat[:, :, k]
 
         # print 'G_p=',G_p
         # print 'G_m=',G_m
 
+        # TEMP
+        #print 'A:\n', H_hat_avg[:, :, M - 1]
+        #print 'B:\n', sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
+        #print 'C:\n', H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
+
         H_bar[:, :, i] = .5 * (
-        H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p)))
+            H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
+        )
         # print 'H_bar[:,:,i]=',H_bar[:,:,i]
         H_bar_avg[:, :, i] = i / (i + 1) * H_bar_avg[:, :, i - 1] + 1 / (i + 1) * H_bar[:, :, i]
 
@@ -158,17 +171,24 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
 
 
 # test the algorithm
-def likelihood(sigma, innovation):
+def log_likelihood(sigma, innovation):
+
+    # TEMPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+    sigma = 0.1
+
     # Gaussian likelihood
-    propFactor = 1 / np.sqrt(2 * np.pi * sigma)
-    l = propFactor * np.exp(-0.5 * innovation ** 2 / sigma)
-    return l
+    #print sigma, sigma**2
+    propFactor = 1 / np.sqrt(2 * np.pi * sigma**2)
+    #print 'propFactor', propFactor
+    #print 'innovation', innovation
+    ll = np.log(propFactor) + -0.5 * innovation ** 2 / sigma**2
+    #print 'll', ll
+    return ll
 
 
-def LogL_func(X):
+def LogL_func(X, sigma_obs = .1):
     n = 50
     p = len(X0)
-    sigma_obs = .01
     Z = []
     for j in range(n):
         Z.append(np.linalg.norm(X0 - np.ones(shape=(1, p))) + np.random.normal(0, sigma_obs))
@@ -176,7 +196,9 @@ def LogL_func(X):
     stdZ = np.std(Z)
     logL_X = []
     zeta = np.linalg.norm(X - np.ones(shape=(1, p))) + np.random.normal(0, sigma_obs)  # fValue(X)
-    logL_X = np.log(likelihood(stdZ, abs(zeta - meanZ)))
+    #print 'stdZ', stdZ
+    #print 'zeta - meanZ', zeta - meanZ
+    logL_X = log_likelihood(stdZ, zeta - meanZ)
     # logL_X = np.log(likelihood(sigma_obs, np.linalg.norm(X)))
     # for i in range(np.shape(X)[1]):
     #    zeta = np.linalg.norm(X[:,i]-np.ones(shape=(1,p))) + np.random.normal(0,sigma_obs) #fValue(X)
@@ -200,7 +222,7 @@ Covariance = np.linalg.inv(Fisher)
 print "eigs of fisher: ", np.linalg.eigvals(Fisher)
 print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
 
-print(Covariance)
+#print(Covariance)
 fig3 = plt.figure('CramerRao')
 ax = plt.subplot(111)
 x, y = X0[0:2]
@@ -210,4 +232,26 @@ plt.xlim(-1, 3)
 plt.ylim(-1, 3)
 plt.xlabel('X', fontsize=14)
 plt.ylabel('Y', fontsize=14)
+
+# Plot the LL function in the background
+x = y = np.arange(-1, 3, 0.1)
+D = len(x)
+X, Y = np.meshgrid(x, y)
+
+Xs = X.reshape( np.prod(X.shape), 1)
+Ys = Y.reshape( np.prod(Y.shape), 1)
+
+Xvec = np.concatenate((Xs, Ys), axis=1)
+
+def dummpy_fun(X, sigma_obs):
+    #print 'X in df:\n', X
+    return (X[0]-1)**2 + (X[1]-1)**2
+
+from functools import partial
+#Zs = np.apply_along_axis( partial(LogL_func, sigma_obs=0), axis=1, arr=Xvec)
+Zs = np.apply_along_axis( partial(dummpy_fun, sigma_obs=0), axis=1, arr=Xvec)
+Zmin = np.min(Zs)
+Zmax = np.max(Zs)
+CS = plt.contourf(X, Y, Zs.reshape(D,D), levels=np.linspace(Zmin, Zmax, 25), cmap='bone')
+
 plt.show()
