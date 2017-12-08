@@ -20,19 +20,22 @@ def populate_catalyst_arguments(subparsers, func):
                                                         'model performance.')
     parser_catalyst = in_common_run_and_catalyst_arguments(parser_catalyst)
     parser_catalyst.add_argument('-s', '--sweep_type', dest='sweep_type', required=True, choices=['timestep', 'popscaling'],
-                                 help='The type of performance sweep to run and report on.')
+                                 help='The type of performance sweep to run and report on. Required.')
     parser_catalyst.add_argument('-m', '--sweep_method', dest='sweep_method', type=str, default=None,
-                                 help='The sweeping method to use (depends on sweep_type).')
+                                 help='The sweeping method to use (depends on sweep_type). Required.')
     parser_catalyst.add_argument('-r', '--report', dest='report_type', type=str, default=None,
-                                 help='The type of report to generate (Default: determined by Simulation_Type in config.json).')
+                                 help='The type of report to generate '
+                                      '(Default: determined by Simulation_Type in config.json).')
     parser_catalyst.add_argument('-id', '--id', dest='experiment_id', default=None,
-                                help='Experiment ID to generate a report for. No new simulations are run if provided.')
+                                help='Experiment ID to generate a report for. No new simulations are run if provided '
+                                     '(Default: run simulations and generate a report).')
     parser_catalyst.add_argument('--start_step', default=None, type=int, dest='step_from',
-                                 help="Starting time step for analysis.")
+                                 help="Starting time step for analysis (Default: near beginning of simulations).")
     parser_catalyst.add_argument('--end_step', default=None, type=int, dest='step_to',
-                                 help="Ending time step for analysis.")
+                                 help="Ending time step for analysis (Default: end of simulations).")
     parser_catalyst.add_argument('--raw_data', default=False, action='store_true',
-                                 help="Saves raw simulation data into a raw_data.csv file. This option may noticeably increase the report generation time.")
+                                 help="Saves raw simulation data into a raw_data.csv file. This option may noticeably "
+                                      "increase the report generation time (Default: False).")
     parser_catalyst.add_argument('-l', '--report_label', default=None, type=str,
                                  help='Additional descriptive label to attach to reporting directory (Default: None)')
 
