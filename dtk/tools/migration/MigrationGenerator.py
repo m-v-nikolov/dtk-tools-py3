@@ -125,9 +125,9 @@ class MigrationGenerator(object):
                     
                 # convert the adjacency list node labels to the corresponding dtk ids from the demographics file, so that the adjacency list can be consumed downstream (e.g. see class GeoGraphGenerator)
                 adjacency_list_node_ids = {}
-                for node_label, node_links in self.adjacency_list.iteritems():
+                for node_label, node_links in self.adjacency_list.items():
                     adjacency_list_node_ids[node_label_2_id[node_label]] = {}
-                    for node_link_label,w in node_links.iteritems():
+                    for node_link_label,w in node_links.items():
                         adjacency_list_node_ids[node_label_2_id[node_label]] = {node_label_2_id[node_link_label]: w}
                 
                 self.adjacency_list = adjacency_list_node_ids

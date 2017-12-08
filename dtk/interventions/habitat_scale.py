@@ -25,7 +25,7 @@ def scale_larval_habitats(cb, scales, target={"ALL_HABITATS" : 1}, variation=0, 
                                         "class": "NodeEventCoordinator",
                                         "Intervention_Config": {
                                             "Larval_Habitat_Multiplier" :
-                                                { key : val*scale for key, val in target.iteritems()},
+                                                { key : val*scale for key, val in target.items()},
                                             "class": "ScaleLarvalHabitatLHM"
                                          }
                                         },

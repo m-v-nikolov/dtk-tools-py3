@@ -144,7 +144,7 @@ def add_block(block_type, local, fields):
     config.set(section, 'type', block_type)
 
     # Add the different config item to the section providing they are not None or 0
-    for widget_id, widget in fields.iteritems():
+    for widget_id, widget in fields.items():
         if widget.hidden:
             continue
 

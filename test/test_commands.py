@@ -113,7 +113,7 @@ class TestCommands(unittest.TestCase):
     # args is a Hash used to set attributes on a Namespace object
     def init_namespace(self, args):
         namespace = Namespace()
-        for k, v in args.iteritems():
+        for k, v in args.items():
             setattr(namespace, k, v)
         return namespace
 

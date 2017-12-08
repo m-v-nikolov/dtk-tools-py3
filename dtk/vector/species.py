@@ -261,7 +261,7 @@ def update_species_param(cb, species, parameter, value, overwrite=True):
             # update values in 'parameter' without deleting what's already there.
             # i.e: update the "TEMPORARY RAINFALL" value in a "Larval_Habitat_Types" object
             # without eliminating the "CONSTANT" value
-            for k, v in value.iteritems():
+            for k, v in value.items():
                 cb.config['parameters']['Vector_Species_Params'][species][parameter][k] = v
         else:
             cb.config['parameters']['Vector_Species_Params'][species][parameter] = value
