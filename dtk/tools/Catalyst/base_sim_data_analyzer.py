@@ -99,11 +99,13 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         # ck4, should use raw_data for demographics info, but not a huge deal since we downloaded it
         sd.demog = DemographicsFile(demog_path=os.path.join(output_directory, self.demographics_file_basename))
 
-        sd.config = parser.raw_data[os.path.basename(self.config_file)]['parameters']
+        # ck4, we need to fix up how the raw_data is read in; this is just bad to force the user to do this
+        sd.config = json.loads(parser.raw_data[ os.path.basename(self.config_file) ].getvalue().decode('UTF-8'))['parameters']
 
         # output
 
-        status = parser.raw_data['status.txt']
+        # ck4, we need to fix up how the raw_data is read in; this is just bad to force the user to do this
+        status = parser.raw_data['status.txt'].getvalue().decode('UTF-8')
         done_idx = status.find('Done')
         if done_idx > 0:
             ptt = 'Done - 0:00:00'
@@ -598,13 +600,15 @@ class JsonChannel(BaseSimDataChannel):
     def __init__(self, parser, name, column_name, file_name):
         super(JsonChannel, self).__init__(parser, name, column_name, file_name)
 
+    # ck4, need to fix up the getvalue thing; should be in OutputParser
     @property
     def _data(self):
-        return self.parser.raw_data[self.file_name]['Channels'][self.name]['Data']
+        return json.loads(self.parser.raw_data[self.file_name].getvalue().decode('UTF-8'))['Channels'][self.name]['Data']
 
+    # ck4, need to fix up the getvalue thing; should be in OutputParser
     @property
     def _header(self):
-        return self.parser.raw_data[self.file_name]['Header']
+        return json.loads(self.parser.raw_data[self.file_name].getvalue().decode('UTF-8'))['Header']
 
     # BaseSimDataChannel methods
 
