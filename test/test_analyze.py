@@ -47,7 +47,6 @@ class TestAnalyze(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skip("demonstrating skipping")
     def test_one_suite(self):
         """
         suite_id = 'd0993489-7cdb-e711-80c6-f0921c167864'
@@ -66,7 +65,6 @@ class TestAnalyze(unittest.TestCase):
         self.assertEqual(2, len(exp_dict))
         self.assertEqual(0, len(sim_dict))
 
-    @unittest.skip("demonstrating skipping")
     def test_one_experiment(self):
         """
         exp_id = 'd1993489-7cdb-e711-80c6-f0921c167864'
@@ -85,7 +83,6 @@ class TestAnalyze(unittest.TestCase):
         self.assertEqual(1, len(exp_dict))
         self.assertEqual(0, len(sim_dict))
 
-    @unittest.skip("demonstrating skipping")
     def test_one_simulation(self):
         """
         sim_id = 'dd993489-7cdb-e711-80c6-f0921c167864'
@@ -104,7 +101,6 @@ class TestAnalyze(unittest.TestCase):
         self.assertEqual(0, len(exp_dict))
         self.assertEqual(1, len(sim_dict))
 
-    @unittest.skip("demonstrating skipping")
     def test_one_experiment_one_simulation(self):
         # positive test
         """
@@ -125,7 +121,6 @@ class TestAnalyze(unittest.TestCase):
         self.assertEqual(1, len(exp_dict))
         self.assertEqual(1, len(sim_dict))
 
-    @unittest.skip("demonstrating skipping")
     def test_one_experiment_one_simulation_one_suite(self):
         """
         suite_id = 'd0993489-7cdb-e711-80c6-f0921c167864'
@@ -146,7 +141,6 @@ class TestAnalyze(unittest.TestCase):
         self.assertEqual(2, len(exp_dict))
         self.assertEqual(1, len(sim_dict))
 
-    @unittest.skip("demonstrating skipping")
     def test_one_experiment_one_simulation_one_suite_2(self):
         """
         suite_id = 'd0993489-7cdb-e711-80c6-f0921c167864'
