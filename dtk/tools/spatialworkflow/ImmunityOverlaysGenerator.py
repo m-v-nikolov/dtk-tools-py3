@@ -84,7 +84,7 @@ class ImmunityOverlaysGenerator(object):
             
         self.nodes_by_params = {}
     
-        for node_label, params in self.nodes_params.iteritems():
+        for node_label, params in self.nodes_params.items():
             
             param_key = self.get_params_key(params.values())
                     
@@ -141,7 +141,7 @@ class ImmunityOverlaysGenerator(object):
             immun_meta_exps = json.load(imm_f)
             
             i = 0
-            for exp_id, exp_path in immun_meta_exps.iteritems():
+            for exp_id, exp_path in immun_meta_exps.items():
                 
                 with open(os.path.abspath(exp_path),'r') as meta_f:
                     exp_meta = json.load(meta_f)
@@ -167,7 +167,7 @@ class ImmunityOverlaysGenerator(object):
                         
                         
                     # iterate through the experiments simulations;
-                    for sim_id, sim_record in exp_meta['sims'].iteritems():
+                    for sim_id, sim_record in exp_meta['sims'].items():
                         sim_output_path = ''
                                                 
                         #for each simulation get the values of parameters relevant to the immune initialization burnin (i.e. the parameters 
@@ -178,7 +178,7 @@ class ImmunityOverlaysGenerator(object):
                         
                         # get the parameter keys in the right order (see group_nodes_by_params(self) and get_params_key(self...); 
                         # the set of relevant parameters is the same across all nodes, so take the one from the first node
-                        node_params = self.nodes_params.itervalues().next().keys()
+                        node_params = self.nodes_params.values().next().keys()
 
                         param_values = [] 
                         for param in node_params:
