@@ -4,8 +4,10 @@ from simtools.ModBuilder import ModBuilder, ModFn
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
 
+
 class RunNumberSweepBuilder(ModBuilder):
     def __init__(self, nsims):
+        self.tags = {}
         self.mod_generator = (
             self.set_mods(
                 [ModFn(DTKConfigBuilder.set_param, 'Run_Number', i)]
