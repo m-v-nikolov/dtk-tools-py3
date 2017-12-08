@@ -7,7 +7,7 @@ import pandas as pd
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-from simtools.Catalyst.fidelity_html_report import FidelityHTMLReport
+from dtk.tools.Catalyst.fidelity_html_report import FidelityHTMLReport
 
 class FidelityReportExperimentDefinition(defaultdict):
 

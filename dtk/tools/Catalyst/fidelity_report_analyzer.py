@@ -7,9 +7,9 @@ import pandas as pd
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-from simtools.Catalyst.fidelity_html_report import FidelityHTMLReport
+from dtk.tools.Catalyst.fidelity_html_report import FidelityHTMLReport
 
-from simtools.Catalyst.base_sim_data_analyzer import BaseSimDataAnalyzer, BaseSimDataChannel
+from dtk.tools.Catalyst.base_sim_data_analyzer import BaseSimDataAnalyzer, BaseSimDataChannel
 
 class FidelityReportAnalyzer(BaseSimDataAnalyzer):
     """Collection and pre-processing of simulation data."""

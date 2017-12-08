@@ -605,8 +605,8 @@ def catalyst(args, unknownArgs):
     :return:
     """
     from dtk.utils.builders.sweep import GenericSweepBuilder
-    from simtools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
-    from simtools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    from dtk.tools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
+    from dtk.tools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
 
@@ -651,7 +651,7 @@ def catalyst(args, unknownArgs):
     if args.report_definitions:
         report_defn_file = args.report_definitions
     else:
-        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'reports.json')
+        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'reports.json')
 
     with open(report_defn_file, 'r') as f:
         reports = json.loads(f.read())
@@ -664,9 +664,9 @@ def catalyst(args, unknownArgs):
     if args.sweep_definitions:
         catalyst_config_file = args.sweep_definitions
     elif args.sweep_type == 'popscaling':
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'pop_sampling.json')
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'pop_sampling.json')
     elif args.sweep_type == 'timestep':
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'simtools', 'Catalyst', 'time_steps.json')
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'time_steps.json')
     else:
         raise ValueError('Invalid sweep type: %s' % args.sweep_type)
 
