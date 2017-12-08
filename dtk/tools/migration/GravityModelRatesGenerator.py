@@ -11,11 +11,11 @@ class GravityModelRatesGenerator(object):
 
         self.graph = graph
         
-        #print graph.edges()
+        #print (graph.edges())
         
         self.coeff = coeff
         
-        #print coeff
+        #print (coeff)
 
         self.link_rates = None # output of gravity model based migration links generation
         
@@ -37,11 +37,11 @@ class GravityModelRatesGenerator(object):
         
         for src,v in self.path_lengths.items():
             paths[src]={}
-            #print v.items()
+            #print (v.items())
             for dest,dist in v.items():
-                #print dist
-                #print src
-                #print dest
+                #print (dist)
+                #print (src)
+                #print (dest)
                 if not dist or src==dest:
                     continue
                 if dist<dist_cutoff:
@@ -50,7 +50,7 @@ class GravityModelRatesGenerator(object):
                     paths[src][dest]=mig_rate 
                     migs.append(mig_rate)
             d=paths[src]
-            #print d
+            #print (d)
             #if d:
             nl=heapq.nlargest(max_migration_dests,d,key=lambda k:d[k])
             #print(len(d), nl, [int(d[k]) for k in nl])

@@ -122,7 +122,7 @@ class CasesByAgeAnalyzer(ReportTyphoidByAgeAndGenderAnalyzer):
         self.shelve_apply( parser.sim_id, shelve_data)
 
         #if self.verbose:
-        #    print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
+        #    print ("size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0)
 
     def combine(self, parsers):
         shelved_data = super(CasesByAgeAnalyzer, self).combine(parsers)

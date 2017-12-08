@@ -142,9 +142,9 @@ class CombineInsetChartTests(unittest.TestCase):
                                            channel_list=test_channels)
         for channel in test_channels:
             stat, pvalue = k_t.test_channel(channel_name=channel)
-            # print "Channel is: {0}".format(channel)
-            # print "Stat is: {0}".format(stat)
-            # print "P_Value is: {0}".format(pvalue)
+            # print ("Channel is: {0}".format(channel))
+            # print ("Stat is: {0}".format(stat))
+            # print ("P_Value is: {0}".format(pvalue))
             self.assertGreater(pvalue, 0.05)
             self.assertLess(stat, 0.20)
 

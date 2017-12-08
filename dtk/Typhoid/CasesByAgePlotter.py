@@ -30,7 +30,7 @@ class CasesByAgePlotter(BasePlotter):
         self.site_analyzer_names = self.iteration_state.site_analyzer_names
 
         data_dict = self.iteration_state.analyzers['Santiago_Case Age Distribution']
-        #print data_dict.keys() # ['result', 'Sim', 'reference', 'reference_years']
+        #print(data_dict.keys() # ['result', 'Sim', 'reference', 'reference_years'])
         data = pd.DataFrame.from_dict(data_dict['Sim'], orient='columns')
 
         reference = pd.DataFrame.from_dict(data_dict['reference'], orient='columns')

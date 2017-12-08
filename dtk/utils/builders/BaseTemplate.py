@@ -179,7 +179,7 @@ class BaseTemplate(ITemplate):
 
         Examples:
             contents, key = self.get_param_handle('Events[0].class')
-            print contents[key] # prints CampaignEventByYear
+            print(contents[key]) # prints CampaignEventByYear
             contents[key] = 'test'
             # Now contents['Events'][0]['class'] is set to 'test'
 

@@ -108,7 +108,7 @@ class PopulationAnalyzer(BaseAnalyzer):
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
-        #print 'Writing selected to csv'
+        #print('Writing selected to csv')
         #[s.to_csv('selected_%d.csv' % i) for (i,s) in enumerate(selected)]
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
