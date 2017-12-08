@@ -38,7 +38,7 @@ class TestSimulationAssets(unittest.TestCase):
 
         while num_sims:
             result = results.get()
-            print 'Result:', result
+            print('Result:', result)
             num_sims -= 1
 
 

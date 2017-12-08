@@ -81,7 +81,7 @@ class TestCommands(unittest.TestCase):
     def test_init_samples(self):
         mod = load_config_module('dummy_calib.py')
 
-        # print mod.next_point_kwargs
+        # print (mod.next_point_kwargs)
         self.initial_samples = mod.next_point_kwargs['initial_samples']
         self.samples_per_iteration = mod.next_point_kwargs['samples_per_iteration']
 
@@ -308,8 +308,8 @@ class TestCommands(unittest.TestCase):
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
 
-        # print self.run_info
-        # print self.resume_info
+        # print (self.run_info)
+        # print (self.resume_info)
         self.assertEqual(self.run_info[0], self.resume_info[0])
         self.assertEqual(self.run_info[1], self.resume_info[1])
         self.assertNotEquals(self.run_info[2], self.resume_info[2])
@@ -328,8 +328,8 @@ class TestCommands(unittest.TestCase):
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
 
-        # print self.run_info
-        # print self.resume_info
+        # print (self.run_info)
+        # print (self.resume_info)
         self.assertNotEquals(self.run_info[0], self.resume_info[0])
         self.assertLess(self.run_info[0], self.resume_info[0])
         self.assertNotEquals(self.run_info[2], self.resume_info[2])

@@ -1,4 +1,5 @@
 import base64
+import datetime
 import json
 import numpy as np
 
@@ -31,8 +32,16 @@ class NumpyEncoder(json.JSONEncoder):
 class GeneralEncoder(NumpyEncoder):
     def default(self, obj):
         from COMPS.Data.Simulation import SimulationState
+        from simtools.DataAccess.Schema import Simulation
+
         if isinstance(obj, SimulationState):
             return obj.name
+        elif isinstance(obj, set):
+            return list(obj)
+        elif isinstance(obj, datetime.datetime):
+            return str(obj)
+        elif isinstance(obj, Simulation):
+            return obj.toJSON()
         return super(GeneralEncoder, self).default(obj)
 
 

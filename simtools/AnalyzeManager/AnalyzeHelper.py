@@ -143,7 +143,7 @@ def consolidate_experiments_with_options(exp_dict, sim_dict, batch_name=None):
 
             if exp_dict or sim_dict:
                 var = input('\nDo you want to [O]verwrite, [M]erge, or [C]ancel:  ')
-                # print "You selected '%s'" % var
+                # print("You selected '%s'" % var)
                 if var == 'O':
                     # clear existing experiments associated with this Batch
                     DataStore.clear_batch(batch)

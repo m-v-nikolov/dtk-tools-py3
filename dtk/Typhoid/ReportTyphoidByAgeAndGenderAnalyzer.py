@@ -76,7 +76,7 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
         if not ret and self.verbose:
             self.num_outstanding -= 1
-            print 'Skipping simulation %s because already in shelve' % str(sim_id)
+            print('Skipping simulation %s because already in shelve' % str(sim_id))
 
         return ret
 
@@ -104,7 +104,9 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
         self.num_outstanding -= 1
         if self.verbose:
-            print 'Progress: %d of %d (%.1f%%).  Pop scaling is %f'%(len(self.sim_ids)-self.num_outstanding, len(self.sim_ids), 100*(len(self.sim_ids)-self.num_outstanding) / float(len(self.sim_ids)), pop_scaling)
+            print('Progress: %d of %d (%.1f%%).  Pop scaling is %f' % (
+            len(self.sim_ids) - self.num_outstanding, len(self.sim_ids),
+            100 * (len(self.sim_ids) - self.num_outstanding) / float(len(self.sim_ids)), pop_scaling))
 
         pdata = pdata.reset_index(drop=True).set_index('Gender')
         pdata.rename({0:'Male', 1:'Female'}, inplace=True)
@@ -117,7 +119,7 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
     def finalize(self):
         if self.verbose:
-            print "finalize"
+            print("finalize")
 
         super(ReportTyphoidByAgeAndGenderAnalyzer, self).finalize() # Closes the shelve file
         self.sim_ids = []
@@ -127,4 +129,4 @@ class ReportTyphoidByAgeAndGenderAnalyzer(BaseShelveAnalyzer):
 
     def plot(self):
         plt.show()
-        print "[ DONE ]"
+        print("[ DONE ]")

@@ -144,7 +144,7 @@ def add_block(block_type, local, fields):
     config.set(section, 'type', block_type)
 
     # Add the different config item to the section providing they are not None or 0
-    for ctl_name, ctl in fields.iteritems():
+    for ctl_name, ctl in fields.items():
         if isinstance(ctl, wx.RadioBox):
             ctl_value = ctl.GetStringSelection()
         elif isinstance(ctl, wx.CheckBox):

@@ -6,6 +6,7 @@ from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Experiment, Simulation
 from sqlalchemy.orm import joinedload
 
+from simtools.Utilities.Encoding import GeneralEncoder
 from simtools.Utilities.General import init_logging, remove_null_values
 logger = init_logging('DataAccess')
 from COMPS.Data.Simulation import SimulationState
@@ -26,7 +27,7 @@ class ExperimentDataStore:
             # Get the experiment
             # Also load the associated simulations eagerly
             experiment = session.query(Experiment).options(
-                joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                joinedload('simulations').joinedload('experiment')) \
                 .filter(Experiment.exp_id == exp_id).one_or_none()
 
             # Detach the object from the session
@@ -47,8 +48,7 @@ class ExperimentDataStore:
         if verbose:
             # Dont display the null values
             logger.info('Saving meta-data for experiment:')
-            from simtools.DataAccess.DataStore import dumper
-            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, default=dumper, sort_keys=True))
+            logger.info(json.dumps(remove_null_values(experiment.toJSON()), indent=3, cls=GeneralEncoder, sort_keys=True))
 
         with session_scope(session) as sess:
             sess.merge(experiment)
@@ -60,7 +60,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiment = session.query(Experiment) \
                 .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                .options(joinedload('simulations').joinedload('experiment')) \
                 .order_by(Experiment.date_created.desc()).first()
 
             session.expunge_all()
@@ -72,7 +72,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiments = session.query(Experiment).distinct(Experiment.exp_id) \
                 .join(Experiment.simulations) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers')) \
+                .options(joinedload('simulations').joinedload('experiment')) \
                 .filter(~Simulation.status_s.in_((SimulationState.Succeeded.name, SimulationState.Failed.name, SimulationState.Canceled.name)))
             if location:
                 experiments = experiments.filter(Experiment.location == location)
@@ -88,7 +88,7 @@ class ExperimentDataStore:
         with session_scope() as session:
             experiments = session.query(Experiment)\
                 .filter(or_(Experiment.exp_id.like('%%%s%%' % id_or_name), Experiment.exp_name.like('%%%s%%' % id_or_name))) \
-                .options(joinedload('simulations').joinedload('experiment').joinedload('analyzers'))
+                .options(joinedload('simulations').joinedload('experiment'))
             if current_dir:
                 experiments = experiments.filter(Experiment.working_directory == current_dir)
 

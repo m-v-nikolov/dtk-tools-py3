@@ -117,9 +117,9 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
             try:
                 self.populate_editor()
             except:
-                # print 'DTK Setup Editor catch exception, existing...'
+                # print ('DTK Setup Editor catch exception, existing...')
                 # exc_info = sys.exc_info()
-                # print exc_info
+                # print (exc_info)
                 exit()
 
             if option['BLOCK']:

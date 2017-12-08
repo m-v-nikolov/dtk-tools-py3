@@ -191,7 +191,7 @@ class SetupEditor(wx.Frame):
                 line = line.strip()
                 ok = re.match(r'^.*setup\(.*$', line)
                 if ok:
-                    # print line
+                    # print (line)
                     begin = True
                     setup_list.append(line)
                 elif begin and re.match(r'^def handle_init.*:$', line):

@@ -1,8 +1,6 @@
-import logging
 import os
 
 from dtk.generic.demographics import set_static_demographics
-from dtk.utils.ioformat.OutputMessage import OutputMessage
 
 
 def convert_filepaths(params):
@@ -17,6 +15,7 @@ def convert_filepaths(params):
     g = params.pop('Geography', None)
     if not g: return
     for k, v in params.items():
+        if not v: continue
         if k == 'Demographics_Filenames':
             params[k] = [os.path.join(g, fn) for fn in v]
         elif k == 'Campaign_Filename':

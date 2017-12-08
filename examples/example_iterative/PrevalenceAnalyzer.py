@@ -25,7 +25,7 @@ class PrevalenceAnalyzer(BaseComparisonAnalyzer):
         nodes_idx = [i for i,val in enumerate(prev_data) if val > threshold]
         nodes_ids = [int(nodes[i]) for i in nodes_idx]
 
-        print "Sim dir: %s" % parser.sim_dir
+        print("Sim dir: %s" % parser.sim_dir)
 
         self.result.append({'NodeIDs':nodes_ids,
                             'Serialized_Population_Path': os.path.join(parser.sim_dir, 'output'),

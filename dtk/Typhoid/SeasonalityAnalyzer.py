@@ -105,7 +105,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         self.shelve_apply( parser.sim_id, shelve_data)
 
         #if self.verbose:
-        #    print "size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0
+        #    print("size (MB):", sys.getsizeof(shelve_data)/8.0/1024.0)
 
     def combine(self, parsers):
         shelved_data = super(SeasonalityAnalyzer, self).combine(parsers)
@@ -153,7 +153,7 @@ class SeasonalityAnalyzer(ReportTyphoidInsetChartAnalyzer):
         return LL
 
         ''' Work in progress, should be dirichlet multinomial:
-        print sample
+        print(sample)
         exit()
 
         LL = LL_calculators.beta_binomial(

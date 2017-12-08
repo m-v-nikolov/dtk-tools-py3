@@ -79,7 +79,7 @@ class OptimToolSPSA(NextPointAlgorithm):
         self.state['Iteration'] = self.state['Iteration'].astype(int)
 
         with pd.option_context("display.max_rows", 500, "display.max_columns", 500):
-            print self.state
+            print(self.state)
             raw_input('resolve_args')
         """
 
@@ -162,7 +162,7 @@ class OptimToolSPSA(NextPointAlgorithm):
             print (iteration, param['Name'], param['Guess'], param['Min'], param['Max'], param['Dynamic'])
             self.state.loc[len(self.state)] = [iteration, param['Name'], param['Guess'], param['aprioriHessian'],
                                                param['Min'], param['Max'], param['Dynamic']]
-            # print self.state
+            # print(self.state)
 
         initial_samples = self.choose_and_clamp_samples_for_iteration(iteration)
 
@@ -369,7 +369,7 @@ class OptimToolSPSA(NextPointAlgorithm):
         xc.columns.name = ""
 
         samples = pd.concat([xc] * (4 * M + 1)).reset_index(drop=True)
-        # print samples
+        # print(samples)
 
         dt = np.transpose(deviations)
 

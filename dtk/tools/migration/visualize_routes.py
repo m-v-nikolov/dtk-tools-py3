@@ -123,7 +123,7 @@ def main(demogfile, migfile, output_dir):
     
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Insufficient number of parameters provided!"
+        print("Insufficient number of parameters provided!")
         exit(0)
 
     main(sys.argv[1:])

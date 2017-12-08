@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+from itertools import cycle
+
+from simtools.Utilities.Encoding import GeneralEncoder
 from simtools.Utilities.General import init_logging, get_tools_revision
 
 logger = init_logging('ExperimentManager')
@@ -16,7 +19,7 @@ from collections import Counter
 
 import fasteners
 
-from simtools.DataAccess.DataStore import DataStore, batch, dumper
+from simtools.DataAccess.DataStore import DataStore, batch
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.OutputParser import SimulationOutputParser
@@ -76,7 +79,6 @@ class BaseExperimentManager:
             exp_name=experiment_name,
             location=self.location,
             tags=self.experiment_tags,
-            analyzers=[],
             sim_type=self.config_builder.get_param('Simulation_Type'),
             dtk_tools_revision=get_tools_revision(),
             selected_block=SetupParser.selected_block,
@@ -235,7 +237,7 @@ class BaseExperimentManager:
         return_list = manager.list()
 
         if verbose:
-            callback = print_status_func
+            callback = None
         else:
             callback = None
 
@@ -250,18 +252,35 @@ class BaseExperimentManager:
 
         # Display some info
         if verbose:
-            logger.info("Creating the simulations (each . represent up to %s)" % sim_per_batch)
+            logger.info("Creating the simulations")
             logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes+1))
             logger.info(" | Simulations per batch: %s" % sim_per_batch)
             logger.info(" | Simulations Count: %s" % total_sims)
             logger.info(" | Max simulations per threads: %s" % nbatches)
+            sys.stdout.write(" | Created simulations: 0/{}".format(total_sims))
+            sys.stdout.flush()
 
-        # Wait for all to finish
+        # Start all the processes
         for c in creator_processes:
             c.start()
 
-        for c in creator_processes:
-            c.join()
+        # While they are running, display the status
+        animation = cycle(("|", "/", "-"))
+        while True:
+            created_sims = len(return_list)
+            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
+            sys.stdout.flush()
+            if created_sims == total_sims or all([not c.is_alive() for c in creator_processes]):
+                break
+            time.sleep(0.3)
+
+        # We exited make sure we had no issues
+        print("\r | Created simulations: {}/{}".format(len(return_list), total_sims))
+        sys.stdout.flush()
+        if created_sims != total_sims:
+            logger.error("Commission seems to have failed. Only {} simulations were created but {} were expected...\n"
+                         "Exiting...".format(created_sims,total_sims))
+            exit()
 
         # Insert all those newly created simulations to the DB
         DataStore.bulk_insert_simulations(return_list)
@@ -274,7 +293,13 @@ class BaseExperimentManager:
             sims_to_display = 2
             display = -sims_to_display if total_sims > sims_to_display else -total_sims
             logger.info(" ")
-            logger.info(json.dumps(self.experiment.simulations[display:], indent=3, default=dumper, sort_keys=True))
+            logger.info("Simulation(s) created:\n"
+                        "----------------------")
+            for sim in self.experiment.simulations[display:]:
+                logger.info("- Simulation {}".format(sim.id))
+                logger.info(json.dumps(sim.tags, indent=2, cls=GeneralEncoder, sort_keys=True))
+                logger.info(" ")
+
             if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
     def refresh_experiment(self):

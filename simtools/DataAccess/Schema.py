@@ -1,7 +1,6 @@
 import datetime
 import inspect
 import os
-from sqlalchemy import Binary
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
@@ -15,14 +14,6 @@ from sqlalchemy.orm import relationship
 from simtools.DataAccess import Base, engine
 from COMPS.Data.Simulation import SimulationState
 
-class Analyzer(Base):
-    __tablename__ = "analyzers"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
-    analyzer = Column(Binary)
-    experiment_id = Column(String, ForeignKey('experiments.exp_id'))
-    experiment = relationship("Experiment", back_populates="analyzers")
 
 class Settings(Base):
     __tablename__ = "settings"
@@ -94,7 +85,6 @@ class Experiment(Base):
     endpoint = Column(String)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
-    analyzers = relationship("Analyzer", back_populates='experiment', cascade="all, delete-orphan")
 
     def __repr__(self):
         format_string = "{date} - {name} : {id} ({location}) - {sim_count} simulations - {state}"
@@ -160,12 +150,6 @@ class Experiment(Base):
                 ret['simulations'] = {}
                 for sim in value:
                     ret['simulations'][sim.id] = sim.tags
-                continue
-
-            if name == 'analyzers':
-                ret['analyzers'] = []
-                for a in value:
-                    ret['analyzers'].append(a.name)
                 continue
 
             # By default just add to the dict
