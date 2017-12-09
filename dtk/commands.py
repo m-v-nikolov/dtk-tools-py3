@@ -1,6 +1,7 @@
 import argparse
 import csv
 import datetime
+import json
 import os
 import shutil
 import subprocess
@@ -29,7 +30,6 @@ from simtools.DataAccess.Schema import Experiment, Simulation
 
 from simtools.Utilities.General import init_logging
 logger = init_logging('Commands')
-
 
 def builtinAnalyzers():
     analyzers = {
@@ -70,7 +70,6 @@ def run(args, unknownArgs):
                   "`calibtool run` command.")
             exit()
 
-        import json
         print("You are trying to run a module without the required run_sim_args dictionary.")
         print("The run_sim_args is expected to be of the format:")
         print(json.dumps({"config_builder": "cb",
@@ -85,6 +84,7 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
+    return exp_manager.experiment
 
 
 def status(args, unknownArgs):
@@ -593,6 +593,136 @@ def get_package(args, unknownArgs):
     return release_dir
 
 
+def catalyst(args, unknownArgs):
+    """
+    Catalyst run-and-analyze process as ported from the test team.
+    Programmatic-only arguments:
+        args.mode : used by FidelityReportExperimentDefinition, default: 'prod'
+        args.report_label : attached to the experiment name
+        args.debug : True/False, passed into FidelityReportAnalyzer, default: False
+    :param args:
+    :param unknownArgs:
+    :return:
+    """
+    from dtk.utils.builders.sweep import GenericSweepBuilder
+    from dtk.tools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
+    from dtk.tools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
+    # to get the run part to do the desired parameter sweep.
+
+    mod = args.loaded_module
+
+    # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.
+    mod.run_sim_args['exp_name'] = mod.run_sim_args['exp_name'] + '-development'
+
+    # lining up the arguments expected by FidelityReportExperimentDefinition
+    args.sweep = args.sweep_method
+
+    # hidden, programmatic arguments
+    args.mode         = args.mode         if hasattr(args, 'mode')         else 'prod'
+    args.report_label = args.report_label if hasattr(args, 'report_label') else None
+    args.debug =        args.debug        if hasattr(args, 'debug')        else False
+
+    # determine which report is being asked for. If not specified, default to what the config.json file says
+    # ck4, this should go somewhere else, on a Config object of some sort? (prob not the builder, though)
+    report_type_mapping = {
+        'DENGUE_SIM': 'dengue',
+        'GENERIC_SIM': 'generic',
+        'HIV_SIM': 'hiv',
+        'MALARIA_SIM': 'malaria',
+        'POLIO_SIM': 'polio',
+        'STI_SIM': 'sti',
+        'TB_SIM': 'tb',
+        'TYPHOID_SIM': 'typhoid',
+        'VECTOR_SIM': 'generic'
+    }
+    if args.report_type:
+        report_type = args.report_type
+    else:
+        sim_type = mod.run_sim_args['config_builder'].config['parameters']['Simulation_Type']
+        report_type = report_type_mapping.get(sim_type, None)
+        if not report_type:
+            raise KeyError('Default report type could not be determined for sim_type: %s. Report type must be specified'
+                           ' via -r flag.'
+                           % sim_type)
+
+    # Create and set a builder to sweep over population scaling or model timestep
+    # ck4, combine pop_sampling.json and time_steps.json into one.
+    if args.report_definitions:
+        report_defn_file = args.report_definitions
+    else:
+        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'reports.json')
+
+    with open(report_defn_file, 'r') as f:
+        reports = json.loads(f.read())
+    if report_type in reports:
+        args.report_channel_list = reports[report_type]['inset_channel_names']
+    else:
+        raise Exception('Invalid report: %s. Available reports: %s' % (report_type, sorted(reports.keys())))
+
+    # ck4, fix this ugly pathing
+    if args.sweep_definitions:
+        catalyst_config_file = args.sweep_definitions
+    elif args.sweep_type == 'popscaling':
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'pop_sampling.json')
+    elif args.sweep_type == 'timestep':
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'time_steps.json')
+    else:
+        raise ValueError('Invalid sweep type: %s' % args.sweep_type)
+
+    with open(catalyst_config_file, 'r') as f:
+        catalyst_config = json.loads(f.read())
+    defn = FidelityReportExperimentDefinition(catalyst_config, args)
+
+    # redefine the experiment name so it doesn't conflict with the likely follow-up non-catalyst experiment
+    mod.run_sim_args['exp_name'] = 'Catalyst-' + mod.run_sim_args['exp_name']
+
+    # define the sweep to perform
+    sweep_dict = {
+        'Run_Number': range(1, int(defn['nruns']) + 1),
+        defn['sweep_param']: defn['sweep_values']
+    }
+    mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
+
+    # overwrite spatial output channels to those used in the catalyst report
+    spatial_channel_names = defn['spatial_channel_names']
+    if len(spatial_channel_names) > 0:
+        mod.run_sim_args['config_builder'].enable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = spatial_channel_names
+    else:
+        mod.run_sim_args['config_builder'].disable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = []
+
+    # now run if no preexisting experiment id was provided
+    if not args.experiment_id:
+        # we must always block so that we can run the analysis at the end; run and analyze!
+        args.blocking = True
+        experiment = run(args, unknownArgs)
+        print('done running experiment: %s!' % experiment.exp_id)
+    else:
+        experiment = retrieve_experiment(args.experiment_id)
+
+    # Create an analyze manager
+    am = AnalyzeManager(exp_list=[experiment])
+
+    # Add the TimeSeriesAnalyzer to the manager and do analysis
+    # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer.
+    # After all, the names COULD be different
+    analyzer = FidelityReportAnalyzer('output',
+                                      'config.json',
+                                      'campaign.json',
+                                      mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
+                                      experiment_definition = defn,
+                                      label=args.report_label,
+                                      time_series_step_from=defn['step_from'],
+                                      time_series_step_to=defn['step_to'],
+                                      time_series_equal_step_count=True,
+                                      raw_data=True, #args.raw_data, # ck4, restore choice
+                                      debug=args.debug)
+    am.add_analyzer(analyzer)
+    am.analyze()
+
+
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
     mod = init.load_config_module(args.config_name)
@@ -642,6 +772,9 @@ def main():
 
     # 'dtk run' options
     commands_args.populate_run_arguments(subparsers, run)
+
+    # 'dtk catalyst' options
+    commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # 'dtk status' options
     commands_args.populate_status_arguments(subparsers, status)
@@ -708,6 +841,9 @@ def main():
 
     # 'dtk get_package' options
     commands_args.populate_get_package_arguments(subparsers, get_package)
+
+    # # 'dtk catalyst' options
+    # commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
