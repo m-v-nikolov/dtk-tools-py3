@@ -1,5 +1,6 @@
 import json
 import os
+from multiprocessing.pool import Pool
 
 import numpy as np
 import pandas as pd
@@ -42,11 +43,7 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         self.equal_step_count = time_series_equal_step_count
         self.raw_data = raw_data
         self.debug = debug
-        self.multiprocessing_plot = False
 
-    ##########################################
-    ### Analyzer interface implementation
-    ##########################################
     def apply(self, parser):
         super(FidelityReportAnalyzer, self).apply(parser)
 
@@ -76,13 +73,13 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         self.result = pd.DataFrame()
         step_from = self.time_series_step_from or 0
         step_to = self.time_series_step_to or max_step_count
-        if not (step_from >= 0 and step_from < step_to - 1):
+        if not (0 <= step_from < step_to - 1):
             raise Exception('Invalid from/to arguments: from {} to {}'.format(step_from, step_to))
 
         # take portion of the simulation dataframe as specified by step_from / step_to arguments.
         self.result = pd.concat([df.iloc[step_from:step_to] for df in selected])
 
-    def plot(self):
+    def finalize(self):
         import json
 
         self.exp_def['duration'] = list(self.sim_data.values())[0].sim_duration
@@ -100,9 +97,11 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
                                  debug=self.debug, **self.exp_def.get_report_instance_args())
         rpt.create_summary_page()
 
-        # TODO: parallelize, requires some refactoring
-        for channel in self.inset_channel_names:
-            rpt.create_channel_detail_page(channel)
+        # Create the pool of worker for the inset_chart_channels
+        pool = Pool()
+        pool.map(rpt.create_channel_detail_page, self.inset_channel_names)
+        pool.close()
+        pool.join()
 
         # write out some metadata that used to be part of a very long dir path
         metadata = {'experiment_name': self.exp_name, 'experiment_id': self.exp_id, 'label': self.label}

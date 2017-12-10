@@ -115,7 +115,7 @@ class BaseSimDataAnalyzer(BaseAnalyzer):
             raise Exception('Experiment failed or missing. Cannot construct experiment dir path.')
 
         # make the reporting directory if it doesn't exist + write out some experiment metadata
-        exp_path = os.path.join(self.output_path, 'catalyst_report')
+        exp_path = os.path.join(self.output_path)
         if not os.path.isdir(exp_path):
             os.makedirs(exp_path)
         return exp_path
