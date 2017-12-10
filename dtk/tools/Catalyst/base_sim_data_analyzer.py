@@ -92,9 +92,6 @@ class BaseSimDataAnalyzer(DownloadAnalyzer):
         sd.sim_id = parser.sim_id
         sd.sim_path = parser.sim_path
 
-        # Initialize sim sources
-        print('Reading sim data for {}\n'.format(parser.sim_id))
-
         # input
         # ck4, should use raw_data for demographics info, but not a huge deal since we downloaded it
         sd.demog = DemographicsFile(demog_path=os.path.join(output_directory, self.demographics_file_basename))
