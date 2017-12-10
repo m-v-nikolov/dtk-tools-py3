@@ -710,17 +710,18 @@ def catalyst(args, unknownArgs):
     # After all, the names COULD be different
     analyzer = FidelityReportAnalyzer('output',
                                       'config.json',
-                                      'campaign.json',
                                       mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
                                       experiment_definition = defn,
                                       label=args.report_label,
                                       time_series_step_from=defn['step_from'],
                                       time_series_step_to=defn['step_to'],
                                       time_series_equal_step_count=True,
-                                      raw_data=True, #args.raw_data, # ck4, restore choice
+                                      raw_data=True,
                                       debug=args.debug)
     am.add_analyzer(analyzer)
     am.analyze()
+    import webbrowser
+    webbrowser.open_new("file:///{}".format(os.path.join(os.getcwd(),"output","catalyst_report","summary_report.html")))
 
 
 def analyze_from_script(args, sim_manager):

@@ -124,23 +124,9 @@ class SimulationOutputParser(threading.Thread):
         self.raw_data[filename] = str(content.getvalue().decode())
 
     def load_bin_file(self, filename, content):
-        n_nodes, = struct.unpack('i', content[0:4])
-        n_tstep, = struct.unpack('i', content[4:8])
-        # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
-
-        nodeids = struct.unpack(str(n_nodes) + 'I', content[8:8 + n_nodes * 4])
-        nodeids = np.asarray(nodeids)
-        # print( "node IDs: " + str(nodeids) )
-
-        channel_data = struct.unpack(str(n_nodes * n_tstep) + 'f',
-                                     content[8 + n_nodes * 4:8 + n_nodes * 4 + n_nodes * n_tstep * 4])
-        channel_data = np.asarray(channel_data)
-        channel_data = channel_data.reshape(n_tstep, n_nodes)
-
-        self.raw_data[filename] = {'n_nodes': n_nodes,
-                                   'n_tstep': n_tstep,
-                                   'nodeids': nodeids,
-                                   'data': channel_data}
+        from dtk.tools.output.SpatialOutput import SpatialOutput
+        so = SpatialOutput.from_bytes(content)
+        self.raw_data[filename] = so.to_dict()
 
     def get_sim_dir(self):
         return self.sim_path

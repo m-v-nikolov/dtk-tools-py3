@@ -86,6 +86,7 @@ class AnalyzeManager:
         if exp_manager.location == 'HPC':
             # Get the sim map no matter what
             if self.create_dir_map:
+
                 exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
                                                               suite_id=exp_manager.experiment.suite_id,
                                                               save=True, comps_experiment=exp_manager.comps_experiment,

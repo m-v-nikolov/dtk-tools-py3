@@ -8,8 +8,9 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 import shutil
 
+
 # TODO: redesign generation of HTML UI (e.g. some package for ), cleaner separation of HTML UI and logic/data analysis
-class FidelityHTMLReport(object):
+class FidelityHTMLReport:
     """Takes simulation data and generates summary HTML pages and one detail HTML page per channel."""
     _html_start = """
     <html>
@@ -54,10 +55,11 @@ class FidelityHTMLReport(object):
         'KS': 'KS test [CDF distance, p-value]'
     }
 
-    required_keys = ['nruns', 'duration', 'init', 'sweep_param', 'sweep_values', 'sweep_base_value', 'inset_channel_names']
+    required_keys = ['nruns', 'duration', 'init', 'sweep_param', 'sweep_values', 'sweep_base_value',
+                     'inset_channel_names']
     optional_keys = ['rolling_win_size', 'step_from', 'step_to']
 
-    def __init__(self, df_raw, report_dir_path, node_count, def_name, init, debug = False, **kwargs):
+    def __init__(self, df_raw, report_dir_path, node_count, def_name, init, debug=False, **kwargs):
         # init frequently used members so they show up in intellisense, actual values are dynamically set from **kwargs below
         self.sweep_param = None
         self.sweep_base_value = None
@@ -74,10 +76,11 @@ class FidelityHTMLReport(object):
             if k in self.all_keys():
                 setattr(self, k, v)
 
-        self.colors_all = ['darkgreen', 'darkblue', 'blue', 'cyan', 'coral', 'darkorange', 'yellow', 'grey', 'purple', 'maroon']
+        self.colors_all = ['darkgreen', 'darkblue', 'blue', 'cyan', 'coral', 'darkorange', 'yellow', 'grey', 'purple',
+                           'maroon']
         step_count = len(df_raw['step'].unique())
         if self.rolling_win_size is None:
-            self.rolling_win_size = 30 if  step_count > 300 else max(int(step_count/10), 1)
+            self.rolling_win_size = 30 if step_count > 300 else max(int(step_count / 10), 1)
 
         self.steps = sorted(df_raw['step'].unique())
         self.runs_count = len(df_raw['Run_Number'].unique())
@@ -85,15 +88,18 @@ class FidelityHTMLReport(object):
 
         # empty result dir, deleting only types of files related to the report
         for p in os.listdir(report_dir_path):
-            if p.endswith('.png') or p != 'data_raw.csv' and p.endswith('.csv') or p.endswith('.html') or p.endswith('.js') or p.endswith('.css'):
+            if p.endswith('.png') or p != 'data_raw.csv' and p.endswith('.csv') or p.endswith('.html') or p.endswith(
+                    '.js') or p.endswith('.css'):
                 ppath = os.path.join(report_dir_path, p)
                 os.remove(ppath)
 
         # copy .js and .css
         print('current dir: %s' % os.getcwd())
         source_path = os.path.dirname(__file__)
-        shutil.copy2(os.path.join(source_path, 'fidelity_html_report.js'), self.get_result_path('fidelity_html_report.js'))
-        shutil.copy2(os.path.join(source_path, 'fidelity_html_report.css'), self.get_result_path('fidelity_html_report.css'))
+        shutil.copy2(os.path.join(source_path, 'fidelity_html_report.js'),
+                     self.get_result_path('fidelity_html_report.js'))
+        shutil.copy2(os.path.join(source_path, 'fidelity_html_report.css'),
+                     self.get_result_path('fidelity_html_report.css'))
 
         # dict for caching measures and plots
         self.init_measure_cache()
@@ -102,7 +108,6 @@ class FidelityHTMLReport(object):
     def all_keys():
         """List of required and optional arguments for instantiating FidelityHTMLReport."""
         return FidelityHTMLReport.required_keys + FidelityHTMLReport.optional_keys
-
 
     ### main HTML page methods
 
@@ -115,7 +120,8 @@ class FidelityHTMLReport(object):
 
         pd.set_option('display.max_colwidth', -1)
 
-        df = pd.DataFrame([list(t) for t in zip(['number of runs', 'sim duration', 'node count'], [self.nruns, self.duration, self.node_count])], columns=['key', ' '])
+        df = pd.DataFrame([list(t) for t in zip(['number of runs', 'sim duration', 'node count'],
+                                                [self.nruns, self.duration, self.node_count])], columns=['key', ' '])
         df = df.set_index('key')
         df.index.names = [None]
         html_args1 = df.to_html(**self.df_html_summary_args())
@@ -133,7 +139,7 @@ class FidelityHTMLReport(object):
                 </td>
             </tr>
         </table>""".format(self._html_sections_select)
-        html += html_summ.replace("__args1__",  html_args1).replace("__perf__", html_perf)
+        html += html_summ.replace("__args1__", html_args1).replace("__perf__", html_perf)
         html += '</div>'
 
         html += '<div id = "report_header_ph" style = "height:135px;">&nbsp;</div>'
@@ -143,7 +149,7 @@ class FidelityHTMLReport(object):
             data_channel = 'inset_{}'.format(channel)
             sweep_values_map, corr, _, _ = self.get_channel_summary_measures(channel)
 
-            df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist']) #'perf', 'corr', 'prob'
+            df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist'])  # 'perf', 'corr', 'prob'
             del df['category']
             df = pd.DataFrame(df.stack())
             df = df.reset_index()
@@ -153,22 +159,26 @@ class FidelityHTMLReport(object):
             df_channels = pd.concat([df_channels, df])
 
         measures_count = len(df_channels['measure_name'].unique())
-        df_channels['measure_value'] = df_channels['measure_value'].apply(lambda x: np.round(x, 2) if type(x) == type(1.0) else x)
+        df_channels['measure_value'] = df_channels['measure_value'].apply(
+            lambda x: np.round(x, 2) if type(x) == type(1.0) else x)
 
-        df_channels = df_channels.pivot_table(index='channel', columns=['measure_name', self.sweep_param], values=['measure_value'], aggfunc='first')
-        df_channels.index.names=[None]
+        df_channels = df_channels.pivot_table(index='channel', columns=['measure_name', self.sweep_param],
+                                              values=['measure_value'], aggfunc='first')
+        df_channels.index.names = [None]
         df_channels = df_channels.sort_index(axis=1, ascending=[None, True, self.is_sweep_ascending()])
 
         html_cols = '<col span="1" class="col0" />'
-        html_cols += ''.join(['<col span="{}" class="col{}"/>'.format(len(self.sweep_values), str((i % 2) + 1)) for i in  range(measures_count)])
+        html_cols += ''.join(['<col span="{}" class="col{}"/>'.format(len(self.sweep_values), str((i % 2) + 1)) for i in
+                              range(measures_count)])
         html_cols += '<thead>'
-        html_channels = df_channels.to_html(**self.df_html_summary_args()).replace('measure_value', '').replace('measure_name', '').replace('Base_Individual_Sample_Rate', '')
+        html_channels = df_channels.to_html(**self.df_html_summary_args()).replace('measure_value', '').replace(
+            'measure_name', '').replace('Base_Individual_Sample_Rate', '')
         html += html_channels.replace('<thead>', html_cols)
 
         for channel in self.inset_channel_names:
             data_channel = 'inset_{}'.format(channel)
             sweep_values_map, corr, plot_html, plot_html2 = self.get_channel_summary_measures(channel)
-            df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist', 'corr', 'prob']) #'perf',
+            df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist', 'corr', 'prob'])  # 'perf',
             del df['category']
 
             html += '<br><h2 id="{0}">{0}</h2>'.format(channel)
@@ -199,7 +209,8 @@ class FidelityHTMLReport(object):
 
         pd.set_option('display.max_colwidth', -1)
 
-        df = pd.DataFrame([list(t) for t in zip(['number of runs', 'sim duration', 'node count'], [self.nruns, self.duration, self.node_count])], columns=['key', ' '])
+        df = pd.DataFrame([list(t) for t in zip(['number of runs', 'sim duration', 'node count'],
+                                                [self.nruns, self.duration, self.node_count])], columns=['key', ' '])
         df = df.set_index('key')
         df.index.names = [None]
         html_args1 = df.to_html(**self.df_html_summary_args())
@@ -216,17 +227,16 @@ class FidelityHTMLReport(object):
                 </td>
             </tr>
         </table>""".format(self._html_sections_select, channel)
-        html += html_summ.replace("__args1__",  html_args1).replace("__perf__", html_perf)
+        html += html_summ.replace("__args1__", html_args1).replace("__perf__", html_perf)
         html += '</div>'
         html += '<div id = "report_header_ph" style = "height:135px;">&nbsp;</div>'
-
 
         sweep_values_map, corr, plot_html, plot_html2 = self.get_channel_summary_measures(channel)
         dfp = self.get_channel_measure_data(channel)
         dfps = self.rolling_mean(dfp)
 
         # Show how it los with fewer runs
-        lower_run_count = self. get_lower_run_count()
+        lower_run_count = self.get_lower_run_count()
         dfp2 = self.get_channel_measure_data(channel, lower_run_count)
 
         df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist', 'corr', 'prob'])
@@ -238,7 +248,8 @@ class FidelityHTMLReport(object):
         html += '<br>'
 
         html += '<h2>Time Series</h2>'
-        html += '<select id="cp_w_base_means_switch" onchange="javascript:switchCompareModeImages(\'{}\')"  style="font-size: 18px;">'.format(data_channel)
+        html += '<select id="cp_w_base_means_switch" onchange="javascript:switchCompareModeImages(\'{}\')"  style="font-size: 18px;">'.format(
+            data_channel)
         html += '   <option value="show_all" selected>Show all plots</option>'
         html += '   <option value="{}">Baseline vs. all means</option>'.format(self.sweep_base_value)
         for r in self.sweep_values:
@@ -246,7 +257,8 @@ class FidelityHTMLReport(object):
             html += '   <option value="{0}">Baseline vs. sweep value {0}</option>'.format(r)
         html += '</select>'
 
-        html += '<select id="cp_w_base_means_runs_switch" onchange="javascript:switchCompareModeImages(\'{}\')"  style="font-size: 18px;">'.format(data_channel)
+        html += '<select id="cp_w_base_means_runs_switch" onchange="javascript:switchCompareModeImages(\'{}\')"  style="font-size: 18px;">'.format(
+            data_channel)
         html += '   <option value="{0}">{0} runs</option>'.format(self.runs_count)
         html += '   <option value="{0}">{0} runs</option>'.format(lower_run_count)
         html += '</select>'
@@ -257,23 +269,31 @@ class FidelityHTMLReport(object):
 
         for r in self.sweep_values:
             if r == self.sweep_base_value: continue
-            html += self.plot_time_series_interval_compare_html(dfp, sweep_values_map, data_channel, r, do_rolling=True, is_visible=True)
+            html += self.plot_time_series_interval_compare_html(dfp, sweep_values_map, data_channel, r, do_rolling=True,
+                                                                is_visible=True)
             self.plot_time_series_interval_compare_html(dfp, sweep_values_map, data_channel, r, is_visible=False)
 
         for r in self.sweep_values:
             if r == self.sweep_base_value: continue
-            html += self.plot_time_series_interval_compare_html(dfp2, sweep_values_map, data_channel, r, do_rolling=True, lower_run_count = lower_run_count, is_visible=False)
-            self.plot_time_series_interval_compare_html(dfp2, sweep_values_map, data_channel, r, lower_run_count = lower_run_count, is_visible=False)
+            html += self.plot_time_series_interval_compare_html(dfp2, sweep_values_map, data_channel, r,
+                                                                do_rolling=True, lower_run_count=lower_run_count,
+                                                                is_visible=False)
+            self.plot_time_series_interval_compare_html(dfp2, sweep_values_map, data_channel, r,
+                                                        lower_run_count=lower_run_count, is_visible=False)
 
         html += '<h3>Individual Runs</h3>'
         for sv in self.sweep_values:
-            html += self.plot_time_series_individual_runs_html(dfp, sweep_values_map, data_channel, sv, do_rolling=True, is_visible=True)
+            html += self.plot_time_series_individual_runs_html(dfp, sweep_values_map, data_channel, sv, do_rolling=True,
+                                                               is_visible=True)
             self.plot_time_series_individual_runs_html(dfp, sweep_values_map, data_channel, sv, is_visible=False)
 
         # Show how it looks with fewer runs
         for sv in self.sweep_values:
-            html += self.plot_time_series_individual_runs_html(dfp2, sweep_values_map, data_channel, sv, do_rolling=True, lower_run_count = lower_run_count, is_visible=False)
-            self.plot_time_series_individual_runs_html(dfp2, sweep_values_map, data_channel, sv, lower_run_count = lower_run_count, is_visible=False)
+            html += self.plot_time_series_individual_runs_html(dfp2, sweep_values_map, data_channel, sv,
+                                                               do_rolling=True, lower_run_count=lower_run_count,
+                                                               is_visible=False)
+            self.plot_time_series_individual_runs_html(dfp2, sweep_values_map, data_channel, sv,
+                                                       lower_run_count=lower_run_count, is_visible=False)
 
         html += '<h3>Means, Simulation End (last 10% of steps)</h2>'
         html += self.plot_time_series_zoom_end_html(dfps, sweep_values_map, data_channel, do_rolling=True)
@@ -303,7 +323,6 @@ class FidelityHTMLReport(object):
 
         print(os.path.normpath(os.path.abspath(report_path)))
 
-
     ### calculate measures
 
     # all measures
@@ -325,13 +344,15 @@ class FidelityHTMLReport(object):
         # visual style map
         from itertools import cycle
         colors_iter = cycle(self.colors_all)
-        sweep_values_map = {r: {'width': 4 if r == self.sweep_base_value else 2, 'color': next(colors_iter)} for r in self.sweep_values}
+        sweep_values_map = {r: {'width': 4 if r == self.sweep_base_value else 2, 'color': next(colors_iter)} for r in
+                            self.sweep_values}
 
         for r in self.sweep_values:
             sweep_values_map[r]['SE'] = np.nanmean(self.calc_channel_se_window(data_channel, r, do_rolling=True))
 
             # Avg. run time per sampling rate
-            sweep_values_map[r]['time_avg'] = self.df_raw[self.df_raw[self.sweep_param] == r]['total_time'].unique().mean()
+            sweep_values_map[r]['time_avg'] = self.df_raw[self.df_raw[self.sweep_param] == r][
+                'total_time'].unique().mean()
 
             # TODO: Spatial node measures: like measures avg. of per node measures, measures per population bin 100-500-1000, histogram of node values.
             # Avg. node std
@@ -343,28 +364,34 @@ class FidelityHTMLReport(object):
 
         total_steps = len(dfp.index)
         if total_steps > 0:
-            dfp = np.round(dfp,4)
+            dfp = np.round(dfp, 4)
             for r in self.sweep_values:
                 base_time = sweep_values_map[self.sweep_base_value]['time_avg']
                 r_time = sweep_values_map[r]['time_avg']
-                sweep_values_map[r]['sim_speedup'] = base_time/r_time
+                sweep_values_map[r]['sim_speedup'] = base_time / r_time
 
                 # MAD
                 sweep_values_map[r]['MAD'] = (np.abs(dfp[self.sweep_base_value] - dfp[r])).mean()
 
                 # MAPE
                 base_values_mean = np.abs(dfp[self.sweep_base_value].mean())
-                sweep_values_map[r]['MAPE'] = (100 * sweep_values_map[r]['MAD']) / base_values_mean if base_values_mean != 0 else np.nan
+                sweep_values_map[r]['MAPE'] = (100 * sweep_values_map[r][
+                    'MAD']) / base_values_mean if base_values_mean != 0 else np.nan
 
                 # % of values in 95% confidece interval, aprox. to 2 x SE (instead of 1.96)
                 b1min, b1max, b2min, b2max = self.get_se_interval_col_names(self.sweep_base_value)
 
-                sweep_values_map[r]['IN1SE'] = (100.0 * ((dfp[r] >= dfp[b1min]) & (dfp[r] <= dfp[b1max])).apply(lambda x: 1 if x else 0).sum()) / total_steps
-                sweep_values_map[r]['IN2SE'] = (100.0 * ((dfp[r] >= dfp[b2min]) & (dfp[r] <= dfp[b2max])).apply(lambda x: 1 if x else 0).sum()) / total_steps
+                sweep_values_map[r]['IN1SE'] = (100.0 * ((dfp[r] >= dfp[b1min]) & (dfp[r] <= dfp[b1max])).apply(
+                    lambda x: 1 if x else 0).sum()) / total_steps
+                sweep_values_map[r]['IN2SE'] = (100.0 * ((dfp[r] >= dfp[b2min]) & (dfp[r] <= dfp[b2max])).apply(
+                    lambda x: 1 if x else 0).sum()) / total_steps
 
                 r1min, r1max, r2min, r2max = self.get_se_interval_col_names(r)
                 # adding 0.0001 to upper side to ensure that cases when SE is 0 (down/up values are equal) still counts as match
-                sweep_values_map[r]['IO2SE'] = 100.0 * sum( dfp.apply( lambda row: self.get_interval_overlap([ row[b2min], row[b2max]+0.0001 ], [ row[r2min], row[r2max]+0.0001 ] ) != 0.0, axis=1 )) / total_steps
+                sweep_values_map[r]['IO2SE'] = 100.0 * sum(dfp.apply(
+                    lambda row: self.get_interval_overlap([row[b2min], row[b2max] + 0.0001],
+                                                          [row[r2min], row[r2max] + 0.0001]) != 0.0,
+                    axis=1)) / total_steps
 
                 # KS test
                 # K-S is small or p-value is high => cannot reject the hypothesis they are from the same distribution.
@@ -373,7 +400,7 @@ class FidelityHTMLReport(object):
 
         return sweep_values_map
 
-    def calc_channel_se_window(self, data_channel, sweep_value, run_number_count = None, do_rolling = False):
+    def calc_channel_se_window(self, data_channel, sweep_value, run_number_count=None, do_rolling=False):
         """ Standard Error (SE) of sweep_value time series, calc as SD of means of different runs / sqrt(number of runs).
             run_number_count indicates how many runs to include in the calucation.
             Usage: calculate SE for summary measures and plots and Noise convergence bar plot.
@@ -387,7 +414,7 @@ class FidelityHTMLReport(object):
         df_rs = self.df_raw[self.df_raw[self.sweep_param] == sweep_value]
 
         # only include specified number of runs
-        df_rs = df_rs[df_rs ['Run_Number'] <= rn]
+        df_rs = df_rs[df_rs['Run_Number'] <= rn]
         df_rs = df_rs.reset_index()
         df_rs = df_rs[['Run_Number', 'step', data_channel]]
 
@@ -414,7 +441,7 @@ class FidelityHTMLReport(object):
         """Measure cache, allows re-use of summary measures and plots. Initiates measure calculation."""
         self._measure_cache = {k: {'map': None, 'corr': None, 'plot': None} for k in self.inset_channel_names}
 
-    def get_channel_measure_data(self, channel, run_number_count = None,):
+    def get_channel_measure_data(self, channel, run_number_count=None, ):
         """Get measure dataframe (channel mean unstacked by sweep vale, with confidence intervals)."""
         data_channel = 'inset_{}'.format(channel)
 
@@ -437,25 +464,31 @@ class FidelityHTMLReport(object):
 
             self._measure_cache[channel]['map'] = sweep_values_map
             self._measure_cache[channel]['corr'] = corr
-            self._measure_cache[channel]['plot'] = self.plot_time_series_html(dfp, sweep_values_map, data_channel, do_rolling=True, is_visible=True)
+            self._measure_cache[channel]['plot'] = self.plot_time_series_html(dfp, sweep_values_map, data_channel,
+                                                                              do_rolling=True, is_visible=True)
             # plot the 'raw' version as well so that image exists but don't add it to html initially, it will be handled by javascirpt per user action
             self.plot_time_series_html(dfp, sweep_values_map, data_channel, do_rolling=False, is_visible=False)
 
             # Show how it los with fewer runs
-            lower_run_count = lower_run_count = self. get_lower_run_count()
+            lower_run_count = lower_run_count = self.get_lower_run_count()
             dfp2 = self.get_channel_measure_data(channel, lower_run_count)
 
-            self._measure_cache[channel]['plot2'] = self.plot_time_series_html(dfp2, sweep_values_map, data_channel, do_rolling=True, lower_run_count = lower_run_count, is_visible=False)
-            self.plot_time_series_html(dfp2, sweep_values_map, data_channel, do_rolling=False, lower_run_count = lower_run_count, is_visible=False)
+            self._measure_cache[channel]['plot2'] = self.plot_time_series_html(dfp2, sweep_values_map, data_channel,
+                                                                               do_rolling=True,
+                                                                               lower_run_count=lower_run_count,
+                                                                               is_visible=False)
+            self.plot_time_series_html(dfp2, sweep_values_map, data_channel, do_rolling=False,
+                                       lower_run_count=lower_run_count, is_visible=False)
 
-        return self._measure_cache[channel]['map'], self._measure_cache[channel]['corr'], self._measure_cache[channel]['plot'], self._measure_cache[channel]['plot2']
+        return self._measure_cache[channel]['map'], self._measure_cache[channel]['corr'], self._measure_cache[channel][
+            'plot'], self._measure_cache[channel]['plot2']
 
     def get_lower_run_count(self):
         return max(int(self.runs_count / 3), 1)
 
     ### init dataframes
 
-    def init_means_df(self, data_channel, run_number_count = None):
+    def init_means_df(self, data_channel, run_number_count=None):
         """ Takes raw df and aggregates individual runs into means.
             Usage: in init_unstacked_means_se_df
             Returning df:
@@ -525,12 +558,13 @@ class FidelityHTMLReport(object):
         # take raw data for the given sweep value
         dfr = self.df_raw[self.df_raw['Run_Number'] <= lower_run_count]
         df = dfr[['step', 'Run_Number', self.sweep_param, data_channel]]
-        df = df[df[self.sweep_param]==sweep_value]
+        df = df[df[self.sweep_param] == sweep_value]
 
         # TODO: del df[self.sweep_param], pivot or unstack without self.sweep_param, use input sweep_value arg to name columns
 
         # unstack so that there is 1 column for each run
-        dfpv = df.pivot_table(index='step', columns=[self.sweep_param, 'Run_Number'], values=[data_channel], aggfunc='first')
+        dfpv = df.pivot_table(index='step', columns=[self.sweep_param, 'Run_Number'], values=[data_channel],
+                              aggfunc='first')
 
         # rename columns to follow the pattern "sweep value {run}"
         dfpv.columns = [(c[1], int(c[2])) for c in dfpv.columns.values]
@@ -559,7 +593,8 @@ class FidelityHTMLReport(object):
             for rn in range(2, self.runs_count + 1):
                 # SE for the give number or runs
                 se_final = self.calc_channel_se_window(data_channel, sv, run_number_count=rn, do_rolling=True)
-                df_se_tmp = pd.DataFrame({'step': self.steps, self.sweep_param: sv, 'run_number_count': rn, 'SE': se_final})
+                df_se_tmp = pd.DataFrame(
+                    {'step': self.steps, self.sweep_param: sv, 'run_number_count': rn, 'SE': se_final})
                 df_se = pd.concat([df_se, df_se_tmp])
 
         return df_se
@@ -571,22 +606,24 @@ class FidelityHTMLReport(object):
                 index: labels
                 cols: sweep values...
             """
-        df_times = self.df_raw[[self.sweep_param, 'Run_Number','total_time']].groupby([self.sweep_param]).mean() #, as_index=False
+        df_times = self.df_raw[[self.sweep_param, 'Run_Number', 'total_time']].groupby(
+            [self.sweep_param]).mean()  # , as_index=False
         del df_times['Run_Number']
         base_time = df_times.loc[self.sweep_base_value].iloc[0]
         time_col = 'sim time (s)'
         df_times.columns = [time_col]
-        df_times['sim speedup (x)'] = base_time/df_times[time_col]
+        df_times['sim speedup (x)'] = base_time / df_times[time_col]
         # sort by sweep value
         df_times = df_times.sort_index(ascending=self.is_sweep_ascending())
 
         # ensure base value is on top, so when transposed it will be the first column
-        df_times_final = pd.concat([df_times[df_times.index == self.sweep_base_value], df_times[df_times.index != self.sweep_base_value]])
+        df_times_final = pd.concat(
+            [df_times[df_times.index == self.sweep_base_value], df_times[df_times.index != self.sweep_base_value]])
 
         # transpose to get labels as index and sweep values as columns
         return df_times.T
 
-    def init_measures_summary_df(self, corr_matrix, sweep_values_map, categories = None):
+    def init_measures_summary_df(self, corr_matrix, sweep_values_map, categories=None):
         """ Constructs measure summary dataframe so that index are measure names and columsn are sweep values.
             Usage: measure summary in sumamry page, channel measure summary in summary and channel detail pages
             Returning df:
@@ -595,14 +632,19 @@ class FidelityHTMLReport(object):
         """
         cols = self.sweep_values + ['category']
         row = [sweep_values_map[r]['SE'] for r in self.sweep_values] + ['se']
-        df_measures = pd.DataFrame(data = [row], columns=cols, index = [['standard error (SE)']])
+        df_measures = pd.DataFrame(data=[row], columns=cols, index=[['standard error (SE)']])
 
-        df_measures.loc[self._measure_names['IN1SE']] = [int(sweep_values_map[r]['IN1SE']) for r in self.sweep_values] + ['se']
-        df_measures.loc[self._measure_names['IN2SE']] = [int(sweep_values_map[r]['IN2SE']) for r in self.sweep_values] + ['se']
-        df_measures.loc[self._measure_names['IO2SE']] = [int(sweep_values_map[r]['IO2SE']) for r in self.sweep_values] + ['se']
+        df_measures.loc[self._measure_names['IN1SE']] = [int(sweep_values_map[r]['IN1SE']) for r in
+                                                         self.sweep_values] + ['se']
+        df_measures.loc[self._measure_names['IN2SE']] = [int(sweep_values_map[r]['IN2SE']) for r in
+                                                         self.sweep_values] + ['se']
+        df_measures.loc[self._measure_names['IO2SE']] = [int(sweep_values_map[r]['IO2SE']) for r in
+                                                         self.sweep_values] + ['se']
         df_measures.loc[self._measure_names['MAD']] = [sweep_values_map[r]['MAD'] for r in self.sweep_values] + ['dist']
-        df_measures.loc[self._measure_names['MAPE']] = [sweep_values_map[r]['MAPE'] for r in self.sweep_values] + ['dist']
-        df_measures.loc[self._measure_names['CORR']] = [corr_matrix[0, j] for j in range(len(self.sweep_values))] + ['corr']
+        df_measures.loc[self._measure_names['MAPE']] = [sweep_values_map[r]['MAPE'] for r in self.sweep_values] + [
+            'dist']
+        df_measures.loc[self._measure_names['CORR']] = [corr_matrix[0, j] for j in range(len(self.sweep_values))] + [
+            'corr']
         df_measures.loc[self._measure_names['KS']] = [sweep_values_map[r]['KS'] for r in self.sweep_values] + ['prob']
 
         if categories is not None:
@@ -633,16 +675,17 @@ class FidelityHTMLReport(object):
 
         return df
 
-
     ### plotting
 
-    def plot_time_series_html(self, dfp, sweep_values_map, data_channel, do_rolling = False, lower_run_count = None, is_visible=True):
+    def plot_time_series_html(self, dfp, sweep_values_map, data_channel, do_rolling=False, lower_run_count=None,
+                              is_visible=True):
         # TODO: consider the edge case when lower_run_count == self.runs_count and prevent dup plots.
         rn = lower_run_count or self.runs_count
         html = ''
         channel = data_channel.replace('inset_', '')
 
-        plot_path = self.get_result_path('{}_cp_w_base_means_time_series{}.png'.format(self.get_file_name_sweep_label(data_channel, self.sweep_base_value, rn), '_rolling' if do_rolling else ''))
+        plot_path = self.get_result_path('{}_cp_w_base_means_time_series{}.png'.format(
+            self.get_file_name_sweep_label(data_channel, self.sweep_base_value, rn), '_rolling' if do_rolling else ''))
         f = plt.figure(figsize=(14, 3))
         if do_rolling:
             dfp = self.rolling_mean(dfp)
@@ -652,12 +695,14 @@ class FidelityHTMLReport(object):
 
         return html
 
-    def plot_time_series_interval_compare_html(self, dfp, sweep_values_map, data_channel, sweep_value_to_compare, do_rolling = False, lower_run_count = None, is_visible=True):
+    def plot_time_series_interval_compare_html(self, dfp, sweep_values_map, data_channel, sweep_value_to_compare,
+                                               do_rolling=False, lower_run_count=None, is_visible=True):
         rn = lower_run_count or self.runs_count
         html = ''
         channel = data_channel.replace('inset_', '')
 
-        plot_path = self.get_result_path('{}_cp_w_base_means_time_series{}.png'.format(self.get_file_name_sweep_label(data_channel, sweep_value_to_compare, rn), '_rolling' if do_rolling else ''))
+        plot_path = self.get_result_path('{}_cp_w_base_means_time_series{}.png'.format(
+            self.get_file_name_sweep_label(data_channel, sweep_value_to_compare, rn), '_rolling' if do_rolling else ''))
 
         f = plt.figure(figsize=(14, 3))
         if do_rolling:
@@ -669,12 +714,15 @@ class FidelityHTMLReport(object):
 
         return html
 
-    def plot_time_series_individual_runs_html(self, dfp, sweep_values_map, data_channel, sweep_value, do_rolling = False, lower_run_count = None, is_visible=True):
+    def plot_time_series_individual_runs_html(self, dfp, sweep_values_map, data_channel, sweep_value, do_rolling=False,
+                                              lower_run_count=None, is_visible=True):
         rn = lower_run_count or self.runs_count
         html = ''
         channel = data_channel.replace('inset_', '')
 
-        plot_path = self.get_result_path('{}_ind_runs_time_series{}.png'.format(self.get_file_name_sweep_label(data_channel, sweep_value, rn), '_rolling' if do_rolling else ''))
+        plot_path = self.get_result_path(
+            '{}_ind_runs_time_series{}.png'.format(self.get_file_name_sweep_label(data_channel, sweep_value, rn),
+                                                   '_rolling' if do_rolling else ''))
 
         dfmpv = self.init_base_mean_w_individual_runs_df(dfp, data_channel, sweep_value, rn)
 
@@ -700,19 +748,21 @@ class FidelityHTMLReport(object):
         handles, labels = ax.get_legend_handles_labels()
         labels2 = [self.sweep_base_value, str(run_keys[0][0])]
         fk = run_keys[0][0]
-        handles2 = [ [h for h in handles if h._label == str(self.sweep_base_value)][0], [h for h in handles if h._label.startswith('(')][0] ]
+        handles2 = [[h for h in handles if h._label == str(self.sweep_base_value)][0],
+                    [h for h in handles if h._label.startswith('(')][0]]
         ax.legend(handles2, labels2, loc='best')
 
         html += self.save_close_report_plot(plot_path, f, is_visible)
 
         return html
 
-    def plot_time_series_zoom_end_html(self, dfp, sweep_values_map, data_channel, w = 0.1, do_rolling = False):
+    def plot_time_series_zoom_end_html(self, dfp, sweep_values_map, data_channel, w=0.1, do_rolling=False):
         """Plots last 10% percent of the dataframe (or percent specified by w input argument)."""
         html = ''
         channel = data_channel.replace('inset_', '')
 
-        plot_path = self.get_result_path('{}_zoom_to_end_time_series{}.png'.format(data_channel, '_rolling' if do_rolling else ''))
+        plot_path = self.get_result_path(
+            '{}_zoom_to_end_time_series{}.png'.format(data_channel, '_rolling' if do_rolling else ''))
         f = plt.figure(figsize=(14, 3))
 
         if do_rolling:
@@ -748,7 +798,7 @@ class FidelityHTMLReport(object):
         df_se_g = df_se_g.pivot(index='run_number_count', columns=self.sweep_param, values='SE')
 
         bar_colors = list(reversed(self.colors_all[:len(self.sweep_values)]))
-        df_se_g.plot(kind = 'bar', color=bar_colors, figsize=(14, 3), ax = ax)
+        df_se_g.plot(kind='bar', color=bar_colors, figsize=(14, 3), ax=ax)
 
         if self.is_sweep_ascending():
             handles, labels = ax.get_legend_handles_labels()
@@ -788,7 +838,8 @@ class FidelityHTMLReport(object):
                 axs[j].get_xaxis().get_major_formatter().set_useOffset(False)
                 axs[j].get_yaxis().get_major_formatter().set_useOffset(False)
                 # writes corr value on the plot
-                axs[j].annotate('{}'.format(np.round(corr[0, j + 1], 4)), (0.5, 0.9), xycoords='axes fraction', ha='center', va='center')
+                axs[j].annotate('{}'.format(np.round(corr[0, j + 1], 4)), (0.5, 0.9), xycoords='axes fraction',
+                                ha='center', va='center')
                 axs[j].set_xlabel(r)
                 axs[j].set_ylabel(self.sweep_base_value)
 
@@ -831,13 +882,14 @@ class FidelityHTMLReport(object):
         return html
 
     def plot_histogram_html(self, dfp, sweep_values_map, data_channel):
-        html = '' #''<h2>Histogram</h2>'
+        html = ''  # ''<h2>Histogram</h2>'
         channel = data_channel.replace('inset_', '')
         plot_path = self.get_result_path('{}_hist_all.png'.format(data_channel))
 
         f = plt.figure(figsize=(14, 3))
         # histogram of all sweep values on the same plot
-        dfp[self.sweep_values].plot.hist(ax=f.gca(), bins=60, color=[sweep_values_map[k]['color'] for k in self.sweep_values])
+        dfp[self.sweep_values].plot.hist(ax=f.gca(), bins=60,
+                                         color=[sweep_values_map[k]['color'] for k in self.sweep_values])
         ax = f.gca()
         # ensure that scientific notation is NOT used to label axes
         ax.get_xaxis().get_major_formatter().set_useOffset(False)
@@ -860,7 +912,8 @@ class FidelityHTMLReport(object):
             f.set_size_inches((14, 2))
 
             for i in range(len(self.sweep_values)):
-                dfp[self.sweep_values[i]].plot.hist(ax=axs[i], bins=20, color=sweep_values_map[self.sweep_values[i]]['color'])
+                dfp[self.sweep_values[i]].plot.hist(ax=axs[i], bins=20,
+                                                    color=sweep_values_map[self.sweep_values[i]]['color'])
                 axs[i].grid(True)
                 axs[i].set_ylim(0, hist_ymax)
                 axs[i].get_xaxis().get_major_formatter().set_useOffset(False)
@@ -877,10 +930,11 @@ class FidelityHTMLReport(object):
 
         return html
 
-    def plot_lines(self, df_tp, sweep_values_map, channel = '', sweep_value_to_compare = None):
+    def plot_lines(self, df_tp, sweep_values_map, channel='', sweep_value_to_compare=None):
         """Plots time series using specified colors and line widths. Also, shades confidence interval areas"""
         is_compare = sweep_value_to_compare is not None
-        sweep_values_to_plot = [self.sweep_base_value, sweep_value_to_compare] if is_compare else sweep_values_map.keys()
+        sweep_values_to_plot = [self.sweep_base_value,
+                                sweep_value_to_compare] if is_compare else sweep_values_map.keys()
         # set color and width
         for k in sweep_values_to_plot:
             if k in df_tp.columns:
@@ -895,44 +949,47 @@ class FidelityHTMLReport(object):
         ax.grid(True)
         self.set_ax_labels(ax)
 
-        sweep_values_w_interval = [self.sweep_base_value, sweep_value_to_compare] if is_compare else [self.sweep_base_value]
+        sweep_values_w_interval = [self.sweep_base_value, sweep_value_to_compare] if is_compare else [
+            self.sweep_base_value]
 
         for r in sweep_values_w_interval:
             se_int_cols = self.get_se_interval_col_names(r)
             if se_int_cols[0] in df_tp.columns.values:
                 color = sweep_values_map[r]['color']
                 if not is_compare:
-                    plt.fill_between(df_tp.index, df_tp[se_int_cols[0]], df_tp[se_int_cols[1]], where=df_tp[se_int_cols[0]] < df_tp[se_int_cols[1]],
-                                 facecolor= color, alpha=0.2, interpolate=True)
-                plt.fill_between(df_tp.index, df_tp[se_int_cols[2]], df_tp[se_int_cols[3]], where=df_tp[se_int_cols[2]] < df_tp[se_int_cols[3]],
+                    plt.fill_between(df_tp.index, df_tp[se_int_cols[0]], df_tp[se_int_cols[1]],
+                                     where=df_tp[se_int_cols[0]] < df_tp[se_int_cols[1]],
+                                     facecolor=color, alpha=0.2, interpolate=True)
+                plt.fill_between(df_tp.index, df_tp[se_int_cols[2]], df_tp[se_int_cols[3]],
+                                 where=df_tp[se_int_cols[2]] < df_tp[se_int_cols[3]],
                                  facecolor=color, alpha=0.1, interpolate=True)
 
         return ax
 
-
     ### helper dicts and methods
 
-    def df_html_summary_args(self, decimals = 2):
+    def df_html_summary_args(self, decimals=2):
         """Arguments needed for transforming df into HTML."""
-        return { 'classes': 'summary', 'float_format' : lambda x: '%.{}f'.format(decimals) % x}
+        return {'classes': 'summary', 'float_format': lambda x: '%.{}f'.format(decimals) % x}
 
-    def get_file_name_sweep_label(self, data_channel, sweep_value, run_number = None):
-        lbl =  '{}_sw{}'.format(data_channel, sweep_value)
+    def get_file_name_sweep_label(self, data_channel, sweep_value, run_number=None):
+        lbl = '{}_sw{}'.format(data_channel, sweep_value)
         if run_number is not None:
-            lbl +=  '_rn{}'.format(run_number)
+            lbl += '_rn{}'.format(run_number)
 
         return lbl
 
     def get_result_path(self, name):
         return os.path.join(self.report_dir_path, name)
 
-    def save_close_report_plot(self, plot_path, fig=None, is_visible = True):
+    def save_close_report_plot(self, plot_path, fig=None, is_visible=True):
         plt.savefig(plot_path, bbox_inches='tight')
 
         if fig:
             plt.close(fig)
 
-        plot_html = "<img src='{}' style='display: {}'/>".format(os.path.basename(plot_path), '' if is_visible else 'none')
+        plot_html = "<img src='{}' style='display: {}'/>".format(os.path.basename(plot_path),
+                                                                 '' if is_visible else 'none')
 
         return plot_html
 
@@ -965,5 +1022,5 @@ class FidelityHTMLReport(object):
 
     @staticmethod
     def get_interval_overlap(a, b):
-        #https://stackoverflow.com/questions/2953967/built-in-function-for-computing-overlap-in-python
+        # https://stackoverflow.com/questions/2953967/built-in-function-for-computing-overlap-in-python
         return max(0, min(a[1], b[1]) - max(a[0], b[0]))
