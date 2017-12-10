@@ -169,7 +169,8 @@ class SimulationAssets(object):
 
             if location == "HPC":
                 # If we already have the master collection set -> set it as collection for every types
-                if self.master_collection:
+                # Bypass the python type for now
+                if self.master_collection and collection_type != self.PYTHON:
                     self.collections[collection_type] = self.master_collection
                     continue
 

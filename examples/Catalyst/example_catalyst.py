@@ -15,6 +15,7 @@ campaign_file = os.path.join(input_dir, 'campaign.json')
 kwargs = {
 }
 cb = DTKConfigBuilder.from_files(config_name=config_file, campaign_name=campaign_file, **kwargs)
+cb.set_collection_id('71483975-57dc-e711-9414-f0921c16b9e5')
 
 # Name of the experiment
 exp_name = 'catalyst_comparison-MalariaSandbox'
