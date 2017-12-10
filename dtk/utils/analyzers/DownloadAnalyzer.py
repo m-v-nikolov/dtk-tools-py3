@@ -41,7 +41,7 @@ class DownloadAnalyzer(BaseAnalyzer):
 
         # Create the output path
         if not os.path.exists(self.output_path):
-            os.mkdir(self.output_path)
+            os.makedirs(self.output_path)
 
     def get_sim_folder(self, parser):
         """
@@ -55,7 +55,7 @@ class DownloadAnalyzer(BaseAnalyzer):
         # Create a folder for the current simulation
         sim_folder = self.get_sim_folder(parser)
         if not os.path.exists(sim_folder):
-            os.mkdir(sim_folder)
+            os.makedirs(sim_folder)
 
         # Create the requested files
         for filename in self.filenames:
