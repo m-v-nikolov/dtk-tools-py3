@@ -703,7 +703,7 @@ def catalyst(args, unknownArgs):
         experiment = retrieve_experiment(args.experiment_id)
 
     # Create an analyze manager
-    am = AnalyzeManager(exp_list=[experiment])
+    am = AnalyzeManager(exp_list=[experiment], verbose=False)
 
     # Add the TimeSeriesAnalyzer to the manager and do analysis
     # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer.

@@ -1,13 +1,12 @@
 import os
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from dtk.utils.analyzers.BaseShelfAnalyzer import BaseShelfAnalyzer
 
 
-class BaseSimDataAnalyzer(BaseAnalyzer):
+class BaseSimDataAnalyzer(BaseShelfAnalyzer):
     """Collect simulation data into SimData objects, one for each simulation."""
     def __init__(self, output_path, config_file, demographics_file, spatial_channel_names=[], inset_channel_names=[], label=None):
         self.config_file = config_file
@@ -38,19 +37,20 @@ class BaseSimDataAnalyzer(BaseAnalyzer):
         self.filenames = [os.path.normpath(f) for f in self.filenames]
 
         # init superclass now that filenames are assembled
-        super(BaseSimDataAnalyzer, self).__init__()
-
-        self.sim_data = defaultdict(SimData)
-        self.result = None
+        super(BaseSimDataAnalyzer, self).__init__(shelf_location=os.path.join(self.output_path, "cache"))
 
     @property
     def spatial_channel_files(self):
         return [os.path.join('output', 'SpatialReport_{}.bin').format(c) for c in self.spatial_channel_names]
 
     def initialize(self):
+        super(BaseSimDataAnalyzer, self).initialize()
         # Create the output path
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
+
+    def filter(self, sim_metadata):
+        return not self.is_in_shelf(sim_metadata["sim_id"])
 
     def apply(self, parser):
         # Retrieve the output directory
@@ -91,38 +91,7 @@ class BaseSimDataAnalyzer(BaseAnalyzer):
             inset[name] = InsetChannel(ic_data["Channels"][name]["Data"], name)
         sd.inset_channels = inset
 
-        self.sim_data[sim_id] = sd
-
-    @property
-    def inset_channel_columns(self):
-        cols = []
-        if self.sim_data is not None and len(self.sim_data.values()) > 0:
-            cols = [c.column_name for c in self.sim_data.values()[0].inset_channels.values()]
-
-        return cols
-
-    @property
-    def spatial_channel_columns(self):
-        cols = []
-        if self.sim_data is not None and len(self.sim_data.values()) > 0:
-            cols = [c.column_name for c in self.sim_data.values()[0].spatial_channels.values()]
-
-        return cols
-
-    @property
-    def exp_path(self):
-        if self.exp_name is None or self.exp_id is None:
-            raise Exception('Experiment failed or missing. Cannot construct experiment dir path.')
-
-        # make the reporting directory if it doesn't exist + write out some experiment metadata
-        exp_path = os.path.join(self.output_path)
-        if not os.path.isdir(exp_path):
-            os.makedirs(exp_path)
-        return exp_path
-
-    def get_result_path(self, name):
-        rpt_path = os.path.join(self.exp_path, name)
-        return rpt_path
+        self.update_shelf(sim_id, sd)
 
     @staticmethod
     def rolling_mean(dfp, rolling_win_size):
@@ -131,13 +100,6 @@ class BaseSimDataAnalyzer(BaseAnalyzer):
         dfps = dfp.rolling(rolling_win_size, min_periods=1, center=False).mean()
 
         return dfps
-
-    @staticmethod
-    def defaultdict_with_default_None():
-        dc = {}
-        dc = defaultdict(lambda: None, dc)
-
-        return dc
 
 
 class SimData:
@@ -229,31 +191,6 @@ class DemographicsFile:
     def locations(self):
         return {node['NodeID']: (node['NodeAttributes']['Latitude'], node['NodeAttributes']['Longitude']) for node in self.json['Nodes']}
 
-    @property
-    def nodes_pop(self):
-        if not self.json: raise Exception('Demographics information is not available before apply method is invoked.')
-        return DemographicsFile.nodes_pop_from_json(self.json)
-
-    @staticmethod
-    def nodes_pop_from_json(demog_json):
-        init_pop = 0
-        try:
-            init_pop = demog_json['Defaults']['NodeAttributes']['InitialPopulation']
-        except:
-            pass
-
-        nodes_pop = BaseSimDataAnalyzer.defaultdict_with_default_None()
-        for nd in demog_json['Nodes']:
-            node_id = nd['NodeID']
-            pop = None
-            try:
-                pop = nd['NodeAttributes']['InitialPopulation']
-            except:
-                pass
-
-            nodes_pop[node_id] = pop or init_pop
-
-        return nodes_pop
 
 
 class BaseSimDataChannel(object):

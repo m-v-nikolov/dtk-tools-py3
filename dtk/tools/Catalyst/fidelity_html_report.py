@@ -57,9 +57,9 @@ class FidelityHTMLReport:
 
     required_keys = ['nruns', 'duration', 'init', 'sweep_param', 'sweep_values', 'sweep_base_value',
                      'inset_channel_names']
-    optional_keys = ['rolling_win_size', 'step_from', 'step_to']
+    optional_keys = ['rolling_win_size', 'step_from', 'step_to', 'node_count']
 
-    def __init__(self, df_raw, report_dir_path, node_count, def_name, init, debug=False, **kwargs):
+    def __init__(self, df_raw, report_dir_path, def_name, init, debug=False, **kwargs):
         # init frequently used members so they show up in intellisense, actual values are dynamically set from **kwargs below
         self.sweep_param = None
         self.sweep_base_value = None
@@ -93,8 +93,6 @@ class FidelityHTMLReport:
                 ppath = os.path.join(report_dir_path, p)
                 os.remove(ppath)
 
-        # copy .js and .css
-        print('current dir: %s' % os.getcwd())
         source_path = os.path.dirname(__file__)
         shutil.copy2(os.path.join(source_path, 'fidelity_html_report.js'),
                      self.get_result_path('fidelity_html_report.js'))
@@ -317,7 +315,7 @@ class FidelityHTMLReport:
         with open(report_path, "w") as rpt_file:
             rpt_file.write(html)
 
-        print(os.path.normpath(os.path.abspath(report_path)))
+        print("Report generated in {}".format(os.path.normpath(os.path.abspath(report_path))))
 
     ### calculate measures
 
