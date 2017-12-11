@@ -2,21 +2,31 @@ import shelve
 
 from multiprocessing import Lock
 
+import os
+
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 
 class BaseShelfAnalyzer(BaseAnalyzer):
 
-    def __init__(self, shelf_filename=None, lock=None):
+    def __init__(self, shelf_filename=None, lock=None, shelf_location=None):
         super(BaseShelfAnalyzer, self).__init__()
         self.shelf_filename = shelf_filename or self.__class__.__name__ + ".shelf"
         self._shelf = None # must set in initialize()
         self._lock = lock or Lock()
         self.multiprocessing_plot = False
+        self.shelf_location = shelf_location
 
     def initialize(self):
+        # Make sure the subdirectory exist
+        if self.shelf_location:
+            if not os.path.exists(self.shelf_location):
+                os.makedirs(self.shelf_location)
         # create the shelf to use
-        self._shelf = shelve.open(self.shelf_filename, writeback=True)
+        self._shelf = shelve.open(os.path.join(self.shelf_location or "", self.shelf_filename), writeback=True)
+
+    def shelf_keys(self):
+        return list(self._shelf.keys())
 
     def update_shelf(self, key, value):
         with self._lock:
@@ -32,12 +42,7 @@ class BaseShelfAnalyzer(BaseAnalyzer):
         return value
 
     def is_in_shelf(self, key):
-        value = True
-        try:
-            self._shelf[str(key)]
-        except KeyError:
-            value = False
-        return value
+        return key in self._shelf
 
     def __del__(self):
         self._shelf.close()

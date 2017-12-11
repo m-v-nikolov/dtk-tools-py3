@@ -57,9 +57,9 @@ class FidelityHTMLReport:
 
     required_keys = ['nruns', 'duration', 'init', 'sweep_param', 'sweep_values', 'sweep_base_value',
                      'inset_channel_names']
-    optional_keys = ['rolling_win_size', 'step_from', 'step_to']
+    optional_keys = ['rolling_win_size', 'step_from', 'step_to', 'node_count']
 
-    def __init__(self, df_raw, report_dir_path, node_count, def_name, init, debug=False, **kwargs):
+    def __init__(self, df_raw, report_dir_path, def_name, init, debug=False, **kwargs):
         # init frequently used members so they show up in intellisense, actual values are dynamically set from **kwargs below
         self.sweep_param = None
         self.sweep_base_value = None
@@ -93,8 +93,6 @@ class FidelityHTMLReport:
                 ppath = os.path.join(report_dir_path, p)
                 os.remove(ppath)
 
-        # copy .js and .css
-        print('current dir: %s' % os.getcwd())
         source_path = os.path.dirname(__file__)
         shutil.copy2(os.path.join(source_path, 'fidelity_html_report.js'),
                      self.get_result_path('fidelity_html_report.js'))
@@ -146,7 +144,6 @@ class FidelityHTMLReport:
         html += '<h2>Channels Summary</h2>'
         df_channels = pd.DataFrame()
         for channel in self.inset_channel_names:
-            data_channel = 'inset_{}'.format(channel)
             sweep_values_map, corr, _, _ = self.get_channel_summary_measures(channel)
 
             df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist'])  # 'perf', 'corr', 'prob'
@@ -176,7 +173,6 @@ class FidelityHTMLReport:
         html += html_channels.replace('<thead>', html_cols)
 
         for channel in self.inset_channel_names:
-            data_channel = 'inset_{}'.format(channel)
             sweep_values_map, corr, plot_html, plot_html2 = self.get_channel_summary_measures(channel)
             df = self.init_measures_summary_df(corr, sweep_values_map, ['se', 'dist', 'corr', 'prob'])  # 'perf',
             del df['category']
@@ -200,8 +196,6 @@ class FidelityHTMLReport:
         if os.path.isfile(report_path):
             os.remove(report_path)
 
-        source_dir = os.path.dirname(__file__)
-        channel_map = pd.read_csv(os.path.join(source_dir, 'channels.csv'))
         data_channel = 'inset_{}'.format(channel)
 
         html = self._html_start
@@ -321,7 +315,7 @@ class FidelityHTMLReport:
         with open(report_path, "w") as rpt_file:
             rpt_file.write(html)
 
-        print(os.path.normpath(os.path.abspath(report_path)))
+        print("Report generated in {}".format(os.path.normpath(os.path.abspath(report_path))))
 
     ### calculate measures
 
@@ -359,8 +353,6 @@ class FidelityHTMLReport:
             # sweep_param_std = '{}_std'.format(data_channel)
             # sweep_values_map[r]['node_count'] = self.node_count
             # sweep_values_map[r]['avg_node_std'] = self.df_raw[self.df_raw[self.sweep_param] == r][sweep_param_std].mean() if sweep_param_std in self.df_raw.columns else None
-
-        se = sweep_values_map[self.sweep_base_value]['SE']
 
         total_steps = len(dfp.index)
         if total_steps > 0:
@@ -470,7 +462,7 @@ class FidelityHTMLReport:
             self.plot_time_series_html(dfp, sweep_values_map, data_channel, do_rolling=False, is_visible=False)
 
             # Show how it los with fewer runs
-            lower_run_count = lower_run_count = self.get_lower_run_count()
+            lower_run_count = self.get_lower_run_count()
             dfp2 = self.get_channel_measure_data(channel, lower_run_count)
 
             self._measure_cache[channel]['plot2'] = self.plot_time_series_html(dfp2, sweep_values_map, data_channel,
@@ -616,10 +608,6 @@ class FidelityHTMLReport:
         # sort by sweep value
         df_times = df_times.sort_index(ascending=self.is_sweep_ascending())
 
-        # ensure base value is on top, so when transposed it will be the first column
-        df_times_final = pd.concat(
-            [df_times[df_times.index == self.sweep_base_value], df_times[df_times.index != self.sweep_base_value]])
-
         # transpose to get labels as index and sweep values as columns
         return df_times.T
 
@@ -747,7 +735,6 @@ class FidelityHTMLReport:
         ax = self.plot_lines(dfmpv, value_map, channel)
         handles, labels = ax.get_legend_handles_labels()
         labels2 = [self.sweep_base_value, str(run_keys[0][0])]
-        fk = run_keys[0][0]
         handles2 = [[h for h in handles if h._label == str(self.sweep_base_value)][0],
                     [h for h in handles if h._label.startswith('(')][0]]
         ax.legend(handles2, labels2, loc='best')
@@ -829,7 +816,6 @@ class FidelityHTMLReport:
             for r in self.sweep_values:
                 if r == self.sweep_base_value: continue
                 color = sweep_values_map[r]['color']
-                width = sweep_values_map[r]['width']
                 j = self.sweep_values.index(r) - 1
                 axs[j].scatter(dfp[self.sweep_base_value], dfp[r],
                                color=color)  # ax=axs[i], bins=20, color=sweep_values_map[sweep_values[i]]['color'])

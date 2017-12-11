@@ -1,5 +1,6 @@
 import json
 import os
+from multiprocessing.pool import Pool
 
 import numpy as np
 import pandas as pd
@@ -42,71 +43,61 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         self.equal_step_count = time_series_equal_step_count
         self.raw_data = raw_data
         self.debug = debug
-        self.multiprocessing_plot = False
-
-    ##########################################
-    ### Analyzer interface implementation
-    ##########################################
-    def apply(self, parser):
-        super(FidelityReportAnalyzer, self).apply(parser)
-
-        sd = self.sim_data[parser.sim_id]
-        result = sd.to_df(['Run_Number', self.sweep_param])
-
-        return result
+        self.result = None
 
     def combine(self, parsers):
-        exp_def_path = self.get_result_path('exp_def.json')
+        exp_def_path = os.path.join(self.output_path, 'exp_def.json')
         self.exp_def['exp_id'] = self.exp_id
         if not os.path.exists(exp_def_path):
             with open(exp_def_path, 'w') as exp_def_file:
                 json.dump(self.exp_def, exp_def_file, sort_keys=True, indent=4)
 
-        selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
+        simulation_data = [self.from_shelf(simid).to_df(['Run_Number', self.sweep_param]) for simid in self.shelf_keys()]
 
-        max_step_count = max([len(df) for df in selected])
+        max_step_count = max([len(df) for df in simulation_data])
         # in case of 'time step' sweep, inset chart time series will be shorter so we need to expand them to the original size
         if self.equal_step_count:
             # some channels, specified in 'inset_cumulative_channel_names', have cumulative values (vs. snap shot vales) and they have to be downscaled. See adjust_dataframe_length.
             inset_cumulative_channel_names = [] if 'inset_cumulative_channel_names' not in self.exp_def else \
             self.exp_def['inset_cumulative_channel_names']
-            selected = [self.adjust_dataframe_length(df, max_step_count, inset_cumulative_channel_names) for df in
-                        selected]
+            simulation_data = [self.adjust_dataframe_length(df, max_step_count, inset_cumulative_channel_names) for df in
+                               simulation_data]
 
-        self.result = pd.DataFrame()
         step_from = self.time_series_step_from or 0
         step_to = self.time_series_step_to or max_step_count
-        if not (step_from >= 0 and step_from < step_to - 1):
+        if not (0 <= step_from < step_to - 1):
             raise Exception('Invalid from/to arguments: from {} to {}'.format(step_from, step_to))
 
         # take portion of the simulation dataframe as specified by step_from / step_to arguments.
-        self.result = pd.concat([df.iloc[step_from:step_to] for df in selected])
+        self.result = pd.concat([df.iloc[step_from:step_to] for df in simulation_data])
 
-    def plot(self):
-        import json
+        # Also extract the simulation_duration and nodecount from the first sim
+        first_sim = self.from_shelf(self.shelf_keys()[0])
+        self.exp_def['duration'] = first_sim.sim_duration
+        self.exp_def['node_count'] = first_sim.demog.node_count
 
-        self.exp_def['duration'] = list(self.sim_data.values())[0].sim_duration
-
+    def finalize(self):
         print('\nCreating reports...')
 
         # save raw data if needed
-        raw_path = self.get_result_path('data_raw.csv')
+        raw_path = os.path.join(self.output_path, 'data_raw.csv')
         if os.path.isfile(raw_path): os.remove(raw_path)
         if self.raw_data:
             self.result.to_csv(raw_path, index=False)
 
         # ck4, self.exp_path should use ... sim.experiment.some_path ?? must be a standard in dtk tools for this
-        rpt = FidelityHTMLReport(self.result, self.exp_path, list(self.sim_data.values())[0].demog.node_count,
-                                 debug=self.debug, **self.exp_def.get_report_instance_args())
+        rpt = FidelityHTMLReport(self.result, self.output_path, debug=self.debug, **self.exp_def.get_report_instance_args())
         rpt.create_summary_page()
 
-        # TODO: parallelize, requires some refactoring
-        for channel in self.inset_channel_names:
-            rpt.create_channel_detail_page(channel)
+        # Create the pool of worker for the inset_chart_channels
+        pool = Pool()
+        pool.map(rpt.create_channel_detail_page, self.inset_channel_names)
+        pool.close()
+        pool.join()
 
         # write out some metadata that used to be part of a very long dir path
         metadata = {'experiment_name': self.exp_name, 'experiment_id': self.exp_id, 'label': self.label}
-        metadata_filename = os.path.join(self.exp_path, 'experiment_metadata.json')
+        metadata_filename = os.path.join(self.output_path, 'experiment_metadata.json')
         with open(metadata_filename, 'w') as f:
             f.write(json.dumps(metadata))
 

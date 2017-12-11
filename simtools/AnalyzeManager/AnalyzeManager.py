@@ -196,9 +196,8 @@ class AnalyzeManager:
         for exp in list(self.experiments_simulations.keys()):
             self.create_parsers_for_experiment_from_simulation(exp)
 
-        if len(self.parsers) == 0:
+        if len(self.parsers) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
-            return # mimic the above len(self.analyzers) == 0 behavior
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()

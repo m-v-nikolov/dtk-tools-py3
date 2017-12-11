@@ -703,15 +703,15 @@ def catalyst(args, unknownArgs):
         experiment = retrieve_experiment(args.experiment_id)
 
     # Create an analyze manager
-    am = AnalyzeManager(exp_list=[experiment])
+    am = AnalyzeManager(exp_list=[experiment], verbose=False)
 
     # Add the TimeSeriesAnalyzer to the manager and do analysis
     # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer.
     # After all, the names COULD be different
-    analyzer = FidelityReportAnalyzer('output',
+    analyzer = FidelityReportAnalyzer('catalyst_report',
                                       'config.json',
                                       mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
-                                      experiment_definition = defn,
+                                      experiment_definition=defn,
                                       label=args.report_label,
                                       time_series_step_from=defn['step_from'],
                                       time_series_step_to=defn['step_to'],
@@ -720,8 +720,9 @@ def catalyst(args, unknownArgs):
                                       debug=args.debug)
     am.add_analyzer(analyzer)
     am.analyze()
+
     import webbrowser
-    webbrowser.open_new("file:///{}".format(os.path.join(os.getcwd(),"output","catalyst_report","summary_report.html")))
+    webbrowser.open_new("file:///{}".format(os.path.join(os.getcwd(), "catalyst_report", "summary_report.html")))
 
 
 def analyze_from_script(args, sim_manager):
