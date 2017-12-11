@@ -569,3 +569,11 @@ class CalibManager(object):
 
     def site_analyzer_names(self):
         return {site.name: [a.name for a in site.analyzers] for site in self.sites}
+
+    # ck4, define.
+    def get_calibrated_point(iteration=None):
+        if iteration is None:
+            iteration = self.get_last_iteration()
+        # ck4, do stuff
+        pass
+        return point # ck4, define a point object and use it
