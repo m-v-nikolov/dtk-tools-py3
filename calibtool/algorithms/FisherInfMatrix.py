@@ -86,29 +86,29 @@ def FisherInfMatrix(X, Perturb_size, M=10000, N=1):
         (X_perturbed, Y_perturbed) = perturbed_points(X, Perturb_size, M)
 
         for k in range(M):
-            # print 'X_perturbed = ', X_perturbed[:,:,k]
-            # print 'Y_perturbed = ', Y_perturbed[:,k]
+            # print('X_perturbed = ', X_perturbed[:,:,k])
+            # print('Y_perturbed = ', Y_perturbed[:,k])
 
             [thetaPlusPlus, thetaPlusMinus, thetaMinusPlus, thetaMinusMinus] = X_perturbed[:, :, k].T
             [loglPP, loglPM, loglMP, loglMM] = Y_perturbed[:, k]
-            # print 'thetaPlusPlus=',thetaPlusPlus
-            # print 'loglPP=',loglPP
+            # print('thetaPlusPlus=',thetaPlusPlus)
+            # print('loglPP=',loglPP)
 
             G_p[:, k] = (loglPP - loglPM) / (thetaPlusPlus - thetaPlusMinus)
             G_m[:, k] = (loglMP - loglMM) / (thetaMinusPlus - thetaMinusMinus)
 
             # H_hat(n)
             S = np.dot((1 / (thetaPlusPlus - thetaMinusPlus))[:, None], (G_p[:, k] - G_m[:, k])[None, :])  # H_hat
-            # print 'S=',S
+            # print('S=',S)
             H_hat[:, :, k] = .5 * (S + S.T)
             H_hat_avg[:, :, k] = k / (k + 1) * H_hat_avg[:, :, k - 1] + 1 / (k + 1) * H_hat[:, :, k]
 
-        # print 'G_p=',G_p
-        # print 'G_m=',G_m
+        # print('G_p=',G_p)
+        # print('G_m=',G_m)
 
         H_bar[:, :, i] = .5 * (
         H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p)))
-        # print 'H_bar[:,:,i]=',H_bar[:,:,i]
+        # print('H_bar[:,:,i]=',H_bar[:,:,i])
         H_bar_avg[:, :, i] = i / (i + 1) * H_bar_avg[:, :, i - 1] + 1 / (i + 1) * H_bar[:, :, i]
 
     Fisher = -1 * H_bar_avg[:, :, N - 1]
@@ -186,7 +186,7 @@ def LogL_func(X):
 p = 2
 global X0
 X0 = np.random.uniform(0.0, 2.0, (p, 1))
-print 'X0 =', X0
+print('X0 =', X0)
 X_min = 0
 X_max = 2
 M = 10
@@ -197,8 +197,8 @@ Fisher = FisherInfMatrix(X0, Perturb_size, M, N)
 # sigma = diag(inv(Fisher))**.5
 Covariance = np.linalg.inv(Fisher)
 
-print "eigs of fisher: ", np.linalg.eigvals(Fisher)
-print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
+print("eigs of fisher: ", np.linalg.eigvals(Fisher))
+print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
 
 print(Covariance)
 fig3 = plt.figure('CramerRao')

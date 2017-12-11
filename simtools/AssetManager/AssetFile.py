@@ -24,3 +24,4 @@ class AssetFile:
             AssetFile.cache[self.absolute_path] = get_md5(self.absolute_path)
 
         return AssetFile.cache[self.absolute_path]
+

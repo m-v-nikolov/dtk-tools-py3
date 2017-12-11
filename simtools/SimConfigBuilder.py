@@ -103,8 +103,14 @@ class SimConfigBuilder:
     def set_dll_root(self, path):
         self.assets.dll_root = os.path.abspath(path)
 
+    def set_python_path(self, path):
+        self.assets.python_path = os.path.abspath(path)
+
     def set_input_collection(self, collection):
         self.assets.set_base_collection(SimulationAssets.INPUT, collection)
+
+    def set_python_collection(self, collection):
+        self.assets.set_base_collection(SimulationAssets.PYTHON, collection)
 
     def set_dll_collection(self, collection):
         self.assets.set_base_collection(SimulationAssets.DLL, collection)

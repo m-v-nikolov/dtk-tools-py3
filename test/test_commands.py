@@ -113,13 +113,13 @@ class TestCommands(unittest.TestCase):
     # args is a Hash used to set attributes on a Namespace object
     def init_namespace(self, args):
         namespace = Namespace()
-        for k, v in args.iteritems():
+        for k, v in args.items():
             setattr(namespace, k, v)
         return namespace
 
     def get_file_contents(self, filename):
         self.assertTrue(os.path.exists(filename))
-        with file(filename) as f:
+        with open(filename, "r") as f:
             text = f.read()
         return text
 # class TestCommands

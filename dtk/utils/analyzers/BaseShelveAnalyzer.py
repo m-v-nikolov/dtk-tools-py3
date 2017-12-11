@@ -28,7 +28,7 @@ class BaseShelveAnalyzer(BaseAnalyzer):
 
         if self.force_apply and not self.force_combine:
             if self.verbose:
-                print "force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache."
+                print("force_apply is True, but force_combine is False.  Setting force_combine = True to avoid using a stale shelve cache.")
             self.force_combine = True
 
         self.shelve = None
@@ -69,25 +69,25 @@ class BaseShelveAnalyzer(BaseAnalyzer):
         if self.shelve is None:
             self.shelve_file = shelve_file
             if self.verbose:
-                print "Opening shelve file: %s" % self.shelve_file
+                print ("Opening shelve file: %s" % self.shelve_file)
 
             self.shelve = shelve.open(self.shelve_file)
 
             if self.force_apply:
                 if self.verbose:
-                    print "User set force_apply = True, so clearing the shelve."
+                    print ("User set force_apply = True, so clearing the shelve.")
                 self.shelve.clear()
 
         if 'status' in self.shelve:
             pass
             if self.shelve['status'] in ['combine', 'finalize'] and not self.force_combine:   # past apply, don't need to download any files
                 if self.verbose:
-                    print 'shelve status is %s, so returning False from filter' % self.shelve['status']
+                    print ('shelve status is %s, so returning False from filter' % self.shelve['status'])
                 self.mutex.release()
                 return False
         else:
             if self.verbose:
-                print "Setting shelve status to filter"
+                print ("Setting shelve status to filter")
             self.shelve['status'] = 'filter' # Already have lock, don't call shelve_write
 
         sim_id = sim_metadata['sim_id']

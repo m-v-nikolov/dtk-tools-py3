@@ -1,5 +1,7 @@
 import logging
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from calibtool.utils import StatusPoint
@@ -87,35 +89,3 @@ class LikelihoodPlotter(BasePlotter):
                      alpha=(iteration + 1) / (n_iterations + 1.),
                      **kwargs)
 
-    def cleanup(self):
-        """
-        cleanup the existing plots
-        :return:
-        """
-        if self.combine_sites:
-            self.cleanup_plot_by_parameter()
-        else:
-            self.cleanup_plot_by_parameter_and_site()
-
-    def cleanup_plot_by_parameter_and_site(self):
-        """
-        cleanup the existing plots
-        :return:
-        """
-        for site, analyzers in self.site_analyzer_names.items():
-            self.cleanup_plot_by_parameter(site=site)
-
-    def cleanup_plot_by_parameter(self, site=''):
-        """
-        cleanup the existing plots
-        :param site:
-        :return:
-        """
-        for param in self.param_names:
-            plot_path = os.path.join(self.directory, site, 'LL_%s.pdf' % param)
-            if os.path.exists(plot_path):
-                try:
-                    # logger.info("Try to delete %s" % plot_path)
-                    os.remove(plot_path)
-                except OSError:
-                    logger.error("Failed to delete %s" % plot_path)

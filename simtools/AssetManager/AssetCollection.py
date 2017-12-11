@@ -40,7 +40,7 @@ class AssetCollection(object):
         for asset_file in self.asset_files_to_use:
             if isinstance(item, AssetFile):
                 if asset_file.file_name == item.file_name: return True
-            elif isinstance(item, str) or isinstance(item, unicode):
+            elif isinstance(item, str) or isinstance(item, str):
                 if asset_file.file_name == item: return True
         return False
 
@@ -88,7 +88,7 @@ class AssetCollection(object):
         for asset_file in local:
             selected[os.path.join(asset_file.relative_path or '', asset_file.file_name)] = asset_file
 
-        return selected.values()
+        return list(selected.values())
 
     def _determine_files_to_use(self):
         if not (self.base_collection or self.local_files or self._remote_files):
@@ -136,7 +136,7 @@ class AssetCollection(object):
                 collection.add_asset(af, file_path=af.absolute_path)
 
         # Calculate MD5 of the collection
-        collection_md5 = hashlib.md5(json.dumps(json.loads(str(collection)), sort_keys=True)).hexdigest()
+        collection_md5 = hashlib.md5(json.dumps(json.loads(str(collection)), sort_keys=True).encode('utf-8')).hexdigest()
 
         # The collection was already there -> returns it
         if collection_md5 in AssetCollection.comps_collection_cache:

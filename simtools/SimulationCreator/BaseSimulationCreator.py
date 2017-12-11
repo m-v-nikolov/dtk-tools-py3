@@ -69,16 +69,18 @@ class BaseSimulationCreator(Process):
 
             if len(self.created_simulations) % self.max_sims_per_batch == 0 or not self.function_set:
                 self.process_batch()
+                self.post_creation()
+                self.created_simulations = []
 
     def process_batch(self):
         self.save_batch()
 
         # Now that the save is done, we have the ids ready -> create the simulations
-        while self.created_simulations:
-            sim = self.created_simulations.pop()
+        for sim in self.created_simulations:
             self.return_list.append(DataStore.create_simulation(id=str(sim.id), tags=sim.tags, experiment_id=self.experiment.exp_id))
 
         if self.callback: self.callback()
+
 
     @abstractmethod
     def create_simulation(self, cb):
@@ -90,6 +92,9 @@ class BaseSimulationCreator(Process):
 
     @abstractmethod
     def save_batch(self):
+        pass
+
+    def post_creation(self):
         pass
 
     @abstractmethod

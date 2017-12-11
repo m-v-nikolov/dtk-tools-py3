@@ -1,6 +1,8 @@
 import numpy as np
 import sys
-from triggered_campaign_delay_event import triggered_campaign_delay_event
+
+from dtk.interventions.triggered_campaign_delay_event import triggered_campaign_delay_event
+
 
 def add_ITN_age_season(config_builder, start=1, coverage_all=1, waning={}, discard={},
                        age_dep={}, seasonal_dep={}, cost=5, nodeIDs=[], as_birth=False, duration=-1, triggered_campaign_delay=0, trigger_condition_list=[],

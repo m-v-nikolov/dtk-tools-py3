@@ -2,9 +2,13 @@ import logging
 import operator
 import sys
 
+import pickle
+
+import os
+
 from calibtool.algorithms.NextPointAlgorithm import NextPointAlgorithm
-from fun_PBnB_support_functions import *
-import m_intial_paramters_setting as par
+from .fun_PBnB_support_functions import *
+import calibtool.algorithms.PBnB.m_intial_paramters_setting as par
 
 logger = logging.getLogger('PBnB_application')
 fh = logging.FileHandler('PBnB_running'+'-debug.log')
@@ -76,7 +80,7 @@ class OptimTool_PBnB(NextPointAlgorithm):
     def get_samples_for_iteration(self, iteration):
         df_samples = self.fun_probability_branching_and_bound(iteration)
         if len(df_samples) >= self.i_max_num_simulation_per_run:
-            print 'simulation per run sent to COMPS is exceeded the limitation ' + str(self.i_max_num_simulation_per_run)
+            print("simulation per run sent to COMPS is exceeded the limitation {}".format(self.i_max_num_simulation_per_run))
             sys.exit()
         # return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]+['Run_Number']])
         return self.fun_generate_samples_from_df(df_samples[[p['Name'] for p in self.params]])
@@ -246,7 +250,7 @@ class OptimTool_PBnB(NextPointAlgorithm):
                     #with open("test.dat", "wb") as f:
                         #pickle.dump(self.l_subr, f)
                     # with open("test.dat", "rb") as f:
-                    # print pickle.load(f)
+                    # print(pickle.load(f))
 
         self.print_results_for_iteration()
         #plot2D(l_subr, l_subr[0].l_coordinate_lower, l_subr[0].l_coordinate_upper, 'final')
@@ -332,7 +336,8 @@ class OptimTool_PBnB(NextPointAlgorithm):
         self.logging_saver(iteration)
 
         if iteration == 0:
-            os.makedirs(self.s_running_file_name+'/All_region_sampling_record/')
+            if not os.path.exists(self.s_running_file_name+'/All_region_sampling_record/'):
+                os.makedirs(self.s_running_file_name+'/All_region_sampling_record/')
         if self.s_problem_type is 'deterministic':
             self.l_subr = fun_results_organizer_deterministic(self.l_subr, self.df_testing_samples, self.params)  # <-- Update the self.l_subr based on df_testing_samples
         elif self.s_problem_type is 'noise':

@@ -142,9 +142,9 @@ class SetupEditor(wx.Frame):
         self.Bind(wx.EVT_MENU, self.about_setup_ui, id=201)
 
     def open_file(self, event):
-        print 'Open configuration file'
+        print('Open configuration file')
 
-        print"OnButton_file: %s\n" % os.getcwd()
+        print("OnButton_file: %s\n" % os.getcwd())
 
         wildcard = "Python source (*.py)|*.py|" \
                    "Text files (*.txt)|*.txt|" \
@@ -191,7 +191,7 @@ class SetupEditor(wx.Frame):
                 line = line.strip()
                 ok = re.match(r'^.*setup\(.*$', line)
                 if ok:
-                    # print line
+                    # print (line)
                     begin = True
                     setup_list.append(line)
                 elif begin and re.match(r'^def handle_init.*:$', line):
@@ -357,7 +357,7 @@ class SetupEditor(wx.Frame):
         block_name = self.panel_edit.get_block_name()
 
         if block_name in ("", "DEFAULT", "NODE_GROUP", "PRIORITY"):
-            print "The block needs to have a valid name!"
+            print("The block needs to have a valid name!")
             return
 
         # save block

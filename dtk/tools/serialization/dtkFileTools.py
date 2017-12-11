@@ -8,7 +8,7 @@ Support for three formats of serialized population files:
 """
 
 from __future__ import print_function
-import dtkFileSupport as support
+import dtk.tools.serialization.dtkFileSupport as support
 import json
 import os
 import snappy

@@ -80,7 +80,7 @@ class GeoGraphGenerator(object):
 		G.population={}
 		G.name={}
 		
-		for node_id,properties in self.node_properties.iteritems():
+		for node_id,properties in self.node_properties.items():
 			G.add_node(node_id)
 			G.name[properties[3]] = node_id
 			G.population[node_id] = properties[2]
@@ -95,8 +95,8 @@ class GeoGraphGenerator(object):
 		
 	
 		# add edge based on adjacency matrix
-		for node_id, node_links in self.adjacency_list.iteritems():
-			for node_link_id, w in node_links.iteritems():
+		for node_id, node_links in self.adjacency_list.items():
+			for node_link_id, w in node_links.items():
 				distance = self.get_haversine_distance(G.position[int(node_id)][0], G.position[int(node_id)][1], G.position[int(node_link_id)][0], G.position[int(node_link_id)][1])
 				G.add_edge(int(node_id), int(node_link_id), weight = distance*w)
 				

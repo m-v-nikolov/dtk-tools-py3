@@ -20,8 +20,6 @@ class ChannelByAgeCohortAnalyzer(BaseCalibrationAnalyzer):
     Base class implementation for similar comparisons of age-binned reference data to simulation output.
     """
 
-    __metaclass__ = ABCMeta
-
     filenames = ['output/MalariaSummaryReport_Annual_Report.json']
     population_channel = 'Average Population by Age Bin'
 

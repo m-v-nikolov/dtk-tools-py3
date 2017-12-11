@@ -1,12 +1,13 @@
 import argparse
 import csv
 import datetime
+import json
 import os
+import shutil
 import subprocess
-import sys
 
-import commands_args
 import simtools.AnalyzeManager.AnalyzeHelper as AnalyzeHelper
+from dtk import commands_args
 from dtk.utils.analyzers import StdoutAnalyzer
 from dtk.utils.analyzers import TimeseriesAnalyzer, VectorSpeciesAnalyzer
 from dtk.utils.analyzers import sample_selection
@@ -18,15 +19,17 @@ from simtools.DataAccess.LoggingDataStore import LoggingDataStore
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiment_by_id, \
-    get_experiments_by_name, COMPS_login
+from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiments_by_name, COMPS_login, \
+    get_experiment_ids_for_user
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
-from simtools.Utilities.General import nostdout, get_tools_revision, init_logging
-
-logger = init_logging('Commands')
+from simtools.Utilities.General import nostdout, get_tools_revision, retrieve_item
 from COMPS.Data.Simulation import SimulationState
 from simtools.Utilities.GitHub.GitHub import GitHub, DTKGitHub
 import simtools.Utilities.Initialization as init
+from simtools.DataAccess.Schema import Experiment, Simulation
+
+from simtools.Utilities.General import init_logging
+logger = init_logging('Commands')
 
 def builtinAnalyzers():
     analyzers = {
@@ -37,9 +40,11 @@ def builtinAnalyzers():
 
     return analyzers
 
+
 class objectview(object):
     def __init__(self, d):
         self.__dict__ = d
+
 
 def test(args, unknownArgs):
     # Get to the test dir
@@ -54,43 +59,6 @@ def test(args, unknownArgs):
     subprocess.Popen(command, cwd=test_dir).wait()
 
 
-# def setup2(args, unknownArgs):
-#     """
-#     Backup of setupui
-#     """
-#     if os.name == "nt":
-#         # Get the current console size
-#         output = subprocess.check_output("mode con", shell=True)
-#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
-#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
-#
-#         # Resize only if needed
-#         if int(original_cols) < 300 or int(original_rows) < 110:
-#             os.system("mode con: cols=100 lines=35")
-#     else:
-#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-#
-#     SetupApplication().run()
-
-# def setup(args, unknownArgs):
-#     """
-#     New Setup Configuraiton Editor
-#     """
-#     if os.name == "nt":
-#         # Get the current console size
-#         output = subprocess.check_output("mode con", shell=True)
-#         original_cols = output.split('\n')[3].split(':')[1].lstrip()
-#         original_rows = output.split('\n')[4].split(':')[1].lstrip()
-#
-#         # Resize only if needed
-#         if int(original_cols) < 300 or int(original_rows) < 110:
-#             os.system("mode con: cols=100 lines=35")
-#     else:
-#         sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=35, cols=100))
-#
-#     SetupApplication2().run()
-
-
 def run(args, unknownArgs):
     # get simulation-running instructions from script
     mod = args.loaded_module
@@ -102,14 +70,12 @@ def run(args, unknownArgs):
                   "`calibtool run` command.")
             exit()
 
-        import json
         print("You are trying to run a module without the required run_sim_args dictionary.")
         print("The run_sim_args is expected to be of the format:")
         print(json.dumps({"config_builder": "cb",
                           "exp_name": "Experiment_name",
                           "exp_builder": "Optional builder"}, indent=3))
         exit()
-
 
     # Assess arguments.
     mod.run_sim_args['blocking'] = True if args.blocking else False
@@ -118,6 +84,7 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
+    return exp_manager.experiment
 
 
 def status(args, unknownArgs):
@@ -126,21 +93,18 @@ def status(args, unknownArgs):
     BaseExperimentManager.check_overseer()
 
     if args.active:
-        logger.info('Getting status of all active experiments.')
+        print('Getting status of all active dtk experiments.')
         active_experiments = DataStore.get_active_experiments()
 
         for exp in active_experiments:
             exp_manager = ExperimentManagerFactory.from_experiment(exp)
-            states, msgs = exp_manager.get_simulation_status()
-            exp_manager.print_status(states, msgs)
+            exp_manager.print_status()
         return
-
     exp_manager = reload_experiment(args)
     if args.repeat:
         exp_manager.wait_for_finished(verbose=True, sleep_time=20)
     else:
-        states, msgs = exp_manager.get_simulation_status()
-        exp_manager.print_status(states, msgs)
+        exp_manager.print_status()
 
 
 def kill(args, unknownArgs):
@@ -152,8 +116,7 @@ def kill(args, unknownArgs):
     exp_manager.print_status(states, msgs, verbose=False)
 
     if exp_manager.status_finished(states):
-        logger.warn(
-            "The Experiment %s is already finished and therefore cannot be killed. Exiting..." % exp_manager.experiment.id)
+        logger.warn("The Experiment %s is already finished and therefore cannot be killed. Exiting..." % exp_manager.experiment.id)
         return
 
     if args.simIds:
@@ -161,40 +124,101 @@ def kill(args, unknownArgs):
     else:
         logger.info('No job IDs were specified.  Killing all jobs in selected experiment (or most recent).')
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
         return
 
-    exp_manager.kill(args, unknownArgs)
-    print "'Kill' has been executed successfully."
+    exp_manager.kill(args.simIds)
+    logger.info("'Kill' has been executed successfully.")
 
 
 def exterminate(args, unknownArgs):
-    with nostdout():
-        exp_managers = reload_experiments(args)
+    exp_managers = reload_experiments(args)
 
     if args.expId:
         for exp_manager in exp_managers:
             states, msgs = exp_manager.get_simulation_status()
             exp_manager.print_status(states, msgs)
-        logger.info('Killing ALL experiments matched by ""' + args.expId + '".')
+        ('Killing ALL experiments matched by ""' + args.expId + '".')
     else:
-        logger.info('Killing ALL experiments.')
+        logger.info('Killing ALL running experiments.')
 
     logger.info('%s experiments found.' % len(exp_managers))
+    for manager in exp_managers:
+        print(manager.experiment)
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
         return
 
-    for exp_manager in exp_managers:
-        exp_manager.cancel_experiment()
+    for manager in exp_managers:
+        manager.cancel_experiment()
 
-    print "'Exterminate' has been executed successfully."
+    print("'Exterminate' has been executed successfully.")
+
+
+def link(args, unknownArgs):
+    """
+    Open browser to the COMPS Experiment/Simulation with ID or name provided
+    :param args:
+    :param unknownArgs:
+    :return:
+    """
+
+    # get input from commands line
+    input_id = args.Id
+
+    # default: consider the latest experiment
+    if input_id is None:
+        latest = DataStore.get_most_recent_experiment()
+        input_id = latest.exp_id
+
+    try:
+        comps_item = retrieve_item(input_id)
+    except:
+        print('Nothing was found for {}'.format(input_id))
+        exit()
+
+    # check item type
+    id_type = ''
+    location = 'LOCAL'
+    if isinstance(comps_item, Experiment):
+        item_id = comps_item.exp_id
+        id_type = 'exp'
+        location = comps_item.location
+    elif isinstance(comps_item, Simulation):
+        item_id = comps_item.id
+        exp_id = comps_item.experiment_id
+        id_type = 'sim'
+        # retrieve location
+        exp = DataStore.get_experiment(exp_id)
+        location = exp.location
+    else:
+        print('No Experiment or Simulation was found on COMPS for {}'.format(input_id))
+        exit()
+
+    # make sure it exists on COMPS
+    if location == 'LOCAL':
+        print('Item is on LOCAL not on COMPS.')
+        exit()
+
+    # open browser to COMPS Experiment/Simulation
+    import webbrowser
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+
+    url = ''
+    if id_type == 'exp':
+        url = '%s/#explore/Experiments?filters=Id=%s&offset=0&selectedId=%s' % (endpoint, item_id, item_id)
+    elif id_type == 'sim':
+        url = '%s/#explore/Simulations?filters=Id=%s&mode=list&orderby=DateCreated+desc&count=50&offset=0&layout=512C56&selectedId=%s' % (endpoint, item_id, item_id)
+
+    # Open URL in new browser window
+    webbrowser.open_new(url)  # opens in default browser
 
 
 def delete(args, unknownArgs):
@@ -206,43 +230,41 @@ def delete(args, unknownArgs):
     states, msgs = exp_manager.get_simulation_status()
     exp_manager.print_status(states, msgs)
 
-    if args.hard:
-        logger.info('Hard deleting selected experiment.')
-    else:
-        logger.info('Deleting selected experiment.')
+    print("The following experiment will be deleted:")
+    print(exp_manager.experiment)
 
-    choice = raw_input('Are you sure you want to continue with the selected action (Y/n)? ')
+    choice = input('Are you sure you want to continue with the selected action (Y/n)? ')
 
     if choice != 'Y':
         logger.info('No action taken.')
         return
 
-    exp_manager.delete_experiment(args.hard)
+    exp_manager.delete_experiment()
     logger.info("Experiment '%s' has been successfully deleted.", exp_manager.experiment.exp_id)
 
 
 def clean(args, unknownArgs):
-    with nostdout():
-        # Store the current directory to let the reload knows that we want to
-        # only retrieve simulations in this directory
-        args.current_dir = os.getcwd()
-        exp_managers = reload_experiments(args)
+
+    # Store the current directory to let the reload knows that we want to
+    # only retrieve simulations in this directory
+    args.current_dir = os.getcwd()
+    exp_managers = reload_experiments(args)
 
     if len(exp_managers) == 0:
-        logger.warn("No experiments matched by '%s'. Exiting..." % args.expId)
+        logger.warn("No experiments matched. Exiting...")
         return
 
     if args.expId:
         logger.info("Hard deleting ALL experiments matched by '%s' ran from the current directory.\n%s experiments total." % (args.expId, len(exp_managers)))
         for exp_manager in exp_managers:
             logger.info(exp_manager.experiment)
-            states, msgs = exp_manager.get_simulation_status()
-            exp_manager.print_status(states, msgs, verbose=False)
-            logger.info("")
     else:
         logger.info("Hard deleting ALL experiments ran from the current directory.\n%s experiments total." % len(exp_managers))
 
-    choice = raw_input("Are you sure you want to continue with the selected action (Y/n)? ")
+    for exp_manager in exp_managers:
+        print(exp_manager.experiment)
+
+    choice = input("Are you sure you want to continue with the selected action (Y/n)? ")
 
     if choice != "Y":
         logger.info("No action taken.")
@@ -250,27 +272,30 @@ def clean(args, unknownArgs):
 
     for exp_manager in exp_managers:
         logger.info("Deleting %s" % exp_manager.experiment)
-        exp_manager.hard_delete()
+        exp_manager.delete_experiment()
 
 
 def stdout(args, unknownArgs):
-    logger.info('Getting stdout...')
-
     exp_manager = reload_experiment(args)
     states, msgs = exp_manager.get_simulation_status()
-
-    if args.succeeded:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Succeeded][:1]
-    elif args.failed:
-        args.simIds = [k for k in states if states.get(k) is SimulationState.Failed][:1]
-    else:
-        args.simIds = [states.keys()[0]]
 
     if not exp_manager.status_succeeded(states):
         logger.warning('WARNING: not all jobs have finished successfully yet...')
 
-    am = AnalyzeManager(exp_list=[exp_manager.experiment], analyzers=StdoutAnalyzer(args.simIds, args.error), force_analyze=True)
-    am.analyze()
+    found = False
+    for sim_id, state in states.items():
+        if (state is SimulationState.Succeeded and args.succeeded) or\
+               (state is SimulationState.Failed and args.failed) or \
+               (not args.succeeded and not args.failed):
+            found = True
+            break
+    if not found:
+        print("No simulations found...")
+    else:
+        am = AnalyzeManager(exp_list=[exp_manager.experiment],
+                            analyzers=StdoutAnalyzer([sim_id], args.error),
+                            force_analyze=True)
+        am.analyze()
 
 
 def analyze(args, unknownArgs):
@@ -280,15 +305,26 @@ def analyze(args, unknownArgs):
 
 
 def create_batch(args, unknownArgs):
-    AnalyzeHelper.create_batch(args, unknownArgs)
+    AnalyzeHelper.create_batch(args.batch_name, args.itemids)
 
 
 def list_batch(args, unknownArgs):
-    AnalyzeHelper.list_batch(args, unknownArgs)
+    id_or_name = None
+    if args.id_or_name and len(unknownArgs) > 0:
+        logger.warning("/!\\ BATCH WARNING /!\\")
+        logger.warning('More than one Batch Id/Name are provided. We will ignore both and list all batches in DB!\n')
+    else:
+        id_or_name = args.id_or_name
+
+    AnalyzeHelper.list_batch(id_or_name=id_or_name)
 
 
 def delete_batch(args, unknownArgs):
-    AnalyzeHelper.delete_batch(args, unknownArgs)
+    if args.batch_id and len(unknownArgs) > 0:
+        logger.warning("/!\\ BATCH WARNING /!\\")
+        logger.warning('More than one Batch Id/Name are provided. Exiting...\n')
+        exit()
+    AnalyzeHelper.delete_batch(args.batch_id)
 
 
 def clean_batch(args, unknownArgs):
@@ -296,11 +332,11 @@ def clean_batch(args, unknownArgs):
 
 
 def clear_batch(args, unknownArgs):
-    AnalyzeHelper.clear_batch(ask=True)
+    AnalyzeHelper.clear_batch(id_or_name=args.id_or_name,ask=True)
 
 
 def analyze_list(args, unknownArgs):
-    logger.info('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
+    print('\n' + '\n'.join(sorted(builtinAnalyzers().keys())))
 
 
 def log(args, unknownArgs):
@@ -313,7 +349,7 @@ def log(args, unknownArgs):
                                          extrasaction='ignore')
             dict_writer.writeheader()
             dict_writer.writerows(records)
-        print "Complete log written to dtk_tools_log.csv."
+        print("Complete log written to dtk_tools_log.csv.")
         return
 
     # Create the level
@@ -325,17 +361,17 @@ def log(args, unknownArgs):
 
     modules = args.module if args.module else LoggingDataStore.get_all_modules()
 
-    print "Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level)
+    print("Presenting the last %s entries for the modules %s and level %s" % (args.number, modules, args.level))
     records = LoggingDataStore.get_records(level,modules,args.number)
 
     records_str = "\n".join(map(str, records))
-    print records_str
+    print(records_str)
 
     if args.export:
         with open(args.export, 'w') as fp:
             fp.write(records_str)
 
-        print "Log written to %s" % args.export
+        print("Log written to %s" % args.export)
 
 
 def sync(args, unknownArgs):
@@ -351,12 +387,13 @@ def sync(args, unknownArgs):
     exp_to_save = list()
     exp_deleted = 0
 
+    # Retrieve all the experiment id from COMPS for the current user
+    exp_ids = get_experiment_ids_for_user(user)
+
     # Test the experiments present in the local DB to make sure they still exist in COMPS
-    for exp in DataStore.get_experiments(None):
+    for exp in DataStore.get_experiments():
         if exp.location == "HPC":
-            try:
-                _ = get_experiment_by_id(exp.exp_id)
-            except:
+            if exp.exp_id not in exp_ids:
                 # The experiment doesnt exist on COMPS anymore -> delete from local
                 DataStore.delete_experiment(exp)
                 exp_deleted += 1
@@ -430,59 +467,66 @@ def version(args, unknownArgs):
 
 # List experiments from local database
 def db_list(args, unknownArgs):
-    format_string = "%s - %s (%s) - %d simulations - %s"
-    experiments = []
-
     # Filter by location
+    selected_block = None
+    num = 20
+    is_all = False
+    name = None
+
     if len(unknownArgs) > 0:
         if len(unknownArgs) == 1:
-            experiments = DataStore.get_recent_experiment_by_filter(location=unknownArgs[0][2:].upper())
+            selected_block = unknownArgs[0][2:].upper()
         else:
             raise Exception('Too many unknown arguments: please see help.')
 
     # Limit number of experiments to display
-    elif args.limit:
+    if args.limit:
         if args.limit.isdigit():
-            experiments = DataStore.get_recent_experiment_by_filter(num=args.limit)
-
+            num = args.limit
         elif args.limit == '*':
-            experiments = DataStore.get_recent_experiment_by_filter(is_all=True)
-
+            is_all=True
         else:
             raise Exception('Invalid limit: please see help.')
 
     # Filter by experiment name like
-    elif args.exp_name:
-        experiments = DataStore.get_recent_experiment_by_filter(name=args.exp_name)
+    if args.exp_name: name=args.exp_name
 
-    # No args given
-    else:
-        experiments = DataStore.get_recent_experiment_by_filter()
+    # Execute query
+    experiments = DataStore.get_recent_experiment_by_filter(num=num, name=name, is_all=is_all, location=selected_block)
 
     if len(experiments) > 0:
         for exp in experiments:
-            print format_string % (exp.date_created.strftime('%m/%d/%Y %H:%M:%S'), exp.exp_id, exp.location,
-                                   len(exp.simulations), "Completed" if exp.is_done() else "Not Completed")
+            print(exp)
     else:
-        print "No experiments to display."
+        print("No experiments to display.")
+
 
 def list_packages(args, unknownArgs):
+    print("The following packages are available to install:")
     package_names = DTKGitHub.get_package_list()
     package_names.remove(DTKGitHub.TEST_DISEASE_PACKAGE_NAME) # don't show the test package/repo!
-    if not hasattr(args, 'quiet'):
-        print "\n".join(package_names)
+    for package in package_names:
+        print(" - {}".format(package))
+
+    print("\nYou can install them with the following command:\n"
+          "`dtk get_package <PACKAGE_NAME>`")
     return package_names
+
 
 def list_package_versions(args, unknownArgs):
     try:
         package_name = args.package_name
         github = DTKGitHub(disease=package_name)
+        print("The following versions are available for the package {}".format(package_name))
         versions = github.get_versions()
-        if not hasattr(args, 'quiet'):
-            print "\n".join([str(v) for v in versions]); sys.stdout.flush()
+        for v in versions:
+            print(" - {}".format(v))
+        print("\nYou can install a specific version with the following command:\n"
+              "`dtk get_package <PACKAGE_NAME> -v <VERSION>`")
     except GitHub.AuthorizationError:
         versions = []
     return versions
+
 
 def get_package(args, unknownArgs):
     import pip
@@ -506,7 +550,7 @@ def get_package(args, unknownArgs):
             version = None
 
         if version is None:
-            print 'Requested version: %s for package: %s does not exist. No changes made.' % (args.package_version, package_name)
+            print("Requested version: %s for package: %s does not exist. No changes made." % (args.package_version, package_name))
             return
 
         tempdir = tempfile.mkdtemp()
@@ -542,9 +586,144 @@ def get_package(args, unknownArgs):
         # update the local DB with the version
         db_key = github.disease_package_db_key
         DataStore.save_setting(DataStore.create_setting(key=db_key, value=str(version)))
+        shutil.rmtree(tempdir)
     except GitHub.AuthorizationError:
         pass
+
     return release_dir
+
+
+def catalyst(args, unknownArgs):
+    """
+    Catalyst run-and-analyze process as ported from the test team.
+    Programmatic-only arguments:
+        args.mode : used by FidelityReportExperimentDefinition, default: 'prod'
+        args.report_label : attached to the experiment name
+        args.debug : True/False, passed into FidelityReportAnalyzer, default: False
+    :param args:
+    :param unknownArgs:
+    :return:
+    """
+    from dtk.utils.builders.sweep import GenericSweepBuilder
+    from dtk.tools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
+    from dtk.tools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
+    # to get the run part to do the desired parameter sweep.
+
+    mod = args.loaded_module
+
+    # when run with 'dtk catalyst', run_sim_args['exp_name'] will have additional information appended.
+    mod.run_sim_args['exp_name'] = mod.run_sim_args['exp_name'] + '-development'
+
+    # lining up the arguments expected by FidelityReportExperimentDefinition
+    args.sweep = args.sweep_method
+
+    # hidden, programmatic arguments
+    args.mode         = args.mode         if hasattr(args, 'mode')         else 'prod'
+    args.report_label = args.report_label if hasattr(args, 'report_label') else None
+    args.debug =        args.debug        if hasattr(args, 'debug')        else False
+
+    # determine which report is being asked for. If not specified, default to what the config.json file says
+    # ck4, this should go somewhere else, on a Config object of some sort? (prob not the builder, though)
+    report_type_mapping = {
+        'DENGUE_SIM': 'dengue',
+        'GENERIC_SIM': 'generic',
+        'HIV_SIM': 'hiv',
+        'MALARIA_SIM': 'malaria',
+        'POLIO_SIM': 'polio',
+        'STI_SIM': 'sti',
+        'TB_SIM': 'tb',
+        'TYPHOID_SIM': 'typhoid',
+        'VECTOR_SIM': 'generic'
+    }
+    if args.report_type:
+        report_type = args.report_type
+    else:
+        sim_type = mod.run_sim_args['config_builder'].config['parameters']['Simulation_Type']
+        report_type = report_type_mapping.get(sim_type, None)
+        if not report_type:
+            raise KeyError('Default report type could not be determined for sim_type: %s. Report type must be specified'
+                           ' via -r flag.'
+                           % sim_type)
+
+    # Create and set a builder to sweep over population scaling or model timestep
+    # ck4, combine pop_sampling.json and time_steps.json into one.
+    if args.report_definitions:
+        report_defn_file = args.report_definitions
+    else:
+        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'reports.json')
+
+    with open(report_defn_file, 'r') as f:
+        reports = json.loads(f.read())
+    if report_type in reports:
+        args.report_channel_list = reports[report_type]['inset_channel_names']
+    else:
+        raise Exception('Invalid report: %s. Available reports: %s' % (report_type, sorted(reports.keys())))
+
+    # ck4, fix this ugly pathing
+    if args.sweep_definitions:
+        catalyst_config_file = args.sweep_definitions
+    elif args.sweep_type == 'popscaling':
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'pop_sampling.json')
+    elif args.sweep_type == 'timestep':
+        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'time_steps.json')
+    else:
+        raise ValueError('Invalid sweep type: %s' % args.sweep_type)
+
+    with open(catalyst_config_file, 'r') as f:
+        catalyst_config = json.loads(f.read())
+    defn = FidelityReportExperimentDefinition(catalyst_config, args)
+
+    # redefine the experiment name so it doesn't conflict with the likely follow-up non-catalyst experiment
+    mod.run_sim_args['exp_name'] = 'Catalyst-' + mod.run_sim_args['exp_name']
+
+    # define the sweep to perform
+    sweep_dict = {
+        'Run_Number': range(1, int(defn['nruns']) + 1),
+        defn['sweep_param']: defn['sweep_values']
+    }
+    mod.run_sim_args['exp_builder'] = GenericSweepBuilder.from_dict(sweep_dict)
+
+    # overwrite spatial output channels to those used in the catalyst report
+    spatial_channel_names = defn['spatial_channel_names']
+    if len(spatial_channel_names) > 0:
+        mod.run_sim_args['config_builder'].enable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = spatial_channel_names
+    else:
+        mod.run_sim_args['config_builder'].disable('Spatial_Output')
+        mod.run_sim_args['config_builder'].params['Spatial_Output_Channels'] = []
+
+    # now run if no preexisting experiment id was provided
+    if not args.experiment_id:
+        # we must always block so that we can run the analysis at the end; run and analyze!
+        args.blocking = True
+        experiment = run(args, unknownArgs)
+        print('done running experiment: %s!' % experiment.exp_id)
+    else:
+        experiment = retrieve_experiment(args.experiment_id)
+
+    # Create an analyze manager
+    am = AnalyzeManager(exp_list=[experiment], verbose=False)
+
+    # Add the TimeSeriesAnalyzer to the manager and do analysis
+    # ck4, is there a better way to specify the first 4 arguments? The DTKCase from Test-land might be nicer.
+    # After all, the names COULD be different
+    analyzer = FidelityReportAnalyzer('catalyst_report',
+                                      'config.json',
+                                      mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
+                                      experiment_definition=defn,
+                                      label=args.report_label,
+                                      time_series_step_from=defn['step_from'],
+                                      time_series_step_to=defn['step_to'],
+                                      time_series_equal_step_count=True,
+                                      raw_data=True,
+                                      debug=args.debug)
+    am.add_analyzer(analyzer)
+    am.analyze()
+
+    import webbrowser
+    webbrowser.open_new("file:///{}".format(os.path.join(os.getcwd(), "catalyst_report", "summary_report.html")))
+
 
 def analyze_from_script(args, sim_manager):
     # get simulation-analysis instructions from script
@@ -554,13 +733,15 @@ def analyze_from_script(args, sim_manager):
     for analyzer in mod.analyzers:
         sim_manager.add_analyzer(analyzer)
 
+
 def reload_experiment(args=None, try_sync=True):
     """
     Return the experiment (for given expId) or most recent experiment
     """
     exp_id = args.expId if args else None
-    exp = DataStore.get_most_recent_experiment(exp_id)
-    if not exp and try_sync and exp_id:
+    if not exp_id:
+        exp = DataStore.get_most_recent_experiment(exp_id)
+    elif try_sync:
         try:
             exp = retrieve_experiment(exp_id,verbose=False)
         except:
@@ -570,26 +751,21 @@ def reload_experiment(args=None, try_sync=True):
         logger.error("No experiment found with the ID '%s' Locally or in COMPS. Exiting..." % exp_id)
         exit()
 
-    # make sure the SetupParser is configured properly for this experiment
-    try:
-        SetupParser.override_block(block=exp.selected_block)
-    except:
-        SetupParser.override_block(block=exp.location)
-
     return ExperimentManagerFactory.from_experiment(exp)
 
 
 def reload_experiments(args=None):
-    id = args.expId if args else None
-    current_dir = args.current_dir if 'current_dir' in args else None
+    exp_id = args.expId if hasattr(args, 'expId') else None
+    current_dir = args.current_dir if hasattr(args, 'current_dir') else None
 
     managers = []
-    for exp in DataStore.get_experiments_with_options(id, current_dir):
-        # make sure the SetupParser is configured properly for this experiment
-        SetupParser.override_block(block=exp.selected_block)
-        managers.append(ExperimentManagerFactory.from_experiment(exp))
+    experiments = DataStore.get_experiments_with_options(exp_id, current_dir)
+    for exp in experiments:
+        try:
+            managers.append(ExperimentManagerFactory.from_experiment(exp))
+        except RuntimeError:
+            print("Could not create manager... Bypassing...")
     return managers
-    #return map(lambda exp: ExperimentManagerFactory.from_experiment(exp), DataStore.get_experiments_with_options(id, current_dir))
 
 
 def main():
@@ -597,99 +773,79 @@ def main():
     subparsers = parser.add_subparsers()
 
     # 'dtk run' options
-    parser_run = commands_args.populate_run_arguments(subparsers, run)
+    commands_args.populate_run_arguments(subparsers, run)
+
+    # 'dtk catalyst' options
+    commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # 'dtk status' options
-    parser_status = commands_args.populate_status_arguments(subparsers)
-    parser_status.set_defaults(func=status)
+    commands_args.populate_status_arguments(subparsers, status)
 
     # 'dtk list' options
-    parser_list = commands_args.populate_list_arguments(subparsers)
-    parser_list.set_defaults(func=db_list)
+    commands_args.populate_list_arguments(subparsers, db_list)
 
     # 'dtk kill' options
-    parser_kill = commands_args.populate_kill_arguments(subparsers)
-    parser_kill.set_defaults(func=kill)
+    commands_args.populate_kill_arguments(subparsers, kill)
 
     # 'dtk exterminate' options
-    parser_exterminate = commands_args.populate_exterminate_arguments(subparsers)
-    parser_exterminate.set_defaults(func=exterminate)
+    commands_args.populate_exterminate_arguments(subparsers, exterminate)
+
+    # 'dtk link' options
+    commands_args.populate_link_arguments(subparsers, link)
 
     # 'dtk delete' options
-    parser_delete = commands_args.populate_delete_arguments(subparsers)
-    parser_delete.set_defaults(func=delete)
+    commands_args.populate_delete_arguments(subparsers, delete)
 
     # 'dtk clean' options
-    parser_clean = commands_args.populate_clean_arguments(subparsers)
-    parser_clean.set_defaults(func=clean)
+    commands_args.populate_clean_arguments(subparsers, clean)
 
     # 'dtk stdout' options
-    parser_stdout = commands_args.populate_stdout_arguments(subparsers)
-    parser_stdout.set_defaults(func=stdout)
+    commands_args.populate_stdout_arguments(subparsers, stdout)
 
     # 'dtk analyze' options
-    parser_analyze = commands_args.populate_analyze_arguments(subparsers)
-    parser_analyze.set_defaults(func=analyze)
+    commands_args.populate_analyze_arguments(subparsers, analyze)
 
     # 'dtk create_batch' options
-    parser_createbatch = commands_args.populate_createbatch_arguments(subparsers)
-    parser_createbatch.set_defaults(func=create_batch)
+    commands_args.populate_createbatch_arguments(subparsers, create_batch)
 
     # 'dtk list_batch' options
-    parser_listbatch = commands_args.populate_listbatch_arguments(subparsers)
-    parser_listbatch.set_defaults(func=list_batch)
+    commands_args.populate_listbatch_arguments(subparsers, list_batch)
 
     # 'dtk delete_batch' options
-    parser_deletebatch = commands_args.populate_deletebatch_arguments(subparsers)
-    parser_deletebatch.set_defaults(func=delete_batch)
+    commands_args.populate_deletebatch_arguments(subparsers, delete_batch)
 
     # 'dtk clear_batch' options
-    parser_clearbatch = commands_args.populate_clearbatch_arguments(subparsers)
-    parser_clearbatch.set_defaults(func=clear_batch)
+    commands_args.populate_clearbatch_arguments(subparsers, clear_batch)
 
     # 'dtk clean_batch' options
-    parser_cleanbatch = commands_args.populate_cleanbatch_arguments(subparsers)
-    parser_cleanbatch.set_defaults(func=clean_batch)
+    commands_args.populate_cleanbatch_arguments(subparsers, clean_batch)
 
     # 'dtk analyze-list' options
-    parser_analyze_list = subparsers.add_parser('analyze-list', help='List the available builtin analyzers.')
-    parser_analyze_list.set_defaults(func=analyze_list)
+    commands_args.populate_analyzer_list_arguments(subparsers, analyze_list)
 
     # 'dtk sync' options
-    parser_sync = commands_args.populate_sync_arguments(subparsers)
-    parser_sync.set_defaults(func=sync)
+    commands_args.populate_sync_arguments(subparsers, sync)
 
     # 'dtk version' options
-    parser_version = subparsers.add_parser('version', help='Display the current dtk-tools version.')
-    parser_version.set_defaults(func=version)
-
-    # 'dtk setup' options
-    # parser_setup = subparsers.add_parser('setup', help='Launch the setup UI allowing to edit ini configuration files.')
-    # parser_setup.set_defaults(func=setup)
-
-    # Testing: 'dtk setup' options
-    # parser_setup = subparsers.add_parser('setup2', help='Launch the setup UI allowing to edit ini configuration files.')
-    # parser_setup.set_defaults(func=setup2)
+    commands_args.populate_version_arguments(subparsers, version)
 
     # 'dtk test' options
-    parser_test = subparsers.add_parser('test', help='Launch the nosetests on the test folder.')
-    parser_test.set_defaults(func=test)
+    commands_args.populate_test_arguments(subparsers, test)
 
     # 'dtk log' options
-    parser_log = commands_args.populate_log_arguments(subparsers)
-    parser_log.set_defaults(func=log)
+    commands_args.populate_log_arguments(subparsers, log)
 
     # 'dtk list_packages' options
-    parser_list_packages = commands_args.populate_list_packages_arguments(subparsers)
-    parser_list_packages.set_defaults(func=list_packages)
+    commands_args.populate_list_packages_arguments(subparsers, list_packages)
 
     # 'dtk list_package_versions' options
-    parser_list_package_versions = commands_args.populate_list_package_versions_arguments(subparsers)
-    parser_list_package_versions.set_defaults(func=list_package_versions)
+    commands_args.populate_list_package_versions_arguments(subparsers, list_package_versions)
 
     # 'dtk get_package' options
-    parser_get_package = commands_args.populate_get_package_arguments(subparsers)
-    parser_get_package.set_defaults(func=get_package)
+    commands_args.populate_get_package_arguments(subparsers, get_package)
+
+    # # 'dtk catalyst' options
+    # commands_args.populate_catalyst_arguments(subparsers, catalyst)
 
     # run specified function passing in function-specific arguments
     args, unknownArgs = parser.parse_known_args()
@@ -697,7 +853,10 @@ def main():
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
 
-    args.func(args, unknownArgs)
+    try:
+        args.func(args, unknownArgs)
+    except AttributeError:
+        parser.print_help()
 
 if __name__ == '__main__':
     main()

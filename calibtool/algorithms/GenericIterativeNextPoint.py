@@ -39,9 +39,6 @@ class GenericIterativeNextPoint(NextPointAlgorithm):
             }
         ]
 
-    def restore(self, iteration_state):
-        pass
-
     def set_state(self, state, iteration):
         self.data = state
 

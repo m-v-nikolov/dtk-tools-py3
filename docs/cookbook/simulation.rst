@@ -14,11 +14,11 @@ the function to get the standard vector simulation::
 
 At this stage, the config builder contains an empty campaign and a default configuration as shown::
 
-    print cb.campaign
+    print(cb.campaign)
     # Prints:
     # {'Campaign_Name': 'Empty Campaign', 'Events': [], 'Use_Defaults': 1}
 
-    print cb.config
+    print(cb.config)
     # Prints:
     # {'parameters': {'Population_Scale_Type': 'FIXED_SCALING', 'Climate_Model': 'CLIMATE_BY_DATA', 'Node_Grid_Size': 0.042, 'Sample_Rate_5_9': 1, [...]
 

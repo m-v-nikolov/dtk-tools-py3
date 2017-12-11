@@ -1,5 +1,3 @@
-from StringIO import StringIO
-
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 
@@ -10,7 +8,7 @@ class SimpleCMSAnalyzer(BaseAnalyzer):
         import pandas as pd
 
         # Transform the data into a normal data frame
-        data = pd.read_csv(StringIO(parser.raw_data[self.filenames[0]]), skiprows=1, header=None).transpose()
+        data = pd.read_csv(parser.raw_data[self.filenames[0]], skiprows=1, header=None).transpose()
         data.columns = data.iloc[0]
         data = data.reindex(data.index.drop(0))
 

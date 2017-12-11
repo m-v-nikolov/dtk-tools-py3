@@ -2,43 +2,18 @@ import datetime
 
 from simtools.DataAccess.BatchDataStore import BatchDataStore
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
-from simtools.DataAccess.Schema import Analyzer
 from simtools.DataAccess.SettingsDataStore import SettingsDataStore
 from simtools.DataAccess.SimulationDataStore import SimulationDataStore
 from simtools.Utilities.General import init_logging
 
 logger = init_logging('DataAccess')
 
-def dumper(obj):
-    """
-    Function to pass to the json.dump function.
-    Allows to call the toJSON() function on the objects that needs to be serialized.
-    Revert to the __dict__ if failure to invoke the toJSON().
-    Args:
-        obj: the object to serialize
-    Returns:
-        Serializable format
-    """
-    import numpy as np
-    try:
-        return obj.toJSON()
-    except:
-        if isinstance(obj, set):
-            return list(obj)
-        if isinstance(obj, datetime.datetime):
-            return str(obj)
-        if isinstance(obj, np.int64):
-            return long(obj)
-
-        return obj.__dict__
-
-
 def batch(iterable, n=1):
     """
     Batch an iterable passed as argument into lists of n elements.
 
     Examples:
-        batch([1,2,3,4,5,6],2) returns [[1,2],[2,3],[4,5],[6]]
+        batch([1,2,2,3,4,5,6],2) returns [[1,2],[2,3],[4,5],[6]]
 
     Args:
         iterable: The iterable to split
@@ -57,10 +32,6 @@ class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore, Bat
     """
     Class holding static methods to abstract the access to the database.
     """
-
-    @classmethod
-    def create_analyzer(cls, **kwargs):
-        return Analyzer(**kwargs)
 
     @classmethod
     def list_leftover(cls, suite_ids, exp_ids):

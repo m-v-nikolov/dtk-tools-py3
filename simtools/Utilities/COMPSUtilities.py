@@ -125,6 +125,85 @@ def get_asset_collection_by_id(collection_id, query_criteria=None):
     except (RuntimeError, ValueError):
         return None
 
+def get_asset_collection_id_for_simulation_id(sim_id):
+    query_criteria = QueryCriteria().select_children('configuration')
+    simulation = Simulation.get(id=sim_id, query_criteria=query_criteria)
+    collection_id = simulation.configuration.asset_collection_id
+    return collection_id
+
+def pretty_display_assets_from_collection(assets):
+    if not assets:
+        str = "The collection does not include any assets..."
+    else:
+        str = "Available assets for the collection:\n"
+
+    for asset in assets:
+        relative_path = asset.relative_path + os.sep if asset.relative_path else ""
+        str += "- {}{}\n".format(relative_path, asset.file_name)
+    return str
+
+def get_asset_files_for_simulation_id(sim_id, paths, output_directory=None, flatten=False, remove_prefix=None):
+    """
+    Obtains AssetManager-contained files from a given simulation.
+    :param sim_id: A simulation id to retrieve files from
+    :param file_paths: relative to the Assets folder
+    :param remove_prefix: if a prefix is given, will remove it from the paths
+    :param output_directory: Write requested files into this directory if specified
+    :param flatten: If true, all the files will be written to the root of output_directory. If false, dir structure will be kept
+    :return: Dictionary associating filename and content
+    """
+    # Get the collection_id from the simulation
+    collection_id = get_asset_collection_id_for_simulation_id(sim_id=sim_id)
+
+    # Retrieve the asset collection
+    query_criteria = QueryCriteria().select_children('assets')
+    asset_collection = AssetCollection.get(id=collection_id, query_criteria=query_criteria)
+
+    # Return dictionary
+    ret = {}
+
+    # For each requested path, get the file content
+    for rpath in paths:
+        if remove_prefix and rpath.startswith(remove_prefix):
+            path = rpath[len(remove_prefix):]
+        else:
+            path = rpath
+
+        # Retrieve the relative_path and the file_name for the given path
+        relative_path, file_name = os.path.split(path)
+        relative_path = relative_path.strip('\\').strip('/')
+
+        # Look for the asset file in the collection
+        af = None
+        for asset_file in asset_collection.assets:
+            if asset_file.file_name == file_name and (asset_file.relative_path or '') == relative_path:
+                af = asset_file
+                break
+
+        # We did not find the asset in the collection -> error
+        if af is None:
+            raise Exception('Asset not found:\n%s %s \n%s' %
+                            (relative_path, file_name, pretty_display_assets_from_collection(asset_collection.assets)))
+
+        # Retrieve the file
+        result = af.retrieve()
+
+        # write the file - result is written as output_directory/file_name, where file_name (with no pathing)
+        if output_directory:
+            output_file = os.path.normpath(os.path.join(output_directory, os.path.split(path)[1]))
+            dirname = os.path.dirname(output_file)
+            try:
+                os.makedirs(dirname)
+            except:
+                pass
+            with open(output_file, 'wb') as f:
+                f.write(result)
+
+        # No matter what add to the return
+        ret[rpath] = result
+
+    return ret
+
 
 def is_comps_alive(endpoint):
     import requests
@@ -166,10 +245,13 @@ def download_asset_collection(collection, output_folder):
         os.remove(zip_path)
 
 
+def get_experiment_ids_for_user(user):
+    exps = Experiment.get(query_criteria=QueryCriteria().select(['id']).where(['owner={}'.format(user)]))
+    return [str(exp.id) for exp in exps]
+
 @retry_function
 def get_experiment_by_id(exp_id, query_criteria=None):
     return Experiment.get(exp_id, query_criteria=query_criteria)
-
 
 @retry_function
 def get_simulation_by_id(sim_id, query_criteria=None):
@@ -180,9 +262,11 @@ def get_experiments_per_user_and_date(user, limit_date):
     limit_date_str = limit_date.strftime("%Y-%m-%d")
     return Experiment.get(query_criteria=QueryCriteria().where('owner=%s,DateCreated>%s' % (user, limit_date_str)))
 
-
-def get_experiments_by_name(name, user):
-    return Experiment.get(query_criteria=QueryCriteria().where(['name~%s' % name, 'owner=%s' % user]))
+@retry_function
+def get_experiments_by_name(name, user=None):
+    filters = ["name~{}".format(name)]
+    if user: filters.append("owner={}".format(user))
+    return Experiment.get(query_criteria=QueryCriteria().where(filters))
 
 
 def sims_from_experiment(e):
@@ -255,4 +339,4 @@ def delete_suite(suite_id):
         s = Suite.get(suite_id)
         s.delete()
     except Exception as e:
-        print "Could not delete suite %s" % suite_id
+        print("Could not delete suite %s" % suite_id)

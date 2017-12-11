@@ -142,8 +142,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             try:
                 import malaria.params as malaria_params # must have the malaria disease package installed!
             except ImportError as e:
-                message = 'The malaria disease package must be installed via the \'dtk get_package malaria -v HEAD\' command' + \
-                            'before the MALARIA_SIM simulation type can be used.'
+                message = 'The malaria disease package must be installed via the \'dtk get_package malaria -v HEAD\' ' \
+                          'command before the MALARIA_SIM simulation type can be used.'
                 raise ImportError(message)
 
             config["parameters"].update(vector_params.params)
@@ -236,16 +236,16 @@ class DTKConfigBuilder(SimConfigBuilder):
 
         eradication_options = {'--config': 'config.json'}
 
-        python_path = SetupParser.get('python_path', default=None)
-        if python_path:
-            eradication_options['--python-script-path'] = python_path
-
         if SetupParser.get('type') == 'LOCAL':
             exe_path = self.stage_executable(self.assets.exe_path, SetupParser.get('bin_staging_root'))
             eradication_options['--input-path'] = self.assets.input_root
+            if self.assets.python_path:
+                eradication_options['--python-script-path'] = self.assets.python_path
         else:
             exe_path = os.path.join('Assets', os.path.basename(self.assets.exe_path or 'Eradication.exe'))
             eradication_options['--input-path'] = './Assets'
+            if self.assets.PYTHON in self.assets.collections:
+                eradication_options['--python-script-path'] = 'Assets\\python'
 
         return CommandlineGenerator(exe_path, eradication_options, [])
 
@@ -273,7 +273,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         return self.config['parameters']
 
-    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames')):
+    def get_input_file_paths(self, ignored=('Campaign_Filename', 'Serialized_Population_Filenames', 'Custom_Reports_Filename')):
         params_dict = self.config['parameters']
         ignored = ignored
         input_files = []
@@ -290,9 +290,9 @@ class DTKConfigBuilder(SimConfigBuilder):
             else:
                 input_files.append(filepath)
 
-            # If it is a .bin -> add the associated json
+            # If it is a .bin -> add the associated json (except for loadbalancing)
             base_filename, extension = os.path.splitext(filepath)
-            if extension == ".bin": input_files.append("%s.json" % filepath)
+            if extension == ".bin" and filename != "Load_Balance_Filename": input_files.append("%s.json" % filepath)
 
         # just in case we somehow have duplicates
         input_files = list(set(input_files))
@@ -437,13 +437,10 @@ class DTKConfigBuilder(SimConfigBuilder):
         campaign_str = json.dumps(self.campaign)
 
         # Retrieve all the events in the campaign file
-        events_from_campaign = re.findall(
-            r"['\"](?:Blackout_Event_Trigger|Broadcast_Event|Event_Trigger|Event_To_Broadcast|Took_Dose_Event)['\"]:\s['\"](.*?)['\"]", campaign_str,
-            re.DOTALL)
+        events_from_campaign = re.findall(r"['\"](?:Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str, re.DOTALL)
 
         # Get all the Trigger condition list too and add them to the campaign events
         trigger_lists = re.findall(r"['\"]Trigger_Condition_List['\"]:\s(\[.*?\])", campaign_str, re.DOTALL)
-
         for tlist in trigger_lists:
             events_from_campaign.extend(json.loads(tlist))
 
@@ -451,21 +448,21 @@ class DTKConfigBuilder(SimConfigBuilder):
         event_set = set(events_from_campaign + self.config['parameters']['Listed_Events'])
 
         # Remove the built in events and return
-        builtin_events = set((
-                             "NoTrigger", "Births", "EveryUpdate", "EveryTimeStep", "NewInfectionEvent", "TBActivation",
-                             "NewClinicalCase", "NewSevereCase", "DiseaseDeaths", "NonDiseaseDeaths",
-                             "TBActivationSmearPos", "TBActivationSmearNeg", "TBActivationExtrapulm",
-                             "TBActivationPostRelapse", "TBPendingRelapse", "TBActivationPresymptomatic",
-                             "TestPositiveOnSmear", "ProviderOrdersTBTest", "TBTestPositive", "TBTestNegative",
-                             "TBTestDefault", "TBRestartHSB", "TBMDRTestPositive", "TBMDRTestNegative",
-                             "TBMDRTestDefault", "TBFailedDrugRegimen", "TBRelapseAfterDrugRegimen",
-                             "TBStartDrugRegimen", "TBStopDrugRegimen", "PropertyChange", "STIDebut", "StartedART",
-                             "StoppedART", "InterventionDisqualified", "HIVNewlyDiagnosed", "GaveBirth", "Pregnant",
-                             "Emigrating", "Immigrating", "HIVTestedNegative", "HIVTestedPositive", "HIVSymptomatic",
-                             "HIVPreARTToART", "HIVNonPreARTToART", "TwelveWeeksPregnant", "FourteenWeeksPregnant",
-                             "SixWeeksOld", "EighteenMonthsOld", "STIPreEmigrating", "STIPostImmigrating",
-                             "STINewInfection", "NodePropertyChange", "HappyBirthday", "EnteredRelationship",
-                             "ExitedRelationship", "FirstCoitalAct"))
+        builtin_events = {"NoTrigger", "Births", "EveryUpdate", "EveryTimeStep", "NewInfectionEvent", "TBActivation",
+                          "NewClinicalCase", "NewSevereCase", "DiseaseDeaths", "NonDiseaseDeaths",
+                          "TBActivationSmearPos", "TBActivationSmearNeg", "TBActivationExtrapulm",
+                          "TBActivationPostRelapse", "TBPendingRelapse", "TBActivationPresymptomatic",
+                          "TestPositiveOnSmear", "ProviderOrdersTBTest", "TBTestPositive", "TBTestNegative",
+                          "TBTestDefault", "TBRestartHSB", "TBMDRTestPositive", "TBMDRTestNegative", "TBMDRTestDefault",
+                          "TBFailedDrugRegimen", "TBRelapseAfterDrugRegimen", "TBStartDrugRegimen", "TBStopDrugRegimen",
+                          "PropertyChange", "STIDebut", "StartedART", "StoppedART", "InterventionDisqualified",
+                          "HIVNewlyDiagnosed", "GaveBirth", "Pregnant", "Emigrating", "Immigrating",
+                          "HIVTestedNegative", "HIVTestedPositive", "HIVSymptomatic", "HIVPreARTToART",
+                          "HIVNonPreARTToART", "TwelveWeeksPregnant", "FourteenWeeksPregnant", "SixWeeksOld",
+                          "EighteenMonthsOld", "STIPreEmigrating", "STIPostImmigrating", "STINewInfection",
+                          "NodePropertyChange", "HappyBirthday", "EnteredRelationship", "ExitedRelationship",
+                          "FirstCoitalAct"}
+
         return list(event_set - builtin_events)
 
     def file_writer(self, write_fn):

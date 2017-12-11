@@ -2,6 +2,10 @@ import os
 import gc
 import multiprocessing
 import sys
+# Add the tools to the path
+from multiprocessing import Process, Manager
+
+sys.path.append(os.path.abspath('..'))
 import threading
 import time
 import traceback
@@ -23,11 +27,20 @@ def SimulationStateUpdater(states):
         logger.debug("Simulation update function")
         if states:
             try:
-                while not states.empty():
+                while states:
                     batch = []
-                    while len(batch) < 250 and not states.empty():
-                        batch.append(states.get())
-                    DataStore.batch_simulations_update(batch)
+                    for k, state in states.items():
+                        if not hasattr(state, 'pid'):
+                            batch.append({'sid': k, 'status': state, 'message': None, 'pid': None})
+                        else:
+                            batch.append({'sid': k, 'status': state.status, 'message': state.message, 'pid': state.pid})
+
+                        del states[k]
+                        if len(batch) > 250:
+                            DataStore.batch_simulations_update(batch)
+                            batch = []
+                    if batch:
+                        DataStore.batch_simulations_update(batch)
             except Exception as e:
                 logger.error("Exception in the status updater")
                 logger.error(e)
@@ -45,13 +58,13 @@ def LogCleaner():
         DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup', value=datetime.today()))
 
 if __name__ == "__main__":
+
     logger.debug('Start Overseer pid: %d' % os.getpid())
     
     # we technically don't care about full consistency of SetupParser with the original dtk command, as experiments
     # have all been created. We can grab 'generic' max_local_sims / max_threads
     SetupParser.init() # default block
     max_local_sims = int(SetupParser.get('max_local_sims'))
-    max_analysis_threads = int(SetupParser.get('max_threads'))
 
     # Create the queue
     local_queue = multiprocessing.Queue(max_local_sims)
@@ -59,8 +72,9 @@ if __name__ == "__main__":
     managers = OrderedDict()
 
     # Queue to be shared among all runners in order to update the individual simulation states in the DB
-    states_queue = multiprocessing.Queue()
-    update_state_thread = threading.Thread(target=SimulationStateUpdater, args=(states_queue,))
+    manager = Manager()
+    states_queue = manager.dict()
+    update_state_thread = Process(target=SimulationStateUpdater, args=(states_queue,))
     update_state_thread.daemon = True
     update_state_thread.start()
 
@@ -68,8 +82,6 @@ if __name__ == "__main__":
     lc = threading.Thread(target=LogCleaner)
     lc.start()
 
-    # will hold the analyze threads
-    analysis_threads = []
     count = 0
 
     while True:
@@ -103,7 +115,7 @@ if __name__ == "__main__":
                         else:
                             # COMPS is alive, sync this particular experiment
                             try:
-                                exp = retrieve_experiment(experiment.id, force_update=True)
+                                exp = retrieve_experiment(experiment.exp_id, force_update=True)
                                 manager = ExperimentManagerFactory.from_experiment(exp)
                             except:
                                 logger.debug("Experiment %s deleted from local DB!" % experiment.id)
@@ -123,12 +135,6 @@ if __name__ == "__main__":
             logger.debug("Checking manager %s" % exp_id)
             if manager.finished():
                 logger.debug('Manager for experiment id: %s is done' % exp_id)
-                # Analyze
-                # For now commented out - Will be reinstated when run_and_analyze comes back
-                # athread = multiprocessing.Thread(target=manager.analyze_experiment)
-                # athread.start()
-                # analysis_threads.append(athread)
-
                 # After analysis delete the manager from the list
                 # Do it after the loop to not change the dict while iterating over it
                 managers_to_delete.append(exp_id)
@@ -142,16 +148,10 @@ if __name__ == "__main__":
         # Delete the managers that needs to be deleted
         for exp_id in managers_to_delete:
             del managers[exp_id]
-        gc.collect()
-
-        # Cleanup the analyze thread list
-        for ap in analysis_threads:
-            if not ap.is_alive(): analysis_threads.remove(ap)
-        logger.debug("Analysis thread: %s" % analysis_threads)
 
         # No more active managers -> Exit if our analyzer threads are done
         # Do not use len() to not block anything
-        if managers == OrderedDict() and analysis_threads == []: break
+        if not managers: break
 
         time.sleep(10)
         count += 1

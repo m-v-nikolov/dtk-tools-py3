@@ -72,7 +72,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
         if not ret and self.verbose:
             self.num_outstanding -= 1
-            print 'Skipping simulation %s because already in shelve' % str(sim_id)
+            print('Skipping simulation %s because already in shelve' % str(sim_id))
 
         return ret
 
@@ -145,7 +145,9 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
         self.num_outstanding -= 1
         if self.verbose:
-            print 'Progress: %d of %d (%.1f%%).  Pop scaling is %f'%(len(self.sim_ids)-self.num_outstanding, len(self.sim_ids), 100*(len(self.sim_ids)-self.num_outstanding) / float(len(self.sim_ids)), pop_scaling)
+            print('Progress: %d of %d (%.1f%%).  Pop scaling is %f' % (
+            len(self.sim_ids) - self.num_outstanding, len(self.sim_ids),
+            100 * (len(self.sim_ids) - self.num_outstanding) / float(len(self.sim_ids)), pop_scaling))
 
         return (pdata, pop_scaling)
 
@@ -154,7 +156,7 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
     def finalize(self):
         if self.verbose:
-            print "finalize"
+            print("finalize")
 
         super(ReportTyphoidInsetChartAnalyzer, self).finalize() # Closes the shelve file
         self.sim_ids = []
@@ -164,4 +166,4 @@ class ReportTyphoidInsetChartAnalyzer(BaseShelveAnalyzer):
 
     def plot(self):
         plt.show()
-        print "[ DONE ]"
+        print("[ DONE ]")

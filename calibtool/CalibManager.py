@@ -8,8 +8,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from IterationState import IterationState
-from ResumeIterationState import ResumeIterationState
+from calibtool.IterationState import IterationState
 from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
@@ -66,6 +65,7 @@ class CalibManager(object):
         self.latest_iteration = 0
         self.current_iteration = None
         self._location = None
+        self.resume = False
 
     @property
     def location(self):
@@ -110,12 +110,6 @@ class CalibManager(object):
         """
         self.calibration_start = datetime.now().replace(microsecond=0)
 
-        # resume case
-        if self.current_iteration:
-            self.current_iteration.run()
-            self.post_iteration()
-            iteration += 1
-
         # normal run
         for i in range(iteration, self.max_iterations):
             self.current_iteration = self.create_iteration_state(i)
@@ -142,6 +136,11 @@ class CalibManager(object):
         )
 
     def create_iteration_state(self, iteration):
+        if self.resume:
+            self.resume = False
+            self.current_iteration.calibration_start = self.calibration_start
+            return self.current_iteration
+
         return IterationState(iteration=iteration,
                               calibration_name=self.name,
                               location=self.location,
@@ -160,15 +159,11 @@ class CalibManager(object):
         Create the working directory for a new calibration.
         Cache the relevant suite-level information to allow re-initializing this instance.
         """
-        try:
-            os.mkdir(self.name)
-            self.cache_calibration()
-        except OSError:
-            from time import sleep
+        if os.path.exists(self.name):
             logger.info("Calibration with name %s already exists in current directory" % self.name)
             var = ""
             while var.upper() not in ('R', 'B', 'C', 'P', 'A'):
-                var = raw_input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
+                var = input('Do you want to [R]esume, [B]ackup + run, [C]leanup + run, Re-[P]lot, [A]bort:  ')
 
             # Abort
             if var == 'A':
@@ -186,6 +181,9 @@ class CalibManager(object):
             elif var == "P":
                 self.replot_calibration(iteration=None)
                 exit()  # avoid calling self.run_iterations(**kwargs)
+        else:
+            os.mkdir(self.name)
+            self.cache_calibration()
 
     def finalize_calibration(self):
         """ Get the final samples (and any associated information like weights) from algo. """
@@ -195,9 +193,6 @@ class CalibManager(object):
 
         # remove any leftover experiments
         self.cleanup_orphan_experiments()
-
-        # delete all backup file for CalibManger and each of iterations
-        self.cleanup_backup_files()
 
     def cache_calibration(self, **kwargs):
         """
@@ -214,9 +209,9 @@ class CalibManager(object):
                  'results': self.serialize_results(),
                  'setup_overlay_file': SetupParser.setup_file,
                  'selected_block': SetupParser.selected_block,
-                 'calibration_start':self.calibration_start}
+                 'calibration_start': self.calibration_start}
         state.update(kwargs)
-        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'wb'), indent=4, cls=NumpyEncoder)
+        json.dump(state, open(os.path.join(self.name, 'CalibManager.json'), 'w'), indent=4, cls=NumpyEncoder)
 
     def backup_calibration(self):
         """
@@ -243,6 +238,8 @@ class CalibManager(object):
         return data.to_dict(orient='list')
 
     def resume_calibration(self, iteration=None, iter_step=None):
+        self.resume = True
+
         # load and validate calibration
         self.load_calibration(iteration, iter_step)
 
@@ -262,7 +259,6 @@ class CalibManager(object):
         self.location = calib_data.get('location')
         self.latest_iteration = int(calib_data.get('iteration', 0))
         self.suites = calib_data['suites']
-        self.calibration_start = datetime.strptime(calib_data['calibration_start'], '%Y-%m-%d %H:%M:%S') if 'calibration_start' in calib_data else datetime.now()
 
         # step 3: validate inputs
         self.current_iteration, resume_point = self.retrieve_iteration(iteration, iter_step)
@@ -309,8 +305,8 @@ class CalibManager(object):
 
     def check_location(self, iteration_state):
         """
-            - Handle the case: process got interrupted but it still runs on remote
-            - Handle location change case: may resume from commission instead
+        - Handle the case: process got interrupted but it still runs on remote
+        - Handle location change case: may resume from commission instead
         """
         # Step 1: Checking possible location changes
         try:
@@ -322,8 +318,7 @@ class CalibManager(object):
             traceback.print_exc()
 
         if not exp:
-            var = raw_input(
-                "Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
+            var = input("Cannot restore Experiment 'exp_id: %s'. Force to resume from commission... Continue ? [Y/N]" % exp_id if exp_id else 'None')
             # force to resume from commission
             if var.upper() == 'Y':
                 iteration_state.resume_point = StatusPoint.commission
@@ -334,57 +329,13 @@ class CalibManager(object):
         # If location has been changed, will double check user for a special case before proceed...
         if self.location != exp.location:
             location = SetupParser.get('type')
-            var = raw_input(
-                "Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (
+            var = input("Location has been changed from '%s' to '%s'. Resume will start from commission instead, do you want to continue? [Y/N]:  " % (
                 exp.location, location))
             if var.upper() == 'Y':
                 self.current_iteration.resume_point = StatusPoint.commission
             else:
                 logger.info("Answer is '%s'. Exiting...", var.upper())
                 exit()
-
-    def replot_calibration(self, iteration):
-        logger.info('Start Re-Plot Process!')
-
-        # make sure data exists for plotting
-        if not os.path.isdir(self.name):
-            raise Exception('Unable to find existing calibration in directory: %s' % self.name)
-
-        # restore the existing calibration data
-        calib_data = self.read_calib_data()
-        self.latest_iteration = int(calib_data.get('iteration', 0))
-        self.suites = calib_data.get('suites')
-
-        # restore calibration results
-        results = calib_data.get('results')
-        if not results:
-            logger.info('No iteration cached results to reload from CalibManager.')
-            return
-
-        # restore results as DataFrame
-        local_all_results = pd.DataFrame.from_dict(results, orient='columns')
-        logger.info('latest_iteration = %s' % self.latest_iteration)
-
-        if iteration is not None:
-            assert (iteration <= self.latest_iteration)
-            self.replot_iteration(iteration, local_all_results)
-            logger.info("Iteration %s got replotted." % iteration)
-            return
-
-        # replot for each iteration up to latest
-        logger.info("Replot will go through %s iterations." % (self.latest_iteration + 1))
-        for i in range(0, self.latest_iteration + 1):
-            self.replot_iteration(i, local_all_results)
-
-        logger.info("Calibration got replotted.")
-
-    def replot_iteration(self, iteration, local_all_results):
-        logger.info('Re-plotting for iteration: %d' % iteration)
-
-        # Create the state for the current iteration
-        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
-        self.current_iteration.update(**self.required_components)
-        self.current_iteration.replot(local_all_results)
 
     def load_experiment_from_iteration(self, iteration=None):
         """
@@ -480,61 +431,6 @@ class CalibManager(object):
                 logger.error("Failed to delete %s" % calib_dir)
                 logger.error("Try deleting the folder manually before retrying the calibration.")
 
-    def reanalyze_calibration(self, iteration):
-        """
-        Reanalyze the current calibration
-        """
-        calib_data = self.read_calib_data()
-
-        with SetupParser.TemporaryBlock(calib_data['selected_block']):
-            self.location = SetupParser.get('type')
-            self.latest_iteration = int(calib_data.get('iteration', 0))
-            self.suites = calib_data['suites']
-
-            if calib_data['location'] == 'HPC':
-                COMPS_login(SetupParser.get('server_endpoint'))
-
-            # load all_results
-            results = calib_data.get('results')
-            if isinstance(results, dict):
-                self.all_results = pd.DataFrame.from_dict(results, orient='columns')
-            elif isinstance(results, list):
-                self.all_results = results
-
-            # Cleanup the LL_all.csv
-            if os.path.exists(os.path.join(self.name, 'LL_all.csv')):
-                os.remove(os.path.join(self.name, 'LL_all.csv'))
-
-            if iteration is not None:
-                assert (iteration <= self.latest_iteration)
-                self.reanalyze_iteration(iteration)
-                logger.info("Iteration %s got reanalyzed." % iteration)
-                return
-
-            # Get the count of iterations and save the suite_id
-            iter_count = calib_data.get('iteration')
-            logger.info("Reanalyze will go through %s iterations." % (iter_count + 1))
-
-            # Go through each already ran iterations
-            for i in range(0, iter_count + 1):
-                self.reanalyze_iteration(i)
-
-            # Before leaving -> set back the suite_id
-            self.suites = calib_data['suites']
-            self.location = calib_data['location']
-
-            # Also finalize
-            self.finalize_calibration()
-            logger.info("Calibration got reanalyzed.")
-
-    def reanalyze_iteration(self, iteration):
-        logger.info("\nReanalyze Iteration %s" % iteration)
-
-        # Create the state for the current iteration
-        self.current_iteration = ResumeIterationState.restore_state(self.name, iteration)
-        self.current_iteration.update(**self.required_components)
-        self.current_iteration.reanalyze()
-
     def read_calib_data(self, force=False):
         try:
             return json.load(open(os.path.join(self.name, 'CalibManager.json'), 'rb'))
@@ -593,7 +489,7 @@ class CalibManager(object):
         """
         exp_orphan_list = self.list_orphan_experiments()
         for experiment in exp_orphan_list:
-            ExperimentManagerFactory.from_experiment(experiment).delete_experiment(hard=True)
+            ExperimentManagerFactory.from_experiment(experiment).delete_experiment()
 
         if len(exp_orphan_list) > 0:
             orphan_str_list = ['- %s - %s' % (exp.exp_id, exp.exp_name) for exp in exp_orphan_list]
@@ -601,47 +497,6 @@ class CalibManager(object):
             logger.info('\n'.join(orphan_str_list))
             logger.info('\n')
             logger.info('Note: the detected orphan experiment(s) have been deleted.')
-
-    def cleanup_backup_files(self):
-        """
-        Cleanup the backup files for current calibration
-        """
-
-        def delete_files(file_list):
-            # print '\n'.join(file_list)
-            for f in file_list:
-                if os.path.exists(f):
-                    try:
-                        os.remove(f)
-                    except OSError:
-                        logger.error("Failed to delete %s" % f)
-
-        iter_count = self.current_iteration.iteration
-        if iter_count is None:
-            try:
-                calib_data = self.read_calib_data()
-                iter_count = calib_data.get('iteration', 0)
-            except Exception:
-                logger.info('Calib data cannot be read, no backup files are deleted.')
-                return
-
-        # Step 1: delete backup files for each of the iterations
-        for i in range(0, iter_count + 1):
-            # Get the iteration backup files
-            iteration_cache = os.path.join(self.name, 'iter%d' % i, 'IterationState_backup_*.json')
-            backup_files = glob.glob(iteration_cache)
-            if backup_files is None or len(backup_files) == 0:
-                continue
-
-            delete_files(backup_files)
-
-        # Step 2: delete backup files for CalibManger.json
-        calib_manager_cache = os.path.join(self.name, 'CalibManager_backup_*.json')
-        backup_files = glob.glob(calib_manager_cache)
-        if backup_files is None or len(backup_files) == 0:
-            return
-
-        delete_files(backup_files)
 
     def list_orphan_experiments(self):
         """
@@ -697,7 +552,7 @@ class CalibManager(object):
                     'analyzer_list': self.analyzer_list,
                     'plotters': self.plotters,
                     'all_results': self.all_results,
-                    'calibration_start':self.calibration_start,
+                    'calibration_start': self.calibration_start,
                     'site_analyzer_names': self.site_analyzer_names()
                 }
         return kwargs

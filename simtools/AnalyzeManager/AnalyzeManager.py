@@ -18,7 +18,7 @@ logger = init_logging('AnalyzeManager')
 
 class AnalyzeManager:
     def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True,
-                 create_dir_map=True):
+                 create_dir_map=False):
         self.experiments = []
         self.simulations = []
         self.experiments_simulations = {}
@@ -37,7 +37,7 @@ class AnalyzeManager:
 
         # Initial adding of experiments
         if exp_list:
-            exp_list = exp_list if isinstance(exp_list, collections.Iterable) and not isinstance(exp_list, basestring) else [exp_list]
+            exp_list = exp_list if isinstance(exp_list, collections.Iterable) and not isinstance(exp_list, str) else [exp_list]
             for exp in exp_list: self.add_experiment(exp)
 
         # Initial adding of the simulations
@@ -86,6 +86,7 @@ class AnalyzeManager:
         if exp_manager.location == 'HPC':
             # Get the sim map no matter what
             if self.create_dir_map:
+
                 exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
                                                               suite_id=exp_manager.experiment.suite_id,
                                                               save=True, comps_experiment=exp_manager.comps_experiment,
@@ -192,12 +193,11 @@ class AnalyzeManager:
             self.create_parsers_for_experiment(exp)
 
         # Create the parsers for the experiments of the standalone simulations
-        for exp in self.experiments_simulations.keys():
+        for exp in list(self.experiments_simulations.keys()):
             self.create_parsers_for_experiment_from_simulation(exp)
 
-        if len(self.parsers) == 0:
+        if len(self.parsers) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
-            return # mimic the above len(self.analyzers) == 0 behavior
 
         for parser in self.parsers:
             self.maxThreadSemaphore.acquire()
@@ -222,11 +222,11 @@ class AnalyzeManager:
                 plotting_process.start()
                 plotting_processes.append(plotting_process)
             except Exception as e:
-                print e
+                print(e)
                 logger.error("Error in the plotting process for analyzer {}".format(a))
                 logger.error("Experiments list {}".format(self.experiments))
                 logger.error(e)
 
-        map(lambda p: p.join(), plotting_processes)
-
+        for p in plotting_processes:
+            p.join()
 

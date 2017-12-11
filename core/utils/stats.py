@@ -8,13 +8,13 @@ def weib_cdf(x, lam, kap):
 
 
 def binom_test(success, fail, prob_success, alpha):
-    # print fail, prob_success, alpha
+    # print(fail, prob_success, alpha)
     p_val = sps.binom_test( success, fail, p=prob_success)
     return {'Valid': p_val >= alpha, 'Test_Statistic': success/fail, 'P_Value': p_val}
 
 
 def kstest(duration, fun, alpha):
-    # print duration, fun, alpha
+    # print(duration, fun, alpha)
     (D, p_val) = sps.kstest(duration, fun)
 
     if p_val < alpha:
@@ -24,9 +24,9 @@ def kstest(duration, fun, alpha):
 
 
 def ztest(x, n, p, alpha):
-    # print x, n, p, alpha
+    # print(x, n, p, alpha)
     if n*p < 10 or n*(1-p) < 10:
-        print "WARNING: not enough samples to use a Z-Test, marking as Fail!"
+        print("WARNING: not enough samples to use a Z-Test, marking as Fail!")
         return {'Valid': False, 'Test_Statistic': None, 'P_Value': None}
 
     p_hat = x / float(n)

@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-class NextPointAlgorithm:
-    __metaclass__ = ABCMeta
+class NextPointAlgorithm(metaclass=ABCMeta):
 
     def __init__(self):
         self.iteration = 0
@@ -14,11 +13,11 @@ class NextPointAlgorithm:
     def set_state(self, state, iteration):
         pass
 
-    @abstractmethod
-    def cleanup(self):
+    def restore(self, iteration_state):
         pass
 
-    def restore(self, iteration_state):
+    @abstractmethod
+    def cleanup(self):
         pass
 
     @abstractmethod

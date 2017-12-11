@@ -7,3 +7,4 @@ class StatusPoint(Enum):
     analyze = 3
     plot = 4
     next_point = 5
+    done = 6

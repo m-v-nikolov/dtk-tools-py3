@@ -1,15 +1,16 @@
-from StringIO import StringIO
 import gc  # for garbage collection
 import json  # to read JSON output files
 import logging
 import os  # mkdir, path, etc.
 import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
+from io import StringIO, BytesIO
 
 import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
 
-from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id
+from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id, \
+    get_asset_files_for_simulation_id
 from simtools.Utilities.COMPSUtilities import workdirs_from_suite_id
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s')
@@ -39,8 +40,8 @@ class SimulationOutputParser(threading.Thread):
         try:
             # list of output files needed by any analysis
             filenames = set()
-            map(lambda a: filenames.update(a.filenames), self.analyzers)
-            filenames = list(filenames)
+            for a in self.analyzers:
+                filenames.update(a.filenames)
 
             # parse output files for analysis
             self.load_all_files(filenames)
@@ -70,20 +71,17 @@ class SimulationOutputParser(threading.Thread):
             return file.read()
 
     def load_all_files(self, filenames):
-        map(self.load_single_file, filenames)
+        for filename in filenames:
+            self.load_single_file(filename)
 
     def load_single_file(self, filename, content=None):
         file_extension = os.path.splitext(filename)[1][1:].lower()
-        if content and file_extension not in ['bin', 'csv']:
-            content = StringIO(content).getvalue()
 
-        if content and file_extension == 'csv' and self.parse:
-            content = StringIO(content)
-
-        if not content:
-            mode = 'rb' if file_extension in ('bin', 'json') else 'r'
-            with open(self.get_path(filename), mode) as output_file:
-                content = output_file.read()
+        if content is not None:
+            content = BytesIO(content)
+        else:
+            with open(self.get_path(filename), 'rb') as output_file:
+                content = BytesIO(output_file.read())
 
         if not self.parse:
             self.load_raw_file(filename, content)
@@ -102,16 +100,16 @@ class SimulationOutputParser(threading.Thread):
         elif file_extension == 'bin' and 'SpatialReport' in filename:
             self.load_bin_file(filename, content)
         else:
-            print(filename + ' is of an unknown type.  Skipping...')
+            self.load_raw_file(filename, content)
 
     def load_json_file(self, filename, content):
-        self.raw_data[filename] = json.loads(content)
+        self.raw_data[filename] = json.load(content)
 
     def load_raw_file(self, filename, content):
         self.raw_data[filename] = content
 
     def load_csv_file(self, filename, content):
-        if not isinstance(content, StringIO):
+        if not isinstance(content, StringIO) and not isinstance(content, BytesIO):
             content = StringIO(content)
 
         csv_read = pd.read_csv(content, skipinitialspace=True)
@@ -123,26 +121,12 @@ class SimulationOutputParser(threading.Thread):
                                    for sheet_name in excel_file.sheet_names}
 
     def load_txt_file(self, filename, content):
-        self.raw_data[filename] = content
+        self.raw_data[filename] = str(content.getvalue().decode())
 
     def load_bin_file(self, filename, content):
-        n_nodes, = struct.unpack('i', content[0:4])
-        n_tstep, = struct.unpack('i', content[4:8])
-        # print( "There are %d nodes and %d time steps" % (n_nodes, n_tstep) )
-
-        nodeids = struct.unpack(str(n_nodes) + 'I', content[8:8 + n_nodes * 4])
-        nodeids = np.asarray(nodeids)
-        # print( "node IDs: " + str(nodeids) )
-
-        channel_data = struct.unpack(str(n_nodes * n_tstep) + 'f',
-                                     content[8 + n_nodes * 4:8 + n_nodes * 4 + n_nodes * n_tstep * 4])
-        channel_data = np.asarray(channel_data)
-        channel_data = channel_data.reshape(n_tstep, n_nodes)
-
-        self.raw_data[filename] = {'n_nodes': n_nodes,
-                                   'n_tstep': n_tstep,
-                                   'nodeids': nodeids,
-                                   'data': channel_data}
+        from dtk.tools.output.SpatialOutput import SpatialOutput
+        so = SpatialOutput.from_bytes(content)
+        self.raw_data[filename] = so.to_dict()
 
     def get_sim_dir(self):
         return self.sim_path
@@ -179,17 +163,29 @@ class CompsDTKOutputParser(SimulationOutputParser):
             super(CompsDTKOutputParser, self).load_all_files(filenames)
             return
 
-        # can't open files locally... we have to go through the COMPS asset service
-        paths = [filename.replace('\\', '/') for filename in filenames]
+        # Separate the path into asset collection and transient files
+        assets = [path for path in filenames if path.lower().startswith("assets")]
+        transient = [path for path in filenames if not path.lower().startswith("assets")]
 
-        try:
-            asset_byte_arrays = self.COMPS_simulation.retrieve_output_files(paths=paths)
-        except RuntimeError as ex:
-            print("Could not retrieve file for simulation {} - Requested files: {}. Parser exiting..."
-                  .format(self.sim_id, paths))
-            exit()
+        byte_arrays = {}
 
-        for filename, byte_array in zip(filenames, asset_byte_arrays):
+        if transient:
+            try:
+                byte_arrays.update(dict(zip(transient, self.COMPS_simulation.retrieve_output_files(paths=transient))))
+            except RuntimeError:
+                print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
+                      .format(self.sim_id, transient))
+                exit()
+
+        if assets:
+            try:
+                byte_arrays.update(get_asset_files_for_simulation_id(self.sim_id, paths=assets, remove_prefix='Assets'))
+            except RuntimeError:
+                print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
+                      .format(self.sim_id, assets))
+                exit()
+
+        for filename, byte_array in byte_arrays.items():
             self.load_single_file(filename, byte_array)
 
     def get_sim_dir(self):

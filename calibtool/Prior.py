@@ -1,4 +1,5 @@
 import logging
+from functools import reduce
 from operator import mul
 
 import numpy as np
@@ -251,7 +252,7 @@ class MultiVariatePrior(object):
         Also will round parameters where the range_type requires integer-only values.
         """
         ret = param_point
-        for param,value in ret.iteritems():
+        for param,value in ret.items():
             if param not in self.sample_functions:
                 continue
 

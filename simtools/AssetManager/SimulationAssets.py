@@ -22,7 +22,10 @@ class SimulationAssets(object):
     INPUT = 'input'
     LOCAL = 'local'
     MASTER = 'master'
-    COLLECTION_TYPES = [DLL, EXE, INPUT]
+    PYTHON = 'python'
+
+    COLLECTION_TYPES = [DLL, EXE, INPUT, PYTHON]
+    SETUP_MAPPING = {DLL: 'dll_root', EXE: 'exe_path', INPUT: 'input_root', PYTHON: 'python_path'}
 
     def __init__(self):
         self.collections = {}
@@ -30,47 +33,52 @@ class SimulationAssets(object):
         self.experiment_files = FileList()
         self.prepared = False
         self.master_collection = None
-        self._exe_path = None
-        self._input_root = None
-        self._dll_root = None
+        self.paths = {}
+
+    def _get_path(self, path_type):
+        return self.paths.get(path_type, None) or SetupParser.get(self.SETUP_MAPPING[path_type])
+
+    def _set_path(self, path_type, path, is_dir=False):
+        if not os.path.exists(path) or (is_dir and not os.path.isdir(path)):
+            raise Exception("The path specified in {} does not exist ({})".format(self.SETUP_MAPPING[path_type], path))
+
+        # Remove the base collection
+        self.base_collections[path] = None
+
+        # Set the path
+        self.paths[path_type] = path
 
     @property
     def exe_path(self):
-        return self._exe_path or SetupParser.get('exe_path')
+        return self._get_path(self.EXE)
 
     @exe_path.setter
-    def exe_path(self, value):
-        if not os.path.exists(value):
-            raise Exception("The path specified in exe_path does not exist (%s)" % value)
-
-        self.base_collections[self.EXE] = None
-        self._exe_path = value
+    def exe_path(self, exe_path):
+        self._set_path(self.EXE, exe_path)
 
     @property
     def input_root(self):
-        return self._input_root or SetupParser.get('input_root')
+        return self._get_path(self.INPUT)
 
     @input_root.setter
     def input_root(self, input_root):
-        if not os.path.exists(input_root) or not os.path.isdir(input_root):
-            raise Exception(
-                "The path specified in input_root does not exist or is not a directory(%s)" % input_root)
-
-        self.base_collections[self.INPUT] = None
-        self._input_root = input_root
+        self._set_path(self.INPUT, input_root, is_dir=True)
 
     @property
     def dll_root(self):
-        return self._dll_root or SetupParser.get('dll_root')
+        return self._get_path(self.DLL)
 
     @dll_root.setter
     def dll_root(self, dll_root):
-        if not os.path.exists(dll_root) or not os.path.isdir(dll_root):
-            raise Exception(
-                "The path specified in dll_root does not exist or is not a directory(%s)" % dll_root)
+        self._set_path(self.DLL, dll_root, is_dir=True)
 
-        self.base_collections[self.DLL] = None
-        self._dll_root = dll_root
+    @property
+    def python_path(self):
+        return self._get_path(self.PYTHON)
+
+    @python_path.setter
+    def python_path(self, python_path):
+        self._set_path(self.PYTHON, python_path, is_dir=True)
 
     def __contains__(self, item):
         for col in self.collections.values():
@@ -105,6 +113,7 @@ class SimulationAssets(object):
         else:
             self.base_collections[collection_type] = AssetCollection(base_collection=collection)
 
+        # For the DLL filter out the exe as we usually have exe+dll in the same collection
         if collection_type == self.DLL:
             self.base_collections[self.DLL].asset_files_to_use = [a for a in self.base_collections[self.DLL].asset_files_to_use if not a.file_name.endswith('exe')]
 
@@ -140,9 +149,7 @@ class SimulationAssets(object):
                         asset_files[(asset.file_name, asset.relative_path)] = asset
 
         # Delete collections that are None (no files)
-        for cid, collection in self.collections.items():
-            if collection.collection_id is None:
-                del self.collections[cid]
+        self.collections = {cid:collection for cid, collection in self.collections.items() if collection.collection_id}
 
         logger.debug("Creating master collection with %d files" % len(asset_files))
         self.master_collection = AssetCollection(remote_files=asset_files.values())
@@ -162,7 +169,8 @@ class SimulationAssets(object):
 
             if location == "HPC":
                 # If we already have the master collection set -> set it as collection for every types
-                if self.master_collection:
+                # Bypass the python type for now
+                if self.master_collection and collection_type != self.PYTHON:
                     self.collections[collection_type] = self.master_collection
                     continue
 
@@ -207,6 +215,8 @@ class SimulationAssets(object):
                 file_list = FileList(root=self.dll_root,
                                      files_in_root=dll_relative_paths,
                                      ignore_missing=config_builder.ignore_missing)
+        elif collection_type == self.PYTHON:
+            file_list = FileList(root=self.python_path, relative_path="python") if self.python_path else None
         else:
             raise Exception("Unknown asset classification: %s" % collection_type)
         return file_list

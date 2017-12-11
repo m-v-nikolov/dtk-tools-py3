@@ -205,7 +205,7 @@ class DemographicsGenerator:
             else:
                 # perhaps similarly to the DTK we should have error logging modes and good generic types exception raising/handling
                 # to avoid code redundancy
-                print self.demographics_type
+                print(self.demographics_type)
                 raise ValueError("Demographics type " + str(self.demographics_type) + " is not implemented!")
 
             nodes.append({'NodeID': node_id, 'NodeAttributes': node_attributes})

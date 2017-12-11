@@ -6,7 +6,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, SingleSimulationBuilder, RunNumberSweepBuilder, ModFn
 from simtools.SetupParser import SetupParser
-from simtools.SimConfigBuilder import SimConfigBuilder, PythonConfigBuilder
+from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.General import get_md5, CommandlineGenerator
 from COMPS.Data.Simulation import SimulationState
 
@@ -55,6 +55,70 @@ class TestSetupParser(unittest.TestCase):
         """
         SetupParser.init(selected_block='LOCAL', setup_file=os.path.join(self.input_path,'965','simtools.ini'), is_testing=True)
         self.assertTrue(SetupParser.get('block'), 'PATH1')
+        SetupParser._uninit()
+
+    def test_block_inheritance(self):
+        """
+        Issue 1246
+        Verify that multi-level block inheritance works properly and that 'type' percolates from the deepest-level
+        (root) of an inheritance chain.
+        """
+
+        # # ck4, template for following tests/asserts
+        # SetupParser.init(selected_block='LOCAL',
+        #                  setup_file=os.path.join(self.input_path, '1246', somedir, 'simtools.ini'), is_testing=True)
+        # something = None
+        # self.assertTrue(something)
+        # SetupParser._uninit()
+
+        #
+        # Using a 3 level-inheritance scheme in all of these cases
+        #
+        # descendant block values override parent block values
+        # EXCEPT: 'type is inherited from the inheritance chain root
+
+        # verify that block order in the ini file does not matter for arbitrary key/values OR 'type'
+        values = {} ; types = {}
+        for i in range(1,4):
+            testdir = 'ordering%d' % i
+            SetupParser.init(selected_block='LOCALB',
+                             setup_file=os.path.join(self.input_path, '1246', testdir, 'simtools.ini'), is_testing=True)
+            values[testdir] = SetupParser.get('a')
+            types[testdir] = SetupParser.get('type')
+            SetupParser._uninit()
+        unique_values = sorted(set(values.values()))
+        self.assertEqual(unique_values, ['3'])
+        unique_types = sorted(set(types.values()))
+        self.assertEqual(unique_types, ['LOCAL'])
+
+        # verify that the proper values are inherited, regardless of the level in the inheritance chain values are
+        # located.
+        SetupParser.init(selected_block='LOCALB',
+                         setup_file=os.path.join(self.input_path, '1246', 'mixedLevelValues', 'simtools.ini'),
+                         is_testing=True)
+        self.assertEqual(SetupParser.get('a'), '1')
+        self.assertEqual(SetupParser.get('b'), '3')
+        self.assertEqual(SetupParser.get('c'), '5')
+        self.assertEqual(SetupParser.get('d'), '7')
+        self.assertEqual(SetupParser.get('e'), '10')
+        SetupParser._uninit()
+
+        # Blocks used as the 'type' should fail if missing
+        kwargs = {
+            'selected_block': 'LOCALB',
+            'setup_file': os.path.join(self.input_path, '1246', 'missingReferencedBlock', 'simtools.ini'),
+            'is_testing': True
+        }
+        self.assertRaises(SetupParser.InvalidBlock, SetupParser.init, **kwargs)
+        SetupParser._uninit()
+
+        # Blocks missing 'type' should fail
+        kwargs = {
+            'selected_block': 'LOCALB',
+            'setup_file': os.path.join(self.input_path, '1246', 'missingType', 'simtools.ini'),
+            'is_testing': True
+        }
+        self.assertRaises(SetupParser.InvalidBlock, SetupParser.init, **kwargs)
         SetupParser._uninit()
 
     def test_reinitialization_not_allowed(self):

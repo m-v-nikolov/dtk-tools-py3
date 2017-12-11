@@ -21,7 +21,7 @@ def load_config_module(config_name):
         return import_module(module_name)
     except ImportError as e:
         e.args = ("'%s' during loading module '%s' in %s files: %s." %
-              (e.message, module_name, os.getcwd(), os.listdir(os.getcwd())),)
+              (e.msg, module_name, os.getcwd(), os.listdir(os.getcwd())),)
         raise e
 
 def initialize_SetupParser_from_args(args, unknownArgs):

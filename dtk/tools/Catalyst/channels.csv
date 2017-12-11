@@ -1,0 +1,43 @@
+Inset_Channel,Spatial_Channel,Cut_Days,Generic,Malaria,Polio,Py,TB,Typhoid,Vector,Total
+,Active_MDR_TB_Prevalence,,,,,,1,,,1
+,Active_TB_Prevalence,,,,,,1,,,1
+Adult Vectors,Adult_Vectors,,,1,,,,,1,2
+,Age_Infection,,,,1,,,,,1
+Air Temperature,Air_Temperature,,1,1,1,1,1,1,1,7
+Births,Births,,1,1,1,1,1,1,1,7
+Campaign Cost,Campaign_Cost,,1,1,1,1,1,1,1,7
+Cumulative Infections,,,,,,,,,,
+Cumulative Reported Infections,,,,,,,,,,
+Daily Bites per Human,Daily_Bites_Per_Human,,,1,,,,,1,2
+Daily EIR,Daily_EIR,,,1,,,,,1,2
+Disease Deaths,Disease_Deaths,,1,1,1,1,1,1,1,7
+Fever Prevalence,Fever_Prevalence,,,1,,,,,,1
+Human Infectious Reservoir,Human_Infectious_Reservoir,,1,1,1,1,1,1,1,7
+Daily (Human) Infection Rate,Infection_Rate,,1,1,1,1,1,1,1,7
+Infected,,,,,,,,,,
+Infectious Vectors,Infectious_Vectors,,,1,,,,,1,2
+Land Temperature,Land_Temperature,,1,1,1,1,1,1,1,7
+,Latent_TB_Prevalence,,,,,,1,,,1
+,MDR_TB_Prevalence,,,,,,1,,,1
+Mean Parasitemia,Mean_Parasitemia,,,1,,,,,,1
+,New_Active_TB_Infections,,,,,,1,,,1
+New Clinical Cases,New_Clinical_Cases,30,,1,,,,,,1
+New Diagnostic Prevalence,New_Diagnostic_Prevalence,,,1,,,,,,1
+New Infections,New_Infections,,1,1,1,1,1,1,1,7
+,New_Paralytic_Cases,,,,1,,,,,1
+New Reported Infections,New_Reported_Infections,,1,1,1,1,1,1,1,7
+New Severe Cases,New_Severe_Cases,,,1,,,,,,1
+,Newly_Cleared_TB_Infections,,,,,,1,,,1
+Parasite Prevalence,Parasite_Prevalence,,,1,,,,,,1
+Statistical Population,Population,,1,1,1,1,1,1,1,7
+Log Prevalence,Prevalence,,1,1,1,1,1,1,1,7
+Rainfall,Rainfall,,1,1,1,1,1,1,1,7
+Relative Humidity,Relative_Humidity,,1,1,1,1,1,1,1,7
+,TB_Immune_Fraction,,,,,,1,,,1
+,Total_Prevalence,,,,1,,,,,1
+,VDPV1_Prevalence,,,,1,,,,,1
+,VDPV2_Prevalence,,,,1,,,,,1
+,VDPV3_Prevalence,,,,1,,,,,1
+,WPV1_Prevalence,,,,1,,,,,1
+,WPV2_Prevalence,,,,1,,,,,1
+,WPV3_Prevalence,,,,1,,,,,1
