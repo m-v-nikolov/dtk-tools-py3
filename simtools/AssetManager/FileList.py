@@ -1,10 +1,11 @@
 import os
-
+import re
 from simtools.AssetManager.AssetFile import AssetFile
+from simtools.Utilities.LocalOS import LocalOS
 
 
 class FileList:
-    def __init__(self, root=None, files_in_root=None, recursive=False, ignore_missing=False):
+    def __init__(self, root=None, files_in_root=None, recursive=False, ignore_missing=False, relative_path=None):
         """
         Represents a set of files that are specified RELATIVE to root.
         e.g. /a/b/c.json could be : root: '/a' files_in_root: ['b/c.json']
@@ -15,11 +16,15 @@ class FileList:
         self.ignore_missing = ignore_missing
 
         # Make sure we have correct separator
-        if files_in_root:
-            files_in_root = [os.path.normpath(f) for f in files_in_root]
+        # os.path.normpath(f) would be best but is not working the same way on UNIX systems
+        if files_in_root is not None:
+            if LocalOS.name == LocalOS.WINDOWS:
+                files_in_root = [os.path.normpath(f) for f in files_in_root]
+            else:
+                files_in_root = [re.sub(r"[\\/]", os.sep, os.path.normpath(f)) for f in files_in_root]
 
         if root:
-            self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive)
+            self.add_path(path=root, files_in_dir=files_in_root, recursive=recursive, relative_path=relative_path)
 
     def add_asset_file(self, af):
         self.files.append(af)
@@ -48,19 +53,19 @@ class FileList:
         :param recursive: Do we want to browse recursively
         """
         from simtools.Utilities.COMPSUtilities import translate_COMPS_path
-        path = os.path.abspath(translate_COMPS_path(path))
-        
+        path = os.path.abspath(translate_COMPS_path(path)).rstrip(os.sep)
+
         # Little safety
         if not os.path.isdir(path) and not path.startswith('\\\\'):
             raise RuntimeError("add_path() requires a directory. '%s' is not." % path)
 
         if not recursive:
-            if not files_in_dir:
+            if files_in_dir is None:
                 files_in_dir = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
             for file_name in files_in_dir:
                 file_path = os.path.join(path, file_name)
-                f_relative_path = os.path.normpath(file_path.replace(path, '').replace(os.path.basename(file_path), ''))
+                f_relative_path = os.path.normpath(file_path.replace(path, '').strip(os.sep).replace(os.path.basename(file_path), ''))
                 if relative_path is not None:
                     f_relative_path = os.path.join(relative_path, f_relative_path)
                 self.add_file(file_path, relative_path=f_relative_path)
@@ -83,7 +88,8 @@ class FileList:
                     if f_relative_path == '.': f_relative_path = ''
 
                     # if files_in_dir specified -> skip the ones not included
-                    if files_in_dir is not None and f not in files_in_dir and os.path.join(f_relative_path, f) not in files_in_dir: continue
+                    if files_in_dir is not None and f not in files_in_dir and os.path.join(f_relative_path,
+                                                                                           f) not in files_in_dir: continue
 
                     # if we want to force a relative path -> force it
                     if relative_path is not None:
@@ -94,7 +100,7 @@ class FileList:
 
     def __iter__(self):
         return self.files.__iter__()
-    
+
     def __getitem__(self, item):
         return self.files.__getitem__(item)
 

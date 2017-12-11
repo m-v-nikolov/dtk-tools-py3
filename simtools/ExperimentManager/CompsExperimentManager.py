@@ -1,12 +1,14 @@
 import os
+from multiprocessing import Process
 
 from COMPS.Data import Experiment, Configuration, Priority, Suite
-from simtools.DataAccess.Schema import Simulation
+
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore
+from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore, \
+    get_simulation_by_id
 from simtools.Utilities.General import init_logging, timestamp
 
 logger = init_logging("COMPSExperimentManager")
@@ -50,7 +52,8 @@ class CompsExperimentManager(BaseExperimentManager):
                                       experiment=self.experiment,
                                       callback=callback,
                                       return_list=return_list,
-                                      save_semaphore=self.save_semaphore)
+                                      save_semaphore=self.save_semaphore,
+                                      comps_experiment=self.comps_experiment)
 
     @staticmethod
     def create_suite(suite_name):
@@ -113,11 +116,10 @@ class CompsExperimentManager(BaseExperimentManager):
         :param states: a multiprocessing.Queue() object for simulations to use for updating their status
         :return: The number of simulations commissioned.
         """
-        import threading
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
         if not self.runner_thread or not self.runner_thread.is_alive():
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            self.runner_thread = threading.Thread(target=COMPSSimulationRunner, args=(self.experiment, states, self.success_callback))
+            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, self.comps_experiment, states, self.success_callback))
             self.runner_thread.daemon = True
             self.runner_thread.start()
             return len(self.experiment.simulations)
@@ -132,18 +134,14 @@ class CompsExperimentManager(BaseExperimentManager):
 
     def hard_delete(self):
         """
-        Delete local cache data for experiment and marks the server entity for deletion.
+        Delete data for experiment and marks the server entity for deletion.
         """
-        # Perform soft delete cleanup.
-        self.soft_delete()
-
         # Mark experiment for deletion in COMPS.
         COMPS_login(self.endpoint)
         self.comps_experiment.delete()
 
     def kill_simulation(self, simulation):
-        COMPS_login(self.endpoint)
-        s = Simulation.get(simulation.id)
+        s = get_simulation_by_id(simulation)
         s.cancel()
 
     def merge_tags(self, additional_tags):

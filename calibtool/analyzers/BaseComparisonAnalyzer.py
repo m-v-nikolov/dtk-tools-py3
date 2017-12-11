@@ -11,8 +11,6 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
     A class to represent the interface of all analyzers that compare simulation output to a reference, e.g. calibration.
     """
 
-    __metaclass__ = ABCMeta
-
     @abstractmethod
     def __init__(self, site, weight=1, compare_fn=lambda s: True):
         super(BaseComparisonAnalyzer, self).__init__()  # self.data = None

@@ -44,7 +44,7 @@ def parse(input_data, decoder=JSONDecoder(), pieces_mem=1024):
         pieces = pieces + piece
         # pieces =  pieces.replace('\n','')
         pieces = strip(pieces)
-        # print pieces
+        # print(pieces)
         while pieces:
             try:
                 j, idx = decoder.raw_decode(pieces)

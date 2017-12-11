@@ -1,4 +1,5 @@
-from simtools.SetupParser import SetupParser
+from multiprocessing import Process
+
 from simtools.Utilities.General import init_logging
 logger = init_logging("LocalExperimentManager")
 
@@ -6,9 +7,7 @@ import os
 import re
 import shutil
 import signal
-import threading
 from datetime import datetime
-from simtools.SetupParser import SetupParser
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
 from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
@@ -65,7 +64,7 @@ class LocalExperimentManager(BaseExperimentManager):
                 break
             else:
                 logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status.name))
-                t1 = threading.Thread(target=LocalSimulationRunner,
+                t1 = Process(target=LocalSimulationRunner,
                                       args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
                 t1.daemon = True
                 t1.start()
@@ -119,11 +118,13 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         Delete experiment and output data.
         """
-        # Perform soft delete cleanup.
-        self.soft_delete()
-
         # Delete local simulation data.
-        shutil.rmtree(self.experiment.get_path())
+        exp_path = self.experiment.get_path()
+        if os.path.exists(exp_path):
+            try:
+                shutil.rmtree(exp_path)
+            except Exception as e:
+                print("Could not delete path: {}\nReason: {}".format(exp_path,e))
 
     def cancel_experiment(self):
         super(LocalExperimentManager, self).cancel_experiment()
@@ -140,7 +141,7 @@ class LocalExperimentManager(BaseExperimentManager):
             try:
                 os.kill(int(simulation.pid), signal.SIGTERM)
             except Exception as e:
-                print e
+                print(e)
 
     def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
         return LocalSimulationCreator(config_builder=self.config_builder,

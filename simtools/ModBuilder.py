@@ -1,6 +1,6 @@
 import itertools
 
-from SimConfigBuilder import SimConfigBuilder
+from simtools.SimConfigBuilder import SimConfigBuilder
 
 
 class ModList(list):
@@ -22,7 +22,7 @@ class ModFn(object):
             md = {'.'.join([self.fname, k]): v for (k, v) in self.kwargs.items()}
 
         # Make sure we cast numpy types into normal system types
-        for k, v in md.iteritems():
+        for k, v in md.items():
             import numpy as np
             if isinstance(v, (np.int64, np.float64, np.float32, np.uint32, np.int16, np.int32)):
                 md[k] = v.item()
@@ -83,9 +83,3 @@ class SingleSimulationBuilder(ModBuilder):
     def __init__(self):
         self.tags = {}
         self.mod_generator = (ModList() for _ in range(1))
-
-
-class RunNumberSweepBuilder(ModBuilder):
-    def __init__(self, nsims):
-        self.tags = {}
-        self.mod_generator = (ModList(ModFn(SimConfigBuilder.set_param, 'Run_Number', i)) for i in range(nsims))

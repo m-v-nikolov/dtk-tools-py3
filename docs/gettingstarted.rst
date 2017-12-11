@@ -11,9 +11,9 @@ Installation
 Pre-requisites
 ``````````````
 
-In order to use the tools, you will need a x64 version of Python 2.7. To verify which Python is installed on your computer, issue a: `python` and the output should look like::
+In order to use the tools, you will need a x64 version of Python 3.6. To verify which Python is installed on your computer, issue a: `python` and the output should look like::
 
-    Python 2.7.13 (v2.7.13:a06454b1afa1, Dec 17 2016, 20:53:40) [MSC v.1500 64 bit (AMD64)] on win32
+    Python 3.6.1 (v3.6.1:69c0db5, Mar 21 2017, 18:41:36) [MSC v.1900 64 bit (AMD64)] on win32
 
 Then you will need to clone the dtk-tools repository. ::
 
@@ -29,6 +29,62 @@ On Windows, navigate to the dtk-tools directory and issue a ::
 All the Python dependencies along with the package will be installed on your machine.
 
 To finish, in order to use dtk-tools from everywhere on your system, ddd the path to the dtk_tools folder to your `PYTHONPATH` environment variable.
+
+CentOS 7 installation
+`````````````````````
+Note: This install guide assumes you are running CentOS 7.
+Also it assumes you have a desktop environment (pyCOMPS require a display in order to allow COMPS login box to appear).
+
+Installation of Python 3.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Update the system and download some pre-requisites::
+
+    yum update -y
+    yum install yum-utils -y
+    yum groupinstall development -y
+    yum install snappy-devel -y
+    yum install openssl-devel -y
+
+Install Python::
+
+    yum install https://centos7.iuscommunity.org/ius-release.rpm
+    yum install python36u
+
+Make sure Python is installed by issuing a::
+
+    python3.6 -V
+
+Install pip and other dev packages::
+
+    yum install python36u-pip
+    yum install python36u-devel
+    yum install python36u-tkinter
+
+Create a virtual environment::
+
+    python3.6 -m venv idm
+
+Activate the idm environment::
+
+    source idm/bin/activate
+
+Installation of dtk-tools
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Clone the repository::
+
+    git clone https://github.com/InstituteforDiseaseModeling/dtk-tools.git
+
+Install the tools::
+
+    cd dtk-tools
+    python setup.py
+
+Download and install pyCOMPS::
+
+    curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+    pip install pyCOMPS-2.1-py2.py3-none-any.whl
 
 MAC OSX installation
 ````````````````````
@@ -46,11 +102,11 @@ Refer to http://brew.sh/index.html
 
 Install Python with the command::
 
-    brew install python
+    brew install python3
 
 Install virtualenv::
 
-    pip install virtualenv
+    pip3 install virtualenv
 
 Then navigate inside the `dtk-tools` directory and create an IDM virtual environment::
 
@@ -64,9 +120,10 @@ Make sure you are in the virtual environment by checking if the prompt displays 
 
     (idm) my-computer:dtk-tools
 
-Install pyCOMPS (wheel available `here <https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-1.0.1-py2.py3-none-any.whl>`_ )::
+Download and install pyCOMPS::
 
-    pip install pyCOMPS-1.0.1-py2.py3-none-any.whl
+    curl -O https://institutefordiseasemodeling.github.io/PythonDependencies/pyCOMPS-2.1-py2.py3-none-any.whl
+    pip3 install pyCOMPS-2.1-py2.py3-none-any.whl
 
 Navigate inside the `dtk-tools` folder and install dtk-tools::
 
@@ -78,9 +135,27 @@ Navigate inside the `dtk-tools` folder and install dtk-tools::
     .. code-block:: bash
 
         brew install homebrew/dupes/tcl-tk
-        brew uninstall python
-        brew install python --with-brewed-tk
+        brew uninstall python3
+        brew install python3 --with-brewed-tk
 
+Testing your installation
+-------------------------
+To ensure your installation is working properly, you can issue a::
+
+    dtk version
+
+Which should display::
+
+    ____    ______  __  __          ______                ___
+    /\  _`\ /\__  _\/\ \/\ \        /\__  _\              /\_ \
+    \ \ \/\ \/_/\ \/\ \ \/'/'       \/_/\ \/   ___     ___\//\ \     ____
+     \ \ \ \ \ \ \ \ \ \ , <    _______\ \ \  / __`\  / __`\\ \ \   /',__\
+      \ \ \_\ \ \ \ \ \ \ \\`\ /\______\\ \ \/\ \L\ \/\ \L\ \\_\ \_/\__, `\
+       \ \____/  \ \_\ \ \_\ \_\/______/ \ \_\ \____/\ \____//\____\/\____/
+        \/___/    \/_/  \/_/\/_/          \/_/\/___/  \/___/ \/____/\/___/
+    Version: 1.0b3
+
+You can also follow the recipe about :doc:`cookbook/firstsimulation`.
 
 Configuration of the tools
 --------------------------

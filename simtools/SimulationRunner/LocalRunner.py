@@ -47,8 +47,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
 
             self.monitor()
         except Exception as e:
-            print "Error encountered while running the simulation."
-            print e
+            print("Error encountered while running the simulation.")
+            print(e)
         finally:
             # Allow another different thread to run now that this one is done.
             self.queue.get()
@@ -87,10 +87,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        self.states.put({'sid':     self.simulation.id,
-                         'status':  self.simulation.status,
-                         'message': self.simulation.message,
-                         'pid':     self.simulation.pid})
+        self.states.update({self.simulation.id: self.simulation})
 
     def last_status_line(self):
         """

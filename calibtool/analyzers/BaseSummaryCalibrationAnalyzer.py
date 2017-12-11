@@ -12,8 +12,6 @@ thread_lock = threading.Lock()
 
 class BaseSummaryCalibrationAnalyzer(BaseComparisonAnalyzer):
 
-    __metaclass__ = ABCMeta
-
     def combine(self, parsers):
         """
         Combine the simulation data into a single table for all analyzed simulations.

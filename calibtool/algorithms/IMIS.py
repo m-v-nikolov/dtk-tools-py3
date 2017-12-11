@@ -294,7 +294,7 @@ class IMIS(NextPointAlgorithm):
         self.gaussian_covariances.append(weighted_covariance)
 
     def get_param_names(self):
-        return self.prior_fn.params
+        return list(self.prior_fn.params)
 
     def verify_valid_samples(self, next_samples):
         """
@@ -430,6 +430,8 @@ class IMIS(NextPointAlgorithm):
             self.latest_samples = pd.DataFrame.from_dict(state['data'], orient='columns')
             for c in self.data.columns:  # Argh
                 self.data[c] = self.data[c].astype(data_dtypes[c])
+
+        self.generate_variables_from_data()
 
         self.n_initial_samples = state.get('n_initial_samples', 0)
         self.gaussian_probs = state.get('gaussian_probs', {})

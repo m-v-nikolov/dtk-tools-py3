@@ -165,7 +165,7 @@ class BaseTemplate(ITemplate):
         :return: Simulation tags
         """
         sim_tags = {}
-        for param, value in params.iteritems():
+        for param, value in params.items():
             if self.has_param(param):
                 new_sim_tags = self.set_param(param, value)
                 sim_tags.update(new_sim_tags)
@@ -179,7 +179,7 @@ class BaseTemplate(ITemplate):
 
         Examples:
             contents, key = self.get_param_handle('Events[0].class')
-            print contents[key] # prints CampaignEventByYear
+            print(contents[key]) # prints CampaignEventByYear
             contents[key] = 'test'
             # Now contents['Events'][0]['class'] is set to 'test'
 
@@ -218,7 +218,7 @@ class BaseTemplate(ITemplate):
         :return: The casted value.
         """
         # The value is already casted
-        if not isinstance(value, str) and not isinstance(value, unicode):
+        if not isinstance(value, str):
             return value
 
         # We have a string so test if only digit

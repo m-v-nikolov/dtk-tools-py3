@@ -2,10 +2,9 @@
 Sphinx plugins for Django documentation.
 """
 from docutils import nodes
-from docutils.parsers.rst import directives
+from docutils.parsers.rst import directives, Directive
 from sphinx import addnodes
 from sphinx.domains.std import Cmdoption
-from sphinx.util.compat import Directive
 from sphinx.util.nodes import set_source_info
 
 

@@ -1,4 +1,3 @@
-from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory

@@ -86,32 +86,34 @@ def FisherInfMatrix(X, Perturb_size, M=10000, N=1):
         (X_perturbed, Y_perturbed) = perturbed_points(X, Perturb_size, M)
 
         for k in range(M):
-            # print 'X_perturbed = ', X_perturbed[:,:,k]
-            # print 'Y_perturbed = ', Y_perturbed[:,k]
+            # print('X_perturbed = ', X_perturbed[:,:,k])
+            # print('Y_perturbed = ', Y_perturbed[:,k])
 
             [thetaPlusPlus, thetaPlusMinus, thetaMinusPlus, thetaMinusMinus] = X_perturbed[:, :, k].T
             [loglPP, loglPM, loglMP, loglMM] = Y_perturbed[:, k]
-            #print 'Y_perturbed[:, k] = ', Y_perturbed[:, k]
-            #print 'thetaPlusPlus=',thetaPlusPlus
-            #print 'thetaPlusMinus=',thetaPlusMinus
-            #print 'loglPP=',loglPP
-            #print 'loglPM=',loglPM
-            #print 'loglMP=',loglMP
-            #print 'loglMM=',loglMM
+
+            #print('Y_perturbed[:, k] = ', Y_perturbed[:, k])
+            #print('thetaPlusPlus=',thetaPlusPlus)
+            #print('thetaPlusMinus=',thetaPlusMinus)
+            #print('loglPP=',loglPP)
+            #print('loglPM=',loglPM)
+            #print('loglMP=',loglMP)
+            #print('loglMM=',loglMM)
 
             G_p[:, k] = (loglPP - loglPM) / (thetaPlusPlus - thetaPlusMinus)
             G_m[:, k] = (loglMP - loglMM) / (thetaMinusPlus - thetaMinusMinus)
 
             # H_hat(n)
             S = np.dot((1 / (thetaPlusPlus - thetaMinusPlus))[:, None], (G_p[:, k] - G_m[:, k])[None, :])  # H_hat
-            #print 'S=',S
+            # print('S=',S)
+
             H_hat[:, :, k] = .5 * (S + S.T)
-            #print 'H_hat_%d:\n'%k, H_hat[:, :, k]
+            #print('H_hat_%d:\n'%k, H_hat[:, :, k])
 
             H_hat_avg[:, :, k] = k / (k + 1) * H_hat_avg[:, :, k - 1] + 1 / (k + 1) * H_hat[:, :, k]
 
-        # print 'G_p=',G_p
-        # print 'G_m=',G_m
+        # print('G_p=',G_p)
+        # print('G_m=',G_m)
 
         # TEMP
         #print 'A:\n', H_hat_avg[:, :, M - 1]
@@ -208,7 +210,7 @@ def LogL_func(X, sigma_obs = .1):
 p = 2
 global X0
 X0 = np.random.uniform(0.0, 2.0, (p, 1))
-print 'X0 =', X0
+print('X0 =', X0)
 X_min = 0
 X_max = 2
 M = 10
@@ -219,8 +221,8 @@ Fisher = FisherInfMatrix(X0, Perturb_size, M, N)
 # sigma = diag(inv(Fisher))**.5
 Covariance = np.linalg.inv(Fisher)
 
-print "eigs of fisher: ", np.linalg.eigvals(Fisher)
-print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
+print("eigs of fisher: ", np.linalg.eigvals(Fisher))
+print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
 
 #print(Covariance)
 fig3 = plt.figure('CramerRao')

@@ -1,6 +1,6 @@
 import base64
+import datetime
 import json
-
 import numpy as np
 
 
@@ -10,8 +10,6 @@ class NumpyEncoder(json.JSONEncoder):
         holding dtype, shape and the data, base64 encoded.
         """
         if isinstance(obj, np.int64):
-            return long(obj)
-        elif isinstance(obj, np.int64):
             return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
         elif isinstance(obj, np.ndarray):
             if obj.flags['C_CONTIGUOUS']:
@@ -20,7 +18,7 @@ class NumpyEncoder(json.JSONEncoder):
                 cont_obj = np.ascontiguousarray(obj)
                 assert(cont_obj.flags['C_CONTIGUOUS'])
                 obj_data = cont_obj.data
-            data_b64 = base64.b64encode(obj_data)
+            data_b64 = base64.b64encode(obj_data).decode('utf-8')
             return dict(__ndarray__=data_b64,
                         dtype=str(obj.dtype),
                         shape=obj.shape)
@@ -34,8 +32,16 @@ class NumpyEncoder(json.JSONEncoder):
 class GeneralEncoder(NumpyEncoder):
     def default(self, obj):
         from COMPS.Data.Simulation import SimulationState
+        from simtools.DataAccess.Schema import Simulation
+
         if isinstance(obj, SimulationState):
             return obj.name
+        elif isinstance(obj, set):
+            return list(obj)
+        elif isinstance(obj, datetime.datetime):
+            return str(obj)
+        elif isinstance(obj, Simulation):
+            return obj.toJSON()
         return super(GeneralEncoder, self).default(obj)
 
 

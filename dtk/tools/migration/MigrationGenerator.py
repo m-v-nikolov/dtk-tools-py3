@@ -4,9 +4,9 @@ import re
 from struct import pack
 
 import dtk.tools.demographics.compiledemog as compiledemog
-import visualize_routes
-from GeoGraphGenerator import GeoGraphGenerator
-from GravityModelRatesGenerator import GravityModelRatesGenerator
+from . import visualize_routes
+from . GeoGraphGenerator import GeoGraphGenerator
+from . GravityModelRatesGenerator import GravityModelRatesGenerator
 
 
 class MigrationGenerator(object):
@@ -76,7 +76,7 @@ class MigrationGenerator(object):
         }
         '''
 
-        with open(self.migration_network_file_path,'r') as mig_f:
+        with open(self.migration_network_file_path, 'r') as mig_f:
             
             if 'csv' in self.migration_network_file_path:
                 
@@ -125,10 +125,10 @@ class MigrationGenerator(object):
                     
                 # convert the adjacency list node labels to the corresponding dtk ids from the demographics file, so that the adjacency list can be consumed downstream (e.g. see class GeoGraphGenerator)
                 adjacency_list_node_ids = {}
-                for node_label, node_links in self.adjacency_list.iteritems():
+                for node_label, node_links in self.adjacency_list.items():
                     adjacency_list_node_ids[node_label_2_id[node_label]] = {}
-                    for node_link_label,w in node_links.iteritems():
-                        adjacency_list_node_ids[node_label_2_id[node_label]] = {node_label_2_id[node_link_label]:w}
+                    for node_link_label,w in node_links.items():
+                        adjacency_list_node_ids[node_label_2_id[node_label]] = {node_label_2_id[node_link_label]: w}
                 
                 self.adjacency_list = adjacency_list_node_ids
                 
@@ -139,7 +139,7 @@ class MigrationGenerator(object):
         
         if self.graph_topo_type == 'geo-graph':
             # generate geo graph with default link radius (in km)
-            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
+            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius=8.5)
         else:
             raise ValueError('Unsupported topology type!')
         
@@ -153,8 +153,8 @@ class MigrationGenerator(object):
         
         if self.graph_topo_type == 'geo-graph':
             # generate geo graph with default link radius (in km)
-            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius = 8.5)
-            print self.gt
+            self.gt = GeoGraphGenerator(self.adjacency_list, self.node_properties, migration_radius=8.5)
+            print(self.gt)
         else:
             raise ValueError('Unsupported topology type!')
         
@@ -167,7 +167,7 @@ class MigrationGenerator(object):
             self.lrm = GravityModelRatesGenerator(
                                                   self.gt.get_shortest_paths(), # assume all graph topologies implement the get_shortest_paths() method 
                                                   self.graph_topo, 
-                                                  coeff = 1e-4
+                                                  coeff=1e-4
                                                   )
         else:
             raise ValueError('Unsupported link rates mode type!')
@@ -181,10 +181,10 @@ class MigrationGenerator(object):
     the txt file is consumable by link_rates_txt_2_bin(self) like function to generate DTK migration binary
     '''
     def save_link_rates_to_txt(self, rates_txt_file_path):
-        with open(rates_txt_file_path,'w') as fout:
+        with open(rates_txt_file_path, 'w') as fout:
             for src,v in self.link_rates.items():
-                for dest,mig in v.items():
-                    fout.write('%d %d %0.1g\n' % (int(src),int(dest),mig))
+                for dest, mig in v.items():
+                    fout.write('%d %d %0.1g\n' % (int(src), int(dest), mig))
                     
     
     
@@ -193,10 +193,10 @@ class MigrationGenerator(object):
     '''
     
     @staticmethod
-    def link_rates_txt_2_bin(rates_txt_file_path, rates_bin_file_path, route = "local"):
+    def link_rates_txt_2_bin(rates_txt_file_path, rates_bin_file_path, route="local"):
    
-        fopen=open(rates_txt_file_path)
-        fout=open(rates_bin_file_path,'wb')
+        fopen = open(rates_txt_file_path)
+        fout = open(rates_bin_file_path, 'wb')
         
         net={}
         net_rate={}
@@ -207,21 +207,21 @@ class MigrationGenerator(object):
                                      'air': 60}
         
         for line in fopen:
-            s=line.strip().split()
-            ID1=int(float(s[0]))
-            ID2=int(float(s[1]))
-            rate=float(s[2])
+            s = line.strip().split()
+            ID1 = int(float(s[0]))
+            ID2 = int(float(s[1]))
+            rate = float(s[2])
             #print(ID1,ID2,rate)
             if ID1 not in net:
-                net[ID1]=[]
-                net_rate[ID1]=[]
+                net[ID1] = []
+                net_rate[ID1] = []
             net[ID1].append(ID2)
             net_rate[ID1].append(rate)
         
         for ID in sorted(net.keys()):
             
-            ID_write=[]
-            ID_rate_write=[]
+            ID_write = []
+            ID_rate_write = []
             
             if len(net[ID]) > MAX_DESTINATIONS_BY_ROUTE[route]:
                 print('There are %d destinations from ID=%d.  Trimming to %d (%s migration max) with largest rates.' % (len(net[ID]), ID, MAX_DESTINATIONS_BY_ROUTE[route], route))
@@ -232,14 +232,14 @@ class MigrationGenerator(object):
                 (net[ID], net_rate[ID]) = zip(*trimmed_rates)
                 #print(net[ID], net_rate[ID])
         
-            for i in xrange(MAX_DESTINATIONS_BY_ROUTE[route]):
+            for i in range(MAX_DESTINATIONS_BY_ROUTE[route]):
                 ID_write.append(0)
                 ID_rate_write.append(0)
-            for i in xrange(len(net[ID])):
-                ID_write[i]=net[ID][i]
-                ID_rate_write[i]=net_rate[ID][i]
-            s_write=pack('L'*len(ID_write), *ID_write)
-            s_rate_write=pack('d'*len(ID_rate_write),*ID_rate_write)
+            for i in range(len(net[ID])):
+                ID_write[i] = net[ID][i]
+                ID_rate_write[i] = net_rate[ID][i]
+            s_write = pack('L'*len(ID_write), *ID_write)
+            s_rate_write = pack('d'*len(ID_rate_write), *ID_rate_write)
             fout.write(s_write)
             fout.write(s_rate_write)
         
@@ -257,7 +257,7 @@ class MigrationGenerator(object):
         # compiledemog.py too could be refactored towards object-orientedness
         # the demographics_file_path supplied here may be different from self.demographics_file_path)
         compiledemog.main(demographics_file_path)
-        import createmigrationheader
+        from . import createmigrationheader
         createmigrationheader.main('dtk-tools', re.sub('\.json$', '.compiled.json', demographics_file_path), 'local')
         
         

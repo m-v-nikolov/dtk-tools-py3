@@ -4,8 +4,9 @@ from collections import Counter
 from simtools.DataAccess.DataStore import DataStore
 from simtools.Utilities.COMPSUtilities import sims_from_suite_id, sims_from_experiment_id, COMPS_login
 from simtools.Utilities.General import init_logging, retry_function
-logger = init_logging('Monitor')
 from COMPS.Data.Simulation import SimulationState
+logger = init_logging('Monitor')
+
 
 class SimulationMonitor(object):
     """
@@ -28,8 +29,9 @@ class SimulationMonitor(object):
             states[sim.id] = sim.status if sim.status else SimulationState.CommissionRequested
             msgs[sim.id] = sim.message if sim.message else ""
         logger.debug("States returned")
-        logger.debug(dict(Counter(states.values())))
+        logger.debug(Counter(states.values()))
         return states, msgs
+
 
 class CompsSimulationMonitor(SimulationMonitor):
     """
@@ -60,10 +62,10 @@ class CompsSimulationMonitor(SimulationMonitor):
         states, msgs = {}, {}
         for sim in sims:
             id_string = str(sim.id)
-            states[id_string] = sim.state # this is already a SimulationState object
+            states[id_string] = sim.state  # this is already a SimulationState object
             msgs[id_string] = ''
 
         logger.debug("States returned")
-        logger.debug(json.dumps(dict(Counter( [st.name for st in states.values()] )), indent=3))
+        logger.debug(json.dumps(Counter([st.name for st in states.values()]), indent=3))
 
         return states, msgs

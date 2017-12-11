@@ -1,4 +1,3 @@
-import cStringIO
 import contextlib
 import functools
 import logging
@@ -6,6 +5,7 @@ import os
 import sys
 
 import time
+from io import StringIO
 
 logging_initialized = False
 def init_logging(name):
@@ -35,6 +35,8 @@ def retrieve_item(itemid):
     from simtools.DataAccess.DataStore import DataStore
     from simtools.Utilities.COMPSUtilities import exps_for_suite_id
     from simtools.Utilities.Experiments import retrieve_simulation
+
+    # Try experiments first
     try:
         return retrieve_experiment(itemid)
     except: pass
@@ -50,7 +52,7 @@ def retrieve_item(itemid):
     exps = DataStore.get_experiments_by_suite(itemid)
     if exps: return exps
 
-    # Still no item found -> test the suites
+    # Still no item found -> test the simulations
     sim = DataStore.get_simulation(itemid)
     if sim: return sim
 
@@ -59,23 +61,12 @@ def retrieve_item(itemid):
     if exps: return [retrieve_experiment(str(exp.id)) for exp in exps]
 
     # Nothing, consider COMPS simulation
-    sim = retrieve_simulation(itemid)
-    if sim: return sim
+    try:
+        return retrieve_simulation(itemid)
+    except: pass
 
     # Didnt find anything sorry
     raise(Exception('Could not find any item corresponding to %s' % itemid))
-
-
-def get_os():
-    """
-    Retrieve OS
-    """
-    msg = "simtools.Utilities.General.get_os() is deprecated. Use simtools.Utilities.General.LocalOS.name"
-    logger.warning(msg)
-    print msg
-
-    from simtools.Utilities.LocalOS import LocalOS
-    return LocalOS.name
 
 
 def utc_to_local(utc_dt):
@@ -99,10 +90,10 @@ def nostdout(stdout = False, stderr=False):
     # Save current state and disable output
     if not stdout:
         save_stdout = sys.stdout
-        sys.stdout  = cStringIO.StringIO()
+        sys.stdout = StringIO()
     if not stderr:
         save_stderr = sys.stderr
-        sys.stderr = cStringIO.StringIO()
+        sys.stderr = StringIO()
 
     # Deactivate logging
     previous_level = logging.root.manager.disable
@@ -139,13 +130,18 @@ def retry_function(func, wait=1.5, max_retries=5):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         retExc = None
-        for i in xrange(max_retries):
+        for i in range(max_retries):
             try:
                 return func(*args, **kwargs)
-            except Exception, e:
+            except RuntimeError as r:
+                # Immediately raise if this is an error.
+                # COMPS is reachable so let's be clever and trust COMPS
+                if str(r) == "404 NotFound - Failed to retrieve experiment for given id":
+                    raise r
+            except Exception as e:
                 retExc = e
                 time.sleep(wait)
-        raise retExc
+        raise retExc if retExc else Exception()
     return wrapper
 
 
@@ -182,7 +178,7 @@ def caller_name(skip=2):
 
 def remove_null_values(null_dict):
     ret = {}
-    for key, value in null_dict.iteritems():
+    for key, value in null_dict.items():
         if value:
             ret[key] = value
     return ret
@@ -195,7 +191,7 @@ def get_tools_revision():
         file_dir = os.path.dirname(os.path.abspath(__file__))
         revision = subprocess.check_output(["git", "describe", "--tags"], cwd=file_dir).replace("\n", "")
     except:
-        revision = "Unknown"
+        revision = "1.0b3"
 
     return revision
 
@@ -277,7 +273,7 @@ def rmtree_f_on_error(func, path, exc_info):
         os.chmod(path, stat.S_IWUSR)
         func(path)
     else:
-        raise
+        raise NameError('os.access error!')
 
 
 def is_running(pid, name_part):
@@ -288,6 +284,8 @@ def is_running(pid, name_part):
     :return: True/False
     """
     import psutil
+    from simtools.Utilities.LocalOS import LocalOS
+
     # ck4, This should be refactored to use a common module containing a dict of Process objects
     #      This way, we don't need to do the name() checking, just use the method process.is_running(),
     #      since this method checks for pid number being active AND pid start time.
@@ -303,14 +301,16 @@ def is_running(pid, name_part):
         logger.debug("is_running: No such process with pid: %d" % pid)
         return False
 
+    # Retrieve info on the process
     running = process.is_running()
+    zombie = process.status() == "zombie" if LocalOS.name != LocalOS.WINDOWS else False
     process_name = process.name()
     valid_name = name_part in process_name
 
     logger.debug("is_running: pid %s running? %s valid_name (%s)? %s. name: %s" %
                  (pid, running, name_part, valid_name, process_name))
 
-    if is_running and valid_name:
+    if is_running and not zombie and valid_name:
         logger.debug("is_running: pid %s is running and process name is valid." % pid)
         return True
 

@@ -108,7 +108,7 @@ class PopulationAnalyzer(BaseAnalyzer):
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
 
-        #print 'Writing selected to csv'
+        #print('Writing selected to csv')
         #[s.to_csv('selected_%d.csv' % i) for (i,s) in enumerate(selected)]
 
         selected = [p.selected_data[id(self)] for p in parsers.values() if id(self) in p.selected_data]
@@ -116,7 +116,7 @@ class PopulationAnalyzer(BaseAnalyzer):
         combined = pd.concat( selected, axis=1,
                                 keys=[(d.sample, d.sim_id) for d in selected],
                                 names=['sample', 'sim_id', 'channel'] )
-        print 'Writing combined to csv'
+        print('Writing combined to csv')
         combined.to_csv('combined_pop.csv')
         #combined = pd.read_csv('combined.csv', skipinitialspace=True, low_memory=False, header=[0,1,2], index_col=[0,1]);
 

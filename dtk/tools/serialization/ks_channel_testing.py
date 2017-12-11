@@ -12,7 +12,7 @@ def ping():
     """
     Method to validate that this script has been imported and is accessible
     """
-    print "file {0} is here!".format(__name__)
+    print("file {0} is here!".format(__name__))
 
 def hardcoded():
     """
@@ -30,21 +30,22 @@ def hardcoded():
         chart_2 = json.load(infile)
 
     if debug:
-        print "chart_1 keys: " + str(chart_1.keys())
-        print "chart_2 keys: " + str(chart_2.keys())
+        print("chart_1 keys: " + str(chart_1.keys()))
+        print("chart_2 keys: " + str(chart_2.keys()))
 
     INFECTIONS_CHANNEL = "Cumulative Infections"
 
     cum_infections_1 = chart_1[CHANNELS_KEY][INFECTIONS_CHANNEL]["Data"]
     cum_infections_2 = chart_2[CHANNELS_KEY][INFECTIONS_CHANNEL]["Data"]
 
-    print "cum_infections_1 sum: {0}".format(sum(cum_infections_1))
-    print "cum_infections_2 sum: {0}".format(sum(cum_infections_2))
+    print("cum_infections_1 sum: {0}".format(sum(cum_infections_1)))
+    print("cum_infections_2 sum: {0}".format(sum(cum_infections_2)))
 
     stat, p_val = stats.ks_2samp(cum_infections_1, cum_infections_2)
 
-    print "stat: {0}".format(stat)
-    print "p_val: {0}".format(p_val)
+    print("stat: {0}".format(stat))
+    print("p_val: {0}".format(p_val))
+
 
 class KsChannelTester:
     def __init__(self, ref_path, test_path, channel_list):

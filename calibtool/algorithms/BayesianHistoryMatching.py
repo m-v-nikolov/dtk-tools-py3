@@ -64,24 +64,24 @@ class BayesianHistoryMatching(NextPointAlgorithm):
         if iteration+1 in data_by_iter.index.unique():
             # Perhaps the results have changed? Check?
             # TODO: Change to logger (everywhere)
-            print "%s: I'm way ahead of you, samples for the next iteration were computed previously." % self.__class__.__name__
+            print(
+                "%s: I'm way ahead of you, samples for the next iteration were computed previously." % self.__class__.__name__)
             return data_by_iter.loc[iteration+1, self.get_param_names()].values
 
-
-        print 'WARNING, assuming working directory is Typhoid_History_Matching_NoDeaths'
+        print('WARNING, assuming working directory is Typhoid_History_Matching_NoDeaths')
         fn = os.path.join('Typhoid_History_Matching_NoDeaths', 'iter%d'%iteration, 'Candidates.xlsx')
-        print 'Reading candidates from', fn
+        print('Reading candidates from', fn)
 
         candidates = pd.read_excel(fn, sheet_name='Values')
 
-        print 'NOT SAVING SAMPLES !!!\n'*25
+        print('NOT SAVING SAMPLES !!!\n' * 25)
         #self.add_samples( candidates.as_matrix(), iteration+1 )
 
     def get_samples_for_iteration(self, iteration):
         return self.data.query('Iteration == @iteration').sort_values('__sample_index__')[self.get_param_names()]
 
     def end_condition(self):
-        print "end_condition"
+        print("end_condition")
         # Stopping Criterion:
         # Return True to stop, False to continue
         logger.info('Continuing iterations ...')
@@ -89,7 +89,7 @@ class BayesianHistoryMatching(NextPointAlgorithm):
 
 
     def get_final_samples(self):
-        print "get_final_samples"
+        print("get_final_samples")
         '''
         Resample Stage:
         '''

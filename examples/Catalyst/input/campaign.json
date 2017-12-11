@@ -1,0 +1,64 @@
+{  
+    "Campaign_Name":"Campaign - Bednets, IRS and Vaccines",
+    "Events":[  
+        {  
+            "Event_Name":"Outbreak",
+            "Start_Day":50,
+            "class":"CampaignEvent",
+            "Event_Coordinator_Config":{  
+                "Demographic_Coverage":1,
+                "Number_Repetitions":1,
+                "Property_Restrictions":[  
+                    "Risk:Seed"
+                ],
+                "Target_Demographic":"Everyone",
+                "Timesteps_Between_Repetitions":1,
+                "Travel_Linked":0,
+                "class":"StandardInterventionDistributionEventCoordinator",
+                "Intervention_Config":{  
+                    "Antigen":0,
+                    "Genome":0,
+                    "Outbreak_Source":"PrevalenceIncrease",
+                    "class":"OutbreakIndividual"
+                }
+            },
+            "Nodeset_Config":{  
+                "class":"NodeSetAll"
+            }
+        },
+		{
+			"Event_Name": "Listener_Event",
+			"Start_Day": 20,
+			"class": "CampaignEvent",
+			"Event_Coordinator_Config": {
+				"Demographic_Coverage": 1.0,
+				"Number_Repetitions": 1,
+				"Target_Demographic":"Everyone",
+				"Timesteps_Between_Repetitions": 1,
+				"Travel_Linked": 0,
+				"class":"StandardInterventionDistributionEventCoordinator",
+				"Intervention_Config": {
+					"Actual_IndividualIntervention_Config": {
+						"Cost_To_Consumer": 1,
+						"Waning_Config": {
+							"Decay_Time_Constant": 50,
+							"Initial_Effect": 0.8,
+							"class": "WaningEffectExponential"
+							},
+						"Vaccine_Take": 1,
+						"Vaccine_Type": "TransmissionBlocking",
+						"class": "SimpleVaccine"
+					},
+					"Demographic_Coverage": 1,
+					"Property_Restrictions_Within_Node": [],
+					"Trigger_Condition_List": ["NewInfectionEvent"],
+					"class": "NodeLevelHealthTriggeredIV"
+				}
+			},
+			"Nodeset_Config": {
+				"class": "NodeSetAll"
+			}
+		}
+    ],
+    "Use_Defaults":1
+}

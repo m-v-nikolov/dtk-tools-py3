@@ -289,7 +289,7 @@ class ConfigOptionPanel(wx.Panel):
         if not item.IsOk():
             return
 
-        # print self.tree.GetItemText(item)
+        # print (self.tree.GetItemText(item))
         data = self.tree.GetItemPyData(item)
         if data is None:
             return None

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import shutil
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from scipy.stats import norm, uniform, multivariate_normal
 from calibtool.IterationState import IterationState
 from calibtool.Prior import MultiVariatePrior, SampleRange, SampleFunctionContainer
@@ -20,6 +20,7 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.General import nostdout
 from simtools.Utilities.Initialization import load_config_module
+from simtools.Utilities.Experiments import validate_exp_name
 
 
 class TestCommands(unittest.TestCase):
@@ -80,7 +81,7 @@ class TestCommands(unittest.TestCase):
     def test_init_samples(self):
         mod = load_config_module('dummy_calib.py')
 
-        # print mod.next_point_kwargs
+        # print (mod.next_point_kwargs)
         self.initial_samples = mod.next_point_kwargs['initial_samples']
         self.samples_per_iteration = mod.next_point_kwargs['samples_per_iteration']
 
@@ -122,7 +123,7 @@ class TestCommands(unittest.TestCase):
         mod = load_config_module('dummy_calib.py')
         manager = mod.calib_manager
 
-        self.assertTrue(utils.validate_exp_name(manager.name))
+        self.assertTrue(validate_exp_name(manager.name))
 
     def test_missing_files(self):
         os.chdir(self.calibration_dir)
@@ -144,7 +145,7 @@ class TestCommands(unittest.TestCase):
 
         # Py-passing 'Campaign_Filename' for now.
         if 'Campaign_Filename' in missing_files:
-            print "By-passing file '%s'..." % missing_files['Campaign_Filename']
+            print("By-passing file '%s'..." % missing_files['Campaign_Filename'])
             missing_files.pop('Campaign_Filename')
 
         self.assertEqual(len(missing_files), 0)
@@ -294,7 +295,7 @@ class TestCommands(unittest.TestCase):
         self.assertEqual(self.run_info[1], self.resume_info[1])
 
     def test_resume_point_black_box2(self):
-        print 'test_resume_point_black_box2'
+        print('test_resume_point_black_box2')
         self.exec_calib(['calibtool', 'run', 'dummy_calib.py'])
         self.run_info = [os.stat('test_dummy_calibration/iter0/IterationState.json').st_mtime,
                          os.stat('test_dummy_calibration/iter0/IterationState.json').st_size,
@@ -307,8 +308,8 @@ class TestCommands(unittest.TestCase):
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
 
-        # print self.run_info
-        # print self.resume_info
+        # print (self.run_info)
+        # print (self.resume_info)
         self.assertEqual(self.run_info[0], self.resume_info[0])
         self.assertEqual(self.run_info[1], self.resume_info[1])
         self.assertNotEquals(self.run_info[2], self.resume_info[2])
@@ -327,8 +328,8 @@ class TestCommands(unittest.TestCase):
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_mtime,
                             os.stat('test_dummy_calibration/iter1/IterationState.json').st_size]
 
-        # print self.run_info
-        # print self.resume_info
+        # print (self.run_info)
+        # print (self.resume_info)
         self.assertNotEquals(self.run_info[0], self.resume_info[0])
         self.assertLess(self.run_info[0], self.resume_info[0])
         self.assertNotEquals(self.run_info[2], self.resume_info[2])
@@ -648,17 +649,6 @@ class TestIterationState(unittest.TestCase):
         np.testing.assert_array_equal(next_point_new['latest_samples'],
                                       next_point_old['latest_samples'])
         os.remove('tmp.json')
-
-    def test_reset_to_step(self):
-        self.example_settings()
-        self.assertEqual(self.state.results[0]['a1'], -13)
-        self.state.reset_to_step(iter_step='analyze')
-        self.assertEqual(self.state.results, [])
-        self.assertEqual(self.state.analyzers, {})
-        self.assertEqual(self.state.simulations['sims']['id1']['p1'], 1)
-        self.state.reset_to_step(iter_step='commission')
-        self.assertEqual(self.state.simulations, {})
-        self.assertEqual(self.state.parameters['values'][2][1], 5)
 
 
 class TestNumpyDecoder(unittest.TestCase):

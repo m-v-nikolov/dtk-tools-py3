@@ -106,7 +106,7 @@ def detect_watershed_patches(A,mask=0,validation=False, blobs=None, label=''):
         blobs = blob_dog(A_norm, max_sigma=30, threshold=.1)
         print('Detected %d blobs to seed watershed'%len(blobs))
     else:
-        print 'Seeding watershed with {len} predefined blobs'.format(len=len(blobs))
+        print('Seeding watershed with {len} predefined blobs'.format(len=len(blobs)))
     if validation:
         title='DetectBlobs' if label == '' else '{label} Blobs'.format(label=label)
         ax=plot(A_copy, title)

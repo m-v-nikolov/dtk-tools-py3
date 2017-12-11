@@ -11,6 +11,7 @@ class LocalOS(object):
     WINDOWS = 'win'
     LINUX = 'lin'
     MAC = 'mac'
+    ALL = (WINDOWS, LINUX, MAC)
     OPERATING_SYSTEMS = {
         'windows': {
             'name': WINDOWS,

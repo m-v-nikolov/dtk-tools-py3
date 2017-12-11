@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import logging
 import operator
 import os
@@ -46,7 +48,7 @@ class OptimToolPBnBPlotter(BasePlotter):
         self.param_names = self.iteration_state.param_names
         self.site_analyzer_names = self.iteration_state.site_analyzer_names
 
-        self.npt = self.iteration_state.next_point
+        self.npt = self.iteration_state.next_point_algo.get_state()
 
         self.params = self.npt['params']
         self.str_k = str(self.npt['i_k'])
@@ -135,6 +137,3 @@ class OptimToolPBnBPlotter(BasePlotter):
         fig.savefig(os.path.join(self.directory, 'Region_Status ' + self.str_k + '.pdf'))
         plt.close(fig)
 
-
-    def cleanup_plot(self, calib_manager):
-        print 'CLEANUP_PLOT?'

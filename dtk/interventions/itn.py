@@ -1,7 +1,5 @@
-import copy
-from triggered_campaign_delay_event import triggered_campaign_delay_event
+from dtk.interventions.triggered_campaign_delay_event import triggered_campaign_delay_event
 
-# new campaign format : need to fix some add_itn() functionalities
 itn_bednet = { "class": "SimpleBednet",
                "Bednet_Type": "ITN", 
                "Killing_Config": {

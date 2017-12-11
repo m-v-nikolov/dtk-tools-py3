@@ -1,7 +1,6 @@
 import datetime
 import inspect
 import os
-from sqlalchemy import Binary
 from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Enum
@@ -15,14 +14,6 @@ from sqlalchemy.orm import relationship
 from simtools.DataAccess import Base, engine
 from COMPS.Data.Simulation import SimulationState
 
-class Analyzer(Base):
-    __tablename__ = "analyzers"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
-    analyzer = Column(Binary)
-    experiment_id = Column(String, ForeignKey('experiments.exp_id'))
-    experiment = relationship("Experiment", back_populates="analyzers")
 
 class Settings(Base):
     __tablename__ = "settings"
@@ -87,16 +78,20 @@ class Experiment(Base):
     setup_overlay_file = Column(String)
     sim_root = Column(String)
     sim_type = Column(String)
+    tags = Column(PickleType())
     command_line = Column(String)
     working_directory = Column(String)
     date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
     endpoint = Column(String)
 
     simulations = relationship("Simulation", back_populates='experiment', cascade="all, delete-orphan", order_by="Simulation.date_created")
-    analyzers = relationship("Analyzer", back_populates='experiment', cascade="all, delete-orphan")
 
     def __repr__(self):
-        return "Experiment %s" % self.id
+        format_string = "{date} - {name} : {id} ({location}) - {sim_count} simulations - {state}"
+        return format_string.format(date=self.date_created.strftime('%m/%d/%Y %H:%M:%S'),
+                                       name=self.exp_name, id=self.exp_id, location=self.location,
+                                       sim_count=len(self.simulations),
+                                       state="Completed" if self.is_done() else "Not Completed")
 
     @hybrid_property
     def id(self):
@@ -113,7 +108,7 @@ class Experiment(Base):
         return False
 
     def get_simulations_with_tag(self, tag, value):
-        return [sim for sim in self.simulations if sim.tags.has_key(tag) and sim.tags[tag] == value]
+        return [sim for sim in self.simulations if tag in sim.tags and sim.tags[tag] == value]
 
     def get_simulation_by_id(self, sim_id):
         for sim in self.simulations:
@@ -125,6 +120,18 @@ class Experiment(Base):
             if sim.status not in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled):
                 return False
         return True
+
+    def is_successful(self):
+        for sim in self.simulations:
+            if sim.status != SimulationState.Succeeded:
+                return False
+        return True
+
+    def any_failed_or_cancelled(self):
+        for sim in self.simulations:
+            if sim.status in (SimulationState.Failed, SimulationState.Canceled):
+                return True
+        return False
 
     def toJSON(self):
         ret = {}
@@ -143,12 +150,6 @@ class Experiment(Base):
                 ret['simulations'] = {}
                 for sim in value:
                     ret['simulations'][sim.id] = sim.tags
-                continue
-
-            if name == 'analyzers':
-                ret['analyzers'] = []
-                for a in value:
-                    ret['analyzers'].append(a.name)
                 continue
 
             # By default just add to the dict
@@ -170,7 +171,19 @@ class Batch(Base):
                                order_by="Simulation.date_created")
 
     def __repr__(self):
-        return "%s (id=%s)" % (self.name, self.id)
+        string = "{s.name} (id={s.id}, exp_count={ec}, sim_count={sc})\n".format(s=self,
+                                                                                   ec=len(self.experiments),
+                                                                                   sc=len(self.simulations))
+        if self.experiments:
+            string += "Experiment(s):\n"
+            string += "\n".join([" - {e.exp_name} ({e.exp_id})".format(e=exp) for exp in self.experiments])
+            string += "\n"
+        if self.simulations:
+            string += "Simulation(s):\n"
+            string += "\n".join(
+                [" - {s.id} (exp: {s.experiment.exp_name})".format(s=sim) for sim in self.simulations])
+
+        return string
 
     # must be called from an instance
     def get_experiment_ids(self):
@@ -182,12 +195,10 @@ class Batch(Base):
         sim_ids = [sim.id for sim in self.simulations]
         return sim_ids
 
-
 class BatchExperiment(Base):
     __tablename__ = "batch_experiment"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
     exp_id = Column(String, ForeignKey('experiments.exp_id'), primary_key=True)
-    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
     def __repr__(self):
         return "batch_experiment"
@@ -197,7 +208,6 @@ class BatchSimulation(Base):
     __tablename__ = "batch_simulation"
     batch_id = Column(String, ForeignKey('batches.id'), primary_key=True)
     sim_id = Column(String, ForeignKey('simulations.id'), primary_key=True)
-    date_created = Column(DateTime(timezone=True), default=datetime.datetime.now())
 
     def __repr__(self):
         return "batch_simulation"

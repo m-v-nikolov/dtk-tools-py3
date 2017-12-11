@@ -117,9 +117,9 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
             try:
                 self.populate_editor()
             except:
-                # print 'DTK Setup Editor catch exception, existing...'
+                # print ('DTK Setup Editor catch exception, existing...')
                 # exc_info = sys.exc_info()
-                # print exc_info
+                # print (exc_info)
                 exit()
 
             if option['BLOCK']:
@@ -202,7 +202,7 @@ class ConfigEditPanel(scrolled.ScrolledPanel):
         block_name = value.upper().replace(' ', '_')
 
         if block_name in ("", "DEFAULT", "NODE_GROUP", "PRIORITY"):
-            print "The block needs to have a valid name!"
+            print("The block needs to have a valid name!")
             return
 
         if self.block:
