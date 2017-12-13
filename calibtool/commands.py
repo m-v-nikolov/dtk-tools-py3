@@ -22,7 +22,7 @@ def run(args, unknownArgs):
 def resample(args, unknownArgs):
     # step 1: Determine how and with what to resample
     calibration_manager = get_calib_manager(args, unknownArgs)
-    resample_manager = args.loaded_module.resample_manager.get('resample_manager', None)
+    resample_manager = args.loaded_module.run_calib_args.get('resample_manager', None)
     if not resample_manager:
         raise Exception('The key \'resample_manager\' must exist in the run_calib_args dict in your script with a '
                         'Resampler object as the value.')
@@ -31,7 +31,7 @@ def resample(args, unknownArgs):
     calibrated_points = calibration_manager.get_calibrated_points()
 
     # step 2: Resample!
-    resample_manager.resample_and_run(initial_points=calibrated_points)
+    resample_manager.resample_and_run(initial_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
     resample_manager.write_results(filename='somefilename.csv') # ck4, filename
 
 def resume(args, unknownArgs):

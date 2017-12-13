@@ -15,9 +15,6 @@ def populate_resample_arguments(subparsers, func):
                                                                    'the resampling steps to be performed.')
     parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
     parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    # parser_run.add_argument('-a', '--analyzer', default=None, type=str,
-    #                         help='Analyzer for calculating the liklihood of parameter space points used in the '
-    #                              'resampling process (Required if using -r) (Default: None')
     parser_run.set_defaults(func=func)
 
 # 'calibtool resume' options
