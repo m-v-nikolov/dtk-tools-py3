@@ -170,7 +170,19 @@ calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customi
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
-run_calib_args = {}
+from calibtool.ResampleManager import ResampleManager
+from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
+from calibtool.resamplers.GaussianResampler import GaussianResampler
+
+resample_steps = [
+    GaussianResampler(), # ck4, add any needed arguments to these resamplers
+    CramerRaoResampler()
+]
+analyzer_path = 'some_file_path' # ck4, set properly
+
+run_calib_args = {
+    'resample_manager': ResampleManager(steps=resample_steps, liklihood_analyzer=analyzer_path)
+}
 
 if __name__ == "__main__":
     SetupParser.init()
