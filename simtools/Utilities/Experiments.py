@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from simtools.DataAccess.DataStore import DataStore
 from simtools.DataAccess.Schema import Experiment, Simulation
 from simtools.SetupParser import SetupParser

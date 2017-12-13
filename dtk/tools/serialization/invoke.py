@@ -1,6 +1,4 @@
 #!/usr/bin/python
-
-from __future__ import print_function
 import argparse
 import serialization_tools as st
 
