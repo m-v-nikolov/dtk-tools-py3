@@ -32,7 +32,9 @@ def resample(args, unknownArgs):
 
     # step 2: Resample!
     resample_manager.resample_and_run(initial_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
-    resample_manager.write_results(filename='somefilename.csv') # ck4, filename
+
+    os.makedirs(os.path.dirname(args.resampled_csv_filename), exist_ok=True)
+    resample_manager.write_results(filename=args.output_filename)
 
 def resume(args, unknownArgs):
     if args.iter_step:
