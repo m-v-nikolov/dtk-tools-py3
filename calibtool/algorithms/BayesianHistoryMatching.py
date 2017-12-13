@@ -1,16 +1,6 @@
 import logging
-from sys import exit# as exit
 import os
-import pandas as pd 
-
-import numpy as np
-from scipy.stats import multivariate_normal
-from scipy.spatial.distance import seuclidean
-from scipy.stats import uniform, norm
-
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
-
+import pandas as pd
 from calibtool.algorithms import NextPointAlgorithm
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
