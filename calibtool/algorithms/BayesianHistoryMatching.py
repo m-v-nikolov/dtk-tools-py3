@@ -11,7 +11,7 @@ from scipy.stats import uniform, norm
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
-from calibtool.NextPointAlgorithm import NextPointAlgorithm
+from calibtool.algorithms import NextPointAlgorithm
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
