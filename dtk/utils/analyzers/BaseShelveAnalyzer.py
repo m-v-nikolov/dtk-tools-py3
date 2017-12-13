@@ -1,7 +1,6 @@
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
-
 from threading import Lock
-import shelve, os
+import shelve
 
 class BaseShelveAnalyzer(BaseAnalyzer):
     """

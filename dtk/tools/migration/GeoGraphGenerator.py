@@ -1,9 +1,5 @@
-import os
 import networkx as nx
-from networkx.readwrite import json_graph
-import matplotlib.pyplot as plt
 from math import radians, cos, sin, asin, sqrt
-import numpy as np
 import itertools
 
 class GeoGraphGenerator(object):

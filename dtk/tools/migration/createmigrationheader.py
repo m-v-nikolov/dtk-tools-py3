@@ -1,4 +1,4 @@
-import sys, os, json, collections, re, msvcrt
+import sys, os, json, collections, re
 
 def ShowUsage():
 	print ('\nUsage: %s [compiled-demographics-file] [migration-type]' % os.path.basename(sys.argv[0]))

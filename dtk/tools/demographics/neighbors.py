@@ -5,7 +5,7 @@ from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from routes import find_route,route_time,plot_route
+from . routes import find_route,route_time,plot_route
 
 with open('cache/raster_nodes_Haiti.json') as f:
     node_json = json.loads(f.read())

@@ -1,6 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
-
+from abc import abstractmethod
 from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)

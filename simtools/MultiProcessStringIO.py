@@ -1,8 +1,7 @@
-import inspect
 import os
-
+from io import StringIO
 from multiprocessing import Lock
-from StringIO import StringIO
+
 
 class PidIndex(object):
     """

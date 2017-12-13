@@ -1,5 +1,5 @@
 import random
-from triggered_campaign_delay_event import triggered_campaign_delay_event
+from . triggered_campaign_delay_event import triggered_campaign_delay_event
 
 
 def add_adherent_drug(config_builder, start=1, coverage=1, cost=1, nodeIDs=[], number_repetitions=1,

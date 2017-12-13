@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import argparse
-import serialization_tools as st
+from . import serialization_tools as st
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

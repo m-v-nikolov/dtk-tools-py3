@@ -1,10 +1,10 @@
 import json
 import time
 
-import Node
-import raster
-from routes import get_raster_nodes
-from db import *
+from . Node import *
+from . raster import *
+from . routes import get_raster_nodes
+from . db import *
 
 def query_PfPR_by_node(node_ids):
     cnxn = idm_DB_connection()

@@ -1,12 +1,9 @@
 import logging
-from abc import ABCMeta, abstractmethod
-
+from abc import abstractmethod
 import pandas as pd
 import numpy as np
 from scipy.stats import binom
-
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas
-
 from calibtool.analyzers.BaseCalibrationAnalyzer import BaseCalibrationAnalyzer, thread_lock
 from calibtool.LL_calculators import gamma_poisson_pandas, beta_binomial_pandas
 from calibtool.analyzers.Helpers import \

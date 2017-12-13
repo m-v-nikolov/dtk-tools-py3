@@ -7,7 +7,7 @@ Support for three formats of serialized population files:
 3. "Second chunked version": multiple payload chunks, simulation and node objects are "root" objects in each chunk
 """
 
-import dtkFileSupport as support
+from . import dtkFileSupport as support
 import json
 import os
 import snappy
