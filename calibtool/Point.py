@@ -1,10 +1,9 @@
-class Point(object):
+class Point:
     """
     A simple class that acts similarly to a dict, but uses attributes for access
     """
     def __init__(self, items):
-        for k,v in items.items():
-            setattr(self, k, v)
+        self.__dict__ = items
         self.items = items.keys()
 
     def to_dict(self):
