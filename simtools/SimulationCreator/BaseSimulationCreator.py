@@ -1,12 +1,9 @@
-from __future__ import print_function
-
 import copy
 from abc import abstractmethod, ABCMeta
 from multiprocessing import Process
 
-from simtools.SetupParser import SetupParser
 from simtools.DataAccess.DataStore import DataStore
-from simtools.Utilities.COMPSUtilities import translate_COMPS_path
+from simtools.SetupParser import SetupParser
 
 
 class BaseSimulationCreator(Process):

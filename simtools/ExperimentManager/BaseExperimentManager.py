@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from itertools import cycle
 
 from simtools.Utilities.Encoding import GeneralEncoder
@@ -12,7 +10,6 @@ import json
 import multiprocessing
 import os
 import subprocess
-import sys
 import time
 from abc import ABCMeta, abstractmethod
 from collections import Counter
