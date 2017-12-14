@@ -2,8 +2,8 @@ import json
 import os
 import shutil
 
-from DemographicsGenerator import DemographicsGenerator
-from ImmunityOverlaysGenerator import ImmunityOverlaysGenerator
+from . DemographicsGenerator import DemographicsGenerator
+from . ImmunityOverlaysGenerator import ImmunityOverlaysGenerator
 from dtk.tools.climate.ClimateGenerator import ClimateGenerator
 from dtk.tools.loadbalance.LoadBalanceGenerator import LoadBalanceGenerator
 from dtk.tools.migration.MigrationGenerator import MigrationGenerator

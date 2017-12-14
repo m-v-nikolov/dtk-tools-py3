@@ -1,5 +1,3 @@
-import json
-from multiprocessing import Lock
 import os
 
 from dtk.utils.analyzers.BaseShelfAnalyzer import BaseShelfAnalyzer

@@ -125,8 +125,8 @@ def main(demographics_file):
         CompileDemographics(demographics_file, True)
         
     else:
-        print "compiledemog.main: Incorrect list of arguments provided."
-        
+        print("compiledemog.main: Incorrect list of arguments provided.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 and ( len(sys.argv) != 3 or sys.argv[2] != "--forceoverwrite" ):

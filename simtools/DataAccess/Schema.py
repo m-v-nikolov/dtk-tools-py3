@@ -3,7 +3,6 @@ import inspect
 import os
 from sqlalchemy import Column
 from sqlalchemy import DateTime
-from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import PickleType

@@ -1,6 +1,6 @@
 import struct, array
 
-from KMeansLoadBalancer import KMeansLoadBalancer 
+from . KMeansLoadBalancer import KMeansLoadBalancer
 
 
 class LoadBalanceGenerator(object):

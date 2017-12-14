@@ -1,5 +1,4 @@
 import os
-import gc
 import multiprocessing
 import sys
 # Add the tools to the path

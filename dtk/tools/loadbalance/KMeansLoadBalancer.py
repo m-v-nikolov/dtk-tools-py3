@@ -1,5 +1,4 @@
-import sys, os, json, numpy, struct, array
-import getopt
+import json, numpy
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 

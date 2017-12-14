@@ -1,5 +1,3 @@
-import datetime
-
 from simtools.DataAccess.BatchDataStore import BatchDataStore
 from simtools.DataAccess.ExperimentDataStore import ExperimentDataStore
 from simtools.DataAccess.SettingsDataStore import SettingsDataStore

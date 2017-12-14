@@ -1,4 +1,4 @@
-import dtkFileTools as dtk
+from . import dtkFileTools as dtk
 
 STATE_ADULT = 1         # implies female, I believe
 STATE_INFECTED = 2

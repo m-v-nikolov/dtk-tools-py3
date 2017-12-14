@@ -2,11 +2,8 @@ import gc  # for garbage collection
 import json  # to read JSON output files
 import logging
 import os  # mkdir, path, etc.
-import struct  # for binary file unpacking
 import threading  # for multi-threaded job submission and monitoring
 from io import StringIO, BytesIO
-
-import numpy as np  # for reading spatial output data by node and timestep
 import pandas as pd  # for reading csv files
 
 from simtools.Utilities.COMPSUtilities import workdirs_from_experiment_id, get_simulation_by_id, \

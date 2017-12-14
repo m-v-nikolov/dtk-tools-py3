@@ -1,17 +1,10 @@
 import logging
-import numpy as np
+
 import pandas as pd
-import copy
+
+from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 # Plotting
-import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib import gridspec
-
-
-from calibtool import LL_calculators
-from calibtool.analyzers.Helpers import accumulate_agebins_cohort
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 

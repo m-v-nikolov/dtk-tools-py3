@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 
-from routes import get_raster_nodes
+from . routes import get_raster_nodes
 
 nodes=get_raster_nodes('cache/raster_nodes_Haiti.json',N=-1)
 min_pop=1e4

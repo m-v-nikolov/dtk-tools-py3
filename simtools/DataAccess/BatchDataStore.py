@@ -1,9 +1,7 @@
-from sqlalchemy import all_
 from sqlalchemy.orm import joinedload
-
 from simtools.DataAccess import session_scope
 from simtools.DataAccess.Schema import Batch, BatchSimulation, BatchExperiment
-from operator import and_, or_
+from operator import and_
 
 
 class BatchDataStore:

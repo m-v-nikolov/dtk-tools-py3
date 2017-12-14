@@ -1,5 +1,4 @@
 import logging
-
 import pandas as pd
 
 from dtk.utils.parsers.malaria_summary import summary_channel_to_pandas

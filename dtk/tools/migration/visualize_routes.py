@@ -3,10 +3,8 @@ import os
 import json
 import struct
 import collections
-import numpy as np
 import operator
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 def ShowUsage():
     print ('\nUsage: %s [demographics-file] [optional:migration-file]' % os.path.basename(sys.argv[0]))

@@ -1,7 +1,8 @@
 import json
 from functools import partial
 from itertools import combinations
-import urllib2
+from urllib.request import urlopen
+from urllib import error
 
 from polyline.codec import PolylineCodec
 import networkx as nx
@@ -21,7 +22,7 @@ def osrm_query(service,params,parse_fns=[]):
     try:
         search_query = 'http://' + server + '/' + service + '?' + params
         print(search_query)
-        sf = urllib2.urlopen(search_query)
+        sf = urlopen(search_query)
         r=sf.read()
         #print(r)
         response = json.loads(r)
@@ -30,7 +31,7 @@ def osrm_query(service,params,parse_fns=[]):
                 print('Bad status')
             else:
                 parse_fn(response)
-    except urllib2.URLError, err:
+    except error as err:
         print(err.reason)
     finally:
         try:
