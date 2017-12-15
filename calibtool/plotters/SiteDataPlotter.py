@@ -6,7 +6,6 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from mpl_toolkits.mplot3d import Axes3D
 from calibtool.IterationState import IterationState
 from calibtool.plotters.BasePlotter import BasePlotter
 from calibtool.utils import StatusPoint

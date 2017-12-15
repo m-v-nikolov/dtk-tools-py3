@@ -1,12 +1,8 @@
-import gc
 import json
 import os
-import re
 import time
 from datetime import datetime
-
 import pandas as pd
-
 from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager

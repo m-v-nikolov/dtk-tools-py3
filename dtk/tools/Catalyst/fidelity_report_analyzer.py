@@ -77,7 +77,7 @@ class FidelityReportAnalyzer(BaseSimDataAnalyzer):
         self.exp_def['node_count'] = first_sim.demog.node_count
 
     def finalize(self):
-        print('\nCreating reports...')
+        print('Creating reports...')
 
         # save raw data if needed
         raw_path = os.path.join(self.output_path, 'data_raw.csv')

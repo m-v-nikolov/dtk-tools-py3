@@ -1,5 +1,4 @@
-from __future__ import print_function
-import dtkFileTools as dtk
+from . import dtkFileTools as dtk
 
 STATE_ADULT = 1         # implies female, I believe
 STATE_INFECTED = 2
@@ -11,7 +10,6 @@ _endings = [ 'th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th' ]
 
 
 def zero_infections(source_filename, dest_filename, ignore_nodes=[], keep_individuals=[]):
-
     print('Ignoring nodes {0}'.format(ignore_nodes))
     print('Keeping infections in humans {0}'.format(keep_individuals))
 

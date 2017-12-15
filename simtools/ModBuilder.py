@@ -1,7 +1,5 @@
 import itertools
 
-from simtools.SimConfigBuilder import SimConfigBuilder
-
 
 class ModList(list):
     def __init__(self, *args):

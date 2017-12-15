@@ -142,7 +142,8 @@ class SimData:
         if not self.config : raise Exception('Config infromation is not available before apply method is invoked.')
         return self.config['Simulation_Duration']
 
-    def to_df(self, config_params = []):
+    def to_df(self, config_params=None):
+        config_params = config_params or []
         df = BaseSimDataChannel.steps_series(self.step_count)
         df['sim_id'] = self.sim_id
         df['total_time'] = self.sim_run_time.total_seconds()
@@ -186,11 +187,6 @@ class DemographicsFile:
     @property
     def node_ids(self):
         return [node['NodeID'] for node in self.json['Nodes']]
-
-    @property
-    def locations(self):
-        return {node['NodeID']: (node['NodeAttributes']['Latitude'], node['NodeAttributes']['Longitude']) for node in self.json['Nodes']}
-
 
 
 class BaseSimDataChannel(object):

@@ -1,9 +1,6 @@
 import logging
-from abc import ABCMeta
 import threading
-
 import pandas as pd
-
 from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
 
 logger = logging.getLogger(__name__)

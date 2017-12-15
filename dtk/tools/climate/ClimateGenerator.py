@@ -2,7 +2,6 @@ import glob
 import json
 import os
 import time
-import zipfile
 from dtk.utils.ioformat.OutputMessage import OutputMessage as om
 from simtools.COMPSAccess.InputDataWorker import InputDataWorker
 from simtools.SetupParser import SetupParser

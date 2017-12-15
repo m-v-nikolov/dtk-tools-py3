@@ -2,9 +2,9 @@ import os
 
 import matplotlib.pyplot as plt
 
-from Node import Node, nodes_for_DTK
-from plotting import plot_nodes
-from db import *
+from . Node import Node, nodes_for_DTK
+from . plotting import plot_nodes
+from . db import *
 
 
 def query_DB_for_shape_data(parent_alias, relative_admin_level, shape_set='EMED'):
