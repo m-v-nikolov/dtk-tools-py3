@@ -171,22 +171,34 @@ calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customi
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
+# *******************************************************************
+# Resampling bits
+# *******************************************************************
+
 from calibtool.ResampleManager import ResampleManager
 from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
 from calibtool.resamplers.RandomPerturbationResampler import RandomPerturbationResampler
 
+# 1. Define the resamplers to run (one or more) in list order.
+# ck4, add any needed arguments to these resamplers (to set as attributes) for use in their _resample() method
 resample_steps = [
-    RandomPerturbationResampler(), # ck4, add any needed arguments to these resamplers
+    RandomPerturbationResampler(),
     CramerRaoResampler()
 ]
-# analyzer_path = 'liklihood_analyzer.py' # ck4, set properly
+
+# 2. Import and initialize the likelihood analyzer that will be used on resampled points. There must be exactly
+#    one analyzer; any beyond the first will be ignored in resample calculations.
 from somewhere import MyLikelihoodAnalyzer
-# There should be exactly ONE likelihood analyzer specified; any beyond the first will be ignored in resample
-# calculations.
-analyzers = [MyLikelihoodAnalyzer()] # REQUIRED variable name, analyzers... used by dtk.commands.analyze()
-run_calib_args = { # REQUIRED variable and key name
+analyzers = [MyLikelihoodAnalyzer()] # REQUIRED variable name: analyzers
+
+# 3. Set up well-known, defined arguments. Note that THIS is the analyzer script that will be loaded for analyzing.
+run_calib_args = { # REQUIRED variable name: run_calib_args . Required key: 'resample_manager'
     'resample_manager': ResampleManager(steps=resample_steps, analyzer_path=os.path.abspath(__file__))
 }
+
+# *******************************************************************
+# End resampling bits
+# *******************************************************************
 
 if __name__ == "__main__":
     SetupParser.init()
