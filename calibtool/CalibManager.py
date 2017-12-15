@@ -128,9 +128,12 @@ class CalibManager(object):
         self.summary_table = self.current_iteration.summary_table
         self.cache_calibration(iteration=self.iteration+1)
 
-    def exp_builder_func(self, next_params):
+    def exp_builder_func(self, next_params, n_replicates=None):
+        if not n_replicates:
+            n_replicates = self.sim_runs_per_param_set
+
         return ModBuilder.from_combos(
-                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i+1) for i in range(self.sim_runs_per_param_set)],
+                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i+1) for i in range(n_replicates)],
                 [ModFn(site.setup_fn) for site in self.sites],
                 [ModFn(self.map_sample_to_model_input_fn, index, samples) for index, samples in  enumerate(next_params)]
         )
@@ -440,6 +443,10 @@ class CalibManager(object):
             else:
                 return None
 
+    def read_iteration_data(self, iteration):
+        iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
+        return IterationState.from_file(iteration_cache)
+
     def get_experiment_from_iteration(self, iteration=None, force_metadata=False):
         """
         Retrieve experiment for a given iteration
@@ -449,9 +456,7 @@ class CalibManager(object):
         # Only check iteration for resume cases
         if force_metadata:
             iteration = self.adjust_iteration(iteration)
-            iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
-            it = IterationState.from_file(iteration_cache)
-
+            it = self.read_iteration_data(iteration)
             exp = DataStore.get_experiment(it.experiment_id)
 
         return exp
@@ -570,10 +575,44 @@ class CalibManager(object):
     def site_analyzer_names(self):
         return {site.name: [a.name for a in site.analyzers] for site in self.sites}
 
-    # ck4, define.
-    def get_calibrated_point(iteration=None):
-        if iteration is None:
-            iteration = self.get_last_iteration()
-        # ck4, do stuff
-        pass
-        return point # ck4, define a point object and use it
+    def get_last_iteration(self):
+        calib_data = self.read_calib_data()
+        last_iteration = int(calib_data.get('iteration', None))
+        if not last_iteration:
+            raise KeyError('Could not determine what the most recent iteration is.')
+        return last_iteration
+
+    def get_calibrated_points(self):
+        """
+        Retrieve information about the most recent (final completed) iteration's calibrated point,
+        merging from the final IterationState.json and CalibManager.json .
+        :return:
+        """
+        from copy import deepcopy
+        from calibtool.Point import Point
+
+        n_points = 1 # ck4, hardcoded for now for HIV purposes, need to determine how to get this from the CalibManager
+
+        calib_data = self.read_calib_data()
+
+        iteration = self.get_last_iteration()
+        iteration_data = self.read_iteration_data(iteration=iteration)
+
+        final_samples = calib_data['final_samples']
+        # iteration_metadata = iteration_data['next_point']['params']
+        iteration_metadata = iteration_data.next_point['params']
+        # print('iteration_metadata:\n%s' % iteration_metadata)
+        # exit()
+        # from pprint import pprint
+        # pprint('The raw iteration param_metadata is:\n%s\n----' % iteration_metadata)
+
+        points = []
+        for i in range(0, n_points):
+            param_dict = {}
+            for param_metadata in iteration_metadata:
+                temp_dict = deepcopy(param_metadata)
+                param_name = temp_dict['Name']
+                param_dict[param_name] = temp_dict
+                param_dict[param_name]['Value'] = final_samples[param_name][0] # it's a list of 1 item; flatten
+            points.append(Point(param_dict))
+        return points

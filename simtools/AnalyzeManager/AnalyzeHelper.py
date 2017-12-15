@@ -67,6 +67,8 @@ def analyze(args, unknownArgs, builtinAnalyzers):
     # remove empty batches
     clean_batch()
 
+    return analyzeManager
+
 
 def check_existing_batch(exp_dict, sim_dict):
     exp_ids_list = exp_dict.keys()
@@ -173,7 +175,7 @@ def collect_analyzers(args, builtinAnalyzers):
         # get provided analyzer
         analyzers.append(builtinAnalyzers[args.config_name])
     else:
-        logger.error('Unknown analyzer...available builtin analyzers: ' + ', '.join(builtinAnalyzers.keys()))
+        logger.error('Unknown analyzer: %s ...available builtin analyzers: '%args.config_name + ', '.join(builtinAnalyzers.keys()))
         exit()
 
     return analyzers

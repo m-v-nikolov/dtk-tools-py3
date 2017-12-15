@@ -1,6 +1,6 @@
 from calibtool.resamplers.Resampler import Resampler
 
-class CramerRaoResampler(Resampler):
+class RandomPerturbationResampler(Resampler):
 
     # ck4, add any desired args for this initializer
     def __init__(self):
@@ -14,5 +14,5 @@ class CramerRaoResampler(Resampler):
         """
 
         # method-specific stuff here
-        raise Exception('CramerRaoResampler _resample() method is incomplete.')
+        raise Exception('RandomPerturbationResampler _resample() method is incomplete.')
         return new_points

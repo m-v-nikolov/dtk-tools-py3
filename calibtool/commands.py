@@ -31,7 +31,7 @@ def resample(args, unknownArgs):
     calibrated_points = calibration_manager.get_calibrated_points()
 
     # step 2: Resample!
-    resample_manager.resample_and_run(initial_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
+    resample_manager.resample_and_run(calibrated_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
 
     os.makedirs(os.path.dirname(args.resampled_csv_filename), exist_ok=True)
     resample_manager.write_results(filename=args.output_filename)
