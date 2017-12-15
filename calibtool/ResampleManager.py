@@ -5,7 +5,7 @@ class ResampleManager:
         self.steps = steps
         self.analyzer_path = analyzer_path
 
-    def resample_and_run(self, calibrated_points, resample_step, run_args, unknown_args):
+    def resample_and_run(self, calibrated_points, run_args, unknown_args):
         resample_step = 0
         for resampler in self.steps:
             calibrated_points = resampler.resample_and_run(calibrated_points=calibrated_points,

@@ -33,7 +33,8 @@ def resample(args, unknownArgs):
     # step 2: Resample!
     resample_manager.resample_and_run(calibrated_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
 
-    os.makedirs(os.path.dirname(args.resampled_csv_filename), exist_ok=True)
+    # step 3: write final results
+    os.makedirs(os.path.dirname(args.output_filename), exist_ok=True)
     resample_manager.write_results(filename=args.output_filename)
 
 def resume(args, unknownArgs):
