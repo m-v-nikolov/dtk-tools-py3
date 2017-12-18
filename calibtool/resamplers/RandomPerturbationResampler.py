@@ -1,10 +1,12 @@
+import copy
+
 from calibtool.resamplers.Resampler import Resampler
 
 class RandomPerturbationResampler(Resampler):
 
     # ck4, add any desired args for this initializer
     def __init__(self):
-        pass
+        super().__init__()
 
     def _resample(self, calibrated_points):
         """
@@ -18,7 +20,15 @@ class RandomPerturbationResampler(Resampler):
         :param calibrated_points: input points for this resampling method
         :return: a list of resampled Point objects
         """
+        new_points = []
 
-        # method-specific stuff here
-        raise Exception('RandomPerturbationResampler _resample() method is incomplete.')
+        for pt in calibrated_points:
+            pt1 = copy.deepcopy(pt)
+
+            for param in pt1.parameters:
+                param.value += 0.5
+            new_points.append(pt)
+            new_points.append(pt1)
+
+
         return new_points

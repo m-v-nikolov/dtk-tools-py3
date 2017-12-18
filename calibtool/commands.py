@@ -2,6 +2,7 @@ import argparse
 import os
 # from calibtool import commands_args
 from calibtool import commands_args
+from calibtool.ResampleManager import ResampleManager
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
 
@@ -22,19 +23,18 @@ def run(args, unknownArgs):
 def resample(args, unknownArgs):
     # step 1: Determine how and with what to resample
     calibration_manager = get_calib_manager(args, unknownArgs)
-    resample_manager = args.loaded_module.run_calib_args.get('resample_manager', None)
-    if not resample_manager:
-        raise Exception('The key \'resample_manager\' must exist in the run_calib_args dict in your script with a '
-                        'Resampler object as the value.')
+    resample_steps = args.loaded_module.run_calib_args.get('resample_steps', None)
+    if not resample_steps:
+        raise Exception('The key \'resample_steps\' must exist in the run_calib_args dict in your script with a '
+                        'list of steps for the Resampler as the value.')
 
-    # could be 1 or more points, depending on calibration methodology used
-    calibrated_points = calibration_manager.get_calibrated_points()
+    # Create the resampleManager
+    resample_manager = ResampleManager(calib_manager=calibration_manager, steps=resample_steps)
 
     # step 2: Resample!
-    resample_manager.resample_and_run(calibrated_points=calibrated_points, run_args=args, unknown_args=unknownArgs)
+    resample_manager.resample()
 
     # step 3: write final results
-    os.makedirs(os.path.dirname(args.output_filename), exist_ok=True)
     resample_manager.write_results(filename=args.output_filename)
 
 def resume(args, unknownArgs):

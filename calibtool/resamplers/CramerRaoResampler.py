@@ -19,6 +19,4 @@ class CramerRaoResampler(Resampler):
         :return: a list of resampled Point objects
         """
 
-        # method-specific stuff here
-        raise Exception('CramerRaoResampler _resample() method is incomplete.')
-        return new_points
+        return calibrated_points

@@ -2,7 +2,6 @@
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
 import copy
 import math
-import os
 import random
 
 from scipy.special import gammaln
@@ -31,10 +30,7 @@ SetupParser.default_block = 'HPC'
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 # List of sites we want to calibrate on
-sites = [DielmoCalibSite(), NdiopCalibSite()]
-
-# For now we will only use Dielmo
-sites = [sites[0]]
+sites = [DielmoCalibSite()]
 
 # The default plotters used in an Optimization with OptimTool
 plotters = [LikelihoodPlotter(combine_sites=True),
@@ -186,14 +182,9 @@ resample_steps = [
     CramerRaoResampler()
 ]
 
-# 2. Import and initialize the likelihood analyzer that will be used on resampled points. There must be exactly
-#    one analyzer; any beyond the first will be ignored in resample calculations.
-from somewhere import MyLikelihoodAnalyzer
-analyzers = [MyLikelihoodAnalyzer()] # REQUIRED variable name: analyzers
-
 # 3. Set up well-known, defined arguments. Note that THIS is the analyzer script that will be loaded for analyzing.
 run_calib_args = { # REQUIRED variable name: run_calib_args . Required key: 'resample_manager'
-    'resample_manager': ResampleManager(steps=resample_steps, analyzer_path=os.path.abspath(__file__))
+    'resample_steps': resample_steps
 }
 
 # *******************************************************************
@@ -202,4 +193,14 @@ run_calib_args = { # REQUIRED variable name: run_calib_args . Required key: 'res
 
 if __name__ == "__main__":
     SetupParser.init()
+    # Run the calibration
     calib_manager.run_calibration()
+
+    # Run the resampling
+    resample_manager = ResampleManager(calib_manager=calib_manager, steps=resample_steps)
+
+    # step 2: Resample!
+    resample_manager.resample()
+
+    # step 3: write final results
+    resample_manager.write_results(filename='output.json')

@@ -84,7 +84,6 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
-    return exp_manager.experiment
 
 
 def status(args, unknownArgs):

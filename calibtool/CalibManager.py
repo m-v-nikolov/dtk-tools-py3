@@ -6,6 +6,7 @@ import shutil
 from datetime import datetime
 import pandas as pd
 from calibtool.IterationState import IterationState
+from calibtool.Point import CalibrationPoint, CalibrationParameter
 from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
@@ -585,9 +586,6 @@ class CalibManager(object):
         merging from the final IterationState.json and CalibManager.json .
         :return:
         """
-        from copy import deepcopy
-        from calibtool.Point import Point
-
         n_points = 1 # ck4, hardcoded for now for HIV purposes, need to determine how to get this from the CalibManager
 
         calib_data = self.read_calib_data()
@@ -596,20 +594,15 @@ class CalibManager(object):
         iteration_data = self.read_iteration_data(iteration=iteration)
 
         final_samples = calib_data['final_samples']
-        # iteration_metadata = iteration_data['next_point']['params']
         iteration_metadata = iteration_data.next_point['params']
-        # print('iteration_metadata:\n%s' % iteration_metadata)
-        # exit()
-        # from pprint import pprint
-        # pprint('The raw iteration param_metadata is:\n%s\n----' % iteration_metadata)
 
-        points = []
+        # Create the list of points and their associated parameters
+        points = list()
         for i in range(0, n_points):
-            param_dict = {}
+            parameters = list()
             for param_metadata in iteration_metadata:
-                temp_dict = deepcopy(param_metadata)
-                param_name = temp_dict['Name']
-                param_dict[param_name] = temp_dict
-                param_dict[param_name]['Value'] = final_samples[param_name][0] # it's a list of 1 item; flatten
-            points.append(Point(param_dict))
+                param_metadata["Value"] = final_samples[param_metadata["Name"]][0]
+                parameters.append(CalibrationParameter.from_dict(param_metadata))
+            points.append(CalibrationPoint(parameters))
+
         return points
