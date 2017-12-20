@@ -253,8 +253,8 @@ ll = pd.DataFrame.from_csv("LLdata.csv")
 Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
 Covariance = np.linalg.inv(Fisher)
 
-print "eigs of fisher: ", np.linalg.eigvals(Fisher)
-print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
+print("eigs of fisher: ", np.linalg.eigvals(Fisher))
+print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
 
 fig3 = plt.figure('CramerRao')
 ax = plt.subplot(111)
