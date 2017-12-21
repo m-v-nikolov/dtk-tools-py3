@@ -6,7 +6,6 @@ import shutil
 from datetime import datetime
 import pandas as pd
 from calibtool.IterationState import IterationState
-from calibtool.Point import CalibrationPoint, CalibrationParameter
 from calibtool.utils import StatusPoint
 from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
@@ -579,30 +578,3 @@ class CalibManager(object):
         if not last_iteration:
             raise KeyError('Could not determine what the most recent iteration is.')
         return last_iteration
-
-    def get_calibrated_points(self):
-        """
-        Retrieve information about the most recent (final completed) iteration's calibrated point,
-        merging from the final IterationState.json and CalibManager.json .
-        :return:
-        """
-        n_points = 1 # ck4, hardcoded for now for HIV purposes, need to determine how to get this from the CalibManager
-
-        calib_data = self.read_calib_data()
-
-        iteration = self.get_last_iteration()
-        iteration_data = self.read_iteration_data(iteration=iteration)
-
-        final_samples = calib_data['final_samples']
-        iteration_metadata = iteration_data.next_point['params']
-
-        # Create the list of points and their associated parameters
-        points = list()
-        for i in range(0, n_points):
-            parameters = list()
-            for param_metadata in iteration_metadata:
-                param_metadata["Value"] = final_samples[param_metadata["Name"]][0]
-                parameters.append(CalibrationParameter.from_dict(param_metadata))
-            points.append(CalibrationPoint(parameters))
-
-        return points
