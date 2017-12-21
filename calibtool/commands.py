@@ -1,6 +1,5 @@
 import argparse
 import os
-# from calibtool import commands_args
 from calibtool import commands_args
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
@@ -15,27 +14,27 @@ def get_calib_manager(args, unknownArgs, force_metadata=False):
     return manager
 
 
-def get_resample_manager(args, unknownArgs, force_metadata=False):
+def get_resampler(args, unknownArgs, force_metadata=False):
     mod = args.loaded_module
 
-    if not hasattr(mod, 'run_calib_args') or 'resample_manager' not in mod.run_calib_args:
+    if not hasattr(mod, 'run_calib_args') or 'resampler' not in mod.run_calib_args:
         warning_note = \
             """
-            /!\\ WARNING /!\\ Required to set resample_manager within run_calib_args like the following:
+            /!\\ WARNING /!\\ Required to set resampler within run_calib_args like the following:
 
-                run_calib_args = {'resample_manager': xxx_manager}
+                run_calib_args = {'resampler': xxx_resampler}
             """
         print(warning_note)
         exit()
     else:
-        manager = mod.run_calib_args['resample_manager']
+        resampler = mod.run_calib_args['resampler']
 
     # Update the SetupParser to match the existing experiment environment/block if force_metadata == True
     if force_metadata:
-        exp = manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
+        exp = resampler.calib_manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
         SetupParser.override_block(exp.selected_block)
 
-    return manager
+    return resampler
 
 
 def run(args, unknownArgs):
@@ -44,11 +43,11 @@ def run(args, unknownArgs):
 
 
 def resample(args, unknownArgs):
-    # step 1: Get the resampleManager
-    resample_manager = get_resample_manager(args, unknownArgs)
+    # step 1: Get the resampler
+    resampler = get_resampler(args, unknownArgs)
 
     # step 2: Resample!
-    resample_manager.resample()
+    resampler.resample()
 
 
 def resume(args, unknownArgs):

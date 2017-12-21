@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class ResampleManager(metaclass=ABCMeta):
+class BaseResampler(metaclass=ABCMeta):
     def __init__(self, calib_manager):
         self.calib_manager = calib_manager
 

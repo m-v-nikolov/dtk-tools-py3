@@ -11,7 +11,7 @@ from calibtool.algorithms.OptimTool import OptimTool
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-from calibtool.resamplers.CramerRaoResampleManager import CramerRaoResampleManager
+from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
@@ -168,11 +168,11 @@ calib_manager = CalibManager(name='ExampleOptimization_cramer',    # <-- Please 
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
-cramerRao_manager = CramerRaoResampleManager(calib_manager)
+cramerRao_resampler = CramerRaoResampler(calib_manager)
 
 run_calib_args = {
-    # REQUIRED variable name: run_calib_args . Required key: 'resample_manager'
-    'resample_manager': cramerRao_manager
+    # REQUIRED variable name: run_calib_args . Required key: 'resampler'
+    'resampler': cramerRao_resampler
 }
 
 
@@ -184,5 +184,5 @@ if __name__ == "__main__":
     calib_manager.run_calibration()
 
     # Run the resampling
-    resample_manager = run_calib_args['resample_manager']
-    resample_manager.resample()
+    resampler = run_calib_args['resampler']
+    resampler.resample()
