@@ -50,10 +50,7 @@ def resample(args, unknownArgs):
 
     # step 2: Resample!
     resample_manager.resample()
-
-    # step 3: write final results
-    resample_manager.write_results(filename=args.output_filename)
-
+    
 
 def resume(args, unknownArgs):
     if args.iter_step:
