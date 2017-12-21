@@ -1,6 +1,8 @@
 from __future__ import division
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from scipy.linalg import sqrtm
@@ -242,33 +244,36 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     return ellip
 
 
-# test
-center = np.array([0.05,-0.92,-.98])
-Xmin = np.array([-1]*3)
-Xmax = np.array([1]*3)
-df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
-#print df_perturbed_points
-# df_perturbed_points.to_csv("data.csv")
-ll = pd.DataFrame.from_csv("LLdata.csv")
-Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
-Covariance = np.linalg.inv(Fisher)
+def test():
+    # test
+    center = np.array([0.05,-0.92,-.98])
+    Xmin = np.array([-1]*3)
+    Xmax = np.array([1]*3)
+    df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
+    #print df_perturbed_points
+    # df_perturbed_points.to_csv("data.csv")
+    ll = pd.DataFrame.from_csv("LLdata.csv")
+    Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
+    Covariance = np.linalg.inv(Fisher)
 
-print("eigs of fisher: ", np.linalg.eigvals(Fisher))
-print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
+    print("eigs of fisher: ", np.linalg.eigvals(Fisher))
+    print("eigs of Covariance: ", np.linalg.eigvals(Covariance))
 
-fig3 = plt.figure('CramerRao')
-ax = plt.subplot(111)
-x, y = center[0:2]
-plt.plot(x, y, 'g.')
-plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=1, alpha=0.6, color='green')
-plt.xlim(Xmin[0], Xmax[0])
-plt.ylim(Xmin[1], Xmax[1])
-plt.xlabel('X', fontsize=14)
-plt.ylabel('Y', fontsize=14)
+    fig3 = plt.figure('CramerRao')
+    ax = plt.subplot(111)
+    x, y = center[0:2]
+    plt.plot(x, y, 'g.')
+    plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=1, alpha=0.6, color='green')
+    plt.xlim(Xmin[0], Xmax[0])
+    plt.ylim(Xmin[1], Xmax[1])
+    plt.xlabel('X', fontsize=14)
+    plt.ylabel('Y', fontsize=14)
 
-plt.show()
+    plt.show()
 
 
+if __name__ == "__main__":
+    test()
 
 
 
