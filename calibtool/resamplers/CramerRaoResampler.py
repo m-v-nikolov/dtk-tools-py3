@@ -16,6 +16,11 @@ class CramerRaoResampler(BaseResampler):
         """
         :return:
         """
+        
+        # make sure the output location exists
+        if not os.path.exists(self.output_location):
+            os.mkdir(self.output_location)
+
         # collect the point from last iteration
         calibrated_points = self.get_calibrated_points()
 
@@ -40,9 +45,6 @@ class CramerRaoResampler(BaseResampler):
         # save perturbed_points with likelihood to file
         df_perturbed_points_ll = df_perturbed_points.copy()
         df_perturbed_points_ll['ll'] = ll
-
-        if not os.path.exists(self.output_location):
-            os.mkdir(self.output_location)
         df_perturbed_points_ll.to_csv(os.path.join(self.output_location, 'LLdata.csv'))
 
         # plotting
@@ -120,8 +122,6 @@ class CramerRaoResampler(BaseResampler):
         df_perturbed_points.columns = ['i', 'j', 'k', 'l'] + Names
 
         # save to csv file
-        if not os.path.exists(self.output_location):
-            os.mkdir(self.output_location)
         df_perturbed_points.to_csv(os.path.join(self.output_location, 'data.csv'))
 
         return df_perturbed_points
@@ -203,8 +203,7 @@ class CramerRaoResampler(BaseResampler):
         plt.xlabel('X', fontsize=14)
         plt.ylabel('Y', fontsize=14)
 
-        if not os.path.exists(self.output_location):
-            os.mkdir(self.output_location)
+        # save fig to file
         fig3.savefig(os.path.join(self.output_location, 'CramerRao.png'))
 
         plt.show()

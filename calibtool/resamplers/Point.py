@@ -37,10 +37,6 @@ class CalibrationPoint:
         return settings
 
     def write_point(self, filename):
-        if os.path.isdir(os.path.dirname(filename)):
-            os.makedirs(filename, exist_ok=True)
-        else:
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as f:
             json.dump(self.to_dict(), f)
 
