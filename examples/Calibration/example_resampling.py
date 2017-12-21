@@ -172,7 +172,8 @@ cramerRao_resampler = CramerRaoResampler(calib_manager)
 
 run_calib_args = {
     # REQUIRED variable name: run_calib_args . Required key: 'resampler'
-    'resampler': cramerRao_resampler
+    'resampler': cramerRao_resampler,
+    'calib_manager': calib_manager
 }
 
 
