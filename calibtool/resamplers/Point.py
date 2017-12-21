@@ -1,3 +1,5 @@
+import os
+import json
 import pandas as pd
 
 
@@ -33,6 +35,12 @@ class CalibrationPoint:
             settings[p.name] = {'max': p.max, 'min': p.min, 'guess': p.guess}
 
         return settings
+
+    def write_point(self, filename):
+        if os.path.isdir(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as f:
+            json.dump(self.to_dict(), f)
 
 
 class CalibrationParameter:

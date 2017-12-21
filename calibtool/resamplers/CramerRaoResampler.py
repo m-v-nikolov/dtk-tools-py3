@@ -20,6 +20,9 @@ class CramerRaoResampler(BaseResampler):
         # consider single point as center point
         center_point = calibrated_points[0]
 
+        # save center to json file
+        center_point.write_point(os.path.join(self.calib_manager.name, 'Resampling Output', 'center.json'))
+
         # generate perturbed points
         df_perturbed_points = self.generate_perturbed_points(center_point)
 
