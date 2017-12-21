@@ -10,6 +10,8 @@ class CramerRaoResampler(BaseResampler):
     def __init__(self,  calib_manager):
         super(CramerRaoResampler, self).__init__(calib_manager)
 
+        self.output_location = os.path.join(calib_manager.name, 'Resampling Output')
+
     def resample(self):
         """
         :return:
@@ -21,7 +23,7 @@ class CramerRaoResampler(BaseResampler):
         center_point = calibrated_points[0]
 
         # save center to json file
-        center_point.write_point(os.path.join(self.calib_manager.name, 'Resampling Output', 'center.json'))
+        center_point.write_point(os.path.join(self.output_location, 'center.json'))
 
         # generate perturbed points
         df_perturbed_points = self.generate_perturbed_points(center_point)
@@ -39,10 +41,9 @@ class CramerRaoResampler(BaseResampler):
         df_perturbed_points_ll = df_perturbed_points.copy()
         df_perturbed_points_ll['ll'] = ll
 
-        folder_path = os.path.join(self.calib_manager.name, 'Resampling Output')
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-        df_perturbed_points_ll.to_csv(os.path.join(folder_path, 'LLdata.csv'))
+        if not os.path.exists(self.output_location):
+            os.mkdir(self.output_location)
+        df_perturbed_points_ll.to_csv(os.path.join(self.output_location, 'LLdata.csv'))
 
         # plotting
         df_point = center_point.to_dataframe()
@@ -119,10 +120,9 @@ class CramerRaoResampler(BaseResampler):
         df_perturbed_points.columns = ['i', 'j', 'k', 'l'] + Names
 
         # save to csv file
-        folder_path = os.path.join(self.calib_manager.name, 'Resampling Output')
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-        df_perturbed_points.to_csv(os.path.join(folder_path, 'data.csv'))
+        if not os.path.exists(self.output_location):
+            os.mkdir(self.output_location)
+        df_perturbed_points.to_csv(os.path.join(self.output_location, 'data.csv'))
 
         return df_perturbed_points
 
@@ -203,10 +203,9 @@ class CramerRaoResampler(BaseResampler):
         plt.xlabel('X', fontsize=14)
         plt.ylabel('Y', fontsize=14)
 
-        folder_path = os.path.join(self.calib_manager.name, 'Resampling Output')
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-        fig3.savefig(os.path.join(folder_path, 'CramerRao.png'))
+        if not os.path.exists(self.output_location):
+            os.mkdir(self.output_location)
+        fig3.savefig(os.path.join(self.output_location, 'CramerRao.png'))
 
         plt.show()
 
