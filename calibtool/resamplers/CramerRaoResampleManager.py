@@ -1,5 +1,3 @@
-import json
-import os
 from calibtool.resamplers.ResampleManager import ResampleManager
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -10,8 +8,6 @@ from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellip
 class CramerRaoResampleManager(ResampleManager):
     def __init__(self,  calib_manager):
         super(CramerRaoResampleManager, self).__init__(calib_manager)
-
-        self.results = []
 
     def resample(self):
         """
@@ -26,19 +22,14 @@ class CramerRaoResampleManager(ResampleManager):
         # generate perturbed points
         df_perturbed_points = self.generate_perturbed_points(center_point)
 
-        # test
-        df_perturbed_points = df_perturbed_points.head(5)
-        print(df_perturbed_points)
-
         # transform perturbed_points to calibration points
         resampled_points = self.transform_perturbed_points_to_calibrated_points(center_point, df_perturbed_points)
-        print('points_to_run count: %s' % len(resampled_points))
 
         # run simulations
         experiment = self._run(points=resampled_points)
 
         # analyze simulations for likelihood
-        self.results, ll = self._analyze(experiment=experiment, analyzers=self.calib_manager.analyzer_list, points_ran=resampled_points)
+        results, ll = self._analyze(experiment=experiment, analyzers=self.calib_manager.analyzer_list, points_ran=resampled_points)
 
         # save perturbed_points with likelihood to file
         df_perturbed_points_ll = df_perturbed_points.copy()
@@ -50,12 +41,7 @@ class CramerRaoResampleManager(ResampleManager):
         center = df_point['Value'].values   #nparray
         Xmin = df_point['Min'].values       #nparray
         Xmax = df_point['Max'].values       #nparray
-        # print('---- ploting---')
-        # print('center: %s' % center)
-        # print('Xmin: %s' % Xmin)
-        # print('Xmax: %s' % Xmax)
-        # df_perturbed_points.to_csv("perturbed_points.csv")
-        # ll.to_csv("perturbed_points_ll.csv")
+
         self.plot(center, Xmin, Xmax, df_perturbed_points, df_perturbed_points_ll)
 
     def get_calibrated_points(self):
@@ -209,13 +195,5 @@ class CramerRaoResampleManager(ResampleManager):
         fig3.savefig('CramerRao.png')
 
         plt.show()
-
-    def write_results(self, filename):
-        points = [p.to_dict() for p in self.results]
-
-        if os.path.isdir(os.path.dirname(filename)):
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, 'w') as f:
-            json.dump(points, f)
 
 

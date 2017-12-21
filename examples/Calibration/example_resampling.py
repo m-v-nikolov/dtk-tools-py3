@@ -186,6 +186,3 @@ if __name__ == "__main__":
     # Run the resampling
     resample_manager = run_calib_args['resample_manager']
     resample_manager.resample()
-
-    # step 3: write final results
-    resample_manager.write_results(filename='output.json')

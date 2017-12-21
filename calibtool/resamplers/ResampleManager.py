@@ -9,7 +9,4 @@ class ResampleManager(metaclass=ABCMeta):
     def resample(self):
         pass
 
-    def write_results(self, filename):
-        pass
-
 
