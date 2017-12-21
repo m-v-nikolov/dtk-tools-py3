@@ -2,7 +2,6 @@ import argparse
 import os
 # from calibtool import commands_args
 from calibtool import commands_args
-from calibtool.resamplers.ResampleManager import ResampleManager
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
 
@@ -50,7 +49,7 @@ def resample(args, unknownArgs):
 
     # step 2: Resample!
     resample_manager.resample()
-    
+
 
 def resume(args, unknownArgs):
     if args.iter_step:

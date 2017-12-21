@@ -141,7 +141,7 @@ def map_sample_to_model_input(cb, sample):
     assert( len(sample) == 0 ) # All params used
 
     # For testing only, the duration should be handled by the site !! Please remove before running in prod!
-    tags.update(cb.set_param("Simulation_Duration", 365 + 1))
+    tags.update(cb.set_param("Simulation_Duration", 3650 + 1))
     tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags
@@ -159,13 +159,13 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization_cramer1',    # <-- Please customize this name
+calib_manager = CalibManager(name='ExampleOptimization_cramer',    # <-- Please customize this name
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,
                              next_point=optimtool,
                              sim_runs_per_param_set=3,  # <-- Replicates
-                             max_iterations=2,          # <-- Iterations
+                             max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
 cramerRao_manager = CramerRaoResampleManager(calib_manager)
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     SetupParser.init()
 
     # Run the calibration
-    # calib_manager.run_calibration()
+    calib_manager.run_calibration()
 
     # Run the resampling
     resample_manager = run_calib_args['resample_manager']
