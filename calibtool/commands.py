@@ -2,7 +2,7 @@ import argparse
 import os
 # from calibtool import commands_args
 from calibtool import commands_args
-from calibtool.ResampleManager import ResampleManager
+from calibtool.resamplers.ResampleManager import ResampleManager
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
 
@@ -15,27 +15,45 @@ def get_calib_manager(args, unknownArgs, force_metadata=False):
         SetupParser.override_block(exp.selected_block)
     return manager
 
+
+def get_resample_manager(args, unknownArgs, force_metadata=False):
+    mod = args.loaded_module
+
+    if not hasattr(mod, 'run_calib_args') or 'resample_manager' not in mod.run_calib_args:
+        warning_note = \
+            """
+            /!\\ WARNING /!\\ Required to set resample_manager within run_calib_args like the following:
+
+                run_calib_args = {'resample_manager': xxx_manager}
+            """
+        print(warning_note)
+        exit()
+    else:
+        manager = mod.run_calib_args['resample_manager']
+
+    # Update the SetupParser to match the existing experiment environment/block if force_metadata == True
+    if force_metadata:
+        exp = manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
+        SetupParser.override_block(exp.selected_block)
+
+    return manager
+
+
 def run(args, unknownArgs):
     manager = get_calib_manager(args, unknownArgs)
     manager.run_calibration()
 
 
 def resample(args, unknownArgs):
-    # step 1: Determine how and with what to resample
-    calibration_manager = get_calib_manager(args, unknownArgs)
-    resample_steps = args.loaded_module.run_calib_args.get('resample_steps', None)
-    if not resample_steps:
-        raise Exception('The key \'resample_steps\' must exist in the run_calib_args dict in your script with a '
-                        'list of steps for the Resampler as the value.')
-
-    # Create the resampleManager
-    resample_manager = ResampleManager(calib_manager=calibration_manager, steps=resample_steps)
+    # step 1: Get the resampleManager
+    resample_manager = get_resample_manager(args, unknownArgs)
 
     # step 2: Resample!
     resample_manager.resample()
 
     # step 3: write final results
     resample_manager.write_results(filename=args.output_filename)
+
 
 def resume(args, unknownArgs):
     if args.iter_step:

@@ -11,6 +11,7 @@ from calibtool.algorithms.OptimTool import OptimTool
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from calibtool.resamplers.CramerRaoResampleManager import CramerRaoResampleManager
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
@@ -140,7 +141,7 @@ def map_sample_to_model_input(cb, sample):
     assert( len(sample) == 0 ) # All params used
 
     # For testing only, the duration should be handled by the site !! Please remove before running in prod!
-    tags.update(cb.set_param("Simulation_Duration", 3650 + 1))
+    tags.update(cb.set_param("Simulation_Duration", 365 + 1))
     tags.update(cb.set_param('Run_Number', random.randint(0, 1e6)))
 
     return tags
@@ -150,7 +151,7 @@ volume_fraction = 0.05   # desired fraction of N-sphere area to unit cube area f
 num_params = len([p for p in params if p['Dynamic']])
 r = math.exp(1/float(num_params)*(math.log(volume_fraction) + gammaln(num_params/2.+1) - num_params/2.*math.log(math.pi)))
 
-optimtool = OptimTool(params, 
+optimtool = OptimTool(params,
     constrain_sample,   # <-- WILL NOT BE SAVED IN ITERATION STATE
     mu_r = r,           # <-- radius for numerical derivatve.  CAREFUL not to go too small with integer parameters
     sigma_r = r/10.,    # <-- stdev of radius
@@ -158,48 +159,32 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
+calib_manager = CalibManager(name='ExampleOptimization_cramer1',    # <-- Please customize this name
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,
                              next_point=optimtool,
                              sim_runs_per_param_set=3,  # <-- Replicates
-                             max_iterations=3,          # <-- Iterations
+                             max_iterations=2,          # <-- Iterations
                              plotters=plotters)
 
-# *******************************************************************
-# Resampling bits
-# *******************************************************************
+cramerRao_manager = CramerRaoResampleManager(calib_manager)
 
-from calibtool.ResampleManager import ResampleManager
-from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
-from calibtool.resamplers.RandomPerturbationResampler import RandomPerturbationResampler
-
-# 1. Define the resamplers to run (one or more) in list order.
-# ck4, add any needed arguments to these resamplers (to set as attributes) for use in their _resample() method
-resample_steps = [
-    RandomPerturbationResampler(),
-    CramerRaoResampler()
-]
-
-# 3. Set up well-known, defined arguments. Note that THIS is the analyzer script that will be loaded for analyzing.
-run_calib_args = { # REQUIRED variable name: run_calib_args . Required key: 'resample_manager'
-    'resample_steps': resample_steps
+run_calib_args = {
+    # REQUIRED variable name: run_calib_args . Required key: 'resample_manager'
+    'resample_manager': cramerRao_manager
 }
 
-# *******************************************************************
-# End resampling bits
-# *******************************************************************
 
 if __name__ == "__main__":
+    # initialization
     SetupParser.init()
+
     # Run the calibration
-    calib_manager.run_calibration()
+    # calib_manager.run_calibration()
 
     # Run the resampling
-    resample_manager = ResampleManager(calib_manager=calib_manager, steps=resample_steps)
-
-    # step 2: Resample!
+    resample_manager = run_calib_args['resample_manager']
     resample_manager.resample()
 
     # step 3: write final results
