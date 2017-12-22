@@ -11,6 +11,7 @@ from calibtool.algorithms.OptimTool import OptimTool
 from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
@@ -30,10 +31,7 @@ SetupParser.default_block = 'HPC'
 cb = DTKConfigBuilder.from_defaults('MALARIA_SIM')
 
 # List of sites we want to calibrate on
-sites = [DielmoCalibSite(), NdiopCalibSite()]
-
-# For now we will only use Dielmo
-sites = [sites[0]]
+sites = [DielmoCalibSite()]
 
 # The default plotters used in an Optimization with OptimTool
 plotters = [LikelihoodPlotter(combine_sites=True),
@@ -161,7 +159,7 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
+calib_manager = CalibManager(name='ExampleOptimization_cramer',    # <-- Please customize this name
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,
@@ -170,11 +168,22 @@ calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customi
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
+cramerRao_resampler = CramerRaoResampler(calib_manager)
+
 run_calib_args = {
-    "calib_manager":calib_manager
+    # REQUIRED variable name: run_calib_args . Required key: 'resampler'
+    'resampler': cramerRao_resampler,
+    'calib_manager': calib_manager
 }
 
+
 if __name__ == "__main__":
+    # initialization
     SetupParser.init()
-    cm = run_calib_args["calib_manager"]
-    cm.run_calibration()
+
+    # Run the calibration
+    calib_manager.run_calibration()
+
+    # Run the resampling
+    resampler = run_calib_args['resampler']
+    resampler.resample()

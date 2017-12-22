@@ -1,14 +1,17 @@
 # Execute directly: 'python example_optimization.py'
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
-import random
 
-from calibtool.CalibManager import CalibManager
+from calibtool.algorithms.OptimTool import OptimTool
+from calibtool.algorithms.OptimToolPSPO import OptimToolPSPO
 from calibtool.algorithms.OptimToolSPSA import OptimToolSPSA
-from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
-from calibtool.plotters.OptimToolSPSAPlotter import OptimToolSPSAPlotter
-from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
+
+from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
+from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
+from calibtool.plotters.OptimToolSPSAPlotter import OptimToolSPSAPlotter
 
 try:
     from malaria.study_sites.DielmoCalibSite import DielmoCalibSite
@@ -111,7 +114,7 @@ def map_sample_to_model_input(cb, sample):
     return tags
 
 
-optimtool = OptimToolSPSA(params=params,
+optimtool = OptimToolPSPO(params=params,
                           constrain_sample_fn=constrain_sample,  # <-- WILL NOT BE SAVED IN ITERATION STATE
                           comps_per_iteration=4  # <-- computations per iteration, includes center repeats.
                           )

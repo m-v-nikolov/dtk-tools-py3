@@ -125,9 +125,12 @@ class CalibManager(object):
         self.summary_table = self.current_iteration.summary_table
         self.cache_calibration(iteration=self.iteration+1)
 
-    def exp_builder_func(self, next_params):
+    def exp_builder_func(self, next_params, n_replicates=None):
+        if not n_replicates:
+            n_replicates = self.sim_runs_per_param_set
+
         return ModBuilder.from_combos(
-                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i+1) for i in range(self.sim_runs_per_param_set)],
+                [ModFn(self.config_builder.__class__.set_param, 'Run_Number', i+1) for i in range(n_replicates)],
                 [ModFn(site.setup_fn) for site in self.sites],
                 [ModFn(self.map_sample_to_model_input_fn, index, samples) for index, samples in  enumerate(next_params)]
         )
@@ -437,6 +440,10 @@ class CalibManager(object):
             else:
                 return None
 
+    def read_iteration_data(self, iteration):
+        iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
+        return IterationState.from_file(iteration_cache)
+
     def get_experiment_from_iteration(self, iteration=None, force_metadata=False):
         """
         Retrieve experiment for a given iteration
@@ -446,9 +453,7 @@ class CalibManager(object):
         # Only check iteration for resume cases
         if force_metadata:
             iteration = self.adjust_iteration(iteration)
-            iteration_cache = os.path.join(self.name, 'iter%d' % iteration, 'IterationState.json')
-            it = IterationState.from_file(iteration_cache)
-
+            it = self.read_iteration_data(iteration)
             exp = DataStore.get_experiment(it.experiment_id)
 
         return exp
@@ -566,3 +571,10 @@ class CalibManager(object):
 
     def site_analyzer_names(self):
         return {site.name: [a.name for a in site.analyzers] for site in self.sites}
+
+    def get_last_iteration(self):
+        calib_data = self.read_calib_data()
+        last_iteration = int(calib_data.get('iteration', None))
+        if not last_iteration:
+            raise KeyError('Could not determine what the most recent iteration is.')
+        return last_iteration
