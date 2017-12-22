@@ -2,7 +2,6 @@
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
 import copy
 import math
-import os
 import random
 
 from scipy.special import gammaln
@@ -154,7 +153,7 @@ volume_fraction = 0.05   # desired fraction of N-sphere area to unit cube area f
 num_params = len([p for p in params if p['Dynamic']])
 r = math.exp(1/float(num_params)*(math.log(volume_fraction) + gammaln(num_params/2.+1) - num_params/2.*math.log(math.pi)))
 
-optimtool = OptimTool(params, 
+optimtool = OptimTool(params,
     constrain_sample,   # <-- WILL NOT BE SAVED IN ITERATION STATE
     mu_r = r,           # <-- radius for numerical derivatve.  CAREFUL not to go too small with integer parameters
     sigma_r = r/10.,    # <-- stdev of radius
@@ -171,23 +170,11 @@ calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customi
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
-from calibtool.ResampleManager import ResampleManager
-from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
-from calibtool.resamplers.RandomPerturbationResampler import RandomPerturbationResampler
-
-resample_steps = [
-    RandomPerturbationResampler(), # ck4, add any needed arguments to these resamplers
-    CramerRaoResampler()
-]
-# analyzer_path = 'liklihood_analyzer.py' # ck4, set properly
-from somewhere import MyLikelihoodAnalyzer
-# There should be exactly ONE likelihood analyzer specified; any beyond the first will be ignored in resample
-# calculations.
-analyzers = [MyLikelihoodAnalyzer()] # REQUIRED variable name, analyzers... used by dtk.commands.analyze()
-run_calib_args = { # REQUIRED variable and key name
-    'resample_manager': ResampleManager(steps=resample_steps, analyzer_path=os.path.abspath(__file__))
+run_calib_args = {
+    "calib_manager":calib_manager
 }
 
 if __name__ == "__main__":
     SetupParser.init()
-    calib_manager.run_calibration()
+    cm = run_calib_args["calib_manager"]
+    cm.run_calibration()
