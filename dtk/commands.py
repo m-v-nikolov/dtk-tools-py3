@@ -84,7 +84,6 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
-    return exp_manager.experiment
 
 
 def status(args, unknownArgs):
@@ -301,8 +300,9 @@ def stdout(args, unknownArgs):
 def analyze(args, unknownArgs):
     # logger.info('Analyzing results...')
     args.config_name = args.analyzer # prevents need for underlying refactor
-    AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers())
 
+    analyze_manager = AnalyzeHelper.analyze(args, unknownArgs, builtinAnalyzers())
+    return analyze_manager
 
 def create_batch(args, unknownArgs):
     AnalyzeHelper.create_batch(args.batch_name, args.itemids)

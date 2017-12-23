@@ -45,3 +45,12 @@ class GenericSweepBuilder(ModBuilder):
             return ModFn(DTKConfigBuilder.set_param, p, v)
 
         return ModBuilder.set_mods([convert_to_mod_fn(pv_pair) for pv_pair in pv_pairs])
+
+    @classmethod
+    def from_list_of_override_dicts(cls, list_of_overrides):
+        """
+        Each dict is a set of param/value overrides to use in individual simulations
+        :param dict_list:
+        :return:
+        """
+        return cls((cls.set_mods(pv_dict.items()) for pv_dict in list_of_overrides))
