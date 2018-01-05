@@ -4,8 +4,21 @@ from calibtool import commands_args
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
 
+
 def get_calib_manager(args, unknownArgs, force_metadata=False):
-    manager = args.loaded_module.calib_manager
+    mod = args.loaded_module
+
+    if not hasattr(mod, 'run_calib_args') or 'calib_manager' not in mod.run_calib_args:
+        warning_note = \
+            """
+            /!\\ WARNING /!\\ Suggest to set calib_manager within run_calib_args like the following:
+            
+                run_calib_args = {'calib_manager': calib_manager}
+            """
+        print(warning_note)
+        manager = mod.calib_manager
+    else:
+        manager = mod.run_calib_args['calib_manager']
 
     # Update the SetupParser to match the existing experiment environment/block if force_metadata == True
     if force_metadata:

@@ -83,7 +83,7 @@ calib_manager = CalibManager(name='FullCalibrationExample',
                              max_iterations=2,
                              plotters=plotters)
 
-run_calib_args = {}
+run_calib_args = {'calib_manager': calib_manager}
 
 if __name__ == "__main__":
     SetupParser.init(selected_block=SetupParser.default_block)
