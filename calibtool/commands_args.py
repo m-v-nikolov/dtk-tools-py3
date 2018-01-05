@@ -9,16 +9,16 @@ def populate_run_arguments(subparsers, func):
 
 # 'calibtool resample' options
 def populate_resample_arguments(subparsers, func):
-    parser_run = subparsers.add_parser('resample', help='Run a post-calibration resampling process as defined in provided '
+    parser_resample = subparsers.add_parser('resample', help='Run a post-calibration resampling process as defined in provided '
                                                         'script.')
-    parser_run.add_argument(dest='config_name', default=None, help='Name of configuration python script that defines '
+    parser_resample.add_argument(dest='config_name', default=None, help='Name of configuration python script that defines '
                                                                    'the resampling steps to be performed.')
-    parser_run.add_argument('-o', '--output', dest='output_filename', default='resampled_points.json',
+    parser_resample.add_argument('-o', '--output', dest='output_filename', default='resampled_points.json',
                             help='Name of file to write final resampled results to (Default: resampled_points.json).')
-    parser_run.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
-    parser_run.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
-    parser_run.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
-    parser_run.set_defaults(func=func)
+    parser_resample.add_argument('--priority', default=None, help='Specify priority of COMPS simulation (only for HPC).')
+    parser_resample.add_argument('--node_group', default=None, help='Specify node group of COMPS simulation (only for HPC).')
+    parser_resample.add_argument('-q', '--quiet', action='store_true', help='Runs quietly.')
+    parser_resample.set_defaults(func=func)
 
 # 'calibtool resume' options
 def populate_resume_arguments(subparsers, func):
