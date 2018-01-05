@@ -50,7 +50,7 @@ class RandomPerturbationResampler(BaseResampler):
 
         # save perturbed_points with likelihood to file
         resampled_points_df_ll = self.resampled_points_df.copy()
-        resampled_points_df_ll['ll'] = analyzer_results
+        resampled_points_df_ll.insert(4, 'LL', analyzer_results)
         output_filename = os.path.join(self.output_location, 'LLdata.csv')
         resampled_points_df_ll.to_csv(output_filename)
 
