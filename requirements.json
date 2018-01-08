@@ -76,5 +76,11 @@
     "version": "1.13.3+mkl",
     "test": ">=",
     "wheel": "numpy-1.13.3+mkl-cp36-cp36m-win_amd64.whl"
+  },
+  "catalyst": {
+    "version": "1.0",
+    "test": ">=",
+    "wheel": "catalyst-1.0-py3.py3-none-any.whl"
   }
+
 }

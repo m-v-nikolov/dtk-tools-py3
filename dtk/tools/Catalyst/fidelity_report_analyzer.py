@@ -5,8 +5,8 @@ from multiprocessing.pool import Pool
 import numpy as np
 import pandas as pd
 
-from dtk.tools.Catalyst.base_sim_data_analyzer import BaseSimDataAnalyzer
-from dtk.tools.Catalyst.fidelity_html_report import FidelityHTMLReport
+from catalyst-report.base_sim_data_analyzer import BaseSimDataAnalyzer
+from catalyst-report.fidelity_html_report import FidelityHTMLReport
 
 
 class FidelityReportAnalyzer(BaseSimDataAnalyzer):

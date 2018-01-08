@@ -605,8 +605,8 @@ def catalyst(args, unknownArgs):
     :return:
     """
     from dtk.utils.builders.sweep import GenericSweepBuilder
-    from dtk.tools.Catalyst.fidelity_report_analyzer import FidelityReportAnalyzer
-    from dtk.tools.Catalyst.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    from catalyst-report.fidelity_report_analyzer import FidelityReportAnalyzer
+    from catalyst-report.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
 
