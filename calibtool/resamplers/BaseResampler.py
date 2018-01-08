@@ -4,15 +4,14 @@ from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 
 class BaseResampler(metaclass=ABCMeta):
-    def __init__(self, n_resampling_points=None):
+    def __init__(self):
         self.calib_manager = None # needs setting externally
         self.output_location = None # must be set via setter below
-        self.n_resampling_points = n_resampling_points # the number/count to generate
 
 
     # strictly required to be defined in subclasses
     @abstractmethod
-    def resample(self, calibrated_points, n_points):
+    def resample(self, calibrated_points):
         pass
 
 
@@ -90,7 +89,7 @@ class BaseResampler(metaclass=ABCMeta):
         # Any _resample() methodology that depends on the likelihood of the provided points should reference
         #    the 'likelihood' attribute on the Point objects (e.g., use mypoint.likelihood, set it in the analyer
         #    return points.
-        points_to_run = self.resample(calibrated_points=calibrated_points, n_points=self.n_resampling_points)
+        points_to_run = self.resample(calibrated_points=calibrated_points)
 
         # # 2. run simulations
         experiment_manager = self._run(points=points_to_run, resample_step=resample_step)

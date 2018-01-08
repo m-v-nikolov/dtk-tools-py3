@@ -4,10 +4,16 @@ from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellip
 
 
 class CramerRaoResampler(BaseResampler):
-    def __init__(self, n_resampling_points=None):
-        super().__init__(n_resampling_points=n_resampling_points)
+    def __init__(self, n_resampling_points, **kwargs):
+        """
+        :param n_resampling_points: The number of resampled points to generate
+        :param kwargs: These are arguments passed directly to the underlying resampling routine.
+        """
+        super().__init__()
+        self.n_resampling_points = n_resampling_points # the number of points to resample/generate
+        self.resample_kwargs = kwargs
 
-    def resample(self, calibrated_points, n_points):
+    def resample(self, calibrated_points):
         """
         :return:
         """
