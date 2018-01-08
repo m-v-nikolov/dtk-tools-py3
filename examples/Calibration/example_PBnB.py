@@ -99,7 +99,7 @@ calib_manager = CalibManager(name=name,
                              max_iterations=30,  # <-- Iterations
                              plotters=plotters)
 
-run_calib_args = {}
+run_calib_args = {'calib_manager': calib_manager}
 
 if __name__ == "__main__":
     SetupParser.init()
