@@ -3,6 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from dtk.tools.demographics.DemographicsFile import DemographicsFile
+from dtk.tools.demographics.Node import Node
 from dtk.utils.analyzers.BaseShelfAnalyzer import BaseShelfAnalyzer
 
 
@@ -61,7 +63,8 @@ class BaseSimDataAnalyzer(BaseShelfAnalyzer):
 
         # input
         # Read the demographics
-        sd.demog = DemographicsFile(data=parser.raw_data[self.demographics_file])
+        nodes = [Node.from_data(node) for node in parser.raw_data[self.demographics_file]['Nodes']]
+        sd.demog = DemographicsFile(nodes=nodes)
 
         # Read the config.json
         sd.config = parser.raw_data[self.config_file]["parameters"]
@@ -178,15 +181,6 @@ class SimData:
 
         return df
 
-
-class DemographicsFile:
-    def __init__(self, data):
-        self.json = data
-        self.node_count = len(self.json['Nodes'])
-
-    @property
-    def node_ids(self):
-        return [node['NodeID'] for node in self.json['Nodes']]
 
 
 class BaseSimDataChannel(object):
