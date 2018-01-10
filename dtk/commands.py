@@ -607,6 +607,8 @@ def catalyst(args, unknownArgs):
     from dtk.utils.builders.sweep import GenericSweepBuilder
     from catalyst-report.fidelity_report_analyzer import FidelityReportAnalyzer
     from catalyst-report.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    import catalyst-report.utils as catalyst_utils
+
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
 
@@ -647,31 +649,14 @@ def catalyst(args, unknownArgs):
                            % sim_type)
 
     # Create and set a builder to sweep over population scaling or model timestep
-    # ck4, combine pop_sampling.json and time_steps.json into one.
-    if args.report_definitions:
-        report_defn_file = args.report_definitions
-    else:
-        report_defn_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'reports.json')
-
-    with open(report_defn_file, 'r') as f:
-        reports = json.loads(f.read())
+    reports = catalyst_utils.load_report_definitions(definitions_filename=args.report_definitions)
     if report_type in reports:
         args.report_channel_list = reports[report_type]['inset_channel_names']
     else:
         raise Exception('Invalid report: %s. Available reports: %s' % (report_type, sorted(reports.keys())))
 
-    # ck4, fix this ugly pathing
-    if args.sweep_definitions:
-        catalyst_config_file = args.sweep_definitions
-    elif args.sweep_type == 'popscaling':
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'pop_sampling.json')
-    elif args.sweep_type == 'timestep':
-        catalyst_config_file = os.path.join(os.path.dirname(__file__), '..', 'dtk', 'tools', 'Catalyst', 'time_steps.json')
-    else:
-        raise ValueError('Invalid sweep type: %s' % args.sweep_type)
-
-    with open(catalyst_config_file, 'r') as f:
-        catalyst_config = json.loads(f.read())
+    catalyst_config = catalyst_utils.load_sweep_definitions(sweep_type=args.sweep_type,
+                                                            config_filename=args.sweep_definitions)
     defn = FidelityReportExperimentDefinition(catalyst_config, args)
 
     # redefine the experiment name so it doesn't conflict with the likely follow-up non-catalyst experiment
