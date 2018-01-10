@@ -3,7 +3,9 @@ from dtk.vector.study_sites import configure_site
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from malaria.reports.MalariaReport import add_event_counter_report
 from simtools.SetupParser import SetupParser
-from dtk.interventions.adherent_drug import add_adherent_drug
+from malaria.interventions.adherent_drug import add_adherent_drug
+from malaria.interventions.adherent_drug import configure_adherent_drug
+
 
 # you will need to install malaria package for use with dtk-tools:
 # use > dtk get_package malaria -v HEAD
@@ -31,7 +33,6 @@ run_sim_args =  {
 # There are defaults for all the variables except the config_builder that gets passed in
 # you could, if you wanted to, create this interventions with
 # add_adherent_drug(cb)
-safasfas
 # You'll want to define the configuration for the usage/waning of the drug separately and pass the whole thing
 # to adherence_config variable - there is a default, which is:
 # {
@@ -44,16 +45,6 @@ safasfas
 #                 }
 #         }
 
-# the map count that does the probability of taking this per dose (you'll have to know how many doses)
-waning_effect_map_count = {
-    "class": "WaningEffectMapCount",
-    "Initial_Effect": 1.0,
-    "Durability_Map":
-        {
-            "Times": [1.0, 2.0, 3.0, 4, 5, 6],
-            "Values": [1, 0.8, 0.8, 0.6, 0.6, 0.2]
-        }
-}
 
 # combination of the effects
 waning_effect_combo ={
@@ -95,18 +86,28 @@ add_adherent_drug(cb, start=25, drug_type="Artemether", adherence_config=waning_
                   triggered_campaign_delay=5, trigger_condition_list=["NewClinicalCase"],
                   listening_duration=75)
 
-# in this campaign that starts on day 200 and gives everyone Artemether with the adherence defined by the waning_effect_combo
-# above, we repeat this twice with second campaign running 30 time steps later, we are defining the non_adherence_options to have
-# probabilities of people stopping altogether being at 30% and people taking the drug at the next update at 70%
-# dont allow duplicates is 1 by default so the second wave of the campaign would be given only to people who didn't recieve the first wave
-# those just born
-add_adherent_drug(cb, start=200, drug_type="Artemether", adherence_config=waning_effect_combo, non_adherence_options=["NEXT_UPDATE", "STOP"],
-                  non_adherence_distribution=[0.7,0.3],
-                  number_repetitions=2, timesteps_between_repititions=30)
+# you can use configure_adherent_drug to create the AdherentDrug class intervention itself
+# and add it to a drug campaign.
+adherent_drug_configs = []
+adherent_drug = configure_adherent_drug(cb, drug="Amodiaquine", adherence_config=waning_effect_combo,
+                                        dosing_type="FullTreatmentCourse",
+                                        non_adherence_options=["NEXT_UPDATE", "STOP"],
+                                        non_adherence_distribution=[0.7, 0.3], max_dose_consideration_duration=40,
+                                        took_dose_event="FirstCoitalAct")
+adherent_drug_configs.append(adherent_drug)
+
+# This is an MDA campaign that gives out three drugs - "Sulfadoxine", "Pyrimethamine", 'Amodiaquine'
+# the S and P are given as one pill as a AntimalarialDrug class and Amodiaquine is given at the same time but as
+# an adherent drug, Amodiaquine is distributed according to the adherent drug configuration
+add_drug_campaign(cb, campaign_type="MDA", drug_code="SP", start_days=[30], coverage=1.0, repetitions=3, interval=60,
+                  diagnostic_threshold=40, fmda_radius='hh', node_selection_type='DISTANCE_ONLY',
+                  trigger_coverage=1.0, snowballs=0, treatment_delay=0, triggered_campaign_delay=0, nodes=[],
+                  target_group='Everyone', dosing='', drug_ineligibility_duration=0,
+                  node_property_restrictions=[], ind_property_restrictions=[], trigger_condition_list=[],
+                  listening_duration=-1, adherent_drug_configs=adherent_drug_configs)
 
 
-
-# If you prefer running with `python example_example_event_count_and_triggered_events.py`, you will need the following block
+# If you prefer running with `python example_adherent_drug.py`, you will need the following block
 if __name__ == "__main__":
     SetupParser.init()
     exp_manager = ExperimentManagerFactory.init()
