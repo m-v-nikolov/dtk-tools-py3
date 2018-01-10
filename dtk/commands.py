@@ -605,9 +605,9 @@ def catalyst(args, unknownArgs):
     :return:
     """
     from dtk.utils.builders.sweep import GenericSweepBuilder
-    from catalyst-report.fidelity_report_analyzer import FidelityReportAnalyzer
-    from catalyst-report.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
-    import catalyst-report.utils as catalyst_utils
+    from catalyst_report.fidelity_report_analyzer import FidelityReportAnalyzer
+    from catalyst_report.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
+    import catalyst_report.utils as catalyst_utils
 
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
@@ -654,8 +654,7 @@ def catalyst(args, unknownArgs):
         args.report_channel_list = reports[report_type]['inset_channel_names']
     else:
         raise Exception('Invalid report: %s. Available reports: %s' % (report_type, sorted(reports.keys())))
-
-    catalyst_config = catalyst_utils.load_sweep_definitions(sweep_type=args.sweep_type,
+    catalyst_config = catalyst_utils.load_sweep_configs(sweep_type=args.sweep_type,
                                                             config_filename=args.sweep_definitions)
     defn = FidelityReportExperimentDefinition(catalyst_config, args)
 

@@ -80,7 +80,7 @@
   "catalyst": {
     "version": "1.0",
     "test": ">=",
-    "wheel": "catalyst-1.0-py3.py3-none-any.whl"
+    "wheel": "catalyst_report-1.0-py3-none-any.whl"
   }
 
 }
