@@ -137,17 +137,19 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
     """
 
     # convert DataFrame to python array
-    LL_data = df_LL_points.as_matrix()
-    points = df_perturbed_points.as_matrix()
+    # LL_data = df_LL_points.as_matrix()
+    # points = df_perturbed_points.as_matrix()
 
-    N = (max(points[:,1]) + 1).astype(int)
-    M = (max(points[:, 2]) + 1).astype(int)
-    n = int((np.shape(points)[0])/(4*M*N))
+    rounds = df_perturbed_points['j'].as_matrix() # j
+    samples_per_round = df_perturbed_points['k'].as_matrix() # k, points[:, 2]
+    N = (max(rounds) + 1).astype(int)
+    M = (max(samples_per_round) + 1).astype(int)
+    n = int((np.shape(rounds)[0])/(4*M*N))
 
-    PlusPlusPoints = points[0:(4 * M * N * n):(4 * n), 4:]
-    PlusMinusPoints = points[1:(4 * M * N * n):(4 * n), 4:]
-    MinusPlusPoints = points[2:(4 * M * N * n):(4 * n), 4:]
-    MinusMinusPoints = points[3:(4 * M * N * n):(4 * n), 4:]
+    PlusPlusPoints = df_perturbed_points['theta'].as_matrix()[0:-1:4,:] # points[0:(4 * M * N * n):(4 * n), 4:]
+    PlusMinusPoints = df_perturbed_points['theta'].as_matrix()[1:-1:4,:] # points[1:(4 * M * N * n):(4 * n), 4:]
+    MinusPlusPoints = df_perturbed_points['theta'].as_matrix()[2:-1:4,:] # points[2:(4 * M * N * n):(4 * n), 4:]
+    MinusMinusPoints = df_perturbed_points['theta'].as_matrix()[3:-1:4,:] # points[3:(4 * M * N * n):(4 * n), 4:]
 
     # dimension of X
     p = len(center)
@@ -169,7 +171,7 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
         MinusPlus_round_i = MinusPlusPoints[(i * M):((i + 1) * M), :]
         MinusMinus_round_i = MinusMinusPoints[(i * M):((i + 1) * M), :]
 
-        loglPP_round_i = LL_data[(i * 4 * M + 0):((i + 1) * 4 * M + 0), 3]
+        loglPP_round_i = df_LL_points['LL'].as_matrix() # LL_data[(i * 4 * M + 0):((i + 1) * 4 * M + 0), 3]
         loglPM_round_i = LL_data[(i * 4 * M + 1):((i + 1) * 4 * M + 1), 3]
         loglMP_round_i = LL_data[(i * 4 * M + 2):((i + 1) * 4 * M + 2), 3]
         loglMM_round_i = LL_data[(i * 4 * M + 3):((i + 1) * 4 * M + 3), 3]
@@ -202,6 +204,24 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
 
     Fisher = -1 * H_bar_avg[:, :, N - 1]
     return Fisher
+
+def sample_cov_ellipse(cov, pos, num_of_pts=10):
+    """
+    Sample 'num_of_pts' points from the specified covariance
+    matrix (`cov`).
+
+    Parameters
+    ----------
+        cov : 2-D array_like, The covariance matrix (inverse of fisher matrix). It must be symmetric and positive-semidefinite for proper sampling.
+        pos : 1-D array_like, The location of the center of the ellipse, Mean of the multi variate distribution
+        num_of_pts : The number of sample points.
+
+    Returns
+    -------
+        ndarray of the drawn samples, of shape (num_of_pts,).
+    """
+    return np.random.multivariate_normal(pos, cov, num_of_pts)
+
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
@@ -263,7 +283,9 @@ def test():
     ax = plt.subplot(111)
     x, y = center[0:2]
     plt.plot(x, y, 'g.')
-    plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=1, alpha=0.6, color='green')
+    plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=3, alpha=0.6, color='green')
+    sample_x, sample_y = np.random.multivariate_normal(center[0:2], Covariance[0:2, 0:2], 5).T
+    plt.plot(sample_x, sample_y, 'x')
     plt.xlim(Xmin[0], Xmax[0])
     plt.ylim(Xmin[1], Xmax[1])
     plt.xlabel('X', fontsize=14)
