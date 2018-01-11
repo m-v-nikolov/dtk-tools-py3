@@ -45,6 +45,18 @@ run_sim_args =  {
 #                 }
 #         }
 
+# the map count that does the probability of taking this per dose (you'll have to know how many doses)
+waning_effect_map_count = {
+    "class": "WaningEffectMapCount",
+    "Initial_Effect": 1.0,
+    "Durability_Map":
+        {
+            "Times": [1.0, 2.0, 3.0, 4, 5, 6],
+            "Values": [1, 0.8, 0.8, 0.6, 0.6, 0.2]
+        }
+}
+
+
 
 # combination of the effects
 waning_effect_combo ={
