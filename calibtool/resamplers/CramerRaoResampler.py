@@ -1,6 +1,8 @@
 import os
+import numpy as np
+import pandas as pd
 from calibtool.resamplers.BaseResampler import BaseResampler
-from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse
+from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, sample_cov_ellipse
 
 
 class CramerRaoResampler(BaseResampler):
@@ -13,12 +15,57 @@ class CramerRaoResampler(BaseResampler):
         self.n_resampling_points = n_resampling_points # the number of points to resample/generate
         self.resample_kwargs = kwargs
 
-    def resample(self, calibrated_points):
+
+    def resample(self, calibrated_points, selection_values, initial_calibration_points):
         """
-        :return:
+        Takes in a list of 1+ Point objects and returns method-specific resampled points as a list of Point objects
+        The resultant Point objects should be copies of the input Points BUT with Value overridden on each, e.g.:
+
+        new_point = Point.copy(one_of_the_input_calibrated_points)
+        for param in new_point.list_params():
+          new_point.set_param_value(param, value=SOME_NEW_VALUE)
+
+        :param calibrated_points: input points for this resampling method
+        :return: a list of resampled Point objects
         """
 
-        raise Exception('CramerRao resample method not yet defined. Ask Atiye.')
+        # selection_valaues: a DataFrame with columns relevant to selection of calibrated_points
+
+        center_point = initial_calibration_points[0]
+
+        # convert input points to DataFrames
+        calibrated_points_df = []
+        for i in range(len(calibrated_points)):
+            print('Calibrated point %d:\n%s' % (i, calibrated_points[i].to_value_dict()))
+            calibrated_points_df.append(calibrated_points[i].to_value_dict())
+        calibrated_points_df = pd.DataFrame(calibrated_points_df)
+        original_column_names = calibrated_points_df.columns
+        calibrated_points_df = selection_values.join(calibrated_points_df)
+
+        columns = list(selection_values.columns) + (['theta'] * len(original_column_names))
+        print('setting columns to: %s' % columns)
+        calibrated_points_df.columns = list(selection_values.columns) + (['theta'] * len(original_column_names)) # expected by FixherInfMatrix code
+
+        # same as calibrated_points_df but with a LL column on the end
+        likelihood_df = pd.DataFrame([{'LL': point.likelihood} for point in calibrated_points])
+        likelihood_df = calibrated_points_df.join(likelihood_df)
+
+        # Do the resampling
+
+        # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
+        print('Center point as value dict:\n%s' % center_point.to_value_dict())
+        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()])) # ck4, is this the same ordering as with calibrated_points_df?
+
+        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df, selection_values)
+        covariance = np.linalg.inv(fisher_inf_matrix)
+        resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
+
+        # convert resampled points to a list of CalibrationPoint objects
+        resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)
+        resampled_points = self._transform_df_points_to_calibrated_points(center_point,
+                                                                          resampled_points_df)
+
+        # return reampled points
         return resampled_points
 
 
@@ -32,6 +79,7 @@ class CramerRaoResampler(BaseResampler):
         # Xmin = df_point['Min'].values  # nparray
         # Xmax = df_point['Max'].values  # nparray
         # self.plot(center, Xmin, Xmax, df_perturbed_points, df_perturbed_points_ll)
+
 
     def plot(self, center, Xmin, Xmax, df_perturbed_points, ll):
         """
@@ -57,7 +105,7 @@ class CramerRaoResampler(BaseResampler):
         ax = plt.subplot(111)
         x, y = center[0:2]
         plt.plot(x, y, 'g.')
-        plot_cov_ellipse(Covariance[0:2, 0:2], center[0:2], nstd=1, alpha=0.6, color='green')
+        plot_cov_ellipse(Covariance[0:2, 0:2], center[0:2], nstd=3, alpha=0.6, color='green')
         plt.xlim(Xmin[0], Xmax[0])
         plt.ylim(Xmin[1], Xmax[1])
         plt.xlabel('X', fontsize=14)

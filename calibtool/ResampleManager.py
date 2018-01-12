@@ -8,18 +8,22 @@ class ResampleManager:
         self.steps = steps
         self.calibration_manager = calibration_manager
 
+
     def resample_and_run(self):
         # set the initial parameter points to resample from
-        calibrated_points = self.get_calibrated_points()
+        initial_calibrated_points = self.get_calibrated_points()
+        calibrated_points = initial_calibrated_points
 
         resample_step = 0
+        selection_values = None
         for resampler in self.steps:
-            calibrated_points = resampler.resample_and_run(calibrated_points=calibrated_points,
-                                                           resample_step=resample_step)
-                                                           # run_args=run_args,
-                                                           # unknown_args=unknown_args)
+            calibrated_points, selection_values = resampler.resample_and_run(calibrated_points=calibrated_points,
+                                                                             resample_step=resample_step,
+                                                                             selection_values=selection_values,
+                                                                             initial_calibration_points=initial_calibrated_points)
             resample_step += 1
         self.results = calibrated_points
+
 
     def write_results(self, filename):
         CalibrationPoints(points=self.results).write(filename=filename)

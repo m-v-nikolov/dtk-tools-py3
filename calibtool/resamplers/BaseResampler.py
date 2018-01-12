@@ -2,16 +2,18 @@ from abc import ABCMeta, abstractmethod
 import os
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
+from calibtool.resamplers.CalibrationPoint import CalibrationPoint, CalibrationParameter
 
 class BaseResampler(metaclass=ABCMeta):
     def __init__(self):
         self.calib_manager = None # needs setting externally
         self.output_location = None # must be set via setter below
-
+        self.selection_columns = [] # items to strip off resampled points DataFrame and pass to next resampler
+        self.selection_values = None # a DataFrame, created using self.selection_columns, added to the resampled points for the next resampler to use
 
     # strictly required to be defined in subclasses
     @abstractmethod
-    def resample(self, calibrated_points):
+    def resample(self, calibrated_points, selection_values, initial_calibration_points):
         pass
 
 
@@ -35,6 +37,8 @@ class BaseResampler(metaclass=ABCMeta):
         if not self.calib_manager:
             raise Exception('calibration manager has not set for resampler. Cannot generate simulations.')
 
+        print(points[0])
+        print(type(points))
         point_dicts = [point.to_value_dict() for point in points]
 
         # ck4, the number of replicates must be 1 for HIV for now; the general solution should allow a user-selected
@@ -44,7 +48,9 @@ class BaseResampler(metaclass=ABCMeta):
         # Create an experiment manager
         manager = ExperimentManagerFactory.from_cb(self.calib_manager.config_builder)
         exp_name = self.calib_manager.name + '_resample_step_%d' % resample_step
-        manager.run_simulations(exp_name=exp_name, blocking=True, exp_builder=exp_builder)
+
+        # ck4, restore manager.run_simulations(exp_name=exp_name, blocking=True, exp_builder=exp_builder)
+        manager = ExperimentManagerFactory.from_experiment('3cb2a132-d1f7-e711-940a-0050569e0ef3') # ck4, DEBUGGING ONLY
 
         return manager
 
@@ -77,7 +83,7 @@ class BaseResampler(metaclass=ABCMeta):
         return points_ran, results
 
 
-    def resample_and_run(self, calibrated_points, resample_step):
+    def resample_and_run(self, calibrated_points, resample_step, selection_values, initial_calibration_points):
         """
         Canonical entry method for using the resampler.
         :param calibrated_points:
@@ -89,7 +95,9 @@ class BaseResampler(metaclass=ABCMeta):
         # Any _resample() methodology that depends on the likelihood of the provided points should reference
         #    the 'likelihood' attribute on the Point objects (e.g., use mypoint.likelihood, set it in the analyer
         #    return points.
-        points_to_run = self.resample(calibrated_points=calibrated_points)
+        points_to_run = self.resample(calibrated_points=calibrated_points,
+                                      selection_values=selection_values,
+                                      initial_calibration_points=initial_calibration_points)
 
         # # 2. run simulations
         experiment_manager = self._run(points=points_to_run, resample_step=resample_step)
@@ -103,4 +111,26 @@ class BaseResampler(metaclass=ABCMeta):
         # 4. perform any post-analysis processing, if defined
         self.post_analysis(self.resampled_points, self.analyzer_results)
 
-        return self.resampled_points
+        return self.resampled_points, self.selection_values
+
+    def _transform_df_points_to_calibrated_points(self, calibrated_point, df_points):
+        # get parameter names
+        df_point = calibrated_point.to_dataframe()
+        param_names = df_point['Name'].tolist()
+
+        # retrieve parameters settings
+        get_settings = calibrated_point.get_settings()
+
+        # build calibration points
+        calibrated_points = []
+        for index, row in df_points.iterrows():
+            parameters = []
+            for name in param_names:
+                parameter = CalibrationParameter(name, get_settings[name]['min'], get_settings[name]['max'], row[name])
+                parameters.append(parameter)
+
+            calibrated_points.append(CalibrationPoint(parameters))
+
+        self.selection_values = df_points[self.selection_columns].copy()
+
+        return calibrated_points

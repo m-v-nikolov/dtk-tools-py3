@@ -12,7 +12,7 @@ class RandomPerturbationResampler(BaseResampler):
         super().__init__()
         self.resample_kwargs = kwargs
 
-    def resample(self, calibrated_points):
+    def resample(self, calibrated_points, selection_values, initial_calibration_points):
         """
         Takes in a list of 1+ Point objects and returns method-specific resampled points as a list of Point objects
         The resultant Point objects should be copies of the input Points BUT with Value overridden on each, e.g.:
@@ -30,12 +30,12 @@ class RandomPerturbationResampler(BaseResampler):
         if n_calibrated_points != 1:
             raise Exception('RandomPerturbationResampler requires there to be exactly one input point. There are %d'
                             % n_calibrated_points)
-        self.center_point = calibrated_points[0]
+        self.center_point = initial_calibration_points[0]
         self.resampled_points_df = self.generate_perturbed_points(self.center_point)
 
         # transform perturbed_points to CalibrationPoint objects
-        self.resampled_points = self.transform_perturbed_points_to_calibrated_points(self.center_point,
-                                                                                     self.resampled_points_df)
+        self.resampled_points = self._transform_df_points_to_calibrated_points(self.center_point,
+                                                                               self.resampled_points_df)
 
         return self.resampled_points
 
@@ -74,27 +74,10 @@ class RandomPerturbationResampler(BaseResampler):
         df_perturbed_points = perturbed_points(Center, Xmin, Xmax, **self.resample_kwargs)
 
         # re-name columns
-        df_perturbed_points.columns = ['i', 'j', 'k', 'l'] + Names
+        self.selection_columns = ['i(1to4)','j(1toN)','k(1toM)','run_number'] # to be made available in the following resampling
+        df_perturbed_points.columns = self.selection_columns + Names
 
         return df_perturbed_points
 
 
-    def transform_perturbed_points_to_calibrated_points(self, calibrated_point, df_perturbed_points):
-        # get parameter names
-        df_point = calibrated_point.to_dataframe()
-        param_names = df_point['Name'].tolist()
 
-        # retrieve parameters settings
-        get_settings = calibrated_point.get_settings()
-
-        # build calibration points
-        calibrated_points = []
-        for index, row in df_perturbed_points.iterrows():
-            parameters = []
-            for name in param_names:
-                paramer = CalibrationParameter(name, get_settings[name]['min'], get_settings[name]['max'], row[name])
-                parameters.append(paramer)
-
-            calibrated_points.append(CalibrationPoint(parameters))
-
-        return calibrated_points

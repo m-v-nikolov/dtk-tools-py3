@@ -119,8 +119,7 @@ def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
     return df_perturbed
 
 
-
-def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
+def FisherInfMatrix(n_dimensions, df_perturbed_points, df_LL_points, selection_values_df):
     """
     Atiye Alaeddini, 12/15/2017
     compute the Fisher Information matrix using the LL of perturbed points
@@ -140,24 +139,19 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
     # LL_data = df_LL_points.as_matrix()
     # points = df_perturbed_points.as_matrix()
 
-    rounds = df_perturbed_points['j(1toN)'].as_matrix() # j
-    samples_per_round = df_perturbed_points['k(1toM)'].as_matrix() # k, points[:, 2]
+    rounds = df_perturbed_points['j'].as_matrix() # j
+    samples_per_round = df_perturbed_points['k'].as_matrix() # k, points[:, 2]
     N = (max(rounds) + 1).astype(int)
     M = (max(samples_per_round) + 1).astype(int)
     n = int((np.shape(rounds)[0])/(4*M*N))
 
-    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(like='theta').as_matrix() #[0:-1:4,:]
-    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(like='theta').as_matrix() #[1:-1:4,:]
-    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(like='theta').as_matrix() #[2:-1:4,:]
-    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(like='theta').as_matrix() #[3:-1:4,:]
-
-    LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL']
-    LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL']
-    LL_MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 2, 'LL']
-    LL_MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 3, 'LL']
+    PlusPlusPoints = df_perturbed_points['theta'].as_matrix()[0:-1:4,:] # points[0:(4 * M * N * n):(4 * n), 4:]
+    PlusMinusPoints = df_perturbed_points['theta'].as_matrix()[1:-1:4,:] # points[1:(4 * M * N * n):(4 * n), 4:]
+    MinusPlusPoints = df_perturbed_points['theta'].as_matrix()[2:-1:4,:] # points[2:(4 * M * N * n):(4 * n), 4:]
+    MinusMinusPoints = df_perturbed_points['theta'].as_matrix()[3:-1:4,:] # points[3:(4 * M * N * n):(4 * n), 4:]
 
     # dimension of X
-    p = len(center)
+    p = n_dimensions
 
     # Hessian
     H_bar = np.zeros(shape=(p, p, N))
@@ -176,10 +170,10 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
         MinusPlus_round_i = MinusPlusPoints[(i * M):((i + 1) * M), :]
         MinusMinus_round_i = MinusMinusPoints[(i * M):((i + 1) * M), :]
 
-        loglPP_round_i = LL_PlusPlusPoints[(i * M):((i + 1) * M), :]
-        loglPM_round_i = LL_PlusMinusPoints[(i * M):((i + 1) * M), :]
-        loglMP_round_i = LL_MinusPlusPoints[(i * M):((i + 1) * M), :]
-        loglMM_round_i = LL_MinusMinusPoints[(i * M):((i + 1) * M), :]
+        loglPP_round_i = df_LL_points['LL'].as_matrix() # LL_data[(i * 4 * M + 0):((i + 1) * 4 * M + 0), 3]
+        loglPM_round_i = LL_data[(i * 4 * M + 1):((i + 1) * 4 * M + 1), 3]
+        loglMP_round_i = LL_data[(i * 4 * M + 2):((i + 1) * 4 * M + 2), 3]
+        loglMM_round_i = LL_data[(i * 4 * M + 3):((i + 1) * 4 * M + 3), 3]
 
         for k in range(M):
 
@@ -210,7 +204,131 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
     Fisher = -1 * H_bar_avg[:, :, N - 1]
     return Fisher
 
-def sample_cov_ellipse(cov, pos, num_of_pts=10):
+
+# def FisherInfMatrix(n_dimensions, df_perturbed_points, df_LL_points, selection_values_df):
+#     """
+#     Atiye Alaeddini, 12/15/2017
+#     compute the Fisher Information matrix using the LL of perturbed points
+#
+#      ------------------------------------------------------------------------
+#     INPUTS:
+#     center    center point    (1 x p) nparray
+#     df_perturbed_points    perturbed points    DataFrame
+#     df_LL_points    Log Likelihood of points    DataFrame
+#      ------------------------------------------------------------------------
+#     OUTPUTS:
+#     Fisher    Fisher Information matrix    (p x p) np array
+#      ------------------------------------------------------------------------
+#     """
+#
+#     # convert DataFrame to python array
+#     # LL_data = df_LL_points.as_matrix()
+#     # points = df_perturbed_points.as_matrix()
+#     print('-------------------------')
+#     print('df_perturbed_points:\n%s' % df_perturbed_points)
+#     print('-------------------------')
+#     print('df_LL_points:\n%s' % df_LL_points)
+#     print('-------------------------')
+#     print('selection_values_df:\n%s' % selection_values_df)
+#     print('-------------------------')
+#
+#     # combining these input DataFrames as expected below
+#     df_LL_points = selection_values_df.join(df_LL_points).join(df_perturbed_points)
+#     index_keys = list(set(df_LL_points.columns))
+#     index_keys.remove('theta')
+#     df_LL_points.set_index(list(index_keys))
+#     print('df_LL_points JOINED:\n%s' % df_LL_points)
+#     print('index: %s' % df_LL_points.index)
+#     print('set index as: %s' % index_keys)
+#     print('-------------------------')
+#
+#
+#     rounds = df_LL_points['j(1toN)'].as_matrix() # j
+#     samples_per_round = df_LL_points['k(1toM)'].as_matrix() # k, points[:, 2]
+#
+#     N = (max(rounds) + 1).astype(int)
+#     M = (max(samples_per_round) + 1).astype(int)
+#     n = int((np.shape(rounds)[0])/(4*M*N))
+#
+#     PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0]['theta'].as_matrix() #[0:-1:4,:]
+#
+#     # PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0]
+#     # PlusPlusPoints = PlusPlusPoints.filter(like='theta')
+#     # PlusPlusPoints = PlusPlusPoints.as_matrix()
+#
+#     PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1]['theta'].as_matrix() #[1:-1:4,:]
+#     MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2]['theta'].as_matrix() #[2:-1:4,:]
+#     MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3]['theta'].as_matrix() #[3:-1:4,:]
+#
+#     LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL']
+#     LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL']
+#     LL_MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 2, 'LL']
+#     LL_MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 3, 'LL']
+#
+#     # dimension of X
+#     p = n_dimensions
+#
+#     # Hessian
+#     H_bar = np.zeros(shape=(p, p, N))
+#     H_bar_avg = np.zeros(shape=(p, p, N))
+#
+#     print('-------------------------')
+#     print('PlusPlusPoints:\n%s' % PlusPlusPoints)
+#     print('-------------------------')
+#
+#     print('-------------------------')
+#     print('LL_PlusPlusPoints:\n%s' % LL_PlusPlusPoints)
+#     print('type: %s' % type(LL_PlusPlusPoints))
+#     print('-------------------------')
+#
+#     for i in range(N):
+#         # reset the data (samples) used for evaluation of the log likelihood
+#         # initialization
+#         H_hat = np.zeros(shape=(p, p, M))
+#         H_hat_avg = np.zeros(shape=(p, p, M))
+#         G_p = np.zeros(shape=(p, M))
+#         G_m = np.zeros(shape=(p, M))
+#
+#         PlusPlus_round_i = PlusPlusPoints[(i * M):((i + 1) * M), :]
+#         PlusMinus_round_i = PlusMinusPoints[(i * M):((i + 1) * M), :]
+#         MinusPlus_round_i = MinusPlusPoints[(i * M):((i + 1) * M), :]
+#         MinusMinus_round_i = MinusMinusPoints[(i * M):((i + 1) * M), :]
+#
+#         loglPP_round_i = LL_PlusPlusPoints[(i * M):((i + 1) * M)]
+#         loglPM_round_i = LL_PlusMinusPoints[(i * M):((i + 1) * M)]
+#         loglMP_round_i = LL_MinusPlusPoints[(i * M):((i + 1) * M)]
+#         loglMM_round_i = LL_MinusMinusPoints[(i * M):((i + 1) * M)]
+#
+#         for k in range(M):
+#
+#             thetaPlusPlus = PlusPlus_round_i[k]
+#             thetaPlusMinus = PlusMinus_round_i[k]
+#             thetaMinusPlus = MinusPlus_round_i[k]
+#             thetaMinusMinus = MinusMinus_round_i[k]
+#
+#             loglPP = loglPP_round_i[k]
+#             loglPM = loglPM_round_i[k]
+#             loglMP = loglMP_round_i[k]
+#             loglMM = loglMM_round_i[k]
+#
+#             G_p[:, k] = (loglPP - loglPM) / (thetaPlusPlus - thetaPlusMinus)
+#             G_m[:, k] = (loglMP - loglMM) / (thetaMinusPlus - thetaMinusMinus)
+#
+#             # H_hat(n)
+#             S = np.dot((1 / (thetaPlusPlus - thetaMinusPlus))[:, None], (G_p[:, k] - G_m[:, k])[None, :])  # H_hat
+#             H_hat[:, :, k] = .5 * (S + S.T)
+#
+#             H_hat_avg[:, :, k] = k / (k + 1) * H_hat_avg[:, :, k - 1] + 1 / (k + 1) * H_hat[:, :, k]
+#
+#         H_bar[:, :, i] = .5 * (
+#             H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
+#         )
+#         H_bar_avg[:, :, i] = i / (i + 1) * H_bar_avg[:, :, i - 1] + 1 / (i + 1) * H_bar[:, :, i]
+#
+#     Fisher = -1 * H_bar_avg[:, :, N - 1]
+#     return Fisher
+
+def sample_cov_ellipse(cov, pos, n_points=10):
     """
     Sample 'num_of_pts' points from the specified covariance
     matrix (`cov`).
@@ -219,13 +337,13 @@ def sample_cov_ellipse(cov, pos, num_of_pts=10):
     ----------
         cov : 2-D array_like, The covariance matrix (inverse of fisher matrix). It must be symmetric and positive-semidefinite for proper sampling.
         pos : 1-D array_like, The location of the center of the ellipse, Mean of the multi variate distribution
-        num_of_pts : The number of sample points.
+        n_points : The number of sample points.
 
     Returns
     -------
-        ndarray of the drawn samples, of shape (num_of_pts,).
+        ndarray of the drawn samples, of shape (n_points,).
     """
-    return np.random.multivariate_normal(pos, cov, num_of_pts)
+    return np.random.multivariate_normal(pos, cov, n_points)
 
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
@@ -277,7 +395,7 @@ def test():
     # df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
     df_perturbed_points = pd.DataFrame.from_csv("data.csv")
     ll = pd.DataFrame.from_csv("LLdata.csv")
-    Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
+    Fisher = FisherInfMatrix(len(center), df_perturbed_points, ll)
     Covariance = np.linalg.inv(Fisher)
 
     print("eigs of fisher: ", np.linalg.eigvals(Fisher))
