@@ -300,6 +300,7 @@ class BaseExperimentManager:
             if total_sims > sims_to_display: logger.info("... and %s more" % (total_sims + display))
 
     def refresh_experiment(self):
+        self.check_overseer()
         # Refresh the experiment
         self.experiment = DataStore.get_experiment(self.experiment.exp_id)
 
