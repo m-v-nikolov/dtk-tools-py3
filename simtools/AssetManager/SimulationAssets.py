@@ -43,7 +43,7 @@ class SimulationAssets(object):
             raise Exception("The path specified in {} does not exist ({})".format(self.SETUP_MAPPING[path_type], path))
 
         # Remove the base collection
-        self.base_collections[path] = None
+        self.base_collections[path_type] = None
 
         # Set the path
         self.paths[path_type] = path
