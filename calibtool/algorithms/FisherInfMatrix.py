@@ -8,7 +8,7 @@ from matplotlib.patches import Ellipse
 from scipy.linalg import sqrtm
 
 
-def perturbed_points(center, Xmin, Xmax, M=1, N=10, n=2, resolution=None):
+def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
     """
     Atiye Alaeddini, 12/11/2017
     generate perturbed points around the center
@@ -114,7 +114,7 @@ def perturbed_points(center, Xmin, Xmax, M=1, N=10, n=2, resolution=None):
 
     # X_perturbed[:,0:4] = X_perturbed[:,0:4].astype(int)
     # convert to pandas DataFrame
-    df_perturbed = pd.DataFrame(data=X_perturbed, columns=(['i','j','k','l']+['theta']*p))
+    df_perturbed = pd.DataFrame(data=X_perturbed, columns=(['i(1to4)','j(1toN)','k(1toM)','run_number']+['theta']*p))
 
     return df_perturbed
 
@@ -140,16 +140,21 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
     # LL_data = df_LL_points.as_matrix()
     # points = df_perturbed_points.as_matrix()
 
-    rounds = df_perturbed_points['j'].as_matrix() # j
-    samples_per_round = df_perturbed_points['k'].as_matrix() # k, points[:, 2]
+    rounds = df_perturbed_points['j(1toN)'].as_matrix() # j
+    samples_per_round = df_perturbed_points['k(1toM)'].as_matrix() # k, points[:, 2]
     N = (max(rounds) + 1).astype(int)
     M = (max(samples_per_round) + 1).astype(int)
     n = int((np.shape(rounds)[0])/(4*M*N))
 
-    PlusPlusPoints = df_perturbed_points['theta'].as_matrix()[0:-1:4,:] # points[0:(4 * M * N * n):(4 * n), 4:]
-    PlusMinusPoints = df_perturbed_points['theta'].as_matrix()[1:-1:4,:] # points[1:(4 * M * N * n):(4 * n), 4:]
-    MinusPlusPoints = df_perturbed_points['theta'].as_matrix()[2:-1:4,:] # points[2:(4 * M * N * n):(4 * n), 4:]
-    MinusMinusPoints = df_perturbed_points['theta'].as_matrix()[3:-1:4,:] # points[3:(4 * M * N * n):(4 * n), 4:]
+    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(like='theta').as_matrix() #[0:-1:4,:]
+    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(like='theta').as_matrix() #[1:-1:4,:]
+    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(like='theta').as_matrix() #[2:-1:4,:]
+    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(like='theta').as_matrix() #[3:-1:4,:]
+
+    LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL']
+    LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL']
+    LL_MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 2, 'LL']
+    LL_MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 3, 'LL']
 
     # dimension of X
     p = len(center)
@@ -171,10 +176,10 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
         MinusPlus_round_i = MinusPlusPoints[(i * M):((i + 1) * M), :]
         MinusMinus_round_i = MinusMinusPoints[(i * M):((i + 1) * M), :]
 
-        loglPP_round_i = df_LL_points['LL'].as_matrix() # LL_data[(i * 4 * M + 0):((i + 1) * 4 * M + 0), 3]
-        loglPM_round_i = LL_data[(i * 4 * M + 1):((i + 1) * 4 * M + 1), 3]
-        loglMP_round_i = LL_data[(i * 4 * M + 2):((i + 1) * 4 * M + 2), 3]
-        loglMM_round_i = LL_data[(i * 4 * M + 3):((i + 1) * 4 * M + 3), 3]
+        loglPP_round_i = LL_PlusPlusPoints[(i * M):((i + 1) * M), :]
+        loglPM_round_i = LL_PlusMinusPoints[(i * M):((i + 1) * M), :]
+        loglMP_round_i = LL_MinusPlusPoints[(i * M):((i + 1) * M), :]
+        loglMM_round_i = LL_MinusMinusPoints[(i * M):((i + 1) * M), :]
 
         for k in range(M):
 
@@ -269,9 +274,8 @@ def test():
     center = np.array([0.05,-0.92,-.98])
     Xmin = np.array([-1]*3)
     Xmax = np.array([1]*3)
-    df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
-    #print df_perturbed_points
-    # df_perturbed_points.to_csv("data.csv")
+    # df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
+    df_perturbed_points = pd.DataFrame.from_csv("data.csv")
     ll = pd.DataFrame.from_csv("LLdata.csv")
     Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
     Covariance = np.linalg.inv(Fisher)
