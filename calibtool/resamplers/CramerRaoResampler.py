@@ -6,13 +6,13 @@ from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellip
 
 
 class CramerRaoResampler(BaseResampler):
-    def __init__(self, n_resampling_points, **kwargs):
+    def __init__(self, **kwargs):
         """
         :param n_resampling_points: The number of resampled points to generate
         :param kwargs: These are arguments passed directly to the underlying resampling routine.
         """
         super().__init__()
-        self.n_resampling_points = n_resampling_points # the number of points to resample/generate
+        # self.n_resampling_points = n_resampling_points # the number of points to resample/generate
         self.resample_kwargs = kwargs
 
 
@@ -29,7 +29,7 @@ class CramerRaoResampler(BaseResampler):
         :return: a list of resampled Point objects
         """
 
-        # selection_valaues: a DataFrame with columns relevant to selection of calibrated_points
+        # selection_values: a DataFrame with columns relevant to selection of calibrated_points
 
         center_point = initial_calibration_points[0]
 
@@ -42,9 +42,11 @@ class CramerRaoResampler(BaseResampler):
         original_column_names = calibrated_points_df.columns
         calibrated_points_df = selection_values.join(calibrated_points_df)
 
-        columns = list(selection_values.columns) + (['theta'] * len(original_column_names))
-        print('setting columns to: %s' % columns)
-        calibrated_points_df.columns = list(selection_values.columns) + (['theta'] * len(original_column_names)) # expected by FixherInfMatrix code
+        # temporary, generic column names for the actual parameter names
+        theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
+        temp_columns = list(selection_values.columns) + theta_column_names
+        print('setting columns to: %s' % temp_columns)
+        calibrated_points_df.columns = temp_columns
 
         # same as calibrated_points_df but with a LL column on the end
         likelihood_df = pd.DataFrame([{'LL': point.likelihood} for point in calibrated_points])
@@ -53,18 +55,25 @@ class CramerRaoResampler(BaseResampler):
         # Do the resampling
 
         # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
-        print('Center point as value dict:\n%s' % center_point.to_value_dict())
-        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()])) # ck4, is this the same ordering as with calibrated_points_df?
-
-        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df, selection_values)
+        # print('Center point as value dict:\n%s' % center_point.to_value_dict())
+        # print('cpdf:\n%s' % pd.DataFrame([center_point.to_value_dict()]))
+        # print('cpdf2:\n%s' % list(pd.DataFrame([center_point.to_value_dict()])))
+        # print('cpdf3:\n%s' % list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0]))
+        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0]) # ck4, is this the same ordering as with calibrated_points_df?
+        print('center_point_as_list:\n%s' % center_point_as_list)
+        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df)
+        # print(fisher_inf_matrix)
         covariance = np.linalg.inv(fisher_inf_matrix)
-        resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
+        # print(covariance)
 
+        resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
+        print('A. There are %d resampled points.' % len(resampled_points_list))
         # convert resampled points to a list of CalibrationPoint objects
         resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)
         resampled_points = self._transform_df_points_to_calibrated_points(center_point,
                                                                           resampled_points_df)
 
+        print('B. There are %d resampled points.' % len(resampled_points))
         # return reampled points
         return resampled_points
 

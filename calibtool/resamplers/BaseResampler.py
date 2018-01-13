@@ -49,8 +49,8 @@ class BaseResampler(metaclass=ABCMeta):
         manager = ExperimentManagerFactory.from_cb(self.calib_manager.config_builder)
         exp_name = self.calib_manager.name + '_resample_step_%d' % resample_step
 
-        # ck4, restore manager.run_simulations(exp_name=exp_name, blocking=True, exp_builder=exp_builder)
-        manager = ExperimentManagerFactory.from_experiment('3cb2a132-d1f7-e711-940a-0050569e0ef3') # ck4, DEBUGGING ONLY
+        manager.run_simulations(exp_name=exp_name, blocking=True, exp_builder=exp_builder)
+        # manager = ExperimentManagerFactory.from_experiment('3cb2a132-d1f7-e711-940a-0050569e0ef3') # ck4, DEBUGGING ONLY
 
         return manager
 
@@ -70,6 +70,7 @@ class BaseResampler(metaclass=ABCMeta):
         # with the .likelihood attribute set to the likelihood value in its .finalize() method.
         results = am.analyzers[0].result.tolist()
 
+        print('len results: %d len points_ran: %d' % (len(results), len(points_ran)))
         for i in range(len(results)):
             # Add the likelihood
             points_ran[i].likelihood = results[i]
@@ -104,6 +105,7 @@ class BaseResampler(metaclass=ABCMeta):
         experiment_manager.wait_for_finished()
 
         # 3. analyze simulations for likelihood
+        print('Analyzing in resampler of type: %s' % type(self))
         self.resampled_points, self.analyzer_results = self._analyze(experiment=experiment_manager.experiment,
                                                                      analyzers=self.calib_manager.analyzer_list,
                                                                      points_ran=points_to_run)

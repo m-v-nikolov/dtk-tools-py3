@@ -178,7 +178,7 @@ calib_manager = CalibManager(name='ExampleOptimization_cramer',    # <-- Please 
 resample_steps = [
     # can pass kwargs directly to the underlying resampling routines if needed
     RandomPerturbationResampler(N=4),
-    CramerRaoResampler(n_resampling_points=10)
+    CramerRaoResampler(num_of_pts=8)
 ]
 
 # REQUIRED variable name: run_calib_args . Required key: 'resamplers'
