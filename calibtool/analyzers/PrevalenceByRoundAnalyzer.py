@@ -6,12 +6,12 @@ import logging
 import pandas as pd
 
 from calibtool import LL_calculators
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from calibtool.analyzers.BaseCalibrationAnalyzer import BaseCalibrationAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class PrevalenceByRoundAnalyzer(BaseAnalyzer):
+class PrevalenceByRoundAnalyzer(BaseCalibrationAnalyzer):
 
     required_reference_types = ['prevalence_by_round']
 
@@ -19,37 +19,42 @@ class PrevalenceByRoundAnalyzer(BaseAnalyzer):
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, name, weight):
-        super(PrevalenceByRoundAnalyzer, self).__init__(name, weight)
-        self.name = name
-        self.weight = weight
-        self.site = None
-        self.setup = {}
-
-    def set_site(self, site):
-        '''
-        Get the reference data that this analyzer needs from the specified site.
-
-        Get survey collection dates and subregions, if present, from the specified site.
-        '''
-        self.site = site
-        self.reference = self.site.reference_data['prevalence_by_round']
-        try :
-            self.testdays = self.setup['testdays']
-        except KeyError :
-            raise Exception('%s requires \'testdays\' input in site setup' % self.name)
-
+    def __init__(self, site, weight=1, compare_fn=LL_calculators.euclidean_distance, **kwargs):
+        super(PrevalenceByRoundAnalyzer, self).__init__(site, weight, compare_fn)
+        self.testdays = kwargs.get('testdays')
+        self.reference = site.get_reference_data('prevalence_by_round')
+        self.regions = site.get_region_list()
         self.filenames = ['output/ReportMalariaFiltered.json']
-        if 'regions' in self.setup :
-            self.regions = self.setup['regions']
-            filenames = ['output/ReportMalariaFiltered' + x + '.json' for x in self.regions if x != 'all']
-            if 'all' in self.regions :
-                self.filenames += filenames
-                self.regions.insert(0, self.regions.pop(self.regions.index('all')))
-            else :
-                self.filenames = filenames
+        region_filenames = ['output/ReportMalariaFiltered' + x + '.json' for x in self.regions if x != 'all']
+        if 'all' in self.regions :
+            self.filenames += region_filenames
+            self.regions.insert(0, self.regions.pop(self.regions.index('all')))
         else :
-            self.regions = ['all']
+            self.filenames = region_filenames
+
+    # def set_site(self, site):
+    #     '''
+    #     Get the reference data that this analyzer needs from the specified site.
+    #
+    #     Get survey collection dates and subregions, if present, from the specified site.
+    #     '''
+    #     self.reference = self.site.reference_data['prevalence_by_round']
+    #     try :
+    #         self.testdays = self.setup['testdays']
+    #     except KeyError :
+    #         raise Exception('%s requires \'testdays\' input in site setup' % self.name)
+    #
+    #     self.filenames = ['output/ReportMalariaFiltered.json']
+    #     if 'regions' in self.setup :
+    #         self.regions = self.setup['regions']
+    #         filenames = ['output/ReportMalariaFiltered' + x + '.json' for x in self.regions if x != 'all']
+    #         if 'all' in self.regions :
+    #             self.filenames += filenames
+    #             self.regions.insert(0, self.regions.pop(self.regions.index('all')))
+    #         else :
+    #             self.filenames = filenames
+    #     else :
+    #         self.regions = ['all']
 
     def filter(self, sim_metadata):
         '''
@@ -97,7 +102,7 @@ class PrevalenceByRoundAnalyzer(BaseAnalyzer):
         Assess the result per sample, in this case the likelihood
         comparison between simulation and reference data.
         '''
-        return sum([LL_calculators.euclidean_distance(self.reference[region], df[self.y].tolist()) for (region, df) in sample.groupby(level='region')])
+        return sum([self.compare_fn(self.reference[region], df[self.y].tolist()) for (region, df) in sample.groupby(level='region')])
 
     def finalize(self):
         '''

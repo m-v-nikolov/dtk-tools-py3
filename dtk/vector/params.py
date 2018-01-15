@@ -59,7 +59,9 @@ cohort_params = {
     "Enable_Temperature_Dependent_Egg_Hatching": 0,
     "Enable_Egg_Mortality": 0,
     "Enable_Drought_Egg_Hatch_Delay": 0,
-    "Temperature_Dependent_Feeding_Cycle": "NO_TEMPERATURE_DEPENDENCE"
+    "Temperature_Dependent_Feeding_Cycle": "NO_TEMPERATURE_DEPENDENCE",
+
+    "Genome_Markers": [ ]
 }
 
 params = copy.deepcopy(cohort_params)

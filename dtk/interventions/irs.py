@@ -9,8 +9,8 @@ irs_housingmod = {"class": "IRSHousingModification",
                   "Cost_To_Consumer": 8.0
                   }
 '''
-import copy
-from triggered_campaign_delay_event import triggered_campaign_delay_event
+import copy, random
+from dtk.interventions.triggered_campaign_delay_event import triggered_campaign_delay_event
 
 irs_housingmod = { "class": "IRSHousingModification",
                 "Killing_Config": {
@@ -158,13 +158,18 @@ def add_IRS(config_builder, start, coverage_by_ages, cost=None, nodeIDs=[],
         config_builder.add_event(IRS_event)
 
 
-def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, cost=None,
+def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90,
+                 waning_effect_type='WaningEffectExponential', cost=None,
                  irs_ineligibility_duration=0, nodeIDs=[], node_property_restrictions=[],
                  triggered_campaign_delay=0,trigger_condition_list=[], listening_duration=-1):
 
     irs_config = copy.deepcopy(node_irs_config)
-    irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
+    irs_config['Killing_Config']['class'] = waning_effect_type
     irs_config['Killing_Config']['Initial_Effect'] = initial_killing
+    irs_config['Killing_Config']['Decay_Time_Constant'] = box_duration
+    if waning_effect_type == 'WaningEffectBox' :
+        irs_config['Killing_Config']['Box_Duration'] = box_duration
+        del irs_config['Killing_Config']['Decay_Time_Constant']
 
     if not nodeIDs:
         nodeset_config = {"class": "NodeSetAll"}
@@ -204,7 +209,7 @@ def add_node_IRS(config_builder, start, initial_killing=0.5, box_duration=90, co
         IRS_event['Event_Coordinator_Config']['Intervention_Config'] = {
             "class": "NodeLevelHealthTriggeredIV",
             "Blackout_On_First_Occurrence": 1,
-            "Blackout_Event_Trigger": "IRS_Blackout",
+            "Blackout_Event_Trigger": "IRS_Blackout_%d" % random.randint(0, 10000),
             "Blackout_Period": 1,
             'Node_Property_Restrictions': node_property_restrictions,
             "Duration": listening_duration,
