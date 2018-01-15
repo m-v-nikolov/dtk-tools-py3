@@ -34,7 +34,7 @@ def ivermectin_config_by_duration(drug_code=None):
     return cfg
 
 
-def add_ivermectin(config_builder, drug_code, coverage, start_days, trigger_condition_list=[], listening_duration=-1):
+def add_ivermectin(config_builder, drug_code, coverage, start_days, trigger_string_list=[]):
     """
     Add an ivermectin event to the config_builder passed.
 
@@ -42,8 +42,7 @@ def add_ivermectin(config_builder, drug_code, coverage, start_days, trigger_cond
     :param drug_code: Can be 'DAY', 'WEEK' or 'MONTH' and drive the ``Killing_config`` (see `Killing_Config in Ivermectin <https://institutefordiseasemodeling.github.io/EMOD/malaria/parameter-campaign.html#iv-ivermectin>`_ for more info).
     :param coverage: Set the ``Demographic_Coverage``
     :param start_days: list of days when to start the ivermectin distribution
-    :param trigger_condition_list: ivermectin will be distributed when it hears the trigger string event, please note the start_days then is used to distribute the NodeLevelHealthTriggeredIV
-    :param listening_duration: for how long the NLHTIV will listen for the trigger
+    :param trigger_string_list: ivermectin will be distributed when it hears the trigger string event, please note the start_days then is used to distribute the NodeLevelHealthTriggeredIV
     :return: Nothing
     """
 
@@ -58,12 +57,11 @@ def add_ivermectin(config_builder, drug_code, coverage, start_days, trigger_cond
                     },
                      "Nodeset_Config": {"class": "NodeSetAll"}}
 
-        if trigger_condition_list:
+        if trigger_string_list:
             IVM_event['Event_Coordinator_Config']['Intervention_Config'] = {
                 "class" : "NodeLevelHealthTriggeredIV",
-                "Trigger_Condition_List": trigger_condition_list,
+                "Trigger_Condition_List": trigger_string_list,
                 "Target_Residents_Only": 1,
-                "Duration": listening_duration,
                 "Demographic_Coverage": coverage,
                 "Actual_IndividualIntervention_Config" : cfg
             }
