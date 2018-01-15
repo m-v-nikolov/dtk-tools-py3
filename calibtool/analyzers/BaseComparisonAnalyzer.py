@@ -10,9 +10,8 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
     A class to represent the interface of all analyzers that compare simulation output to a reference, e.g. calibration.
     """
 
-    @abstractmethod
-    def __init__(self, site, weight=1, compare_fn=lambda s: True):
-        super(BaseComparisonAnalyzer, self).__init__()  # self.data = None
+    def __init__(self, site, weight=1, compare_fn=None):
+        super(BaseComparisonAnalyzer, self).__init__()
         self.site = site
         self.weight = weight
         self.compare_fn = compare_fn
@@ -50,7 +49,6 @@ class BaseComparisonAnalyzer(BaseAnalyzer):
         logger.debug(self.result)
 
     @classmethod
-    @abstractmethod
     def plot_comparison(cls, fig, data, **kwargs):
         """
         Plot data onto figure according to logic in derived classes
