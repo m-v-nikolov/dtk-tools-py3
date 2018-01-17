@@ -37,8 +37,6 @@ class BaseResampler(metaclass=ABCMeta):
         if not self.calib_manager:
             raise Exception('calibration manager has not set for resampler. Cannot generate simulations.')
 
-        print(points[0])
-        print(type(points))
         point_dicts = [point.to_value_dict() for point in points]
 
         # ck4, the number of replicates must be 1 for HIV for now; the general solution should allow a user-selected
@@ -50,7 +48,6 @@ class BaseResampler(metaclass=ABCMeta):
         exp_name = self.calib_manager.name + '_resample_step_%d' % resample_step
 
         manager.run_simulations(exp_name=exp_name, blocking=True, exp_builder=exp_builder)
-        # manager = ExperimentManagerFactory.from_experiment('3cb2a132-d1f7-e711-940a-0050569e0ef3') # ck4, DEBUGGING ONLY
 
         return manager
 
@@ -70,7 +67,6 @@ class BaseResampler(metaclass=ABCMeta):
         # with the .likelihood attribute set to the likelihood value in its .finalize() method.
         results = am.analyzers[0].result.tolist()
 
-        print('len results: %d len points_ran: %d' % (len(results), len(points_ran)))
         for i in range(len(results)):
             # Add the likelihood
             points_ran[i].likelihood = results[i]
@@ -105,7 +101,6 @@ class BaseResampler(metaclass=ABCMeta):
         experiment_manager.wait_for_finished()
 
         # 3. analyze simulations for likelihood
-        print('Analyzing in resampler of type: %s' % type(self))
         self.resampled_points, self.analyzer_results = self._analyze(experiment=experiment_manager.experiment,
                                                                      analyzers=self.calib_manager.analyzer_list,
                                                                      points_ran=points_to_run)

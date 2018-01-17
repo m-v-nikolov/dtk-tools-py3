@@ -36,7 +36,6 @@ class CramerRaoResampler(BaseResampler):
         # convert input points to DataFrames
         calibrated_points_df = []
         for i in range(len(calibrated_points)):
-            print('Calibrated point %d:\n%s' % (i, calibrated_points[i].to_value_dict()))
             calibrated_points_df.append(calibrated_points[i].to_value_dict())
         calibrated_points_df = pd.DataFrame(calibrated_points_df)
         original_column_names = calibrated_points_df.columns
@@ -49,7 +48,6 @@ class CramerRaoResampler(BaseResampler):
         # temporary, generic column names for the actual parameter names
         theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
         temp_columns = list(selection_values.columns) + theta_column_names
-        print('setting columns to: %s' % temp_columns)
         calibrated_points_df.columns = temp_columns
 
         # same as calibrated_points_df but with a LL column on the end
