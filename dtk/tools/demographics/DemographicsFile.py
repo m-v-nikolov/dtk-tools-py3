@@ -79,6 +79,14 @@ class DemographicsFile(BaseInputFile):
         with open(name, 'w') as output:
             json.dump(self.content, output, indent=3)
 
+    @property
+    def node_ids(self):
+        return [node['NodeID'] for node in self.nodes]
+
+    @property
+    def node_count(self):
+        return len(self.nodes)
+
     def get_node(self, nodeid):
         """
         Return the node idendified by nodeid. Search either name or actual id

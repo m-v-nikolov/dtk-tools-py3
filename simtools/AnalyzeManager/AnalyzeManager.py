@@ -21,15 +21,19 @@ class AnalyzeManager:
                  create_dir_map=False):
         self.experiments = []
         self.simulations = []
-        self.experiments_simulations = {}
-        self.verbose = verbose
-        self.analyzers = []
-        with SetupParser.TemporarySetup() as sp:
-            self.maxThreadSemaphore = multiprocessing.Semaphore(int(sp.get('max_threads', 16)))
-        self.working_dir = working_dir or os.getcwd()
         self.parsers = []
+        self.analyzers = []
+        self.experiments_simulations = {}
+
+        self.verbose = verbose
         self.force_analyze = force_analyze
         self.create_dir_map = create_dir_map
+        self.parse = True
+
+        self.working_dir = working_dir or os.getcwd()
+
+        with SetupParser.TemporarySetup() as sp:
+            self.maxThreadSemaphore = multiprocessing.Semaphore(int(sp.get('max_threads', 16)))
 
         # If no experiment is specified, retrieve the most recent as a convenience
         if exp_list == 'latest':
@@ -100,61 +104,30 @@ class AnalyzeManager:
 
         # Create the thread pool to create the parsers
         p = ThreadPool()
-        res = []
 
+        # Simulations to handle
         if experiment.exp_id in self.experiments_simulations:
-            # only consider simulations provided
-            for simulation in self.experiments_simulations[experiment.exp_id]:
-                res.append(p.apply_async(self.parser_for_simulation, args=(simulation, experiment, exp_manager)))
-
+            simulations = self.experiments_simulations[experiment.exp_id]
             # drop experiment from self.experiments_simulations
             self.experiments_simulations.pop(experiment.exp_id)
         else:
-            for simulation in exp_manager.experiment.simulations:
-                res.append(p.apply_async(self.parser_for_simulation, args=(simulation, experiment, exp_manager)))
+            simulations = exp_manager.experiment.simulations
+
+        results = [p.apply_async(self.parser_for_simulation, args=(s, experiment, exp_manager)) for s in simulations]
 
         p.close()
         p.join()
 
-        # Retrieve the parsers from the pool
-        for r in res:
-            parser = r.get()
-            if parser: self.parsers.append(parser)
+        # Retrieve the parsers from the pool (remove the None)
+        self.parsers.extend(list(filter(None.__ne__, (r.get() for r in results))))
 
     def create_parsers_for_experiment_from_simulation(self, exp_id):
         experiment = retrieve_experiment(exp_id)
         self.create_parsers_for_experiment(experiment)
 
-    def create_parser_for_simulation(self, simulation):
-        experiment = simulation.experiment
-
-        # Create a manager for the current experiment
-        exp_manager = ExperimentManagerFactory.from_experiment(experiment)
-
-        # Refresh the experiment just to be sure to have latest info
-        exp_manager.refresh_experiment()
-
-        if exp_manager.location == 'HPC':
-            # Get the sim map no matter what
-            if self.create_dir_map:
-                exp_manager.parserClass.createSimDirectoryMap(exp_id=exp_manager.experiment.exp_id,
-                                                              suite_id=exp_manager.experiment.suite_id,
-                                                              save=True, comps_experiment=exp_manager.comps_experiment,
-                                                              verbose=self.verbose)
-            if not exp_manager.asset_service:
-                exp_manager.parserClass.asset_service = False
-
-        # Call the analyzer per experiment function for initialization
-        for analyzer in self.analyzers:
-            analyzer.per_experiment(experiment)
-
-        # Create a parser for given simulation
-        parser = self.parser_for_simulation(simulation, experiment, exp_manager)
-        self.parsers.append(parser)
-
     def parser_for_simulation(self, simulation, experiment, manager):
         # If simulation not done -> return none
-        if not self.force_analyze and simulation.status != SimulationState.Succeeded:
+        if simulation.status != SimulationState.Succeeded and not self.force_analyze:
             if self.verbose: print("Simulation {} skipped (status is {})".format(simulation.id, simulation.status.name))
             return
 
@@ -174,11 +147,8 @@ class AnalyzeManager:
             if self.verbose: print("Simulation {} did not pass filter on any analyzer.".format(simulation.id))
             return
 
-        # If all the analyzers present call for deactivating the parsing -> do it
-        parse = any([a.parse for a in self.analyzers if hasattr(a,'parse')])
-
         # Create the parser
-        return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, parse)
+        return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
 
     def analyze(self):
         # If no analyzers -> quit
@@ -187,6 +157,9 @@ class AnalyzeManager:
 
         # Empty the parsers
         self.parsers = []
+
+        # If all the analyzers present call for deactivating the parsing -> do it
+        self.parse = any([a.parse for a in self.analyzers if hasattr(a, 'parse')])
 
         # Create the parsers for the experiments
         for exp in self.experiments:
