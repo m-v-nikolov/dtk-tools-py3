@@ -42,6 +42,10 @@ class CramerRaoResampler(BaseResampler):
         original_column_names = calibrated_points_df.columns
         calibrated_points_df = selection_values.join(calibrated_points_df)
 
+        # ck4, debugging only, this block
+        filename = os.path.join(self.output_location, 'cr-calibrated-points.csv')  # C
+        calibrated_points_df.to_csv(filename)
+
         # temporary, generic column names for the actual parameter names
         theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
         temp_columns = list(selection_values.columns) + theta_column_names
@@ -52,35 +56,51 @@ class CramerRaoResampler(BaseResampler):
         likelihood_df = pd.DataFrame([{'LL': point.likelihood} for point in calibrated_points])
         likelihood_df = calibrated_points_df.join(likelihood_df)
 
+        # ck4, debugging only, this block
+        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed.csv') # D
+        calibrated_points_df.to_csv(filename)
+        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed-ll.csv') # E
+        likelihood_df.to_csv(filename)
+
         # Do the resampling
 
         # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
-        # print('Center point as value dict:\n%s' % center_point.to_value_dict())
-        # print('cpdf:\n%s' % pd.DataFrame([center_point.to_value_dict()]))
-        # print('cpdf2:\n%s' % list(pd.DataFrame([center_point.to_value_dict()])))
-        # print('cpdf3:\n%s' % list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0]))
-        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0]) # ck4, is this the same ordering as with calibrated_points_df?
-        print('center_point_as_list:\n%s' % center_point_as_list)
+        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0])
         fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df)
-        # print(fisher_inf_matrix)
         covariance = np.linalg.inv(fisher_inf_matrix)
-        # print(covariance)
 
         resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
-        print('A. There are %d resampled points.' % len(resampled_points_list))
+
         # convert resampled points to a list of CalibrationPoint objects
         resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)
+
+        # ck4, debugging only
+        filename = os.path.join(self.output_location, 'cr-resampled-points.csv') # J
+        resampled_points_df.to_csv(filename)
+
         resampled_points = self._transform_df_points_to_calibrated_points(center_point,
                                                                           resampled_points_df)
 
-        print('B. There are %d resampled points.' % len(resampled_points))
+        # ck4, debugging only
+        from calibtool.resamplers.CalibrationPoints import CalibrationPoints
+        filename = os.path.join(self.output_location, 'cr-resampled-points-transformed.csv') # K
+        points = CalibrationPoints(resampled_points)
+        points.write(filename)
+
+        # ck4, Verification, for review
+        # J is the same as K, except for an additional indexing column in J
+        # D is the same as E except for the LL column and end-of-line whitespace chars
+        # E is the same as LLdata.csv from the RandomPerturbationResampler EXCEPT different param/LL column order (same values)
+        #    -- This should be fine, as order preservation is only needed across (in/out) of CR resampling due to column renaming.
+        # Parameter number ranges for input (cr-calibrated-points.csv) and output (cr-resampled-points.csv) are similar,
+        #    e.g. col0 ~ 1.25, col1 ~ 2000, col2 ~ 0.65, col3 ~ 25
+
         # return reampled points
         return resampled_points
 
 
     def post_analysis(self, resampled_points, analyzer_results):
         super().post_analysis(resampled_points, analyzer_results)
-        raise Exception('CramerRao post_analysis method not yet defined, if needed.')
 
         # # plotting
         # df_point = center_point.to_dataframe()

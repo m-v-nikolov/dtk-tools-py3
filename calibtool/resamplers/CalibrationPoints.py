@@ -8,7 +8,7 @@ class CalibrationPoints(object):
         self.points = points
 
     def write(self, filename):
-        point_dicts = [p.to_dict() for p in self.points]
+        point_dicts = [p.to_value_dict() for p in self.points]
         point_dataframe = pd.DataFrame(point_dicts)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         point_dataframe.to_csv(filename, index=False)
