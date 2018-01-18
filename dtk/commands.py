@@ -84,7 +84,7 @@ def run(args, unknownArgs):
     # Create the experiment manager
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**mod.run_sim_args)
-
+    return exp_manager
 
 def status(args, unknownArgs):
     # No matter what check the overseer
@@ -681,8 +681,9 @@ def catalyst(args, unknownArgs):
     if not args.experiment_id:
         # we must always block so that we can run the analysis at the end; run and analyze!
         args.blocking = True
-        experiment = run(args, unknownArgs)
-        print('done running experiment: %s!' % experiment.exp_id)
+        experiment_manager = run(args, unknownArgs)
+        experiment = experiment_manager.experiment
+        print('Done running experiment: %s' % experiment.exp_id)
     else:
         experiment = retrieve_experiment(args.experiment_id)
 
