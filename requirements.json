@@ -11,9 +11,9 @@
     "wheel": "pyCOMPS-2.1-py2.py3-none-any.whl"
   },
   "matplotlib": {
-    "version": "2.1.0",
+    "version": "2.1.1",
     "test": ">=",
-    "wheel": "matplotlib-2.1.0-cp36-cp36m-win_amd64.whl"
+    "wheel": "matplotlib-2.1.1-cp36-cp36m-win_amd64.whl"
   },
   "scipy": {
     "version": "0.19.1",
@@ -31,9 +31,9 @@
     "wheel": "psutil-5.3.1-cp36-cp36m-win_amd64.whl"
   },
   "lz4": {
-    "version": "0.10.1",
+    "version": "0.18.1",
     "test": ">=",
-    "wheel": "lz4-0.10.1-cp36-cp36m-win_amd64.whl"
+    "wheel": "lz4-0.18.1-cp36-cp36m-win_amd64.whl"
   },
   "python-snappy": {
     "platform": [
@@ -66,7 +66,7 @@
     "platform": [
       "mac"
     ],
-    "version": "4.0.10",
+    "version": "4.2.1",
     "test": "=="
   },
   "validators": null,
