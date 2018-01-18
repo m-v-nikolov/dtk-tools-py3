@@ -1,8 +1,13 @@
 {
   "six": null,
-  "github3.py": {
+    "github3.py": {
     "version": "1.0.0a4",
     "test": ">="
+  },
+  "numpy": {
+    "version": "1.14.0+mkl",
+    "test": ">=",
+    "wheel": "numpy-1.14.0+mkl-cp36-cp36m-win_amd64.whl"
   },
   "packaging": null,
   "pyCOMPS": {
@@ -12,8 +17,7 @@
   },
   "matplotlib": {
     "version": "2.1.1",
-    "test": ">=",
-    "wheel": "matplotlib-2.1.1-cp36-cp36m-win_amd64.whl"
+    "test": ">="
   },
   "scipy": {
     "version": "0.19.1",
@@ -22,18 +26,15 @@
   },
   "pandas": {
     "version": "0.20.3",
-    "test": ">=",
-    "wheel": "pandas-0.20.3-cp36-cp36m-win_amd64.whl"
+    "test": ">="
   },
   "psutil": {
     "version": "5.4.3",
-    "test": "==",
-    "wheel": "psutil-5.4.3-cp36-cp36m-win_amd64.whl"
+    "test": ">="
   },
   "lz4": {
     "version": "0.18.1",
-    "test": ">=",
-    "wheel": "lz4-0.18.1-cp36-cp36m-win_amd64.whl"
+    "test": ">="
   },
   "python-snappy": {
     "platform": [
@@ -46,8 +47,7 @@
   },
   "seaborn": {
     "version": "0.8.1",
-    "test": "==",
-    "wheel": "seaborn-0.8.1-py2.py3-none-any.whl"
+    "test": "=="
   },
   "statsmodels": {
     "version": "0.8.0",
@@ -72,11 +72,6 @@
   "validators": null,
   "networkx": null,
   "patsy": null,
-  "numpy": {
-    "version": "1.14.0+mkl",
-    "test": ">=",
-    "wheel": "numpy-1.14.0+mkl-cp36-cp36m-win_amd64.whl"
-  },
   "catalyst": {
     "version": "1.0",
     "test": ">=",
