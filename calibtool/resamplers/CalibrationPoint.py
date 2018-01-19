@@ -7,6 +7,7 @@ class CalibrationPoint:
     def __init__(self, parameters=None, likelihood=None):
         self.parameters = parameters
         self.likelihood = likelihood
+        self.dimensionality = len(self.parameters)
 
     def to_value_dict(self):
         """

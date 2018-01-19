@@ -1,177 +1,112 @@
 import os
+import numpy as np
+import pandas as pd
 from calibtool.resamplers.BaseResampler import BaseResampler
-from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
-from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
-from calibtool.resamplers.Point import CalibrationPoint, CalibrationParameter
-from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, perturbed_points
+from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, sample_cov_ellipse
 
 
 class CramerRaoResampler(BaseResampler):
-    def __init__(self,  calib_manager):
-        super(CramerRaoResampler, self).__init__(calib_manager)
-
-        self.output_location = os.path.join(calib_manager.name, 'Resampling Output')
-
-    def resample(self):
+    def __init__(self, **kwargs):
         """
-        :return:
+        :param n_resampling_points: The number of resampled points to generate
+        :param kwargs: These are arguments passed directly to the underlying resampling routine.
         """
-        
-        # make sure the output location exists
-        if not os.path.exists(self.output_location):
-            os.mkdir(self.output_location)
+        super().__init__()
+        # self.n_resampling_points = n_resampling_points # the number of points to resample/generate
+        self.resample_kwargs = kwargs
 
-        # collect the point from last iteration
-        calibrated_points = self.get_calibrated_points()
 
-        # consider single point as center point
-        center_point = calibrated_points[0]
-
-        # save center to json file
-        center_point.write_point(os.path.join(self.output_location, 'center.json'))
-
-        # generate perturbed points
-        df_perturbed_points = self.generate_perturbed_points(center_point)
-
-        # transform perturbed_points to calibration points
-        resampled_points = self.transform_perturbed_points_to_calibrated_points(center_point, df_perturbed_points)
-
-        # run simulations
-        experiment = self._run(points=resampled_points)
-
-        # analyze simulations for likelihood
-        results, ll = self._analyze(experiment=experiment, analyzers=self.calib_manager.analyzer_list, points_ran=resampled_points)
-
-        # save perturbed_points with likelihood to file
-        df_perturbed_points_ll = df_perturbed_points.copy()
-        df_perturbed_points_ll['ll'] = ll
-        df_perturbed_points_ll.to_csv(os.path.join(self.output_location, 'LLdata.csv'))
-
-        # plotting
-        df_point = center_point.to_dataframe()
-        center = df_point['Value'].values   #nparray
-        Xmin = df_point['Min'].values       #nparray
-        Xmax = df_point['Max'].values       #nparray
-
-        self.plot(center, Xmin, Xmax, df_perturbed_points, df_perturbed_points_ll)
-
-    def get_calibrated_points(self):
+    def resample(self, calibrated_points, selection_values, initial_calibration_points):
         """
-        Retrieve information about the most recent (final completed) iteration's calibrated point,
-        merging from the final IterationState.json and CalibManager.json .
-        :return:
-        """
-        n_points = 1 # ck4, hardcoded for now for HIV purposes, need to determine how to get this from the CalibManager
+        Takes in a list of 1+ Point objects and returns method-specific resampled points as a list of Point objects
+        The resultant Point objects should be copies of the input Points BUT with Value overridden on each, e.g.:
 
-        calib_data = self.calib_manager.read_calib_data()
+        new_point = Point.copy(one_of_the_input_calibrated_points)
+        for param in new_point.list_params():
+          new_point.set_param_value(param, value=SOME_NEW_VALUE)
 
-        iteration = self.calib_manager.get_last_iteration()
-        iteration_data = self.calib_manager.read_iteration_data(iteration=iteration)
-
-        final_samples = calib_data['final_samples']
-        iteration_metadata = iteration_data.next_point['params']
-
-        # Create the list of points and their associated parameters
-        points = list()
-        for i in range(0, n_points):
-            parameters = list()
-            for param_metadata in iteration_metadata:
-                param_metadata["Value"] = final_samples[param_metadata["Name"]][0]
-                parameters.append(CalibrationParameter.from_dict(param_metadata))
-            points.append(CalibrationPoint(parameters))
-
-        return points
-
-    def transform_perturbed_points_to_calibrated_points(self, calibrated_point, df_perturbed_points):
-
-        # get parameter names
-        df_point = calibrated_point.to_dataframe()
-        param_names = df_point['Name'].tolist()
-
-        # retrieve parameters settings
-        get_settings = calibrated_point.get_settings()
-
-        # build calibration points
-        calibrated_points = []
-        for index, row in df_perturbed_points.iterrows():
-            parameters = []
-            for name in param_names:
-                paramer = CalibrationParameter(name, get_settings[name]['min'], get_settings[name]['max'], row[name])
-                parameters.append(paramer)
-
-            calibrated_points.append(CalibrationPoint(parameters))
-
-        return calibrated_points
-
-    def generate_perturbed_points(self, center_point):
-        """
-        given center and generate perturbed points
+        :param calibrated_points: input points for this resampling method
+        :return: a list of resampled Point objects
         """
 
-        # retrieve settings
-        df = center_point.to_dataframe()
-        Names = df['Name'].tolist()
-        Center = df['Value'].values
-        Xmin = df['Min'].values
-        Xmax = df['Max'].values
+        # selection_values: a DataFrame with columns relevant to selection of calibrated_points
 
-        # get perturbed points
-        df_perturbed_points = perturbed_points(Center, Xmin, Xmax)
+        center_point = initial_calibration_points[0]
 
-        # re-name columns
-        df_perturbed_points.columns = ['i', 'j', 'k', 'l'] + Names
+        # convert input points to DataFrames
+        calibrated_points_df = []
+        for i in range(len(calibrated_points)):
+            calibrated_points_df.append(calibrated_points[i].to_value_dict())
+        calibrated_points_df = pd.DataFrame(calibrated_points_df)
+        original_column_names = calibrated_points_df.columns
+        calibrated_points_df = selection_values.join(calibrated_points_df)
 
-        # save to csv file
-        df_perturbed_points.to_csv(os.path.join(self.output_location, 'data.csv'))
+        # ck4, debugging only, this block
+        filename = os.path.join(self.output_location, 'cr-calibrated-points.csv')  # C
+        calibrated_points_df.to_csv(filename)
 
-        return df_perturbed_points
+        # temporary, generic column names for the actual parameter names
+        theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
+        temp_columns = list(selection_values.columns) + theta_column_names
+        calibrated_points_df.columns = temp_columns
 
-    def _run(self, points):
-        """
-        This run method is for running simulations, which is the in-common part of resampling.
-        :param points: The points to run simulations at.
-        :return: The Experiment object for these simulations
-        """
+        # same as calibrated_points_df but with a LL column on the end
+        likelihood_df = pd.DataFrame([{'LL': point.likelihood} for point in calibrated_points])
+        likelihood_df = calibrated_points_df.join(likelihood_df)
 
-        # create a sweep where each point is a separate sim
-        point_dicts = [point.to_value_dict() for point in points]
+        # ck4, debugging only, this block
+        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed.csv') # D
+        calibrated_points_df.to_csv(filename)
+        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed-ll.csv') # E
+        likelihood_df.to_csv(filename)
 
-        # ck4, the number of replicates must be 1 for HIV for now; the general solution should allow a user-selected
-        # replicate count, so long as their likelihood analyzer can handle > 1 replicates.
-        exp_builder = self.calib_manager.exp_builder_func(point_dicts, n_replicates=1)
+        # Do the resampling
 
-        # Create an experiment manager
-        manager = ExperimentManagerFactory.from_cb(self.calib_manager.config_builder)
-        manager.run_simulations(exp_name=self.calib_manager.name + '_resampled', blocking=True, exp_builder=exp_builder)
+        # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
+        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0])
+        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df)
+        covariance = np.linalg.inv(fisher_inf_matrix)
 
-        return manager.experiment
+        resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
 
-    def _analyze(self, experiment, analyzers, points_ran):
-        """
-        This method is the in-common route for Resamplers to analyze simulations for liklihood.
-        :param experiment: the experiment to analyze, should be from self._run()
-        :param analyzer_path: The liklihood analyzer to use
-        :param points_ran: Points objects that were just _run()
-        :return: The supplied points_ran with their .likelihood attribute set
-        """
-        am = AnalyzeManager(analyzers=analyzers, exp_list=experiment)
-        am.analyze()
+        # convert resampled points to a list of CalibrationPoint objects
+        resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)
 
-        # The provided likelihood analyzer MUST set self.result to be a list of Point objects
-        # with the .likelihood attribute set to the likelihood value in its .finalize() method.
-        results = am.analyzers[0].result.tolist()
+        # ck4, debugging only
+        filename = os.path.join(self.output_location, 'cr-resampled-points.csv') # J
+        resampled_points_df.to_csv(filename)
 
-        for i in range(len(results)):
-            # Add the likelihood
-            points_ran[i].likelihood = results[i]
+        resampled_points = self._transform_df_points_to_calibrated_points(center_point,
+                                                                          resampled_points_df)
 
-        # verify that the returned points all have a likelihood attribute set
-        likelihoods_are_missing = True in {point.likelihood is None for point in points_ran}
-        if likelihoods_are_missing:
-            raise Exception('At least one Point object returned by the provided analyzer does not have '
-                            'its .likelihood attribute set.')
+        # ck4, debugging only
+        from calibtool.resamplers.CalibrationPoints import CalibrationPoints
+        filename = os.path.join(self.output_location, 'cr-resampled-points-transformed.csv') # K
+        points = CalibrationPoints(resampled_points)
+        points.write(filename)
 
-        return points_ran, results
+        # ck4, Verification, for review
+        # J is the same as K, except for an additional indexing column in J
+        # D is the same as E except for the LL column and end-of-line whitespace chars
+        # E is the same as LLdata.csv from the RandomPerturbationResampler EXCEPT different param/LL column order (same values)
+        #    -- This should be fine, as order preservation is only needed across (in/out) of CR resampling due to column renaming.
+        # Parameter number ranges for input (cr-calibrated-points.csv) and output (cr-resampled-points.csv) are similar,
+        #    e.g. col0 ~ 1.25, col1 ~ 2000, col2 ~ 0.65, col3 ~ 25
+
+        # return reampled points
+        return resampled_points
+
+
+    def post_analysis(self, resampled_points, analyzer_results):
+        super().post_analysis(resampled_points, analyzer_results)
+
+        # # plotting
+        # df_point = center_point.to_dataframe()
+        # center = df_point['Value'].values  # nparray
+        # Xmin = df_point['Min'].values  # nparray
+        # Xmax = df_point['Max'].values  # nparray
+        # self.plot(center, Xmin, Xmax, df_perturbed_points, df_perturbed_points_ll)
+
 
     def plot(self, center, Xmin, Xmax, df_perturbed_points, ll):
         """
@@ -197,7 +132,7 @@ class CramerRaoResampler(BaseResampler):
         ax = plt.subplot(111)
         x, y = center[0:2]
         plt.plot(x, y, 'g.')
-        plot_cov_ellipse(Covariance[0:2, 0:2], center[0:2], nstd=1, alpha=0.6, color='green')
+        plot_cov_ellipse(Covariance[0:2, 0:2], center[0:2], nstd=3, alpha=0.6, color='green')
         plt.xlim(Xmin[0], Xmax[0])
         plt.ylim(Xmin[1], Xmax[1])
         plt.xlabel('X', fontsize=14)
