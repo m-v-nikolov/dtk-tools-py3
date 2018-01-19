@@ -20,9 +20,8 @@
     "test": ">="
   },
   "scipy": {
-    "version": "0.19.1",
-    "test": ">=",
-    "wheel": "scipy-0.19.1-cp36-cp36m-win_amd64.whl"
+    "version": "1.0.0",
+    "test": ">="
   },
   "pandas": {
     "version": "0.20.3",
