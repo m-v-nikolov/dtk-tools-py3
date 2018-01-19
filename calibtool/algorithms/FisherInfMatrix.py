@@ -134,20 +134,16 @@ def FisherInfMatrix(dimensionality, df_perturbed_points, df_LL_points):
      ------------------------------------------------------------------------
     """
 
-    # convert DataFrame to python array
-    # LL_data = df_LL_points.as_matrix()
-    # points = df_perturbed_points.as_matrix()
-
-    rounds = df_perturbed_points['j(1toN)'].as_matrix() # j
-    samples_per_round = df_perturbed_points['k(1toM)'].as_matrix() # k, points[:, 2]
+    rounds = df_perturbed_points['j(1toN)'].as_matrix()
+    samples_per_round = df_perturbed_points['k(1toM)'].as_matrix()
     N = (max(rounds) + 1).astype(int)
     M = (max(samples_per_round) + 1).astype(int)
     n = int((np.shape(rounds)[0])/(4*M*N))
 
-    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(like='theta').as_matrix() #[0:-1:4,:]
-    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(like='theta').as_matrix() #[1:-1:4,:]
-    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(like='theta').as_matrix() #[2:-1:4,:]
-    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(like='theta').as_matrix() #[3:-1:4,:]
+    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(like='theta').as_matrix()
+    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(like='theta').as_matrix()
+    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(like='theta').as_matrix()
+    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(like='theta').as_matrix()
 
     LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL'].as_matrix()
     LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL'].as_matrix()
