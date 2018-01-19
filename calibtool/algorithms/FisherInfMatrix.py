@@ -118,7 +118,7 @@ def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
 
 
 
-def FisherInfMatrix(dimensionality, df_perturbed_points, df_LL_points):
+def FisherInfMatrix(dimensionality, df_LL_points):
     """
     Atiye Alaeddini, 12/15/2017
     compute the Fisher Information matrix using the LL of perturbed points
@@ -134,8 +134,8 @@ def FisherInfMatrix(dimensionality, df_perturbed_points, df_LL_points):
      ------------------------------------------------------------------------
     """
 
-    rounds = df_perturbed_points['j(1toN)'].as_matrix()
-    samples_per_round = df_perturbed_points['k(1toM)'].as_matrix()
+    rounds = df_LL_points['j(1toN)'].as_matrix()
+    samples_per_round = df_LL_points['k(1toM)'].as_matrix()
     N = (max(rounds) + 1).astype(int)
     M = (max(samples_per_round) + 1).astype(int)
     n = int((np.shape(rounds)[0])/(4*M*N))

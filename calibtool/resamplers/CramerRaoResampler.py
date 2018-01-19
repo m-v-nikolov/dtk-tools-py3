@@ -64,7 +64,7 @@ class CramerRaoResampler(BaseResampler):
 
         # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
         center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0])
-        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, calibrated_points_df, likelihood_df)
+        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, likelihood_df)
         covariance = np.linalg.inv(fisher_inf_matrix)
 
         resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
