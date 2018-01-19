@@ -159,7 +159,7 @@ class OptimTool(NextPointAlgorithm):
 
     def choose_initial_samples(self):
         self.data = pd.DataFrame(
-            columns=[['Iteration', '__sample_index__', 'Results', 'Fitted'] + self.get_param_names()])
+            columns=['Iteration', '__sample_index__', 'Results', 'Fitted', *self.get_param_names()])
         self.data['Iteration'] = self.data['Iteration'].astype(int)
         self.data['__sample_index__'] = self.data['__sample_index__'].astype(int)
 

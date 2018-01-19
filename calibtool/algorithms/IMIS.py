@@ -43,8 +43,7 @@ class IMIS(NextPointAlgorithm):
         self.results = []
         self.samples = np.array([])
         self.latest_samples = np.array([])
-        self.data = pd.DataFrame(
-            columns=[['Iteration', '__sample_index__', 'Prior', 'Result'] + self.get_param_names()])
+        self.data = pd.DataFrame(columns=['Iteration', '__sample_index__', 'Prior', 'Result', *self.get_param_names()])
 
         self.set_state(current_state or {}, self.iteration)
 
@@ -103,8 +102,7 @@ class IMIS(NextPointAlgorithm):
         """
         iteration = 0
 
-        self.data = pd.DataFrame(
-            columns=[['Iteration', '__sample_index__', 'Prior', 'Result'] + self.get_param_names()])
+        self.data = pd.DataFrame(columns=['Iteration', '__sample_index__', 'Prior', 'Result', *self.get_param_names()])
         self.data['Iteration'] = self.data['Iteration'].astype(int)
         self.data['__sample_index__'] = self.data['__sample_index__'].astype(int)
 
