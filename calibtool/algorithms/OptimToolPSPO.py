@@ -5,26 +5,28 @@ import logging
 import numpy as np
 import pandas as pd
 
-from calibtool.NextPointAlgorithm import NextPointAlgorithm
-
+from calibtool.algorithms.NextPointAlgorithm import NextPointAlgorithm
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class OptimToolPSPO(NextPointAlgorithm):
-    '''
+    """
     OptimTool
 
     The basic idea of OptimTool is
-    '''
+    """
 
-    def __init__(self, params, constrain_sample_fn, comps_per_iteration = 10):
+    def cleanup(self):
+        pass
 
+    def __init__(self, params, constrain_sample_fn, comps_per_iteration=10):
+        super().__init__()
         self.args = locals()     # Store inputs in case set_state is called later and we want to override with new (user) args
         del self.args['self']
         self.need_resolve = False
-
+        self.data = pd.DataFrame()
         self.constrain_sample_fn = constrain_sample_fn
 
         self.state = pd.DataFrame(columns=['Iteration', 'Parameter', 'Center', 'Hessian', 'Min', 'Max', 'Dynamic'])
@@ -32,7 +34,7 @@ class OptimToolPSPO(NextPointAlgorithm):
 
         self.params = params # TODO: Check min <= center <= max
         self.comps_per_iteration = int(comps_per_iteration)
-
+        self.n_dimensions = 0
         self.Xmin = {p['Name']:p['Min'] for p in self.params }
         self.Xmax = {p['Name']:p['Max'] for p in self.params }
         self.Dynamic = {p['Name']:p['Dynamic'] for p in self.params }
@@ -119,7 +121,7 @@ class OptimToolPSPO(NextPointAlgorithm):
 
     def clamp(self, X):
 
-        print 'X.before:\n', X
+        print('X.before:\n', X)
 
         # X should be a data frame
         for pname in X.columns:
@@ -147,7 +149,7 @@ class OptimToolPSPO(NextPointAlgorithm):
 
 
     def choose_initial_samples(self):
-        self.data = pd.DataFrame(columns=[['Iteration', '__sample_index__', 'Results'] + self.get_param_names()])
+        self.data = pd.DataFrame(columns=['Iteration', '__sample_index__', 'Results', *self.get_param_names()])
         self.data['Iteration'] = self.data['Iteration'].astype(int)
         self.data['__sample_index__'] = self.data['__sample_index__'].astype(int)
 
@@ -272,7 +274,7 @@ class OptimToolPSPO(NextPointAlgorithm):
 
         old_center = self._get_X_center(iteration-1)
         old_center_of_dynamic_params = old_center[dynamic_params].values
-        new_dynamic_center = X_next.tolist()
+        new_dynamic_center = X_next.tolist()[0]
         new_center_dict = old_center.to_dict() #{k:v for k,v in zip(self.get_param_names(), old_center)}
         new_center_dict.update( {k:v for k,v in zip(dynamic_params, new_dynamic_center)} )
 
@@ -286,8 +288,8 @@ class OptimToolPSPO(NextPointAlgorithm):
         # User may have added or removed params
         param_names = [p['Name'] for p in self.params]
         # Remove -
-        new_center_df = {k:v for k,v in new_center_dict.iteritems() if k in param_names}
-        new_Hessian_df = {k: v for k, v in new_Hessian_dict.iteritems() if k in param_names}
+        new_center_df = {k:v for k,v in new_center_dict.items() if k in param_names}
+        new_Hessian_df = {k: v for k, v in new_Hessian_dict.items() if k in param_names}
         # Add -
         new_params = {p['Name']:p['Guess'] for p in self.params if p['Name'] not in new_center_dict}
         new_center_dict.update(new_params)
@@ -414,14 +416,14 @@ class OptimToolPSPO(NextPointAlgorithm):
 
 
     def end_condition(self):
-        print "end_condition"
+        print("end_condition")
         # Stopping Criterion: good rsqared with small norm?
         # Return True to stop, False to continue
         logger.info('Continuing iterations ...')
         return False
 
     def get_final_samples(self):
-        print "get_final_samples"
+        print("get_final_samples")
         '''
         Resample Stage:
         '''
