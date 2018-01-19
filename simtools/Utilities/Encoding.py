@@ -11,6 +11,8 @@ class NumpyEncoder(json.JSONEncoder):
         """
         if isinstance(obj, np.int64):
             return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
+        elif isinstance(obj, np.int32):
+            return int(obj) # because JSON doesn't know what to do with np.int32 (on Windows)
         elif isinstance(obj, np.ndarray):
             if obj.flags['C_CONTIGUOUS']:
                 obj_data = obj.data

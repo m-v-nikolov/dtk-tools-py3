@@ -434,7 +434,7 @@ class DTKConfigBuilder(SimConfigBuilder):
         """
         Returns the custom events listed in the campaign along with user-defined ones in the Listed_Events (config.json)
         """
-        campaign_str = json.dumps(self.campaign)
+        campaign_str = json.dumps(self.campaign, cls=NumpyEncoder)
 
         # Retrieve all the events in the campaign file
         events_from_campaign = re.findall(r"['\"](?:Broadcast_Event|Event_Trigger|Event_To_Broadcast)['\"]:\s['\"](.*?)['\"]", campaign_str, re.DOTALL)
