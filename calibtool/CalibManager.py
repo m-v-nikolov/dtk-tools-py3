@@ -303,6 +303,10 @@ class CalibManager(object):
         if given_step.value > latest_step.value:
             raise Exception("The iter_step '%s' is beyond the latest step '%s'" % (given_step.name, latest_step.name))
 
+        # move forward if status is done
+        if given_step == StatusPoint.done:
+            iter_step = StatusPoint.next_point.name
+
         # finally check user input location and experiment location and provide options for resume
         self.check_location(it)
 
