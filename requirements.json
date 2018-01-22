@@ -1,5 +1,6 @@
 {
   "six": null,
+  "requests":null,
     "github3.py": {
     "version": "1.0.0a4",
     "test": ">="
