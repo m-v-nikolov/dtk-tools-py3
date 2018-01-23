@@ -19,6 +19,8 @@ params = {
     "Enable_Immunity_Initialization_Distribution": 0,  # compatibility with EMOD v2.0 and earlier
     "Immunity_Initialization_Distribution_Type": "DISTRIBUTION_OFF",
 
+    "Enable_Initial_Prevalence": 1,
+
     "Enable_Vital_Dynamics": 1,
     "Death_Rate_Dependence": "NONDISEASE_MORTALITY_BY_AGE_AND_GENDER",
     "Enable_Birth": 1,
@@ -30,6 +32,7 @@ params = {
     "Base_Mortality": 0,
     "Mortality_Time_Course": "DAILY_MORTALITY",
     "x_Other_Mortality": 1,
+    "Enable_Natural_Mortality": 1,
 
     "Individual_Sampling_Type": "TRACK_ALL",
     "Base_Individual_Sample_Rate": 1,  # all parameters below are unused without sampling
