@@ -14,6 +14,7 @@ params = {
     "Transmission_Blocking_Immunity_Decay_Rate": 0.01, 
     "Transmission_Blocking_Immunity_Duration_Before_Decay": 90,
     "x_Population_Immunity": 1, 
+    "Enable_Susceptibility_Scaling": 0,
     "Susceptibility_Scale_Type": "CONSTANT_SUSCEPTIBILITY",
 
     "Base_Incubation_Period": 25, ###
