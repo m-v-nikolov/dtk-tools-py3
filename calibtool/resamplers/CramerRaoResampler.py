@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from calibtool.resamplers.BaseResampler import BaseResampler
-from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, sample_cov_ellipse
+from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, trunc_gauss
 
 
 class CramerRaoResampler(BaseResampler):
@@ -46,9 +46,9 @@ class CramerRaoResampler(BaseResampler):
         calibrated_points_df.to_csv(filename)
 
         # temporary, generic column names for the actual parameter names
-        theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
-        temp_columns = list(selection_values.columns) + theta_column_names
-        calibrated_points_df.columns = temp_columns
+        # theta_column_names = ['theta%d'%i for i in range(len(original_column_names))]
+        # temp_columns = list(selection_values.columns) + theta_column_names
+        # calibrated_points_df.columns = temp_columns
 
         # same as calibrated_points_df but with a LL column on the end
         likelihood_df = pd.DataFrame([{'LL': point.likelihood} for point in calibrated_points])
@@ -63,11 +63,18 @@ class CramerRaoResampler(BaseResampler):
         # Do the resampling
 
         # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
+        # obtain min/max of parameter ranges to force results to be within them
+        minimums = center_point.get_attribute(key='Min')
+        maximums = center_point.get_attribute(key='Max')
+        names = center_point.get_attribute(key='Name')
+
         center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0])
-        fisher_inf_matrix = FisherInfMatrix(calibrated_points[0].dimensionality, likelihood_df)
+
+        fisher_inf_matrix = FisherInfMatrix(center_point_as_list, likelihood_df, names)
         covariance = np.linalg.inv(fisher_inf_matrix)
 
-        resampled_points_list = sample_cov_ellipse(covariance, center_point_as_list, **self.resample_kwargs)
+        resampled_points_list = trunc_gauss(center_point_as_list, covariance, minimums, maximums,
+                                            **self.resample_kwargs)
 
         # convert resampled points to a list of CalibrationPoint objects
         resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)

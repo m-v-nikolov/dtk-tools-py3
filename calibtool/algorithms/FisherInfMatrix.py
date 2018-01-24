@@ -6,7 +6,7 @@ from matplotlib.patches import Ellipse
 from scipy.linalg import sqrtm
 
 
-def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
+def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=1, resolution=None):
     """
     Atiye Alaeddini, 12/11/2017
     generate perturbed points around the center
@@ -34,7 +34,7 @@ def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
     X_scaled = (center - Xmin) / (Xmax - Xmin)
 
     # perturbation sizes
-    C = 0.05*np.ones(p)#*(Xmax -Xmin)
+    C = 0.05*np.ones(p)
 
     # making sure all plus/minus points in range
     too_big = (X_scaled + C) > 1
@@ -117,8 +117,7 @@ def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=2, resolution=None):
     return df_perturbed
 
 
-
-def FisherInfMatrix(dimensionality, df_LL_points):
+def FisherInfMatrix(center_point, df_LL_points, data_columns):
     """
     Atiye Alaeddini, 12/15/2017
     compute the Fisher Information matrix using the LL of perturbed points
@@ -126,7 +125,6 @@ def FisherInfMatrix(dimensionality, df_LL_points):
      ------------------------------------------------------------------------
     INPUTS:
     center    center point    (1 x p) nparray
-    df_perturbed_points    perturbed points    DataFrame
     df_LL_points    Log Likelihood of points    DataFrame
      ------------------------------------------------------------------------
     OUTPUTS:
@@ -134,16 +132,16 @@ def FisherInfMatrix(dimensionality, df_LL_points):
      ------------------------------------------------------------------------
     """
 
-    rounds = df_LL_points['j(1toN)'].as_matrix()
-    samples_per_round = df_LL_points['k(1toM)'].as_matrix()
+    rounds = df_LL_points['j(1toN)'].as_matrix() # j
+    samples_per_round = df_LL_points['k(1toM)'].as_matrix() # k, points[:, 2]
     N = (max(rounds) + 1).astype(int)
     M = (max(samples_per_round) + 1).astype(int)
     n = int((np.shape(rounds)[0])/(4*M*N))
 
-    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(like='theta').as_matrix()
-    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(like='theta').as_matrix()
-    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(like='theta').as_matrix()
-    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(like='theta').as_matrix()
+    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(data_columns).as_matrix()
+    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(data_columns).as_matrix()
+    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(data_columns).as_matrix()
+    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(data_columns).as_matrix()
 
     LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL'].as_matrix()
     LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL'].as_matrix()
@@ -151,7 +149,7 @@ def FisherInfMatrix(dimensionality, df_LL_points):
     LL_MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 3, 'LL'].as_matrix()
 
     # dimension of X
-    p = dimensionality
+    p = len(center_point)
 
     # Hessian
     H_bar = np.zeros(shape=(p, p, N))
@@ -221,6 +219,14 @@ def sample_cov_ellipse(cov, pos, num_of_pts=10):
     """
     return np.random.multivariate_normal(pos, cov, num_of_pts)
 
+def trunc_gauss(mu, sigma, low_bound, top_bound, num_of_pts):
+    samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
+    count = 1
+    while ((np.logical_and(samples >= np.tile(low_bound, (num_of_pts, 1)), samples <= np.tile(top_bound, (num_of_pts, 1))))==False).any():
+        samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
+        count += 1
+    print('trunc_gauss ran %d times' % count)
+    return samples
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
@@ -265,15 +271,15 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
 
 # test
 def test():
-    center = np.array([0.05,-0.92,-.98])
-    Xmin = np.array([-1]*3)
-    Xmax = np.array([1]*3)
-    # df_perturbed_points = perturbed_points(center, Xmin, Xmax)
+    center_point = np.array([0.08, -0.92, .92])
+    low_bound = np.array([-1] * 3)
+    up_bound = np.array([1] * 2 + [1])
+    # df_perturbed_points = perturbed_points(center_point, low_bound, up_bound)
     # print df_perturbed_points
-    # df_perturbed_points.to_csv("data.csv")
+    # df_perturbed_points.to_csv("data2.csv")
     df_perturbed_points = pd.DataFrame.from_csv("data.csv")
     ll = pd.DataFrame.from_csv("LLdata.csv")
-    Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
+    Fisher = FisherInfMatrix(center_point, ll)
     Covariance = np.linalg.inv(Fisher)
 
     print("eigs of fisher: ", np.linalg.eigvals(Fisher))
@@ -281,14 +287,23 @@ def test():
 
     fig3 = plt.figure('CramerRao')
     ax = plt.subplot(111)
-    x, y = center[0:2]
+    x, y = center_point[0:2]
     plt.plot(x, y, 'g.')
-    plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=3, alpha=0.6, color='green')
-    sample_x, sample_y = np.random.multivariate_normal(center[0:2], Covariance[0:2,0:2], 5).T
+    plot_cov_ellipse(Covariance[0:2,0:2], center_point[0:2], nstd=3, alpha=0.6, color='green')
+    sample_x, sample_y, sample_z = trunc_gauss(center_point, Covariance, low_bound, up_bound, 10).T
+    # sample_x, sample_y = np.random.multivariate_normal(center_point[0:2], Covariance[0:2,0:2], 10).T
+    print('covariance:\n%s'%Covariance)
+    print('sample_x:\n%s'%sample_x)
+    print('sample_y:\n%s'%sample_y)
+    print('sample_z:\n%s'%sample_z)
+
     plt.plot(sample_x, sample_y, 'x')
-    plt.xlim(Xmin[0], Xmax[0])
-    plt.ylim(Xmin[1], Xmax[1])
+    plt.xlim(low_bound[0], up_bound[0])
+    plt.ylim(low_bound[1], up_bound[1])
     plt.xlabel('X', fontsize=14)
     plt.ylabel('Y', fontsize=14)
 
     plt.show()
+
+if __name__ == '__main__':
+    test()
