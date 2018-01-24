@@ -94,6 +94,8 @@ class CMSConfigBuilder(SimConfigBuilder):
 
     def get_dll_paths_for_asset_manager(self):
         from simtools.AssetManager.FileList import FileList
+        if self.assets.master_collection:
+            return []
         fl = FileList(root=self.assets.dll_root, recursive=True)
         return [f.absolute_path for f in fl.files if f.file_name != self.assets.exe_path]
 

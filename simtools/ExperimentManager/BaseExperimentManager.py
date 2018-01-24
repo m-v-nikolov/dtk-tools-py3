@@ -1,7 +1,7 @@
 from itertools import cycle
 
 from simtools.Utilities.Encoding import GeneralEncoder
-from simtools.Utilities.General import init_logging, get_tools_revision
+from simtools.Utilities.General import init_logging, get_tools_revision, animation
 
 logger = init_logging('ExperimentManager')
 
@@ -262,7 +262,6 @@ class BaseExperimentManager:
             c.start()
 
         # While they are running, display the status
-        animation = cycle(("|", "/", "-"))
         while True:
             created_sims = len(return_list)
             sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
