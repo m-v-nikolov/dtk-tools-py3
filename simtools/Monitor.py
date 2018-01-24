@@ -8,7 +8,7 @@ from COMPS.Data.Simulation import SimulationState
 logger = init_logging('Monitor')
 
 
-class SimulationMonitor(object):
+class SimulationMonitor:
     """
     A class to monitor the status of simulations in the local DB.
     """

@@ -6,8 +6,13 @@ import sys
 
 import time
 from io import StringIO
+from itertools import cycle
 
 logging_initialized = False
+
+animation = cycle(("◰", "◳", "◲", "◱",))
+
+
 def init_logging(name):
     import logging.config
     global logging_initialized
