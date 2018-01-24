@@ -54,6 +54,9 @@ def add_health_seeking(config_builder,
         "Broadcast_Event": broadcast_event_name
     }
 
+    if repetitions < 1 :
+        repetitions = 1
+
     if broadcast_event_name not in config_builder.config["parameters"]['Listed_Events']:
         config_builder.config["parameters"]['Listed_Events'].append(broadcast_event_name)
 
