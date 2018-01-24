@@ -12,6 +12,8 @@ params = {
     "Enable_Heterogeneous_Intranode_Transmission": 0,
     "Report_Event_Recorder": 0,
 
+    "Enable_Skipping": 0,
+
     "Listed_Events": [],
     "Minimum_Adult_Age_Years" : 15,
 

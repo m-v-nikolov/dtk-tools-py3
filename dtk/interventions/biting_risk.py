@@ -5,7 +5,7 @@ def change_biting_risk(cb, start_day=0,
                        tsteps_btwn_repetitions=365,
                        target_group='Everyone',
                        trigger=None,
-                       duration=-1,
+                       triggered_biting_risk_duration=-1,
                        nodeIDs=[],
                        node_property_restrictions=[],
                        ind_property_restrictions=[]
@@ -27,7 +27,7 @@ def change_biting_risk(cb, start_day=0,
     :param tsteps_btwn_repetitions: days between repetitions
     :param target_group: to restrict by age, dict of {'agemin' : x, 'agemax' : y}. Default is targeting everyone.
     :param trigger: for triggered changes, trigger for changing risk. Can be "Birth" or any other trigger string.
-    :param duration: for triggered changes, duration after start_day over which triggered risk-changing will happen;
+    :param triggered_bitign_risk_duration: for triggered changes, duration after start_day over which triggered risk-changing will happen;
     default is forever
     :param nodeIDs: list of node IDs; if empty, defaults to all nodes
     :param ind_property_restrictions: used with Property_Restrictions_Within_Node. Format: list of dicts:
@@ -80,7 +80,7 @@ def change_biting_risk(cb, start_day=0,
         if 'birth' in trigger.lower() :
             triggered_intervention = {
                 "class": "BirthTriggeredIV",
-                "Duration": duration,  # default to forever if  duration not specified
+                "Duration": triggered_biting_risk_duration,  # default to forever if  duration not specified
                 "Demographic_Coverage": coverage,
                 "Actual_IndividualIntervention_Config": risk_config  # itn_bednet
             }
@@ -89,7 +89,7 @@ def change_biting_risk(cb, start_day=0,
             triggered_intervention = {
                 "class": "NodeLevelHealthTriggeredIV",
                 "Demographic_Coverage": coverage,
-                "Duration": duration,
+                "Duration": triggered_biting_risk_duration,
                 "Trigger_Condition_List": [trigger],
                 "Actual_IndividualIntervention_Config" : risk_config
             }
