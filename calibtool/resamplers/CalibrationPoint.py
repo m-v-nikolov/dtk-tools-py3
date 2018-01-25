@@ -15,6 +15,16 @@ class CalibrationPoint:
         """
         return {param.name: param.value for param in self.parameters}
 
+    def get_attribute(self, key):
+        """
+        Returns the specified attribute of each CalibrationParameter as a list, ordered by parameter
+        name.
+        :param key:
+        :return:
+        """
+        attr_tuples = [(param.name, getattr(param, key.lower())) for param in self.parameters]
+        return [item[1] for item in sorted(attr_tuples, key=lambda x: x[0])]
+
     def to_dict(self):
         return {"parameters": [param.to_dict() for param in self.parameters],
                 "likelihood": self.likelihood}
