@@ -8,7 +8,6 @@ import pandas as pd
 
 from calibtool.IterationState import IterationState
 from calibtool.utils import StatusPoint
-from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
@@ -16,7 +15,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, verbose_timedelta
 
 logger = init_logging("Calibration")
 

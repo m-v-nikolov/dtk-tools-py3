@@ -53,16 +53,9 @@ class Simulation(Base):
     def toJSON(self):
         return {self.id: self.tags}
 
-    def get_path(self, save_map=True):
-        if self.experiment.location == "LOCAL":
-            return os.path.join(self.experiment.sim_root, '%s_%s' % (self.experiment.exp_name, self.experiment.exp_id), self.id)
-        else:
-            from simtools.OutputParser import CompsDTKOutputParser
-            if not CompsDTKOutputParser.sim_dir_map or self.id not in CompsDTKOutputParser.sim_dir_map:
-                map = CompsDTKOutputParser.createSimDirectoryMap(exp_id=self.experiment.exp_id, save=save_map)
-                return map[self.id]
-
-            return CompsDTKOutputParser.sim_dir_map[self.id]
+    def get_path(self):
+        from simtools.Utilities.SimulationDirectoryMap import SimulationDirectoryMap
+        return SimulationDirectoryMap.get_simulation_path(self)
 
 class Experiment(Base):
     __tablename__ = "experiments"
