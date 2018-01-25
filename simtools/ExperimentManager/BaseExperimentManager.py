@@ -233,17 +233,12 @@ class BaseExperimentManager:
         manager = multiprocessing.Manager()
         return_list = manager.list()
 
-        if verbose:
-            callback = None
-        else:
-            callback = None
-
         # Create the simulation processes
         creator_processes = []
         for fn_batch in fn_batches:
             c = self.get_simulation_creator(function_set=fn_batch,
                                             max_sims_per_batch=sim_per_batch,
-                                            callback=callback,
+                                            callback=None,
                                             return_list=return_list)
             creator_processes.append(c)
 
@@ -264,14 +259,14 @@ class BaseExperimentManager:
         # While they are running, display the status
         while True:
             created_sims = len(return_list)
-            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
+            sys.stdout.write("\r | {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
             sys.stdout.flush()
             if created_sims == total_sims or all([not c.is_alive() for c in creator_processes]):
                 break
             time.sleep(0.3)
 
         # We exited make sure we had no issues
-        print("\r | Created simulations: {}/{}".format(len(return_list), total_sims))
+        print("\r ✓ Created simulations: {}/{}".format(len(return_list), total_sims))
         sys.stdout.flush()
         if created_sims != total_sims:
             logger.error("Commission seems to have failed. Only {} simulations were created but {} were expected...\n"

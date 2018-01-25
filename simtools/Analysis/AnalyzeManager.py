@@ -19,6 +19,8 @@ from simtools.Utilities.General import init_logging, animation
 
 logger = init_logging('AnalyzeManager')
 
+ANALYZE_TIMEOUT = 3600
+WAIT_TIME = 1.15
 
 class AnalyzeManager:
     def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True):
@@ -78,17 +80,20 @@ class AnalyzeManager:
             COMPSCache.load_simulation(simulation.id)
 
     def add_analyzer(self, analyzer):
+        # First check if we need to change the UID depending on other analyzers
+        same_name = sum(1 if a.uid == analyzer.uid else 0 for a in self.analyzers)
+        if same_name != 0:
+            analyzer.uid += "_{}".format(same_name)
+
+        # Then call the initialize method
         analyzer.working_dir = analyzer.working_dir or self.working_dir
         analyzer.initialize()
-
-        same_type = sum(1 if type(a) == type(analyzer) else 0 for a in self.analyzers)
-        if same_type != 0:
-            analyzer.uid += "_{}".format(same_type)
 
         self.analyzers.append(analyzer)
 
     def analyze(self):
         start_time = time.time()
+
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
@@ -100,27 +105,23 @@ class AnalyzeManager:
             for experiment in self.experiments:
                 SimulationDirectoryMap.preload_experiment(experiment)
 
-        simulations = set()
+        simulations = dict()
 
-        # Gather the simulations for the experiments
-        for exp in self.experiments + list(self.experiments_simulations.keys()):
+        # Gather the simulations for the regular experiments
+        for exp in self.experiments:
             for a in self.analyzers:
                 a.per_experiment(exp)
+            simulations.update({s.id:s for s in exp.simulations if self.force_analyze or s.status == SimulationState.Succeeded})
 
-            # Simulations to handle
-            if exp in self.experiments_simulations:
-                simulations.update(s for s in self.experiments_simulations[exp])
-            else:
-                simulations.update(exp.simulations)
-
-        # Remove the simulation not finished (if not force analyze)
-        if not self.force_analyze:
-            simulations = [s for s in simulations if s.status == SimulationState.Succeeded]
-        else:
-            simulations = list(simulations)
+        # Gather the simulations for the standalones and count them along the way
+        sa_count = 0
+        for exp, sims in self.experiments_simulations.items():
+            for a in self.analyzers:
+                a.per_experiment(exp)
+            sa_count += len(sims)
+            simulations.update({s.id:s for s in sims if self.force_analyze or s.status == SimulationState.Succeeded})
 
         max_threads = min(self.max_threads, len(simulations))
-        sa_count = sum(len(s) for s in self.experiments_simulations.values())
 
         # Display some info
         if self.verbose:
@@ -133,36 +134,44 @@ class AnalyzeManager:
                       .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
-        directory = mkdtemp()
+        directory = r'D:\Projects\dtk-tools-br\simtools\Analysis\cache'
         self.cache = FanoutCache(directory, shards=max_threads, timeout=1)
         if len(simulations) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
         else:
-
             pool = Pool(max_threads)
-            r = pool.starmap_async(retrieve_data, itertools.product(simulations, (self.analyzers,), (self.cache,)))
+            results = pool.starmap_async(retrieve_data, itertools.product(simulations.values(), (self.analyzers,), (self.cache,)))
             pool.close()
 
-            while not r.ready():
+            while not results.ready():
+                time_elapsed = time.time()-start_time
                 if self.verbose:
                     sys.stdout.write("\r {} Analyzing {}/{}... {:.2f}s elapsed"
-                                     .format(next(animation), len(self.cache), len(simulations), time.time()-start_time))
+                                     .format(next(animation), len(self.cache), len(simulations), time_elapsed))
                     sys.stdout.flush()
-                    time.sleep(1.15)
+
+                if time_elapsed > ANALYZE_TIMEOUT:
+                    raise Exception("Timeout while waiting the analysis to complete...")
+
+                time.sleep(WAIT_TIME)
 
         # At this point we have all our results
         # Give to the analyzer
         for a in self.analyzers:
             analyzer_data = {}
             for key in self.cache:
-                analyzer_data[key] = self.cache.get(key)[a.uid]
+                # Retrieve the cache content and the simulation object
+                sim_cache = self.cache.get(key)
+                simulation_obj = simulations[key]
+                # Give to the analyzer
+                analyzer_data[simulation_obj] = sim_cache[a.uid] if sim_cache and a.uid in sim_cache else None
             a.finalize(analyzer_data)
 
         self.cache.close()
-        shutil.rmtree(directory)
+        # shutil.rmtree(directory)
 
         if self.verbose:
             total_time = time.time() - start_time
-            print("\r | Analysis done. Took {:.1f}s (~ {:.3f}s per simulation)"
+            print("\r ✓ Analysis done. Took {:.1f}s (~ {:.3f}s per simulation)"
                   .format(total_time, total_time/len(simulations)))
 

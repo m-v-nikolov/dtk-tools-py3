@@ -15,7 +15,8 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     def initialize(self):
         """
-        Called once after the analyzer has been added to the AnalyzeManager
+        Called once after the analyzer has been added to the AnalyzeManager.
+        Everything depending on the working directory or uid should be here instead of in __init__
         """
         pass
 

@@ -13,7 +13,9 @@ def retrieve_data(simulation, analyzers, cache):
     filenames = set(itertools.chain(*(a.filenames for a in filtered_analysis)))
 
     # We dont have anything to do :)
-    if not filenames or not filtered_analysis: return
+    if not filenames or not filtered_analysis:
+        cache.set(simulation.id, None)
+        return
 
     if simulation.experiment.location == "HPC":
         COMPS_login(simulation.experiment.endpoint)
@@ -40,7 +42,7 @@ def retrieve_data(simulation, analyzers, cache):
             data = raw_data
 
         # Retrieve the selected data for the given analyzer
-        selected_data[analyzer.uid] = analyzer.select_simulation_data(data , simulation)
+        selected_data[analyzer.uid] = analyzer.select_simulation_data(data, simulation)
 
     # Store in the cache
     cache.set(simulation.id, selected_data)
