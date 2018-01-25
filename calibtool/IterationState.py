@@ -4,13 +4,12 @@ import time
 from datetime import datetime
 import pandas as pd
 from calibtool.utils import StatusPoint
-from core.utils.time import verbose_timedelta
 from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.Encoding import NumpyEncoder, json_numpy_obj_hook
 from simtools.Utilities.Experiments import retrieve_experiment
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, verbose_timedelta
 
 logger = init_logging("Calibration")
 

@@ -10,13 +10,13 @@ import sys
 from COMPS.Data.Simulation import SimulationState
 from diskcache import FanoutCache
 
-from core.utils.time import verbose_timedelta
+
 from simtools.Analysis.DataRetrievalProcess import retrieve_data
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSCache import COMPSCache
 from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
-from simtools.Utilities.General import init_logging, animation
+from simtools.Utilities.General import init_logging, animation, verbose_timedelta
 
 logger = init_logging('AnalyzeManager')
 
@@ -150,7 +150,7 @@ class AnalyzeManager:
             while not results.ready():
                 time_elapsed = time.time()-start_time
                 if self.verbose:
-                    sys.stdout.write("\r {} Analyzing {}/{}... {:.2f}s elapsed"
+                    sys.stdout.write("\r {} Analyzing {}/{}... {} elapsed"
                                      .format(next(animation), len(self.cache), len(simulations), verbose_timedelta(time_elapsed)))
                     sys.stdout.flush()
 
@@ -177,6 +177,6 @@ class AnalyzeManager:
 
         if self.verbose:
             total_time = time.time() - start_time
-            print("\r ✓ Analysis done. Took {:.1f}s (~ {:.3f}s per simulation)"
+            print("\r ✓ Analysis done. Took {} (~ {:.3f}s per simulation)"
                   .format(verbose_timedelta(total_time), total_time/len(simulations)))
 
