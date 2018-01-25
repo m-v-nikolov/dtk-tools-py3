@@ -10,6 +10,7 @@ import sys
 from COMPS.Data.Simulation import SimulationState
 from diskcache import FanoutCache
 
+from core.utils.time import verbose_timedelta
 from simtools.Analysis.DataRetrievalProcess import retrieve_data
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
@@ -19,8 +20,9 @@ from simtools.Utilities.General import init_logging, animation
 
 logger = init_logging('AnalyzeManager')
 
-ANALYZE_TIMEOUT = 3600
-WAIT_TIME = 1.15
+ANALYZE_TIMEOUT = 3600  # Maximum seconds before timing out - set to 1h
+WAIT_TIME = 1.15        # How much time to wait between check if the analysis is done
+
 
 class AnalyzeManager:
     def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True):
@@ -130,12 +132,14 @@ class AnalyzeManager:
                   .format(len(simulations), sa_count, len(self.experiments)))
             print(" | Analyzers: ")
             for a in self.analyzers:
-                print(" |  - {} (Directory map: {} / File parsing: {})"
-                      .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off"))
+                print(" |  - {} (Directory map: {} / File parsing: {} / Use cache: {})"
+                      .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off", "yes" if hasattr(a, "cache") else "no"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
-        directory = r'D:\Projects\dtk-tools-br\simtools\Analysis\cache'
+        # Create a temporary directory for the cache
+        directory = mkdtemp()
         self.cache = FanoutCache(directory, shards=max_threads, timeout=1)
+
         if len(simulations) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
         else:
@@ -147,7 +151,7 @@ class AnalyzeManager:
                 time_elapsed = time.time()-start_time
                 if self.verbose:
                     sys.stdout.write("\r {} Analyzing {}/{}... {:.2f}s elapsed"
-                                     .format(next(animation), len(self.cache), len(simulations), time_elapsed))
+                                     .format(next(animation), len(self.cache), len(simulations), verbose_timedelta(time_elapsed)))
                     sys.stdout.flush()
 
                 if time_elapsed > ANALYZE_TIMEOUT:
@@ -167,11 +171,12 @@ class AnalyzeManager:
                 analyzer_data[simulation_obj] = sim_cache[a.uid] if sim_cache and a.uid in sim_cache else None
             a.finalize(analyzer_data)
 
+        # Close the cache and delete
         self.cache.close()
-        # shutil.rmtree(directory)
+        shutil.rmtree(directory)
 
         if self.verbose:
             total_time = time.time() - start_time
             print("\r ✓ Analysis done. Took {:.1f}s (~ {:.3f}s per simulation)"
-                  .format(total_time, total_time/len(simulations)))
+                  .format(verbose_timedelta(total_time), total_time/len(simulations)))
 
