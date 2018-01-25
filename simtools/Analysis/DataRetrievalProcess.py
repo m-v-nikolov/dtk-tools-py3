@@ -26,12 +26,21 @@ def retrieve_data(simulation, analyzers, cache):
             with open(path, 'rb') as output_file:
                 byte_arrays.append(output_file.read())
 
-    raw_data = {}
-    for filename, content in zip(filenames, byte_arrays):
-        raw_data[filename] = SimulationOutputParser.parse(filename, content)
+    # Get the raw data as a dictionary associating filename=>content
+    raw_data = dict(zip(filenames, byte_arrays))
 
+    # Selected data will be a dict with analyzer.uid => data
     selected_data = {}
     for analyzer in filtered_analysis:
-        selected_data[analyzer.uid] = analyzer.select_simulation_data(raw_data, simulation)
+        # If the analyzer needs the parsed data, parse
+        if analyzer.parse:
+            data = {filename:SimulationOutputParser.parse(filename, content) for filename, content in raw_data.items()}
+        else:
+            # If the analyzer doesnt wish to parse, give the raw data
+            data = raw_data
 
+        # Retrieve the selected data for the given analyzer
+        selected_data[analyzer.uid] = analyzer.select_simulation_data(data , simulation)
+
+    # Store in the cache
     cache.set(simulation.id, selected_data)

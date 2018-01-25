@@ -30,8 +30,6 @@ class AnalyzeManager:
             self.max_threads = min(os.cpu_count(), int(sp.get('max_threads', 16)))
         self.verbose = verbose
         self.force_analyze = force_analyze
-        self.parse = True
-        self.need_dir_map = False
         self.working_dir = working_dir or os.getcwd()
         self.cache = None
 
@@ -83,6 +81,10 @@ class AnalyzeManager:
         analyzer.working_dir = analyzer.working_dir or self.working_dir
         analyzer.initialize()
 
+        same_type = sum(1 if type(a) == type(analyzer) else 0 for a in self.analyzers)
+        if same_type != 0:
+            analyzer.uid += "_{}".format(same_type)
+
         self.analyzers.append(analyzer)
 
     def analyze(self):
@@ -91,11 +93,8 @@ class AnalyzeManager:
         if len(self.analyzers) == 0:
             return
 
-        # If all the analyzers present call for deactivating the parsing -> do it
-        self.parse = any(a.parse for a in self.analyzers if hasattr(a, 'parse'))
-        self.need_dir_map = any(a.need_dir_map for a in self.analyzers if hasattr(a, 'need_dir_map'))
-
-        if self.need_dir_map:
+        # If any of the analyzer needs the dir map, create it
+        if any(a.need_dir_map for a in self.analyzers if hasattr(a, 'need_dir_map')):
             # preload the global dir map
             from simtools.Utilities.SimulationDirectoryMap import SimulationDirectoryMap
             for experiment in self.experiments:
@@ -128,9 +127,10 @@ class AnalyzeManager:
             print("Analyze Manager")
             print(" | {} simulations (including {} stand-alones) from {} experiments"
                   .format(len(simulations), sa_count, len(self.experiments)))
-            print(" | Analyzers: {}".format(", ".join((a.uid for a in self.analyzers))))
-            print(" | File parsing is {} and directory map {} be created"
-                  .format("enabled" if self.parse else "disabled", "will" if self.need_dir_map else "won't"))
+            print(" | Analyzers: ")
+            for a in self.analyzers:
+                print(" |  - {} (Directory map: {} / File parsing: {})"
+                      .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
         directory = mkdtemp()
@@ -145,10 +145,10 @@ class AnalyzeManager:
 
             while not r.ready():
                 if self.verbose:
-                    sys.stdout.write("\r {} Analyzing {}/{}... {:.3}s elapsed"
+                    sys.stdout.write("\r {} Analyzing {}/{}... {:.2f}s elapsed"
                                      .format(next(animation), len(self.cache), len(simulations), time.time()-start_time))
                     sys.stdout.flush()
-                    time.sleep(.5)
+                    time.sleep(1.15)
 
         # At this point we have all our results
         # Give to the analyzer
@@ -163,6 +163,6 @@ class AnalyzeManager:
 
         if self.verbose:
             total_time = time.time() - start_time
-            print("\r | Analysis done. Took {:.3}s (~ {:.3}s per simulation)"
+            print("\r | Analysis done. Took {:.1f}s (~ {:.3f}s per simulation)"
                   .format(total_time, total_time/len(simulations)))
 

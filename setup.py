@@ -22,10 +22,10 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 install_directory = os.path.join(current_directory, 'install')
 
 # Force writing a new simtools
-force_new_simtools = True
+force_new_simtools = False
 
 # Force a new database ?
-force_new_db = True
+force_new_db = False
 
 # This lets us guarantee a consistent time to be used for timestamped backup files
 this_time = datetime.utcnow()

@@ -1,6 +1,7 @@
 {
   "six": null,
   "requests":null,
+  "diskcache":null,
     "github3.py": {
     "version": "1.0.0a4",
     "test": ">="
