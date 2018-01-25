@@ -17,7 +17,7 @@ def convert_filepaths(params):
     for k, v in params.items():
         if not v: continue
         if k == 'Demographics_Filenames':
-            params[k] = [os.path.join(g, fn) for fn in v]
+            params[k] = [os.path.join(g, fn) for fn in v] if isinstance(v, list) else os.path.join(g, v)
         elif k == 'Campaign_Filename':
             continue
         elif 'Filename' in k:
@@ -86,6 +86,17 @@ def set_geography(cb, geography, static=False, pop_scale=1):
 
 
 geographies = {
+
+    "Garki_gridded_net": {"Geography": "Garki/Garki_gridded_net",
+                     "Air_Temperature_Filename": "Garki_gridded_net_temperature.bin",
+                     "Demographics_Filenames": ["GarkiNE_demographics.json"],
+                     # "Demographics_Filenames": ["Garki_gridded_net_demographics.compiled.json"],
+                     "Land_Temperature_Filename": "Garki_gridded_net_temperature.bin",
+                     "Rainfall_Filename": "Garki_gridded_net_rainfall.bin",
+                     "Relative_Humidity_Filename": "Garki_gridded_net_humidity.bin",
+                     "Enable_Climate_Stochasticity": 1,  # every two weeks in raw data series
+                     "Enable_Demographics_Other": 0  # no 'AbovePoverty' etc. in these files
+                     },
 
     "Garki_Single": {"Geography": "Garki_Single",
                      "Air_Temperature_Filename": "Garki_single_temperature.bin",
