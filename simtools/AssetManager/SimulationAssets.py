@@ -110,6 +110,8 @@ class SimulationAssets(object):
 
         if collection_type == self.MASTER:
             self.master_collection = AssetCollection(base_collection=collection)
+            for t in self.SETUP_MAPPING: self.SETUP_MAPPING[t] = ""
+
         else:
             self.base_collections[collection_type] = AssetCollection(base_collection=collection)
 

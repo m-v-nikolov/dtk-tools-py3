@@ -259,7 +259,7 @@ class BaseExperimentManager:
         # While they are running, display the status
         while True:
             created_sims = len(return_list)
-            sys.stdout.write("\r | {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
+            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
             sys.stdout.flush()
             if created_sims == total_sims or all([not c.is_alive() for c in creator_processes]):
                 break
