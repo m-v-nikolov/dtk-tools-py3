@@ -3,7 +3,7 @@ from models.cms.core.CMS_Object import *
 
 class CMS_ConfigBuilder(object):
     def __init__(self, start_model_name):
-        self.start_model = StartModel(start_model_name)
+        # self.start_model = StartModel(start_model_name)       # [TODO]: delete if no need StartModel class
         self.start_model_name = start_model_name
         self.species = []
         self.time_event = []
