@@ -1,4 +1,4 @@
-import sys, os, json, collections, re, msvcrt
+import sys, os, json, collections, re
 
 def ShowUsage():
 	print ('\nUsage: %s [compiled-demographics-file] [migration-type]' % os.path.basename(sys.argv[0]))
@@ -33,7 +33,7 @@ def GetMaxValueCountForMigrationType(mig_type):
 	return {
 		'sea' : 5,
 		'local' : 90,
-		'regional' : 90,
+		'regional' : 30,
 		'air' : 60
 	}.get(mig_type, -1.0)
 
@@ -42,11 +42,10 @@ def main(tool, compiled_demographics, mig_file_name, mig_type):
 
 	infilename = compiled_demographics
 	print(infilename)
-	#outfilename = re.sub('_demographics.compiled.json$', '_migration.bin.json', infilename)
-	outfilename = mig_file_name + ".json"
+	outfilename = re.sub('_demographics.compiled.json$', '_%s_migration.bin.json' % mig_type, infilename)
 	print(outfilename)
 	maxvalcount = GetMaxValueCountForMigrationType(mig_type)
-	
+
 	if maxvalcount <= 0:
 		print('Invalid migration-type string: %s' % mig_type)
 		exit(-1)
@@ -61,11 +60,11 @@ def main(tool, compiled_demographics, mig_file_name, mig_type):
 	migjson['Metadata'] = demogjson['Metadata']
 	migjson['Metadata']['Tool'] = os.path.basename(tool)
 	migjson['Metadata']['DatavalueCount'] = maxvalcount
-	
+
 	strmap = demogjson['StringTable']
 
 	demogoffsets = demogjson['NodeOffsets']
-	
+
 	migoffsets = ''
 	nodecount = 0
 	nodecountfound = 0
@@ -78,7 +77,7 @@ def main(tool, compiled_demographics, mig_file_name, mig_type):
 
 	migjson['Metadata']['NodeCount'] = nodecountfound
 	migjson['NodeOffsets'] = migoffsets
-			
+
 	with open(outfilename, 'w') as file:
 		print("MIGRATION HEADER PATH: " + outfilename)
 		json.dump(migjson, file, indent=5)

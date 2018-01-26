@@ -3,6 +3,8 @@ import os
 from calibtool import commands_args
 from simtools.SetupParser import SetupParser
 import simtools.Utilities.Initialization as init
+from calibtool.ResampleManager import ResampleManager
+
 
 
 def get_calib_manager(args, unknownArgs, force_metadata=False):
@@ -27,10 +29,10 @@ def get_calib_manager(args, unknownArgs, force_metadata=False):
     return manager
 
 
-def get_resampler(args, unknownArgs, force_metadata=False):
+def get_resamplers(args, unknownArgs, force_metadata=False):
     mod = args.loaded_module
 
-    if not hasattr(mod, 'run_calib_args') or 'resampler' not in mod.run_calib_args:
+    if not hasattr(mod, 'run_calib_args') or 'resamplers' not in mod.run_calib_args:
         warning_note = \
             """
             /!\\ WARNING /!\\ Required to set resampler within run_calib_args like the following:
@@ -40,14 +42,14 @@ def get_resampler(args, unknownArgs, force_metadata=False):
         print(warning_note)
         exit()
     else:
-        resampler = mod.run_calib_args['resampler']
+        resamplers = mod.run_calib_args['resamplers']
 
     # Update the SetupParser to match the existing experiment environment/block if force_metadata == True
     if force_metadata:
-        exp = resampler.calib_manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
+        exp = resamplers[0].calib_manager.get_experiment_from_iteration(iteration=args.iteration, force_metadata=force_metadata)
         SetupParser.override_block(exp.selected_block)
 
-    return resampler
+    return resamplers
 
 
 def run(args, unknownArgs):
@@ -56,11 +58,13 @@ def run(args, unknownArgs):
 
 
 def resample(args, unknownArgs):
-    # step 1: Get the resampler
-    resampler = get_resampler(args, unknownArgs)
+    # step 1: Get the resamplers and calibration manager
+    resamplers = get_resamplers(args, unknownArgs)
+    calib_manager = get_calib_manager(args, unknownArgs)
+    resample_manager = ResampleManager(steps=resamplers, calibration_manager=calib_manager)
 
     # step 2: Resample!
-    resampler.resample()
+    resample_manager.resample_and_run()
 
 
 def resume(args, unknownArgs):

@@ -66,6 +66,19 @@ class filtered_report_fn:
         from malaria.reports.MalariaReport import add_filtered_report
         return add_filtered_report(cb, start=self.start, end=self.end, nodes=self.nodes, description=self.description)
 
+class filtered_spatial_report_fn:
+    def __init__(self, start, end, channels, nodes=[], description=''):
+        self.start = start
+        self.end = end
+        self.channels = channels
+        self.nodes = nodes
+        self.description = description
+
+    def __call__(self, cb):
+        from malaria.reports.MalariaReport import add_filtered_spatial_report
+        return add_filtered_spatial_report(cb, start=self.start, end=self.end, channels=self.channels,
+                                           nodes=self.nodes, description=self.description)
+
 # vector
 class larval_habitat_fn:
     def __init__(self, species, habitats):
@@ -186,17 +199,19 @@ class add_mosquito_release_fn:
 
 # health-seeking
 class add_treatment_fn:
-    def __init__(self, start=0, drug=None, targets=None, nodes=None):
+    def __init__(self, start=0, drug=None, targets=None, nodes=None, node_property_restrictions=[]):
         self.start = start
         self.drug = drug or ['Artemether', 'Lumefantrine']
         self.targets = targets or [{'trigger': 'NewClinicalCase', 'coverage': 0.8, 'seek': 0.6, 'rate': 0.2}]
         self.nodes = nodes or {"class": "NodeSetAll"}
+        self.node_property_restrictions=node_property_restrictions
 
     def __call__(self, cb):
         return self.fn(cb)
 
     def fn(self, cb):
-        add_health_seeking(cb, start_day=self.start, drug=self.drug, targets=self.targets, nodes=self.nodes)
+        add_health_seeking(cb, start_day=self.start, drug=self.drug, targets=self.targets, nodes=self.nodes,
+                           node_property_restrictions=self.node_property_restrictions)
         cb.update_params({'PKPD_Model': 'CONCENTRATION_VERSUS_TIME'})
 
 
@@ -265,6 +280,63 @@ class add_seasonal_HS_by_node_id_fn:
                 add_health_seeking(cb, start_day=start_day, targets=targets,
                                    duration=duration, repetitions=-1,
                                    nodes={'Node_List': hscov['nodes'], "class": "NodeSetNodeList"})
+
+class add_seasonal_HS_by_NP_fn:
+    def __init__(self, fname, channel, start_day, days_in_month, scale_by_month, duration_years):
+        self.fname = fname
+        self.channel = channel
+        self.date = start_day
+        self.days_in_month = days_in_month
+        self.scale_by_month = scale_by_month
+        self.duration_years = duration_years
+        self.prop_name = 'HScategory' if self.channel == 'hscov' else 'CHWcategory'
+
+    def __call__(self, cb):
+        return self.fn(cb)
+
+    def fn(self, cb):
+        self.set_hs_group(cb)
+        self.seasonal_health_seeking(cb)
+
+    def set_hs_group(self, cb):
+
+        from dtk.interventions.property_change import change_node_property
+
+        with open(self.fname) as fin:
+            interv = json.loads(fin.read())
+
+        covlist = interv[self.channel]
+        for i, item in enumerate(covlist):
+            code = 'group%d' % i
+            change_node_property(cb, self.prop_name, code, start_day=self.date, nodeIDs=item['nodes'])
+
+    def seasonal_health_seeking(self, cb):
+
+        with open(self.fname) as fin:
+            cov = json.loads(fin.read())
+        for i, hscov in enumerate(cov[self.channel]):
+
+            code = 'group%d' % i
+            ad_cov = hscov['coverage']
+            kid_cov = min([1, hscov['coverage'] * 1.5])
+            sev_cov = 0.8
+
+            for start_month in range(len(self.scale_by_month)):
+                start_day = self.date + np.cumsum(self.days_in_month)[start_month]
+                duration = self.days_in_month[start_month + 1]
+                scale = self.scale_by_month[start_month]
+                targets = [
+                    {'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin': 15, 'agemax': 200,
+                     'seek': min([1, ad_cov * scale]), 'rate': 0.3},
+                    {'trigger': 'NewClinicalCase', 'coverage': 1, 'agemin': 0, 'agemax': 15,
+                     'seek': min([1, kid_cov * scale]), 'rate': 0.3},
+                    {'trigger': 'NewSevereCase', 'coverage': 1,
+                     'seek': min([1, max([sev_cov * scale, kid_cov * scale])]), 'rate': 0.5}]
+
+                add_health_seeking(cb, start_day=start_day, targets=targets,
+                                   duration=duration, repetitions=self.duration_years + 1,
+                                   drug_ineligibility_duration=14,
+                                   node_property_restrictions=[{self.prop_name: code}])
 
 
 # ITNs
@@ -354,7 +426,8 @@ class add_node_level_irs_by_node_id_fn:
 class add_drug_campaign_fn:
     def __init__(self, campaign_type, drug_code, start_days, coverage=1.0, repetitions=3,
                          interval=60, diagnostic_threshold=40,
-                         snowballs=0, delay=0, nodes=None, target_group='Everyone'):
+                         snowballs=0, delay=0, nodes=None, target_group='Everyone',
+                 node_property_restrictions=[]):
         self.campaign_type = campaign_type
         self.drug_code = drug_code
         self.start_days = start_days
@@ -366,12 +439,13 @@ class add_drug_campaign_fn:
         self.delay = delay
         self.nodes = nodes or []
         self.target_group = target_group
+        self.NP_restrictions = node_property_restrictions
 
     def __call__(self, cb):
-        from dtk.interventions.malaria_drug_campaigns import add_drug_campaign
+        from malaria.interventions.malaria_drug_campaigns import add_drug_campaign
         return add_drug_campaign(cb, self.campaign_type, self.drug_code, start_days=self.start_days,
                                  coverage=self.coverage, repetitions=self.repetitions, interval=self.interval,
                                  diagnostic_threshold=self.diagnostic_threshold,
-                                 snowballs=self.snowballs, delay=self.delay, nodes=self.nodes,
-                                 target_group=self.target_group)
+                                 snowballs=self.snowballs, treatment_delay=self.delay, nodes=self.nodes,
+                                 target_group=self.target_group, node_property_restrictions=self.NP_restrictions)
 

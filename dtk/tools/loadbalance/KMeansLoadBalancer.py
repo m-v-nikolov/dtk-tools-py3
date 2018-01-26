@@ -81,7 +81,9 @@ class KMeansLoadBalancer(object):
         iterations = 0
         while(True):
             warnings.filterwarnings("ignore")
-            res, idx = kmeans2(numpy.array(zip(longs,lats)), self.nclusters, self.niterations, 1e-05, 'points')
+            #print (numpy.array(zip(longs,lats)))
+            #res, idx = kmeans2(numpy.array(zip(longs,lats)), self.nclusters, self.niterations, 1e-05, 'points')
+            res, idx = kmeans2(numpy.column_stack((numpy.array(longs), numpy.array(lats))), self.nclusters, self.niterations, 1e-05, 'points')
     
             #print('kmeans centroids: ' + str(res))
             #print('kmeans indices: ', idx)
@@ -107,8 +109,8 @@ class KMeansLoadBalancer(object):
         sizes = ( [self.max_marker_size*node_pop/float(max_node_pop) for node_pop in node_pops] )
     
         # get node IDs in order of cluster ID in preparation for writing load-balancing file
-        node_ids_by_index = zip(idx, node_ids, lats, longs)
-        node_ids_by_index.sort()
+        node_ids_by_index = sorted(zip(idx, node_ids, lats, longs))
+        #node_ids_by_index.sort()
         #for node_id_index_pair in node_ids_by_index:
         #    print('Cluster idx = ' + str(node_id_index_pair[0]) + '\t Node ID = ' + str(node_id_index_pair[1]))
     

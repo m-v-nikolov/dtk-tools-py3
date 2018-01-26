@@ -7,47 +7,48 @@ import pandas as pd
 
 from calibtool import LL_calculators
 from calibtool.analyzers.Helpers import get_spatial_report_data_at_date, get_risk_by_distance
-from dtk.utils.analyzers.BaseAnalyzer import BaseAnalyzer
+from calibtool.analyzers.BaseCalibrationAnalyzer import BaseCalibrationAnalyzer
+
 
 logger = logging.getLogger(__name__)
 
-class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
+class PositiveFractionByDistanceAnalyzer(BaseCalibrationAnalyzer):
 
     required_reference_types = ['risk_by_distance']
-    filenames = ['output/SpatialReport_New_Diagnostic_Prevalence.bin', 'output/SpatialReport_Population.bin']
+    filenames = ['output/SpatialReportMalariaFiltered_New_Diagnostic_Prevalence.bin',
+                 'output/SpatialReportMalariaFiltered_Population.bin']
 
     x = 'distance'
     y = 'Risk of RDT Positive'
 
     data_group_names = ['sample', 'sim_id', 'channel']
 
-    def __init__(self, name, weight):
-        super(PositiveFractionByDistanceAnalyzer, self).__init__(name, weight)
-        self.name = name
-        self.weight = weight
-        self.site = None
-        self.setup = {}
-        self.ignore_nodes = []
+    def __init__(self, site, weight=1, compare_fn=LL_calculators.euclidean_distance, **kwargs):
+        super(PositiveFractionByDistanceAnalyzer, self).__init__(site, weight, compare_fn)
+        self.testday = kwargs.get('testday')
+        self.reference = site.get_reference_data('risk_by_distance')
+        self.ignore_nodes = site.get_ignore_node_list()
+        self.distmat = site.get_distance_matrix()
 
-    def set_site(self, site):
-        '''
-        Get the reference data that this analyzer needs from the specified site.
-        '''
-
-        self.site = site
-        self.reference = self.site.reference_data['risk_by_distance']
-        try :
-            self.testday = self.setup['testday']
-        except KeyError :
-            raise Exception('%s requires \'testday\' input in site setup' % self.name)
-        if 'ignore_nodes' in self.setup :
-            self.ignore_nodes = self.setup['ignore_nodes']
-        else :
-            self.ignore_nodes = []
-        try :
-            self.distmat = pd.read_csv(self.setup['distmat'])
-        except KeyError :
-            raise Exception('%s requires node distance matrix csv path \'distmat\' in site setup' % self.name)
+    # def set_site(self, site):
+    #     '''
+    #     Get the reference data that this analyzer needs from the specified site.
+    #     '''
+    #
+    #     self.site = site
+    #     self.reference = site.get_reference_data(self.site_ref_type)
+    #     try :
+    #         self.testday = self.setup['testday']
+    #     except KeyError :
+    #         raise Exception('%s requires \'testday\' input in site setup' % self.name)
+    #     if 'ignore_nodes' in self.setup :
+    #         self.ignore_nodes = self.setup['ignore_nodes']
+    #     else :
+    #         self.ignore_nodes = []
+    #     try :
+    #         self.distmat = pd.read_csv(self.setup['distmat'])
+    #     except KeyError :
+    #         raise Exception('%s requires node distance matrix csv path \'distmat\' in site setup' % self.name)
 
     def filter(self, sim_metadata):
         '''
@@ -61,7 +62,6 @@ class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
         '''
         Extract data from output data and measure risk of RDT+ by distance from RDT+.
         '''
-
         prev_data = get_spatial_report_data_at_date(parser.raw_data[self.filenames[0]], self.testday)
         prev_data.rename(columns={ 'data' : 'prev' }, inplace=True )
         pop_data = get_spatial_report_data_at_date(parser.raw_data[self.filenames[1]], self.testday)
@@ -70,6 +70,7 @@ class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
 
         if any(self.ignore_nodes) :
             df = df[~df['node'].isin(self.ignore_nodes)]
+            df = df.reset_index(drop=True)
             
         df['pos'] = df['prev']*df['pop']
         ref_distance = self.reference['distances']
@@ -103,7 +104,7 @@ class PositiveFractionByDistanceAnalyzer(BaseAnalyzer):
         Assess the result per sample, in this case the likelihood
         comparison between simulation and reference data.
         '''
-        return LL_calculators.euclidean_distance(self.reference['risks'] + [self.reference['prevalence']], sample[self.y].tolist())
+        return self.compare_fn(self.reference['risks'] + [self.reference['prevalence']], sample[self.y].tolist())
 
     def finalize(self):
         '''

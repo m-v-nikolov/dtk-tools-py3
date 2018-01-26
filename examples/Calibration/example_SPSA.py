@@ -1,17 +1,14 @@
 # Execute directly: 'python example_optimization.py'
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
+import random
 
-from calibtool.algorithms.OptimTool import OptimTool
+from calibtool.CalibManager import CalibManager
 from calibtool.algorithms.OptimToolPSPO import OptimToolPSPO
-from calibtool.algorithms.OptimToolSPSA import OptimToolSPSA
-
+from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
+from calibtool.plotters.OptimToolSPSAPlotter import OptimToolSPSAPlotter
+from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
-
-from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
-from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
-from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
-from calibtool.plotters.OptimToolSPSAPlotter import OptimToolSPSAPlotter
 
 try:
     from malaria.study_sites.DielmoCalibSite import DielmoCalibSite

@@ -199,8 +199,8 @@ class DemographicsGenerator:
             node_attributes = node.to_dict()
 
             if self.demographics_type == 'static':
-                # value correspond to a population removal rate of 23: 23/365
-                birth_rate = (float(node.pop) / (1000 + 0.0)) * 0.06301
+                # value correspond to a population removal rate of 45: 45/365
+                birth_rate = (float(node.pop) / (1000 + 0.0)) * 0.12329
                 node_attributes.update({'BirthRate': birth_rate})
             else:
                 # perhaps similarly to the DTK we should have error logging modes and good generic types exception raising/handling
@@ -227,7 +227,6 @@ class DemographicsGenerator:
         }
 
         return metadata
-
 
     def generate_demographics(self):
         """

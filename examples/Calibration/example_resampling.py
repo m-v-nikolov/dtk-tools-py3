@@ -12,6 +12,8 @@ from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
 from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from calibtool.resamplers.CramerRaoResampler import CramerRaoResampler
+from calibtool.resamplers.RandomPerturbationResampler import RandomPerturbationResampler
+
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
@@ -168,16 +170,27 @@ calib_manager = CalibManager(name='ExampleOptimization_cramer',    # <-- Please 
                              max_iterations=3,          # <-- Iterations
                              plotters=plotters)
 
-cramerRao_resampler = CramerRaoResampler(calib_manager)
+# *******************************************************************
+# Resampling specific code
+# *******************************************************************
 
+# Define the resamplers to run (one or more) in list order.
+resample_steps = [
+    # can pass kwargs directly to the underlying resampling routines if needed
+    RandomPerturbationResampler(N=8),
+    CramerRaoResampler(num_of_pts=10)
+]
+
+# REQUIRED variable name: run_calib_args . Required key: 'resamplers'
 run_calib_args = {
-    # REQUIRED variable name: run_calib_args . Required key: 'resampler'
-    'resampler': cramerRao_resampler,
+    'resamplers': resample_steps,
     'calib_manager': calib_manager
 }
 
 
 if __name__ == "__main__":
+    from calibtool.ResampleManager import ResampleManager
+
     # initialization
     SetupParser.init()
 
@@ -185,5 +198,5 @@ if __name__ == "__main__":
     calib_manager.run_calibration()
 
     # Run the resampling
-    resampler = run_calib_args['resampler']
-    resampler.resample()
+    resample_manager = ResampleManager(steps=run_calib_args['resamplers'], calibration_manager=calib_manager)
+    resample_manager.resample_and_run()

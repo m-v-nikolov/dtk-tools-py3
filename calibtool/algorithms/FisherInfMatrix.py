@@ -1,14 +1,12 @@
 from __future__ import division
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from scipy.linalg import sqrtm
 
 
-def perturbed_points(center, Xmin, Xmax, M=1, N=10, n=2, resolution=None):
+def perturbed_points(center, Xmin, Xmax, M=3, N=5, n=1, resolution=None):
     """
     Atiye Alaeddini, 12/11/2017
     generate perturbed points around the center
@@ -36,7 +34,7 @@ def perturbed_points(center, Xmin, Xmax, M=1, N=10, n=2, resolution=None):
     X_scaled = (center - Xmin) / (Xmax - Xmin)
 
     # perturbation sizes
-    C = 0.05*np.ones(p)#*(Xmax -Xmin)
+    C = 0.05*np.ones(p)
 
     # making sure all plus/minus points in range
     too_big = (X_scaled + C) > 1
@@ -114,13 +112,12 @@ def perturbed_points(center, Xmin, Xmax, M=1, N=10, n=2, resolution=None):
 
     # X_perturbed[:,0:4] = X_perturbed[:,0:4].astype(int)
     # convert to pandas DataFrame
-    df_perturbed = pd.DataFrame(data=X_perturbed, columns=(['i','j','k','l']+['theta']*p))
+    df_perturbed = pd.DataFrame(data=X_perturbed, columns=(['i(1to4)','j(1toN)','k(1toM)','run_number']+['theta']*p))
 
     return df_perturbed
 
 
-
-def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
+def FisherInfMatrix(center_point, df_LL_points, data_columns):
     """
     Atiye Alaeddini, 12/15/2017
     compute the Fisher Information matrix using the LL of perturbed points
@@ -128,7 +125,6 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
      ------------------------------------------------------------------------
     INPUTS:
     center    center point    (1 x p) nparray
-    df_perturbed_points    perturbed points    DataFrame
     df_LL_points    Log Likelihood of points    DataFrame
      ------------------------------------------------------------------------
     OUTPUTS:
@@ -136,21 +132,24 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
      ------------------------------------------------------------------------
     """
 
-    # convert DataFrame to python array
-    LL_data = df_LL_points.as_matrix()
-    points = df_perturbed_points.as_matrix()
+    rounds = df_LL_points['j(1toN)'].as_matrix() # j
+    samples_per_round = df_LL_points['k(1toM)'].as_matrix() # k, points[:, 2]
+    N = (max(rounds) + 1).astype(int)
+    M = (max(samples_per_round) + 1).astype(int)
+    n = int((np.shape(rounds)[0])/(4*M*N))
 
-    N = (max(points[:,1]) + 1).astype(int)
-    M = (max(points[:, 2]) + 1).astype(int)
-    n = int((np.shape(points)[0])/(4*M*N))
+    PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==0].filter(data_columns).as_matrix()
+    PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==1].filter(data_columns).as_matrix()
+    MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==2].filter(data_columns).as_matrix()
+    MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)']==3].filter(data_columns).as_matrix()
 
-    PlusPlusPoints = points[0:(4 * M * N * n):(4 * n), 4:]
-    PlusMinusPoints = points[1:(4 * M * N * n):(4 * n), 4:]
-    MinusPlusPoints = points[2:(4 * M * N * n):(4 * n), 4:]
-    MinusMinusPoints = points[3:(4 * M * N * n):(4 * n), 4:]
+    LL_PlusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 0, 'LL'].as_matrix()
+    LL_PlusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 1, 'LL'].as_matrix()
+    LL_MinusPlusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 2, 'LL'].as_matrix()
+    LL_MinusMinusPoints = df_LL_points.loc[df_LL_points['i(1to4)'] == 3, 'LL'].as_matrix()
 
     # dimension of X
-    p = len(center)
+    p = len(center_point)
 
     # Hessian
     H_bar = np.zeros(shape=(p, p, N))
@@ -169,10 +168,10 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
         MinusPlus_round_i = MinusPlusPoints[(i * M):((i + 1) * M), :]
         MinusMinus_round_i = MinusMinusPoints[(i * M):((i + 1) * M), :]
 
-        loglPP_round_i = LL_data[(i * 4 * M + 0):((i + 1) * 4 * M + 0), 3]
-        loglPM_round_i = LL_data[(i * 4 * M + 1):((i + 1) * 4 * M + 1), 3]
-        loglMP_round_i = LL_data[(i * 4 * M + 2):((i + 1) * 4 * M + 2), 3]
-        loglMM_round_i = LL_data[(i * 4 * M + 3):((i + 1) * 4 * M + 3), 3]
+        loglPP_round_i = LL_PlusPlusPoints[(i * M):((i + 1) * M)]
+        loglPM_round_i = LL_PlusMinusPoints[(i * M):((i + 1) * M)]
+        loglMP_round_i = LL_MinusPlusPoints[(i * M):((i + 1) * M)]
+        loglMM_round_i = LL_MinusMinusPoints[(i * M):((i + 1) * M)]
 
         for k in range(M):
 
@@ -202,6 +201,32 @@ def FisherInfMatrix(center, df_perturbed_points, df_LL_points):
 
     Fisher = -1 * H_bar_avg[:, :, N - 1]
     return Fisher
+
+def sample_cov_ellipse(cov, pos, num_of_pts=10):
+    """
+    Sample 'num_of_pts' points from the specified covariance
+    matrix (`cov`).
+
+    Parameters
+    ----------
+        cov : 2-D array_like, The covariance matrix (inverse of fisher matrix). It must be symmetric and positive-semidefinite for proper sampling.
+        pos : 1-D array_like, The location of the center of the ellipse, Mean of the multi variate distribution
+        num_of_pts : The number of sample points.
+
+    Returns
+    -------
+        ndarray of the drawn samples, of shape (num_of_pts,).
+    """
+    return np.random.multivariate_normal(pos, cov, num_of_pts)
+
+def trunc_gauss(mu, sigma, low_bound, top_bound, num_of_pts):
+    samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
+    count = 1
+    while ((np.logical_and(samples >= np.tile(low_bound, (num_of_pts, 1)), samples <= np.tile(top_bound, (num_of_pts, 1))))==False).any():
+        samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
+        count += 1
+    print('trunc_gauss ran %d times' % count)
+    return samples
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
@@ -244,16 +269,17 @@ def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     return ellip
 
 
+# test
 def test():
-    # test
-    center = np.array([0.05,-0.92,-.98])
-    Xmin = np.array([-1]*3)
-    Xmax = np.array([1]*3)
-    df_perturbed_points = perturbed_points(center, Xmin, Xmax, M=2, N=5)
-    #print df_perturbed_points
-    # df_perturbed_points.to_csv("data.csv")
+    center_point = np.array([0.08, -0.92, .92])
+    low_bound = np.array([-1] * 3)
+    up_bound = np.array([1] * 2 + [1])
+    # df_perturbed_points = perturbed_points(center_point, low_bound, up_bound)
+    # print df_perturbed_points
+    # df_perturbed_points.to_csv("data2.csv")
+    df_perturbed_points = pd.DataFrame.from_csv("data.csv")
     ll = pd.DataFrame.from_csv("LLdata.csv")
-    Fisher = FisherInfMatrix(center, df_perturbed_points, ll)
+    Fisher = FisherInfMatrix(center_point, ll)
     Covariance = np.linalg.inv(Fisher)
 
     print("eigs of fisher: ", np.linalg.eigvals(Fisher))
@@ -261,228 +287,23 @@ def test():
 
     fig3 = plt.figure('CramerRao')
     ax = plt.subplot(111)
-    x, y = center[0:2]
+    x, y = center_point[0:2]
     plt.plot(x, y, 'g.')
-    plot_cov_ellipse(Covariance[0:2,0:2], center[0:2], nstd=1, alpha=0.6, color='green')
-    plt.xlim(Xmin[0], Xmax[0])
-    plt.ylim(Xmin[1], Xmax[1])
+    plot_cov_ellipse(Covariance[0:2,0:2], center_point[0:2], nstd=3, alpha=0.6, color='green')
+    sample_x, sample_y, sample_z = trunc_gauss(center_point, Covariance, low_bound, up_bound, 10).T
+    # sample_x, sample_y = np.random.multivariate_normal(center_point[0:2], Covariance[0:2,0:2], 10).T
+    print('covariance:\n%s'%Covariance)
+    print('sample_x:\n%s'%sample_x)
+    print('sample_y:\n%s'%sample_y)
+    print('sample_z:\n%s'%sample_z)
+
+    plt.plot(sample_x, sample_y, 'x')
+    plt.xlim(low_bound[0], up_bound[0])
+    plt.ylim(low_bound[1], up_bound[1])
     plt.xlabel('X', fontsize=14)
     plt.ylabel('Y', fontsize=14)
 
     plt.show()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()
-
-
-
-
-
-
-
-
-
-# def perturbed_points(X, perturb_size, M):
-#     # % Atiye Alaeddini, 12/11/2017
-#     # % generate perturbed X and their corresponding log likelihood function
-#     #
-#     # % ------------------------------------------------------------------------
-#     # % INPUTS:
-#     # % X           ----- center point ---------------------------------- px1
-#     # % pert_size   ----- size of the perturbation ---------------------- px1
-#     # % M           ----- number of Hessian estimates
-#     #
-#     # % ------------------------------------------------------------------------
-#     # % OUTPUTS:
-#     # % X_perturbed ----- perturbed points ----------------------------   px4xM
-#     # % Y_perturbed ----- cost values of perturbed points -------------   4xM
-#
-#
-#     # dimension of X
-#     p = len(X)
-#     C = np.random.uniform(low=0.5, high=2.0) * perturb_size  # .05*(X_max -X_min)
-#     C_tilde = np.random.uniform(low=0.5, high=1.0) * C
-#
-#     X_perturbed = np.zeros(shape=(p, 4, M))  # np.tile(X, (M+1,1))
-#     Y_perturbed = np.zeros(shape=(4, M))
-#     # X_perturbed[:,0] = X
-#     # Y_perturbed[0] = LogL_func(X_perturbed[:,0])
-#     if p != 2:
-#         Delta = np.ones(shape=(p, 1))
-#         Delta_tilde = np.ones(shape=(p, 1))
-#
-#     for k in range(M):
-#         np.random.seed()
-#         # loc = np.random.permutation(p)[0]
-#         if p == 2:
-#             Delta = np.random.choice([-1, 1], size=(p, 1))
-#             Delta_tilde = np.random.choice([-1, 1], size=(p, 1))
-#         else:
-#             Delta[np.random.permutation(p)[0]] = -1 * Delta[np.random.permutation(p)[0]]
-#             Delta_tilde[np.random.permutation(p)[0]] = -1 * Delta_tilde[np.random.permutation(p)[0]]
-#
-#         thetaPlus = X + (C * Delta)
-#         thetaMinus = X - (C * Delta)
-#
-#         X_perturbed[:, [0], k] = thetaPlus + C_tilde * Delta_tilde  # thetaPlusPlus
-#         Y_perturbed[0, k] = LogL_func(X_perturbed[:, 0, k])  # loglPP
-#
-#         X_perturbed[:, [1], k] = thetaPlus - C_tilde * Delta_tilde  # thetaPlusMinus
-#         Y_perturbed[1, k] = LogL_func(X_perturbed[:, 1, k])  # loglPM
-#
-#         X_perturbed[:, [2], k] = thetaMinus + C_tilde * Delta_tilde  # thetaMinusPlus
-#         Y_perturbed[2, k] = LogL_func(X_perturbed[:, 2, k])  # loglMP
-#
-#         X_perturbed[:, [3], k] = thetaMinus - C_tilde * Delta_tilde  # thetaMinusMinus
-#         Y_perturbed[3, k] = LogL_func(X_perturbed[:, 3, k])  # loglMM
-#
-#     return (X_perturbed, Y_perturbed)
-#
-#
-# def FisherInfMatrix(X, Perturb_size, M=10000, N=1):
-#     # dimension of X
-#     p = len(X)
-#     # Hessian
-#     H_bar = np.zeros(shape=(p, p, N))
-#     H_bar_avg = np.zeros(shape=(p, p, N))
-#
-#     for i in range(N):
-#         # reset the data (samples) used for evaluation of the log likelihood
-#         # initialization
-#         H_hat = np.zeros(shape=(p, p, M))
-#         H_hat_avg = np.zeros(shape=(p, p, M))
-#         G_p = np.zeros(shape=(p, M))
-#         G_m = np.zeros(shape=(p, M))
-#
-#         (X_perturbed, Y_perturbed) = perturbed_points(X, Perturb_size, M)
-#
-#         for k in range(M):
-#             # print 'X_perturbed = ', X_perturbed[:,:,k]
-#             # print 'Y_perturbed = ', Y_perturbed[:,k]
-#
-#             [thetaPlusPlus, thetaPlusMinus, thetaMinusPlus, thetaMinusMinus] = X_perturbed[:, :, k].T
-#             [loglPP, loglPM, loglMP, loglMM] = Y_perturbed[:, k]
-#             #print 'Y_perturbed[:, k] = ', Y_perturbed[:, k]
-#             #print 'thetaPlusPlus=',thetaPlusPlus
-#             #print 'thetaPlusMinus=',thetaPlusMinus
-#             #print 'loglPP=',loglPP
-#             #print 'loglPM=',loglPM
-#             #print 'loglMP=',loglMP
-#             #print 'loglMM=',loglMM
-#
-#             G_p[:, k] = (loglPP - loglPM) / (thetaPlusPlus - thetaPlusMinus)
-#             G_m[:, k] = (loglMP - loglMM) / (thetaMinusPlus - thetaMinusMinus)
-#
-#             # H_hat(n)
-#             S = np.dot((1 / (thetaPlusPlus - thetaMinusPlus))[:, None], (G_p[:, k] - G_m[:, k])[None, :])  # H_hat
-#             #print 'S=',S
-#             H_hat[:, :, k] = .5 * (S + S.T)
-#             #print 'H_hat_%d:\n'%k, H_hat[:, :, k]
-#
-#             H_hat_avg[:, :, k] = k / (k + 1) * H_hat_avg[:, :, k - 1] + 1 / (k + 1) * H_hat[:, :, k]
-#
-#         # print 'G_p=',G_p
-#         # print 'G_m=',G_m
-#
-#         # TEMP
-#         #print 'A:\n', H_hat_avg[:, :, M - 1]
-#         #print 'B:\n', sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
-#         #print 'C:\n', H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
-#
-#         H_bar[:, :, i] = .5 * (
-#             H_hat_avg[:, :, M - 1] - sqrtm(np.linalg.matrix_power(H_hat_avg[:, :, M - 1], 2) + 1e-6 * np.eye(p))
-#         )
-#         # print 'H_bar[:,:,i]=',H_bar[:,:,i]
-#         H_bar_avg[:, :, i] = i / (i + 1) * H_bar_avg[:, :, i - 1] + 1 / (i + 1) * H_bar[:, :, i]
-#
-#     Fisher = -1 * H_bar_avg[:, :, N - 1]
-#     return Fisher
-#
-#
-#
-# # test the algorithm
-# def log_likelihood(sigma, innovation):
-#
-#     # TEMPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
-#     sigma = 0.1
-#
-#     # Gaussian likelihood
-#     #print sigma, sigma**2
-#     propFactor = 1 / np.sqrt(2 * np.pi * sigma**2)
-#     #print 'propFactor', propFactor
-#     #print 'innovation', innovation
-#     ll = np.log(propFactor) + -0.5 * innovation ** 2 / sigma**2
-#     #print 'll', ll
-#     return ll
-#
-#
-# def LogL_func(X, sigma_obs = .1):
-#     n = 50
-#     p = len(X0)
-#     Z = []
-#     for j in range(n):
-#         Z.append(np.linalg.norm(X0 - np.ones(shape=(1, p))) + np.random.normal(0, sigma_obs))
-#     meanZ = np.mean(Z)
-#     stdZ = np.std(Z)
-#     logL_X = []
-#     zeta = np.linalg.norm(X - np.ones(shape=(1, p))) + np.random.normal(0, sigma_obs)  # fValue(X)
-#     #print 'stdZ', stdZ
-#     #print 'zeta - meanZ', zeta - meanZ
-#     logL_X = log_likelihood(stdZ, zeta - meanZ)
-#     # logL_X = np.log(likelihood(sigma_obs, np.linalg.norm(X)))
-#     # for i in range(np.shape(X)[1]):
-#     #    zeta = np.linalg.norm(X[:,i]-np.ones(shape=(1,p))) + np.random.normal(0,sigma_obs) #fValue(X)
-#     #    logL_X.append(np.log(likelihood(stdZ, abs(zeta-meanZ))))
-#     return logL_X
-#
-# p = 2
-# global X0
-# X0 = np.random.uniform(0.0, 2.0, (p, 1))
-# print 'X0 =', X0
-# X_min = 0
-# X_max = 2
-# M = 10
-# N = 100
-# Perturb_size = .1 * (X_max - X_min)
-# Fisher = FisherInfMatrix(X0, Perturb_size, M, N)
-#
-# # sigma = diag(inv(Fisher))**.5
-# Covariance = np.linalg.inv(Fisher)
-#
-# print "eigs of fisher: ", np.linalg.eigvals(Fisher)
-# print "eigs of Covariance: ", np.linalg.eigvals(Covariance)
-#
-# #print(Covariance)
-# fig3 = plt.figure('CramerRao')
-# ax = plt.subplot(111)
-# x, y = X0[0:2]
-# plt.plot(x, y, 'g.')
-# plot_cov_ellipse(Covariance, X0, nstd=1, alpha=0.6, color='green')
-# plt.xlim(-1, 3)
-# plt.ylim(-1, 3)
-# plt.xlabel('X', fontsize=14)
-# plt.ylabel('Y', fontsize=14)
-#
-# # Plot the LL function in the background
-# x = y = np.arange(-1, 3, 0.1)
-# D = len(x)
-# X, Y = np.meshgrid(x, y)
-#
-# Xs = X.reshape( np.prod(X.shape), 1)
-# Ys = Y.reshape( np.prod(Y.shape), 1)
-#
-# Xvec = np.concatenate((Xs, Ys), axis=1)
-#
-# def dummpy_fun(X, sigma_obs):
-#     #print 'X in df:\n', X
-#     return (X[0]-1)**2 + (X[1]-1)**2
-#
-# from functools import partial
-# #Zs = np.apply_along_axis( partial(LogL_func, sigma_obs=0), axis=1, arr=Xvec)
-# Zs = np.apply_along_axis( partial(dummpy_fun, sigma_obs=0), axis=1, arr=Xvec)
-# Zmin = np.min(Zs)
-# Zmax = np.max(Zs)
-# CS = plt.contourf(X, Y, Zs.reshape(D,D), levels=np.linspace(Zmin, Zmax, 25), cmap='bone')
-#
-# plt.show()

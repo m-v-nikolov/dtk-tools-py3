@@ -1,8 +1,9 @@
 import random
 
 
-def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered_campaign_delay=0,
-                                   trigger_condition_list=[], listening_duration=-1, event_to_send_out=None):
+def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], delay_distribution="FIXED_DURATION",
+                                   triggered_campaign_delay=0, trigger_condition_list=[],
+                                   listening_duration=-1, event_to_send_out=None, node_property_restrictions=[]):
     if not isinstance(nodeIDs, dict):
         if nodeIDs:
             nodeIDs = {'class': 'NodeSetNodeList',
@@ -11,7 +12,22 @@ def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered
             nodeIDs = {'class': 'NodeSetAll'}
 
     if not event_to_send_out:
-        event_to_send_out = random.randrange(100000)
+        event_to_send_out = 'Random_Event_%d' % random.randrange(100000)
+
+    event_cfg = {
+        "class": "BroadcastEvent",
+        "Broadcast_Event": event_to_send_out
+    }
+
+    if triggered_campaign_delay :
+        intervention = {
+            "class": "DelayedIntervention",
+            "Delay_Distribution": delay_distribution,
+            "Delay_Period": triggered_campaign_delay,
+            "Actual_IndividualIntervention_Configs":  [ event_cfg ]
+        }
+    else :
+        intervention = event_cfg
 
     triggered_delay = {"class": "CampaignEvent",
                        "Start_Day": int(start),
@@ -23,18 +39,8 @@ def triggered_campaign_delay_event(config_builder, start,  nodeIDs=[], triggered
                                "Trigger_Condition_List": trigger_condition_list,
                                "Duration": listening_duration,
                                "Target_Residents_Only": 1,
-                               "Actual_IndividualIntervention_Config": {
-                                   "class": "DelayedIntervention",
-                                   "Delay_Distribution": "FIXED_DURATION",
-                                   "Delay_Period": triggered_campaign_delay,
-                                   "Actual_IndividualIntervention_Configs":
-                                       [
-                                           {
-                                               "class": "BroadcastEvent",
-                                               "Broadcast_Event": str(event_to_send_out)
-                                           }
-                                       ]
-                               }
+                               "Node_Property_Restrictions": node_property_restrictions,
+                               "Actual_IndividualIntervention_Config": intervention
                            }
                        }
                        }

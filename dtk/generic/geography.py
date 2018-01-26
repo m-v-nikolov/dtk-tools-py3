@@ -17,7 +17,7 @@ def convert_filepaths(params):
     for k, v in params.items():
         if not v: continue
         if k == 'Demographics_Filenames':
-            params[k] = [os.path.join(g, fn) for fn in v]
+            params[k] = [os.path.join(g, fn) for fn in v] if isinstance(v, list) else os.path.join(g, v)
         elif k == 'Campaign_Filename':
             continue
         elif 'Filename' in k:
@@ -86,6 +86,17 @@ def set_geography(cb, geography, static=False, pop_scale=1):
 
 
 geographies = {
+
+    "Garki_gridded_net": {"Geography": "Garki/Garki_gridded_net",
+                     "Air_Temperature_Filename": "Garki_gridded_net_temperature.bin",
+                     "Demographics_Filenames": ["GarkiNE_demographics.json"],
+                     # "Demographics_Filenames": ["Garki_gridded_net_demographics.compiled.json"],
+                     "Land_Temperature_Filename": "Garki_gridded_net_temperature.bin",
+                     "Rainfall_Filename": "Garki_gridded_net_rainfall.bin",
+                     "Relative_Humidity_Filename": "Garki_gridded_net_humidity.bin",
+                     "Enable_Climate_Stochasticity": 1,  # every two weeks in raw data series
+                     "Enable_Demographics_Other": 0  # no 'AbovePoverty' etc. in these files
+                     },
 
     "Garki_Single": {"Geography": "Garki_Single",
                      "Air_Temperature_Filename": "Garki_single_temperature.bin",
@@ -335,8 +346,8 @@ geographies = {
                   "Listed_Events": ["VaccinateNeighbors", "Blackout", "Distributing_AntimalariaDrug", 'TestedPositive',
                                     'Give_Drugs', 'Spray_IRS', 'Drug_Campaign_Blackout', 'IRS_Blackout', 'Node_Sprayed',
                                     'Received_Campaign_Drugs', 'Received_Treatment', 'Received_ITN', 'Received_Vehicle',
-                                    'Received_Test', 'Received_RCD_Drugs', 'Received_Survey'] + ["Diagnostic_Survey_%d" % x for x in
-                                                                              range(5)],
+                                    'Received_Test', 'Received_RCD_Drugs', 'Received_Survey',
+                                    'Property_Change_Blackout'] + ["Diagnostic_Survey_%d" % x for x in range(5)],
                   "Report_Event_Recorder_Events": ["NewClinicalCase", 'Received_Campaign_Drugs', 'Received_RCD_Drugs',
                                                    'Received_Treatment', 'TestedPositive', 'Received_ITN',
                                                    'Received_Test', 'Node_Sprayed', 'Received_Survey'],
@@ -351,6 +362,7 @@ geographies = {
                   "logLevel_JsonConfigurable": "WARNING",
                   "logLevel_MosquitoRelease": "WARNING",
                   "logLevel_VectorPopulationIndividual": "WARNING",
+                  "logLevel_VectorPopulation": "WARNING",
                   "logLevel_LarvalHabitatMultiplier": "WARNING",
                   "logLevel_BroadcastEventToOtherNodes": 'WARNING',
                   'logLevel_NodeLevelHealthTriggeredIV': 'WARNING',
@@ -380,9 +392,9 @@ geographies = {
                   "Enable_Sea_Demographics_Modifiers": 0,
                   "Enable_Sea_Family_Migration": 0,
 
-                  # "Vector_Sampling_Type": "TRACK_ALL_VECTORS",
-                  # "Enable_Vector_Aging": 1,
-                  # "Enable_Vector_Mortality": 1,
+                  "Vector_Sampling_Type": "TRACK_ALL_VECTORS",
+                  "Enable_Vector_Aging": 1,
+                  "Enable_Vector_Mortality": 1,
                   "Enable_Vector_Migration": 1,
                   "Enable_Vector_Migration_Local": 1,
                   "Enable_Vector_Migration_Regional": 1,

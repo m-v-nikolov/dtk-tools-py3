@@ -11,6 +11,12 @@ params = {
     "Enable_Default_Reporting": 1,
     "Enable_Heterogeneous_Intranode_Transmission": 0,
     "Report_Event_Recorder": 0,
+    "Enable_Immunity_Distribution": 0,
+	"Enable_Maternal_Infection_Transmission": 0,
+	"Enable_Maternal_Protection": 0,
+
+
+    "Enable_Skipping": 0,
 
     "Listed_Events": [],
     "Minimum_Adult_Age_Years" : 15,

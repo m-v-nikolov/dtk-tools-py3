@@ -8,7 +8,6 @@ import pandas as pd
 
 from calibtool.IterationState import IterationState
 from calibtool.utils import StatusPoint
-from core.utils.time import verbose_timedelta
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.ModBuilder import ModBuilder, ModFn
@@ -16,7 +15,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
-from simtools.Utilities.General import init_logging
+from simtools.Utilities.General import init_logging, verbose_timedelta
 
 logger = init_logging("Calibration")
 
@@ -302,6 +301,10 @@ class CalibManager(object):
         given_step = StatusPoint[iter_step]
         if given_step.value > latest_step.value:
             raise Exception("The iter_step '%s' is beyond the latest step '%s'" % (given_step.name, latest_step.name))
+
+        # move forward if status is done
+        if given_step == StatusPoint.done:
+            iter_step = StatusPoint.next_point.name
 
         # finally check user input location and experiment location and provide options for resume
         self.check_location(it)

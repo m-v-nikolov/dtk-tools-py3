@@ -215,6 +215,9 @@ class SpatialManager:
     def set_graph_topo_type(self, graph_topo_type):
         self.mg.set_graph_topo_type(graph_topo_type)
 
+    def set_link_rates(self, link_rates):
+        self.mg.set_link_rates(link_rates)
+
     def set_link_rates_model_type(self, link_rates_model_type):
         self.mg.set_link_rates_model_type(link_rates_model_type)
 
@@ -267,6 +270,7 @@ class SpatialManager:
 
             else:  # if existing file is provided copy it to the reight location
                 om("Looking for existing cluster load balance file...", style='bold')
+                load_balance_filename = self.cb.get_param('Load_Balance_Filename')
 
                 shutil.copy(self.existing_load_balancing_file_path,
                             os.path.join(self.sim_data_input, load_balance_filename))
@@ -299,14 +303,14 @@ class SpatialManager:
 
                 om("generating migration json header...", style='bold')
                 MigrationGenerator.save_migration_header(
-                    os.path.join(self.sim_data_input, self.demographics_output_file))
+                    os.path.join(self.sim_data_input, self.demographics_output_file), os.path.join(self.sim_data_input, migration_filename))
 
                 om("Migration header saved to: " + os.path.join(self.sim_data_input, self.demographics_output_file))
 
             else:  # if existing migration files are provided, copy them to the right places
 
                 om("Looking for existing migration binary and header...", style='bold')
-
+                migration_filename = self.cb.get_param('Local_Migration_Filename')
                 shutil.copy(self.existing_migration_file_path, os.path.join(self.sim_data_input, migration_filename))
                 om("Existing binary found at : " + self.existing_migration_file_path)
                 om("Successfully copied to: " + os.path.join(self.sim_data_input, migration_filename))
@@ -406,7 +410,7 @@ class SpatialManager:
                     os.path.join(self.log_path, self.name + '_demographics_log.json'),
                     os.path.join(self.log_path, self.name + '_migration.bin'), os.path.join(self.log_path))
 
-                self.mg.save_migration_graph_topo_visualization(os.path.join(self.log_path))
+                # self.mg.save_migration_graph_topo_visualization(os.path.join(self.log_path))
 
                 om("LOG: migration rates and network stored in " + os.path.join(self.log_path))
 

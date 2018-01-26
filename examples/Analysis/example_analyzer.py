@@ -18,9 +18,9 @@ class PopulationAnalyzer(BaseAnalyzer):
 
     def plot(self):
         import matplotlib.pyplot as plt
-        for pop in self.pop_data.values():
+        for pop in list(self.pop_data.values()):
             plt.plot(pop)
-        plt.legend(self.pop_data.keys())
+        plt.legend(list(self.pop_data.keys()))
         plt.show()
 
 
