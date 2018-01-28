@@ -97,7 +97,8 @@ class AnalyzeManager:
         start_time = time.time()
 
         # If no analyzers -> quit
-        if len(self.analyzers) == 0:
+        if not all((self.analyzers, self.experiments or self.experiments_simulations)):
+            print("No analyzers or experiments selected, exiting...")
             return
 
         # If any of the analyzer needs the dir map, create it
@@ -128,12 +129,12 @@ class AnalyzeManager:
         # Display some info
         if self.verbose:
             print("Analyze Manager")
-            print(" | {} simulations (including {} stand-alones) from {} experiments"
-                  .format(len(simulations), sa_count, len(self.experiments)))
-            print(" | Analyzers: ")
+            print(" | {} simulation{} (including {} stand-alones) from {} experiments"
+                  .format(len(simulations), "s"[len(simulations):], sa_count, len(self.experiments)))
+            print(" | Analyzer{}: ".format("s"[len(self.analyzers):]))
             for a in self.analyzers:
                 print(" |  - {} (Directory map: {} / File parsing: {} / Use cache: {})"
-                      .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off", "yes" if hasattr(a, "cache") else "no"))
+                      .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off", "on" if hasattr(a, "cache") else "off"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
         # Create a temporary directory for the cache
