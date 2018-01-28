@@ -3,6 +3,8 @@ import os
 from multiprocessing.pool import ThreadPool
 
 import collections
+
+import itertools
 from COMPS.Data.Simulation import SimulationState
 
 from simtools.DataAccess.DataStore import DataStore
@@ -154,6 +156,17 @@ class AnalyzeManager:
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
+
+        from simtools.Analysis.BaseAnalyzers.BaseAnalyzer import BaseAnalyzer
+        from simtools.Analysis.AnalyzeManager import AnalyzeManager as am
+        if isinstance(self.analyzers[0], BaseAnalyzer):
+            new_am = am(exp_list=self.experiments, analyzers=self.analyzers, sim_list=itertools.chain(*self.experiments_simulations.values()))
+            new_am.analyze()
+            return
+
+        print("The format of analyzer is changing! The new Analysis mode gives 5x speed ups on average :)")
+        print("Please update your analyzers to use the new simtools.Analysis.BaseAnalyzers.BaseAnalyzer")
+        print("Also use the new AnalyzeManager found at simtools.Analysis.AnalyzeManager")
 
         # Empty the parsers
         self.parsers = []
