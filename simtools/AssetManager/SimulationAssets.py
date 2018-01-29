@@ -49,6 +49,10 @@ class SimulationAssets(object):
         self.paths[path_type] = path
 
     @property
+    def exe_name(self):
+        return os.path.basename(self.exe_path)
+
+    @property
     def exe_path(self):
         return self._get_path(self.EXE)
 

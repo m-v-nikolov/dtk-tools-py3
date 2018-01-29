@@ -3,7 +3,7 @@ class COMPSCache:
     _experiments = {}
 
     @classmethod
-    def simulations(cls, sid, criteria=None, children=None):
+    def simulation(cls, sid, criteria=None, children=None):
         if criteria:
             return cls.query_simulation(sid, criteria, children)
 
@@ -13,7 +13,7 @@ class COMPSCache:
         return cls._simulations[sid]
 
     @classmethod
-    def experiments(cls, eid, criteria=None, children=None):
+    def experiment(cls, eid, criteria=None, children=None):
         if criteria:
             return cls.query_experiment(eid, criteria, children)
 
@@ -21,6 +21,14 @@ class COMPSCache:
             cls.load_experiment(eid, criteria, children)
 
         return cls._experiments[eid]
+
+    @classmethod
+    def add_experiment_to_cache(cls, e):
+        cls._experiments[str(e.id)] = e
+
+    @classmethod
+    def add_simulation_to_cache(cls, s):
+        cls._simulations[str(s.id)] = s
 
     @classmethod
     def load_simulation(cls, sid, criteria=None, children=None):

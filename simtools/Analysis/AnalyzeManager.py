@@ -2,19 +2,19 @@ import collections
 import itertools
 import os
 import shutil
+import sys
 import time
 from multiprocessing.pool import Pool
 from tempfile import mkdtemp
 
-import sys
 from COMPS.Data.Simulation import SimulationState
 from diskcache import FanoutCache
-
 
 from simtools.Analysis.DataRetrievalProcess import retrieve_data
 from simtools.DataAccess.DataStore import DataStore
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSCache import COMPSCache
+from simtools.Utilities.CacheEnabled import CacheEnabled
 from simtools.Utilities.Experiments import retrieve_experiment, retrieve_simulation
 from simtools.Utilities.General import init_logging, animation, verbose_timedelta
 
@@ -22,10 +22,13 @@ logger = init_logging('AnalyzeManager')
 
 ANALYZE_TIMEOUT = 3600  # Maximum seconds before timing out - set to 1h
 WAIT_TIME = 1.15        # How much time to wait between check if the analysis is done
+EXCEPTION_KEY = "__EXCEPTION__"
 
 
-class AnalyzeManager:
-    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True):
+class AnalyzeManager(CacheEnabled):
+    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False,
+                 verbose=True):
+        super().__init__()
         self.experiments = []
         self.simulations = []
         self.analyzers = []
@@ -35,7 +38,6 @@ class AnalyzeManager:
         self.verbose = verbose
         self.force_analyze = force_analyze
         self.working_dir = working_dir or os.getcwd()
-        self.cache = None
 
         # If no experiment is specified, retrieve the most recent as a convenience
         if exp_list == 'latest':
@@ -55,6 +57,9 @@ class AnalyzeManager:
         if analyzers:
             analyzer_list = analyzers if isinstance(analyzers, collections.Iterable) else [analyzers]
             for a in analyzer_list: self.add_analyzer(a)
+
+        # Initialize the cache
+        self.cache = self.initialize_cache(shards=self.max_threads)
 
     def add_experiment(self, experiment):
         from simtools.DataAccess.Schema import Experiment
@@ -93,7 +98,21 @@ class AnalyzeManager:
 
         self.analyzers.append(analyzer)
 
+    def _check_exception(self):
+        if self.cache.get(EXCEPTION_KEY, default=None):
+            exp = self.cache[EXCEPTION_KEY]
+            sys.stdout.flush()
+            print("\nAn exception has been raised during data processing.\n"
+                  "Simulation: {} \n"
+                  "Analyzer: {}\n"
+                  "\n{}".format(exp["s"], exp["a"], exp["tb"]))
+            exit()
+
     def analyze(self):
+        # Clear the cache
+        self.cache.clear()
+
+        # Start the timer
         start_time = time.time()
 
         # If no analyzers -> quit
@@ -137,10 +156,6 @@ class AnalyzeManager:
                       .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off", "on" if hasattr(a, "cache") else "off"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
-        # Create a temporary directory for the cache
-        directory = mkdtemp()
-        self.cache = FanoutCache(directory, shards=max_threads, timeout=1)
-
         if len(simulations) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
         else:
@@ -149,6 +164,8 @@ class AnalyzeManager:
             pool.close()
 
             while not results.ready():
+                self._check_exception()
+
                 time_elapsed = time.time()-start_time
                 if self.verbose:
                     sys.stdout.write("\r {} Analyzing {}/{}... {} elapsed"
@@ -159,12 +176,14 @@ class AnalyzeManager:
                     raise Exception("Timeout while waiting the analysis to complete...")
 
                 time.sleep(WAIT_TIME)
+            self._check_exception()
 
         # At this point we have all our results
         # Give to the analyzer
         for a in self.analyzers:
             analyzer_data = {}
             for key in self.cache:
+                if key == EXCEPTION_KEY: continue
                 # Retrieve the cache content and the simulation object
                 sim_cache = self.cache.get(key)
                 simulation_obj = simulations[key]
@@ -172,12 +191,9 @@ class AnalyzeManager:
                 analyzer_data[simulation_obj] = sim_cache[a.uid] if sim_cache and a.uid in sim_cache else None
             a.finalize(analyzer_data)
 
-        # Close the cache and delete
-        self.cache.close()
-        shutil.rmtree(directory)
-
         if self.verbose:
             total_time = time.time() - start_time
             print("\r ✓ Analysis done. Took {} (~ {:.3f}s per simulation)"
                   .format(verbose_timedelta(total_time), total_time/len(simulations)))
+
 

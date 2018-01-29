@@ -5,10 +5,8 @@ class BaseSimulationRunner:
 
     MONITOR_SLEEP = 5 # seconds
 
-    def __init__(self, experiment, states, success):
+    def __init__(self, experiment):
         self.experiment = experiment
-        self.states = states
-        self.success = success
 
     @abstractmethod
     def run(self):

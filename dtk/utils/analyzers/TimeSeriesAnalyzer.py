@@ -47,7 +47,7 @@ class TimeseriesAnalyzer(BaseAnalyzer):
 
         if len(selected) == 0:
             print("No data have been returned... Exiting...")
-            exit()
+            return
 
         # Combining selected data...
         combined = pd.concat(selected, axis=1,

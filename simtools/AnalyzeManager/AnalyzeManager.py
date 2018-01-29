@@ -150,7 +150,12 @@ class AnalyzeManager:
             return
 
         # Create the parser
-        return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
+        if experiment.location == "HPC":
+            from simtools.OutputParser import CompsDTKOutputParser
+            return CompsDTKOutputParser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
+        else:
+            from simtools.OutputParser import SimulationOutputParser
+            return SimulationOutputParser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
 
     def analyze(self):
         # If no analyzers -> quit
@@ -164,7 +169,7 @@ class AnalyzeManager:
             new_am.analyze()
             return
 
-        print("The format of analyzer is changing! The new Analysis mode gives 5x speed ups on average :)")
+        print("The format of analyzer is changing! The new Analysis mode gives up to 5x speed up on average :)")
         print("Please update your analyzers to use the new simtools.Analysis.BaseAnalyzers.BaseAnalyzer")
         print("Also use the new AnalyzeManager found at simtools.Analysis.AnalyzeManager")
 

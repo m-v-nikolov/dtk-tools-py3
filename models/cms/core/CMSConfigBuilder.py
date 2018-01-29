@@ -10,7 +10,6 @@ class CMSConfigBuilder(SimConfigBuilder):
     def __init__(self, model, config=None):
         super(CMSConfigBuilder, self).__init__(config)
         self.model = model
-        self.exe_name = 'compartments.exe'
 
     def set_config_param(self, param, value):
         self.config[param] = value

@@ -6,16 +6,16 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.CompsExperimentManager import CompsExperimentManager
 from simtools.Monitor import CompsSimulationMonitor
 from simtools.SimulationRunner.BaseSimulationRunner import BaseSimulationRunner
-from simtools.Utilities.COMPSUtilities import experiment_needs_commission, get_simulation_by_id, COMPS_login
+from simtools.Utilities.COMPSUtilities import experiment_needs_commission, COMPS_login
 from simtools.Utilities.General import init_logging
 
 logger = init_logging('Runner')
 
 
 class COMPSSimulationRunner(BaseSimulationRunner):
-    def __init__(self, experiment, comps_experiment, states, success):
+    def __init__(self, experiment, comps_experiment):
         logger.debug('Create COMPSSimulationRunner with experiment: %s' % experiment.id)
-        super(COMPSSimulationRunner, self).__init__(experiment, states, success)
+        super(COMPSSimulationRunner, self).__init__(experiment)
 
         # Check if we need to commission
         COMPS_login(experiment.endpoint)
@@ -43,7 +43,6 @@ class COMPSSimulationRunner(BaseSimulationRunner):
 
         # Until done, update the status
         while True:
-            logger.debug('COMPS - Waiting loop')
             try:
                 states, _ = monitor.query()
                 if states == {}:
@@ -53,41 +52,15 @@ class COMPSSimulationRunner(BaseSimulationRunner):
                 logger.error('Exception in the COMPS Monitor for experiment %s' % self.experiment.id)
                 logger.error(e)
 
-            # Create the diff list
-            # This list holds the ids of simulations that changed since last loop
-            # Also include eventual created simulations since last time
-            diff_list = [key for key in states if (key in last_states and last_states[key] != states[key]) or states[key] == SimulationState.Created]
+            # Only update the simulations that changed since last check
+            # We are also including simulations that were not present (in case we add some later)
+            DataStore.batch_simulations_update(list({"sid": key, "status":states[key].name} for key in states if (key in last_states and last_states[key] != states[key]) or key not in last_states))
 
-            logger.debug('COMPS - Difflist for experiment %s' % self.experiment.id)
-            logger.debug(diff_list)
-
-            if len(diff_list) > 0:
-                try:
-                    # Update the simulation status first
-                    self.states.update(states)
-
-                    # loop again to take care of success if needed
-                    for key in diff_list:
-                        if states[key] == SimulationState.Succeeded:
-                            logger.debug("Simulation %s has succeeded, calling ths success callback" % key)
-                            simulation = DataStore.get_simulation(key)
-                            self.success(simulation)
-                            logger.debug("Callback done for %s" % key)
-                        if states[key] == SimulationState.Created:
-                            # If we find a simulation created but not commissioned -> run it!
-                            # This case can happen when simulations are added at a later time
-                            logger.debug("Found a simulation not commissioned: %s. Run it!" % key)
-                            sim = get_simulation_by_id(key)
-                            sim.commission()
-
-                except Exception as e:
-                    logger.error("Error in the COMPSRunner Monitor")
-                    logger.error(e)
-
-                last_states = states
+            # Store the last state
+            last_states = states
 
             if CompsExperimentManager.status_finished(states):
                 logger.debug('Stop monitoring for experiment %s because all simulations finished' % self.experiment.id)
                 break
 
-            time.sleep(2 * self.MONITOR_SLEEP)
+            time.sleep(self.MONITOR_SLEEP)

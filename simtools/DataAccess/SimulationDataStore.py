@@ -10,8 +10,9 @@ from sqlalchemy import update
 from simtools.Utilities.General import init_logging
 from sqlalchemy.orm import joinedload
 
-logger = init_logging('DataAccess')
 from COMPS.Data.Simulation import SimulationState
+logger = init_logging('DataAccess')
+
 
 class SimulationDataStore:
 
@@ -23,23 +24,19 @@ class SimulationDataStore:
 
         The batch needs to be formatted as follow:
         [
-            {'sid':'simid', "status": 'simstatus', "message":'message', "pid":123},
-            {'sid':'simid', "status": 'simstatus', "message":'message', "pid":123}
+            {'sid':'simid', "status": 'simstatus'},
+            {'sid':'simid', "status": 'simstatus'}
         ]
 
         Args:
             batch: Batch of simulations to save
         """
-        logger.debug("Batch simulations update")
         if len(simulation_batch) == 0: return
-
-        for h in simulation_batch:
-            h["status"] = h["status"].name # SimulationState -> name
 
         with session_scope() as session:
             stmt = update(Simulation).where(and_(Simulation.id == bindparam("sid"),
                                                  not_(Simulation.status in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled))))\
-                .values(status_s=bindparam("status"), message=bindparam("message"), pid=bindparam("pid"))
+                .values(status_s=bindparam("status"))
             session.execute(stmt, simulation_batch)
 
     @classmethod

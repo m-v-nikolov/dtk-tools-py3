@@ -4,6 +4,8 @@ import sys
 # Add the tools to the path
 from multiprocessing import Process, Manager
 
+from simtools.Utilities.COMPSCache import COMPSCache
+
 sys.path.append(os.path.abspath('..'))
 import threading
 import time
@@ -21,31 +23,6 @@ from simtools.Utilities.COMPSUtilities import is_comps_alive
 logger = init_logging('Overseer')
 
 
-def SimulationStateUpdater(states):
-    while True:
-        logger.debug("Simulation update function")
-        if states:
-            try:
-                while states:
-                    batch = []
-                    for k, state in states.items():
-                        if not hasattr(state, 'pid'):
-                            batch.append({'sid': k, 'status': state, 'message': None, 'pid': None})
-                        else:
-                            batch.append({'sid': k, 'status': state.status, 'message': state.message, 'pid': state.pid})
-
-                        del states[k]
-                        if len(batch) > 250:
-                            DataStore.batch_simulations_update(batch)
-                            batch = []
-                    if batch:
-                        DataStore.batch_simulations_update(batch)
-            except Exception as e:
-                logger.error("Exception in the status updater")
-                logger.error(e)
-
-        time.sleep(3)
-
 
 def LogCleaner():
     # Get the last time a cleanup happened
@@ -55,6 +32,7 @@ def LogCleaner():
         from simtools.DataAccess.LoggingDataStore import LoggingDataStore
         LoggingDataStore.log_cleanup()
         DataStore.save_setting(DataStore.create_setting(key='last_log_cleanup', value=datetime.today()))
+
 
 if __name__ == "__main__":
 
@@ -72,10 +50,6 @@ if __name__ == "__main__":
 
     # Queue to be shared among all runners in order to update the individual simulation states in the DB
     manager = Manager()
-    states_queue = manager.dict()
-    update_state_thread = Process(target=SimulationStateUpdater, args=(states_queue,))
-    update_state_thread.daemon = True
-    update_state_thread.start()
 
     # Take this opportunity to cleanup the logs
     lc = threading.Thread(target=LogCleaner)
@@ -105,19 +79,7 @@ if __name__ == "__main__":
                     logger.debug('Exception in creation manager for experiment %s' % experiment.id)
                     logger.debug(e)
                     logger.debug(traceback.format_exc())
-                    # See what to do depending on what happened
-                    if experiment.location == "HPC":
-                        # Exit if we couldnt ping COMPS
-                        if not is_comps_alive(experiment.endpoint):
-                            logger.error("Exiting the Overseer because COMPS is not available!")
-                            exit()
-                        else:
-                            # COMPS is alive, sync this particular experiment
-                            try:
-                                exp = retrieve_experiment(experiment.exp_id, force_update=True)
-                                manager = ExperimentManagerFactory.from_experiment(exp)
-                            except:
-                                logger.debug("Experiment %s deleted from local DB!" % experiment.id)
+
                 if manager:
                     if manager.location == "LOCAL": manager.local_queue = local_queue
                     managers[experiment.id] = manager
@@ -131,17 +93,18 @@ if __name__ == "__main__":
         logger.debug("Checking experiment managers. There are %d of them. pid: %d" % (len(managers), os.getpid()))
         managers_to_delete = []
         for exp_id, manager in managers.items():
-            logger.debug("Checking manager %s" % exp_id)
-            if manager.finished():
+            # Refresh the experiment first
+            manager.refresh_experiment()
+
+            # Manager experiment is gone, we dont need it anymore
+            if not manager.experiment:
+                managers_to_delete.append(exp_id)
+            elif manager.finished():
                 logger.debug('Manager for experiment id: %s is done' % exp_id)
-                # After analysis delete the manager from the list
-                # Do it after the loop to not change the dict while iterating over it
                 managers_to_delete.append(exp_id)
             else:
-                # Refresh the experiment first
-                manager.refresh_experiment()
                 logger.debug('Commission simulations as needed for experiment id: %s' % exp_id)
-                n_commissioned_sims = manager.commission_simulations(states_queue)
+                n_commissioned_sims = manager.commission_simulations()
                 logger.debug('Experiment done (re)commissioning %d simulation(s)' % n_commissioned_sims)
 
         # Delete the managers that needs to be deleted
