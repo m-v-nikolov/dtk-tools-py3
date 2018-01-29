@@ -1,6 +1,7 @@
 import itertools
 
 import os
+import traceback
 
 from simtools.Analysis.OutputParser import SimulationOutputParser
 from simtools.Utilities.COMPSCache import COMPSCache
@@ -42,7 +43,13 @@ def retrieve_data(simulation, analyzers, cache):
             data = raw_data
 
         # Retrieve the selected data for the given analyzer
-        selected_data[analyzer.uid] = analyzer.select_simulation_data(data, simulation)
+        try:
+            selected_data[analyzer.uid] = analyzer.select_simulation_data(data, simulation)
+        except:
+            tb = traceback.format_exc()
+            from simtools.Analysis.AnalyzeManager import EXCEPTION_KEY
+            cache.set(EXCEPTION_KEY, {"a": analyzer, "s": simulation, "tb": tb})
+            return
 
     # Store in the cache
     cache.set(simulation.id, selected_data)

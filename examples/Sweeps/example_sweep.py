@@ -20,8 +20,9 @@ configure_site(cb, 'Namawala')
 # Name of the experiment
 exp_name = 'ExampleSweep'
 
+
 # Create a builder to sweep over the birth rate multiplier
-builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1, 1.5, .1)})
+builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1, 1.5, .01)})
 
 run_sim_args = {
     'exp_name': exp_name,
@@ -34,3 +35,4 @@ if __name__ == "__main__":
     exp_manager = ExperimentManagerFactory.init()
     exp_manager.run_simulations(**run_sim_args)
     exp_manager.wait_for_finished(verbose=True)
+    assert(exp_manager.succeeded())

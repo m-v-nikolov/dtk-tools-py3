@@ -9,12 +9,13 @@ from simtools.Utilities.General import init_logging, is_running
 logger = init_logging("LocalRunner")
 from COMPS.Data.Simulation import SimulationState
 
+
 class LocalSimulationRunner(BaseSimulationRunner):
     """
     Run one simulation.
     """
-    def __init__(self, simulation, experiment, thread_queue, states, success):
-        super(LocalSimulationRunner, self).__init__(experiment, states, success)
+    def __init__(self, simulation, experiment, thread_queue):
+        super(LocalSimulationRunner, self).__init__(experiment)
         self.queue = thread_queue # used to limit the number of concurrently running simulations
         self.simulation = simulation
         self.sim_dir = self.simulation.get_path()
@@ -59,7 +60,7 @@ class LocalSimulationRunner(BaseSimulationRunner):
         """
         sim_pid = self.simulation.pid
 
-        while is_running(sim_pid, name_part='Eradication') and self.simulation.status != "Cancelled":
+        while is_running(sim_pid, name_part=self.experiment.exe_name) and self.simulation.status != "Cancelled":
             logger.debug("monitor: waiting on pid: %s" % sim_pid)
             self.simulation.message = self.last_status_line()
             self.update_status()
@@ -71,10 +72,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
         last_message = self.last_status_line()
         last_state = self.check_state()
 
-        if "Done" in last_message:
+        if "Done" in last_message or os.path.exists(os.path.join(self.sim_dir, 'trajectories.csv')):
             self.simulation.status = SimulationState.Succeeded
-            # Wise to wait a little bit to make sure files are written
-            self.success(self.simulation)
         else:
             # If we exited with a Canceled status, don't update to Failed
             if last_state != SimulationState.Canceled:
@@ -87,7 +86,8 @@ class LocalSimulationRunner(BaseSimulationRunner):
         self.update_status()
 
     def update_status(self):
-        self.states.update({self.simulation.id: self.simulation})
+        # For local sim, we save the object so we have the info we need
+        DataStore.save_simulation(self.simulation)
 
     def last_status_line(self):
         """

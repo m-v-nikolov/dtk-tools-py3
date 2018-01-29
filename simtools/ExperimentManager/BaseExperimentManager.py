@@ -1,5 +1,4 @@
-from itertools import cycle
-
+from simtools.Utilities.CacheEnabled import CacheEnabled
 from simtools.Utilities.Encoding import GeneralEncoder
 from simtools.Utilities.General import init_logging, get_tools_revision, animation
 
@@ -19,7 +18,6 @@ import fasteners
 from simtools.DataAccess.DataStore import DataStore, batch
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
-from simtools.OutputParser import SimulationOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.Experiments import validate_exp_name
 from simtools.Utilities.General import is_running
@@ -29,16 +27,13 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 from COMPS.Data.Simulation import SimulationState
 import sys
 
-def print_status_func():
-    print(".", end="")
-    sys.stdout.flush()
 
-class BaseExperimentManager:
+class BaseExperimentManager(CacheEnabled):
     __metaclass__ = ABCMeta
-    parserClass=SimulationOutputParser
     location = None
 
-    def __init__(self, experiment, config_builder=None):
+    def __init__(self, experiment=None, config_builder=None):
+        super().__init__()
         self.experiment = experiment
         self.exp_builder = None
         self.config_builder = config_builder
@@ -46,9 +41,10 @@ class BaseExperimentManager:
         self.experiment_tags = {}
         self.asset_service = None
         self.assets = None
+        self.cache = self.initialize_cache(queue=True)
 
     @abstractmethod
-    def commission_simulations(self, states):
+    def commission_simulations(self):
         pass
 
     @staticmethod
@@ -64,7 +60,7 @@ class BaseExperimentManager:
         pass
 
     @abstractmethod
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+    def get_simulation_creator(self, function_set, max_sims_per_batch):
         pass
 
     @abstractmethod
@@ -72,6 +68,7 @@ class BaseExperimentManager:
         self.experiment = DataStore.create_experiment(
             exp_id=experiment_id,
             suite_id=suite_id,
+            exe_name=self.assets.exe_name,
             sim_root=SetupParser.get('sim_root'),
             exp_name=experiment_name,
             location=self.location,
@@ -117,12 +114,6 @@ class BaseExperimentManager:
             # Save the pid in the settings
             DataStore.save_setting(DataStore.create_setting(key='overseer_pid', value=str(p.pid)))
 
-    def success_callback(self, simulation):
-        """
-        Called when the given simulation is done successfully
-        """
-        pass
-
     def get_simulation_status(self):
         """
         Query the status of simulations in the currently managed experiment.
@@ -132,11 +123,8 @@ class BaseExperimentManager:
         states, msgs = SimulationMonitor(self.experiment.exp_id).query()
         return states, msgs
 
-    def get_output_parser(self, simulation, filtered_analyses, semaphore, parse):
-        return self.parserClass(simulation, filtered_analyses, semaphore, parse)
-
-    def run_simulations(self, config_builder=None, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None,
-                        blocking=False, quiet=False, experiment_tags=None):
+    def run_simulations(self, config_builder=None, exp_name='test', exp_builder=None,
+                        suite_id=None, blocking=False, quiet=False, experiment_tags=None):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         Commission simulations and cache meta-data to local file.
@@ -199,11 +187,12 @@ class BaseExperimentManager:
                 return False
         return True
 
-    def create_simulations(self, exp_name='test', exp_builder=SingleSimulationBuilder(), suite_id=None, verbose=True):
+    def create_simulations(self, exp_name='test', exp_builder=None, suite_id=None, verbose=True):
         """
         Create an experiment with simulations modified according to the specified experiment builder.
         """
-        self.exp_builder = exp_builder
+        self.exp_builder = exp_builder or SingleSimulationBuilder()
+        self.cache.clear()
 
         # Create the experiment if not present already
         if not self.experiment or self.experiment.exp_name != exp_name:
@@ -217,35 +206,24 @@ class BaseExperimentManager:
 
         # Separate the experiment builder generator into batches
         sim_per_batch = int(SetupParser.get('sims_per_thread', default=50))
-        max_creator_processes = max(min(int(SetupParser.get('max_threads')), multiprocessing.cpu_count()-1),1)
         work_list = list(self.exp_builder.mod_generator)
         total_sims = len(work_list)
+        max_creator_processes = min(max(int(SetupParser.get('max_threads')), multiprocessing.cpu_count()), total_sims)
 
         # Batch the work to do differently depending on number of simulations
-        if total_sims > sim_per_batch*max_creator_processes:
-            nbatches = int(total_sims/max_creator_processes)
+        if total_sims > sim_per_batch * max_creator_processes:
+            nbatches = int(total_sims / max_creator_processes)
         else:
             nbatches = sim_per_batch
         fn_batches = batch(work_list, n=nbatches)
 
-        # Create a manager for sharing the list of simulations created back with the main thread
-        # Also create a dict for the cache of md5
-        manager = multiprocessing.Manager()
-        return_list = manager.list()
-
         # Create the simulation processes
-        creator_processes = []
-        for fn_batch in fn_batches:
-            c = self.get_simulation_creator(function_set=fn_batch,
-                                            max_sims_per_batch=sim_per_batch,
-                                            callback=None,
-                                            return_list=return_list)
-            creator_processes.append(c)
+        creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch)  for fn_batch in fn_batches]
 
         # Display some info
         if verbose:
             logger.info("Creating the simulations")
-            logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes+1))
+            logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes))
             logger.info(" | Simulations per batch: %s" % sim_per_batch)
             logger.info(" | Simulations Count: %s" % total_sims)
             logger.info(" | Max simulations per threads: %s" % nbatches)
@@ -258,23 +236,26 @@ class BaseExperimentManager:
 
         # While they are running, display the status
         while True:
-            created_sims = len(return_list)
-            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), len(return_list), total_sims))
+            created_sims = len(self.cache)
+            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), created_sims, total_sims))
             sys.stdout.flush()
-            if created_sims == total_sims or all([not c.is_alive() for c in creator_processes]):
+            if created_sims == total_sims or all(not c.is_alive() for c in creator_processes):
                 break
             time.sleep(0.3)
 
+        for c in creator_processes:
+            c.join()
+
         # We exited make sure we had no issues
-        print("\r ✓ Created simulations: {}/{}".format(len(return_list), total_sims))
+        print("\r ✓ Created simulations: {}/{}".format(len(self.cache), total_sims))
         sys.stdout.flush()
         if created_sims != total_sims:
             logger.error("Commission seems to have failed. Only {} simulations were created but {} were expected...\n"
-                         "Exiting...".format(created_sims,total_sims))
+                         "Exiting...".format(created_sims, total_sims))
             exit()
 
         # Insert all those newly created simulations to the DB
-        DataStore.bulk_insert_simulations(return_list)
+        DataStore.bulk_insert_simulations(self.cache)
 
         # Refresh the experiment
         self.refresh_experiment()
@@ -323,15 +304,8 @@ class BaseExperimentManager:
         # Display the counter no matter the number of simulations
         print(dict(Counter([st.name for st in states.values()])))
 
-    def delete_experiment(self):
-        # Delete on COMPS/local files
-        self.hard_delete()
-
-        # Delete in the DB
-        DataStore.delete_experiment(self.experiment)
-
     def wait_for_finished(self, verbose=False, sleep_time=5):
-        timeout = 3600 * 24 # 48 hours timeout
+        timeout = 3600 * 24  # 48 hours timeout
         while True:
             # Get the new status
             try:
@@ -385,28 +359,29 @@ class BaseExperimentManager:
                 self.kill_simulation(simulation)
 
             # Add to the batch
-            sim_batch.append({'sid':simulation.id, 'status':SimulationState.Canceled,'message':None, 'pid':None})
+            sim_batch.append({'sid': simulation.id, 'status': SimulationState.Canceled, 'message': None, 'pid': None})
 
         # Batch update the statuses
         DataStore.batch_simulations_update(sim_batch)
 
     @staticmethod
     def status_succeeded(states):
-        return all(v in [SimulationState.Succeeded] for v in states.values())
+        return all(v == SimulationState.Succeeded for v in states.values())
 
     def succeeded(self):
         return self.experiment.is_successful()
 
     @staticmethod
     def status_failed(states):
-        return all(v in [SimulationState.Failed] for v in states.values())
+        return all(v  == SimulationState.Failed for v in states.values())
 
     def any_failed_or_cancelled(self):
         return self.experiment.any_failed_or_cancelled()
 
     @staticmethod
     def status_finished(states):
-        return all(v in [SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled] for v in states.values())
+        return all(
+            v in (SimulationState.Succeeded, SimulationState.Failed, SimulationState.Canceled) for v in states.values())
 
     def finished(self):
         return self.experiment.is_done()
@@ -421,4 +396,3 @@ class BaseExperimentManager:
         for c in ['/', '\\', ':']:
             experiment_name = experiment_name.replace(c, '_')
         return experiment_name
-

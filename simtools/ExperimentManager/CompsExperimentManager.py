@@ -4,10 +4,10 @@ from multiprocessing import Process
 from COMPS.Data import Experiment, Configuration, Priority, Suite
 
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
-from simtools.OutputParser import CompsDTKOutputParser
 from simtools.SetupParser import SetupParser
 from simtools.SimulationCreator.COMPSSimulationCreator import COMPSSimulationCreator
-from simtools.Utilities.COMPSUtilities import get_experiment_by_id, experiment_is_running, COMPS_login, get_semaphore, \
+from simtools.Utilities.COMPSCache import COMPSCache
+from simtools.Utilities.COMPSUtilities import experiment_is_running, COMPS_login, get_semaphore, \
     get_simulation_by_id
 from simtools.Utilities.General import init_logging, timestamp
 
@@ -20,15 +20,14 @@ class CompsExperimentManager(BaseExperimentManager):
     e.g. creation of Simulation, Experiment, Suite objects
     """
     location = 'HPC'
-    parserClass = CompsDTKOutputParser
 
-    def __init__(self, experiment, config_builder=None):
+    def __init__(self, experiment=None, config_builder=None):
         # Ensure we use the SetupParser environment of the experiment if it already exists
+        super().__init__(experiment, config_builder)
         temp_block = experiment.selected_block if experiment else SetupParser.selected_block
         temp_path = experiment.setup_overlay_file if experiment else None
 
         with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_path) as setup:
-            BaseExperimentManager.__init__(self, experiment, config_builder)
             self.comps_sims_to_batch = int(setup.get(parameter='sims_per_thread'))
             self.endpoint = setup.get(parameter='server_endpoint')
             COMPS_login(self.endpoint)
@@ -41,17 +40,15 @@ class CompsExperimentManager(BaseExperimentManager):
 
         # If we pass an experiment, retrieve it from COMPS
         if self.experiment:
-            id = self.experiment.exp_id
-            self.comps_experiment = get_experiment_by_id(id)
+            self.comps_experiment = COMPSCache.experiment(self.experiment.exp_id)
 
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+    def get_simulation_creator(self, function_set, max_sims_per_batch):
         return COMPSSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
-                                      callback=callback,
-                                      return_list=return_list,
+                                      cache=self.cache,
                                       save_semaphore=self.save_semaphore,
                                       comps_experiment=self.comps_experiment)
 
@@ -63,6 +60,7 @@ class CompsExperimentManager(BaseExperimentManager):
         return str(suite.id)
 
     MAX_SUBDIRECTORY_LENGTH = 50 - len(timestamp()) - 1 # avoid maxpath issues on COMPS
+
     def create_experiment(self, experiment_name, experiment_id=None, suite_id=None):
         # Also create the experiment in COMPS to get the ID
         COMPS_login(SetupParser.get('server_endpoint'))
@@ -93,6 +91,9 @@ class CompsExperimentManager(BaseExperimentManager):
         # Store in our object
         self.comps_experiment = e
 
+        # Also add it to the cache
+        COMPSCache.add_experiment_to_cache(e)
+
         # Create experiment in the base class
         super(CompsExperimentManager, self).create_experiment(experiment_name,  str(e.id), suite_id)
 
@@ -110,16 +111,16 @@ class CompsExperimentManager(BaseExperimentManager):
         # Add the simulation to the batch
         self.sims_to_create.append({'name': self.config_builder.get_param('Config_Name'), 'files':files, 'tags':tags})
 
-    def commission_simulations(self, states):
+    def commission_simulations(self):
         """
         Launches an experiment and its associated simulations in COMPS
         :param states: a multiprocessing.Queue() object for simulations to use for updating their status
         :return: The number of simulations commissioned.
         """
         from simtools.SimulationRunner.COMPSRunner import COMPSSimulationRunner
-        if not self.runner_thread or not self.runner_thread.is_alive():
+        if self.experiment and (not self.runner_thread or not self.runner_thread.is_alive()):
             logger.debug("Commissioning simulations for COMPS experiment: %s" % self.experiment.id)
-            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, self.comps_experiment, states, self.success_callback))
+            self.runner_thread = Process(target=COMPSSimulationRunner, args=(self.experiment, self.comps_experiment))
             self.runner_thread.daemon = True
             self.runner_thread.start()
             return len(self.experiment.simulations)
@@ -139,6 +140,9 @@ class CompsExperimentManager(BaseExperimentManager):
         # Mark experiment for deletion in COMPS.
         COMPS_login(self.endpoint)
         self.comps_experiment.delete()
+        # Delete in the DB
+        from simtools.DataAccess.DataStore import DataStore
+        DataStore.delete_experiment(self.experiment)
 
     def kill_simulation(self, simulation):
         s = get_simulation_by_id(simulation)
