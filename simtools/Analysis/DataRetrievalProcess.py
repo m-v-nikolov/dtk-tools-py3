@@ -20,7 +20,7 @@ def retrieve_data(simulation, analyzers, cache):
 
     if simulation.experiment.location == "HPC":
         COMPS_login(simulation.experiment.endpoint)
-        COMPS_simulation = COMPSCache.simulations(simulation.id)
+        COMPS_simulation = COMPSCache.simulation(simulation.id)
         byte_arrays = COMPS_simulation.retrieve_output_files(paths=filenames)
     else:
         byte_arrays = []
