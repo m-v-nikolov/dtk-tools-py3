@@ -1,5 +1,3 @@
-import copy
-
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
@@ -17,8 +15,6 @@ run_sim_args = {
     'config_builder': cb
 }
 
-cb2 = copy.deepcopy(cb)
-
 # If you prefer running with `python example_sim.py`, you will need the following block
 if __name__ == "__main__":
     SetupParser.init()
@@ -27,6 +23,3 @@ if __name__ == "__main__":
     # Wait for the simulations to be done
     exp_manager.wait_for_finished(verbose=True)
     assert (exp_manager.succeeded())
-
-    exp_manager.run_simulations(config_builder=cb2, exp_name="ExampleSim")
-    exp_manager.wait_for_finished(verbose=True)
