@@ -1,14 +1,12 @@
 import collections
 import itertools
 import os
-import shutil
 import sys
 import time
 from multiprocessing.pool import Pool
-from tempfile import mkdtemp
 
 from COMPS.Data.Simulation import SimulationState
-from diskcache import FanoutCache
+from multiprocessing import Process
 
 from simtools.Analysis.DataRetrievalProcess import retrieve_data
 from simtools.DataAccess.DataStore import DataStore
@@ -63,28 +61,29 @@ class AnalyzeManager(CacheEnabled):
 
     def add_experiment(self, experiment):
         from simtools.DataAccess.Schema import Experiment
+        from simtools.Utilities.COMPSUtilities import COMPS_login
+
         if not isinstance(experiment, Experiment):
             experiment = retrieve_experiment(experiment)
 
         if experiment not in self.experiments:
             self.experiments.append(experiment)
             if experiment.location == "HPC":
+                COMPS_login(experiment.endpoint)
                 COMPSCache.load_experiment(experiment.exp_id)
 
     def add_simulation(self, simulation):
         from simtools.DataAccess.Schema import Simulation
+
         if not isinstance(simulation, Simulation):
             simulation = retrieve_simulation(simulation)
 
-        experiment = simulation.experiment
+        experiment = retrieve_experiment(simulation.experiment_id)
 
         if experiment not in self.experiments_simulations:
             self.experiments_simulations[experiment] = [simulation]
         else:
             self.experiments_simulations[experiment].append(simulation)
-
-        if experiment.location == "HPC":
-            COMPSCache.load_simulation(simulation.id)
 
     def add_analyzer(self, analyzer):
         # First check if we need to change the UID depending on other analyzers
@@ -144,24 +143,23 @@ class AnalyzeManager(CacheEnabled):
             simulations.update({s.id:s for s in sims if self.force_analyze or s.status == SimulationState.Succeeded})
 
         max_threads = min(self.max_threads, len(simulations))
-
+        scount = len(simulations)
         # Display some info
         if self.verbose:
             print("Analyze Manager")
             print(" | {} simulation{} (including {} stand-alones) from {} experiments"
-                  .format(len(simulations), "s"[len(simulations):], sa_count, len(self.experiments)))
+                  .format(scount, "s"[scount:], sa_count, len(self.experiments)))
             print(" | Analyzer{}: ".format("s"[len(self.analyzers):]))
             for a in self.analyzers:
                 print(" |  - {} (Directory map: {} / File parsing: {} / Use cache: {})"
                       .format(a.uid, "on" if a.need_dir_map else "off", "on" if a.parse else "off", "on" if hasattr(a, "cache") else "off"))
             print(" | Pool of {} analyzing processes".format(max_threads))
 
+        pool = Pool(max_threads)
         if len(simulations) == 0 and self.verbose:
             print("No experiments/simulations for analysis.")
         else:
-            pool = Pool(max_threads)
             results = pool.starmap_async(retrieve_data, itertools.product(simulations.values(), (self.analyzers,), (self.cache,)))
-            pool.close()
 
             while not results.ready():
                 self._check_exception()
@@ -169,7 +167,7 @@ class AnalyzeManager(CacheEnabled):
                 time_elapsed = time.time()-start_time
                 if self.verbose:
                     sys.stdout.write("\r {} Analyzing {}/{}... {} elapsed"
-                                     .format(next(animation), len(self.cache), len(simulations), verbose_timedelta(time_elapsed)))
+                                     .format(next(animation), len(self.cache), scount, verbose_timedelta(time_elapsed)))
                     sys.stdout.flush()
 
                 if time_elapsed > ANALYZE_TIMEOUT:
@@ -189,11 +187,12 @@ class AnalyzeManager(CacheEnabled):
                 simulation_obj = simulations[key]
                 # Give to the analyzer
                 analyzer_data[simulation_obj] = sim_cache[a.uid] if sim_cache and a.uid in sim_cache else None
-            a.finalize(analyzer_data)
+            pool.apply_async(a.finalize, (analyzer_data,))
+        pool.close()
+        pool.join()
 
         if self.verbose:
             total_time = time.time() - start_time
             print("\r ✓ Analysis done. Took {} (~ {:.3f}s per simulation)"
-                  .format(verbose_timedelta(total_time), total_time/len(simulations)))
-
+                  .format(verbose_timedelta(total_time), total_time / scount if scount != 0 else 0))
 

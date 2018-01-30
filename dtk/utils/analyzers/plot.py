@@ -1,3 +1,5 @@
+from itertools import chain, repeat, islice, cycle
+
 import numpy as np
 import pandas as pd
 
@@ -79,3 +81,11 @@ def plot_by_channel(channels, plot_fn):
         plot_fn(channel, ax)
 
         # fig.set_tight_layout(True)
+
+def default_vectorplot_fn(df, ax):
+    grouped = df.groupby(level=['species', 'group'], axis=1)
+    m = grouped.mean()
+    nspecies, ngroups = map(len, m.keys().levels)
+    colors = list(
+        chain(*[list(repeat(c, ngroups)) for c in islice(cycle(['navy', 'firebrick', 'green']), None, nspecies)]))
+    m.plot(ax=ax, legend=True, color=colors, alpha=0.5)

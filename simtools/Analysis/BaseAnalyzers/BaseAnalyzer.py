@@ -51,3 +51,6 @@ class BaseAnalyzer(metaclass=ABCMeta):
         """
         pass
 
+    def plot(self):
+        pass
+

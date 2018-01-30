@@ -16,7 +16,7 @@ class TimeseriesAnalyzer(BaseAnalyzer):
                  channels=('Statistical Population',
                            'Rainfall', 'Adult Vectors',
                            'Daily EIR', 'Infected',
-                           'Parasite Prevalence'), saveOutput=False):
+                           'Air Temperature'), saveOutput=False):
         super(TimeseriesAnalyzer, self).__init__(filenames=(filename,))
         self.channels = set(channels)
         self.group_function = group_function
@@ -28,14 +28,14 @@ class TimeseriesAnalyzer(BaseAnalyzer):
     def filter(self, simulation):
         return self.filter_function(simulation.tags)
 
-    def get_channel_data(self, data_by_channel, selected_channels):
+    def get_channel_data(self, data_by_channel, selected_channels, header):
         channel_series = [self.select_function(data_by_channel[channel]["Data"]) for channel in selected_channels]
         return pd.concat(channel_series, axis=1, keys=selected_channels)
 
     def select_simulation_data(self, data, simulation):
         cdata = data[self.filenames[0]]['Channels']
         selected_channels = self.channels.intersection(cdata.keys()) if self.channels else cdata.keys()
-        return self.get_channel_data(cdata, selected_channels)
+        return self.get_channel_data(cdata, selected_channels, data[self.filenames[0]]["Header"])
 
     def finalize(self, all_data):
         selected = []
@@ -65,6 +65,8 @@ class TimeseriesAnalyzer(BaseAnalyzer):
 
         channels = data.columns.levels[0]
         plot_by_channel(channels, plot_fn)
+
         import matplotlib.pyplot as plt
         plt.legend()
         plt.show()
+
