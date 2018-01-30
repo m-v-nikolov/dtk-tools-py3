@@ -6,7 +6,6 @@ import time
 from multiprocessing.pool import Pool
 
 from COMPS.Data.Simulation import SimulationState
-from multiprocessing import Process
 
 from simtools.Analysis.DataRetrievalProcess import retrieve_data
 from simtools.DataAccess.DataStore import DataStore
@@ -98,13 +97,11 @@ class AnalyzeManager(CacheEnabled):
         self.analyzers.append(analyzer)
 
     def _check_exception(self):
-        if self.cache.get(EXCEPTION_KEY, default=None):
-            exp = self.cache[EXCEPTION_KEY]
+        exception = self.cache.get(EXCEPTION_KEY, default=None)
+        if exception:
             sys.stdout.flush()
-            print("\nAn exception has been raised during data processing.\n"
-                  "Simulation: {} \n"
-                  "Analyzer: {}\n"
-                  "\n{}".format(exp["s"], exp["a"], exp["tb"]))
+            print("")
+            print(exception)
             exit()
 
     def analyze(self):
@@ -142,8 +139,9 @@ class AnalyzeManager(CacheEnabled):
             sa_count += len(sims)
             simulations.update({s.id:s for s in sims if self.force_analyze or s.status == SimulationState.Succeeded})
 
-        max_threads = min(self.max_threads, len(simulations))
         scount = len(simulations)
+        max_threads = min(self.max_threads, scount if scount != 0 else 1)
+
         # Display some info
         if self.verbose:
             print("Analyze Manager")
@@ -174,10 +172,11 @@ class AnalyzeManager(CacheEnabled):
                     raise Exception("Timeout while waiting the analysis to complete...")
 
                 time.sleep(WAIT_TIME)
-            self._check_exception()
+            results.get()
 
         # At this point we have all our results
         # Give to the analyzer
+        finalize_results = {}
         for a in self.analyzers:
             analyzer_data = {}
             for key in self.cache:
@@ -187,9 +186,13 @@ class AnalyzeManager(CacheEnabled):
                 simulation_obj = simulations[key]
                 # Give to the analyzer
                 analyzer_data[simulation_obj] = sim_cache[a.uid] if sim_cache and a.uid in sim_cache else None
-            pool.apply_async(a.finalize, (analyzer_data,))
+            finalize_results[a.uid] = pool.apply_async(a.finalize, (analyzer_data,))
+
         pool.close()
         pool.join()
+
+        for a in self.analyzers:
+            a.results = finalize_results[a.uid].get()
 
         if self.verbose:
             total_time = time.time() - start_time

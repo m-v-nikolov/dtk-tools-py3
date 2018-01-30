@@ -70,3 +70,5 @@ class TimeseriesAnalyzer(BaseAnalyzer):
         plt.legend()
         plt.show()
 
+        return "test"
+

@@ -12,6 +12,7 @@ class BaseAnalyzer(metaclass=ABCMeta):
         self.need_dir_map = need_dir_map
         self.working_dir = working_dir
         self.uid = uid or self.__class__.__name__
+        self.results = None
 
     def initialize(self):
         """

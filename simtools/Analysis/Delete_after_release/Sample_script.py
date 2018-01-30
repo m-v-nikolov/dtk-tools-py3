@@ -21,6 +21,8 @@ if __name__ == "__main__":
     a.add_simulation("c0bb450b-5e05-e811-80c7-f0921c167864")
     a.analyze()
 
+    print(analyzers[0].results)
+
     # t = time.time()
     # analyzers = [TimeseriesAnalyzer()]
     # a = AnalyzeManager(exp_list=exp_ids, analyzers=analyzers)
