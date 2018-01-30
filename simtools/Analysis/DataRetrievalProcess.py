@@ -18,16 +18,22 @@ def retrieve_data(simulation, analyzers, cache):
         cache.set(simulation.id, None)
         return
 
-    if simulation.experiment.location == "HPC":
-        COMPS_login(simulation.experiment.endpoint)
-        COMPS_simulation = COMPSCache.simulation(simulation.id)
-        byte_arrays = COMPS_simulation.retrieve_output_files(paths=filenames)
-    else:
-        byte_arrays = []
-        for filename in filenames:
-            path = os.path.join(simulation.get_path(), filename)
-            with open(path, 'rb') as output_file:
-                byte_arrays.append(output_file.read())
+    try:
+        if simulation.experiment.location == "HPC":
+            COMPS_login(simulation.experiment.endpoint)
+            COMPS_simulation = COMPSCache.simulation(simulation.id)
+            byte_arrays = COMPS_simulation.retrieve_output_files(paths=filenames)
+        else:
+            byte_arrays = []
+            for filename in filenames:
+                path = os.path.join(simulation.get_path(), filename)
+                with open(path, 'rb') as output_file:
+                    byte_arrays.append(output_file.read())
+    except:
+        tb = traceback.format_exc()
+        from simtools.Analysis.AnalyzeManager import EXCEPTION_KEY
+        cache.set(EXCEPTION_KEY, {"a": analyzers, "s": simulation, "tb": tb})
+        return
 
     # Get the raw data as a dictionary associating filename=>content
     raw_data = dict(zip(filenames, byte_arrays))

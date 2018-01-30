@@ -19,7 +19,7 @@ logger = init_logging('AnalyzeManager')
 
 
 class AnalyzeManager:
-    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True,
+    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=False,
                  create_dir_map=False):
         self.experiments = []
         self.simulations = []
@@ -165,7 +165,7 @@ class AnalyzeManager:
         from simtools.Analysis.BaseAnalyzers.BaseAnalyzer import BaseAnalyzer
         from simtools.Analysis.AnalyzeManager import AnalyzeManager as am
         if isinstance(self.analyzers[0], BaseAnalyzer):
-            new_am = am(exp_list=self.experiments, analyzers=self.analyzers, sim_list=itertools.chain(*self.experiments_simulations.values()))
+            new_am = am(exp_list=self.experiments, analyzers=self.analyzers, sim_list=itertools.chain(*self.experiments_simulations.values()), verbose=self.verbose)
             new_am.analyze()
             return
 

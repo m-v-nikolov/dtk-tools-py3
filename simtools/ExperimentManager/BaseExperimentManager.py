@@ -218,7 +218,7 @@ class BaseExperimentManager(CacheEnabled):
         fn_batches = batch(work_list, n=nbatches)
 
         # Create the simulation processes
-        creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch)  for fn_batch in fn_batches]
+        creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch) for fn_batch in fn_batches]
 
         # Display some info
         if verbose:

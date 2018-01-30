@@ -293,7 +293,8 @@ def stdout(args, unknownArgs):
     else:
         am = AnalyzeManager(exp_list=[exp_manager.experiment],
                             analyzers=StdoutAnalyzer([sim_id], args.error),
-                            force_analyze=True)
+                            force_analyze=True,
+                            verbose=False)
         am.analyze()
 
 
@@ -838,10 +839,8 @@ def main():
     # This is it! This is where SetupParser gets set once and for all. Until you run 'dtk COMMAND' again, that is.
     init.initialize_SetupParser_from_args(args, unknownArgs)
 
-    try:
-        args.func(args, unknownArgs)
-    except AttributeError:
-        parser.print_help()
+    args.func(args, unknownArgs)
+
 
 if __name__ == '__main__':
     main()
