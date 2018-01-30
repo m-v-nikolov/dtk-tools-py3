@@ -169,9 +169,9 @@ class AnalyzeManager:
             new_am.analyze()
             return
 
-        print("The format of analyzer is changing! The new Analysis mode gives up to 5x speed up on average :)")
-        print("Please update your analyzers to use the new simtools.Analysis.BaseAnalyzers.BaseAnalyzer")
-        print("Also use the new AnalyzeManager found at simtools.Analysis.AnalyzeManager")
+        # print("The format of analyzer is changing! The new Analysis mode gives up to 5x speed up on average :)")
+        # print("Please update your analyzers to use the new simtools.Analysis.BaseAnalyzers.BaseAnalyzer")
+        # print("Also use the new AnalyzeManager found at simtools.Analysis.AnalyzeManager")
 
         # Empty the parsers
         self.parsers = []
