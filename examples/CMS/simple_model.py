@@ -5,7 +5,7 @@ from simtools.AssetManager.SimulationAssets import SimulationAssets
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
-SetupParser.default_block = "LOCAL"
+SetupParser.default_block = "HPC"
 
 cb = CMSConfigBuilder.from_files(model_file='inputs/models/simplemodel.emodl',
                                  config_file='inputs/models/simplemodel.cfg')
