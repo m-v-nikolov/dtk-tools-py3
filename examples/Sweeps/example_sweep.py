@@ -22,7 +22,7 @@ exp_name = 'ExampleSweep'
 
 
 # Create a builder to sweep over the birth rate multiplier
-builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1, 1.5, .01)})
+builder = GenericSweepBuilder.from_dict({'x_Birth': np.arange(1, 1.5, .1)})
 
 run_sim_args = {
     'exp_name': exp_name,
