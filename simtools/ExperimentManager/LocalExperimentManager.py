@@ -1,6 +1,7 @@
 from multiprocessing import Process
 
 from simtools.Utilities.General import init_logging
+
 logger = init_logging("LocalExperimentManager")
 
 import os
@@ -9,7 +10,6 @@ import shutil
 import signal
 from datetime import datetime
 from simtools.ExperimentManager.BaseExperimentManager import BaseExperimentManager
-from simtools.OutputParser import SimulationOutputParser
 from simtools.SimulationCreator.LocalSimulationCreator import LocalSimulationCreator
 from simtools.SimulationRunner.LocalRunner import LocalSimulationRunner
 from simtools.Utilities.General import is_running
@@ -22,7 +22,6 @@ class LocalExperimentManager(BaseExperimentManager):
     of local experiments, i.e. collections of related simulations
     """
     location = 'LOCAL'
-    parserClass = SimulationOutputParser
 
     @property
     def experiment(self):
@@ -50,7 +49,7 @@ class LocalExperimentManager(BaseExperimentManager):
 
         BaseExperimentManager.__init__(self, experiment, config_builder)
 
-    def commission_simulations(self, states):
+    def commission_simulations(self):
         """
          Commissions all simulations that need to (and can be) commissioned.
         :param states: a multiprocessing.Queue for simulations to use to update their status.
@@ -58,19 +57,17 @@ class LocalExperimentManager(BaseExperimentManager):
         """
         to_commission = self.needs_commissioning()
         commissioned = []
-        logger.debug("Commissioning up to %d simulation(s) (This many may need commissioning)." % len(to_commission))
         for simulation in to_commission:
             if self.local_queue.full():
                 break
             else:
                 logger.debug("Commissioning simulation: %s, its status was: %s" % (simulation.id, simulation.status.name))
                 t1 = Process(target=LocalSimulationRunner,
-                                      args=(simulation, self.experiment, self.local_queue, states, self.success_callback))
+                             args=(simulation, self.experiment, self.local_queue))
                 t1.daemon = True
                 t1.start()
                 self.local_queue.put('run 1')
                 commissioned.append(simulation)
-        logger.debug("Commissioned %d simulation(s) (Limited by available thread count)." % len(commissioned))
         return len(commissioned)
 
     def needs_commissioning(self):
@@ -84,9 +81,9 @@ class LocalExperimentManager(BaseExperimentManager):
             logger.debug("There are %d unfinished_simulation_ids to check." % len(self.unfinished_simulations))
             for sim in self.unfinished_simulations.values():
                 if sim.status == SimulationState.Created or\
-                        (sim.status == SimulationState.Running and not is_running(sim.pid, name_part='Eradication')):
+                        (sim.status == SimulationState.Running and not is_running(sim.pid, name_part=self.experiment.exe_name)):
                     logger.debug("Detected sim potentially in need of commissioning. sim id: %s sim status: %s sim pid: %s is_running? %s" %
-                                 (sim.id, sim.status, sim.pid, is_running(sim.pid, name_part='Eradication')))
+                                 (sim.id, sim.status, sim.pid, is_running(sim.pid, name_part=self.experiment.exe_name)))
                     simulations.append(sim)
                 elif sim.status in [SimulationState.Failed, SimulationState.Succeeded, SimulationState.Canceled]:
                     del self.unfinished_simulations[sim.id]
@@ -126,6 +123,11 @@ class LocalExperimentManager(BaseExperimentManager):
             except Exception as e:
                 print("Could not delete path: {}\nReason: {}".format(exp_path,e))
 
+        # Delete in the DB
+        from simtools.DataAccess.DataStore import DataStore
+        DataStore.delete_experiment(self.experiment)
+
+
     def cancel_experiment(self):
         super(LocalExperimentManager, self).cancel_experiment()
         sim_list = [sim for sim in self.experiment.simulations if sim.status in [SimulationState.CommissionRequested, SimulationState.Running]]
@@ -143,11 +145,10 @@ class LocalExperimentManager(BaseExperimentManager):
             except Exception as e:
                 print(e)
 
-    def get_simulation_creator(self, function_set, max_sims_per_batch, callback, return_list):
+    def get_simulation_creator(self, function_set, max_sims_per_batch):
         return LocalSimulationCreator(config_builder=self.config_builder,
                                       initial_tags=self.exp_builder.tags,
                                       function_set=function_set,
                                       max_sims_per_batch=max_sims_per_batch,
                                       experiment=self.experiment,
-                                      callback=callback,
-                                      return_list=return_list)
+                                      cache=self.cache)

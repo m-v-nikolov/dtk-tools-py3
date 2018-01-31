@@ -1,3 +1,5 @@
+from itertools import chain, repeat, islice, cycle
+
 import numpy as np
 import pandas as pd
 
@@ -5,6 +7,11 @@ import pandas as pd
 def no_plots(df, ax):
     pass
 
+
+def default_plot_fn(df, ax):
+    grouped = df.groupby(level=['group'], axis=1)
+    m = grouped.mean()
+    m.plot(ax=ax, legend=False)
 
 def plot_CI_bands(df, ax):
     """
@@ -59,13 +66,12 @@ def plot_grouped_lines(df, ax):
 
 
 # Subplots by channel
-def plot_by_channel(plot_name, channels, plot_fn):
+def plot_by_channel(channels, plot_fn):
     import matplotlib.pyplot as plt
     ncol = int(1 + len(channels) / 4)
     nrow = int(np.ceil(float(len(channels)) / ncol))
 
-    fig, axs = plt.subplots(num=plot_name,
-                            figsize=(max(6, min(8, 4 * ncol)), min(6, 3 * nrow)),
+    fig, axs = plt.subplots(figsize=(max(6, min(8, 4 * ncol)), min(6, 3 * nrow)),
                             nrows=nrow, ncols=ncol,
                             sharex=True)
 
@@ -75,3 +81,11 @@ def plot_by_channel(plot_name, channels, plot_fn):
         plot_fn(channel, ax)
 
         # fig.set_tight_layout(True)
+
+def default_vectorplot_fn(df, ax):
+    grouped = df.groupby(level=['species', 'group'], axis=1)
+    m = grouped.mean()
+    nspecies, ngroups = map(len, m.keys().levels)
+    colors = list(
+        chain(*[list(repeat(c, ngroups)) for c in islice(cycle(['navy', 'firebrick', 'green']), None, nspecies)]))
+    m.plot(ax=ax, legend=True, color=colors, alpha=0.5)

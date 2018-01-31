@@ -30,6 +30,10 @@ class SimConfigBuilder:
     def params(self):
         return self.config
 
+    @property
+    def exe_name(self):
+        return self.assets.exe_name
+
     def update_params(self, params, validate=False):
         if not validate:
             self.params.update(params)

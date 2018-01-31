@@ -3,6 +3,8 @@ import os
 from multiprocessing.pool import ThreadPool
 
 import collections
+
+import itertools
 from COMPS.Data.Simulation import SimulationState
 
 from simtools.DataAccess.DataStore import DataStore
@@ -17,7 +19,7 @@ logger = init_logging('AnalyzeManager')
 
 
 class AnalyzeManager:
-    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=True,
+    def __init__(self, exp_list=None, sim_list=None, analyzers=None, working_dir=None, force_analyze=False, verbose=False,
                  create_dir_map=False):
         self.experiments = []
         self.simulations = []
@@ -148,12 +150,28 @@ class AnalyzeManager:
             return
 
         # Create the parser
-        return manager.get_output_parser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
+        if experiment.location == "HPC":
+            from simtools.OutputParser import CompsDTKOutputParser
+            return CompsDTKOutputParser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
+        else:
+            from simtools.OutputParser import SimulationOutputParser
+            return SimulationOutputParser(simulation, filtered_analyses, self.maxThreadSemaphore, self.parse)
 
     def analyze(self):
         # If no analyzers -> quit
         if len(self.analyzers) == 0:
             return
+
+        from simtools.Analysis.BaseAnalyzers.BaseAnalyzer import BaseAnalyzer
+        from simtools.Analysis.AnalyzeManager import AnalyzeManager as am
+        if isinstance(self.analyzers[0], BaseAnalyzer):
+            new_am = am(exp_list=self.experiments, analyzers=self.analyzers, sim_list=itertools.chain(*self.experiments_simulations.values()), verbose=self.verbose)
+            new_am.analyze()
+            return
+
+        # print("The format of analyzer is changing! The new Analysis mode gives up to 5x speed up on average :)")
+        # print("Please update your analyzers to use the new simtools.Analysis.BaseAnalyzers.BaseAnalyzer")
+        # print("Also use the new AnalyzeManager found at simtools.Analysis.AnalyzeManager")
 
         # Empty the parsers
         self.parsers = []

@@ -7,11 +7,19 @@ class BaseAnalyzer(metaclass=ABCMeta):
     """
     @abstractmethod
     def __init__(self, uid=None, working_dir=None, parse=True, need_dir_map=False, filenames=None):
+        """
+        :param uid: The unique id identifying this analyzer
+        :param working_dir: A working directory to dump files
+        :param parse: Do we want to leverage the OutputParser or just get the raw data in the select_simulation_data()
+        :param need_dir_map: Will we need the path of the simulations eventually?
+        :param filenames: Which files the analyzer needs to download
+        """
         self.filenames = filenames or []
         self.parse = parse
         self.need_dir_map = need_dir_map
         self.working_dir = working_dir
         self.uid = uid or self.__class__.__name__
+        self.results = None  # Store what finalize() is returning
 
     def initialize(self):
         """

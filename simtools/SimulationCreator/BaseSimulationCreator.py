@@ -12,16 +12,14 @@ class BaseSimulationCreator(Process):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list):
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, cache):
         super(BaseSimulationCreator, self).__init__()
         self.config_builder = config_builder
         self.experiment = experiment
         self.initial_tags = initial_tags
         self.function_set = function_set
         self.max_sims_per_batch = max_sims_per_batch
-        self.return_list = return_list
-        self.dll_path = SetupParser.get('dll_root')
-        self.callback = callback
+        self.cache = cache
         self.created_simulations = []
         self.setup_parser_singleton = SetupParser.singleton
 
@@ -74,10 +72,7 @@ class BaseSimulationCreator(Process):
 
         # Now that the save is done, we have the ids ready -> create the simulations
         for sim in self.created_simulations:
-            self.return_list.append(DataStore.create_simulation(id=str(sim.id), tags=sim.tags, experiment_id=self.experiment.exp_id))
-
-        if self.callback: self.callback()
-
+            self.cache.append(DataStore.create_simulation(id=str(sim.id), tags=sim.tags, experiment_id=self.experiment.exp_id))
 
     @abstractmethod
     def create_simulation(self, cb):

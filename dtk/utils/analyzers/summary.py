@@ -2,8 +2,8 @@ import os
 
 import pandas as pd
 
+from dtk.utils.analyzers import TimeseriesAnalyzer
 from .plot import plot_grouped_lines
-from .timeseries import TimeseriesAnalyzer
 
 
 class SummaryAnalyzer(TimeseriesAnalyzer):

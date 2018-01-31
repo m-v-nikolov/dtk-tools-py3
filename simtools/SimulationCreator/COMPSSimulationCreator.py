@@ -7,8 +7,8 @@ from simtools.Utilities.General import nostdout
 
 
 class COMPSSimulationCreator(BaseSimulationCreator):
-    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list, save_semaphore, comps_experiment):
-        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, callback, return_list)
+    def __init__(self, config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, cache, save_semaphore, comps_experiment):
+        super(COMPSSimulationCreator, self).__init__(config_builder, initial_tags,  function_set, max_sims_per_batch, experiment, cache)
 
         # Store the environment and endpoint
         self.server_endpoint = SetupParser.get('server_endpoint')
@@ -26,17 +26,11 @@ class COMPSSimulationCreator(BaseSimulationCreator):
             Simulation.save_all(save_semaphore=self.save_semaphore)
 
     def post_creation(self):
-        # Commission all the simulations created
-        for sim in self.created_simulations:
-            sim.commission()
-
-        # We have to do simulations one by one for now as commissioning the experiment may lead to some simulations
-        # being commission before the assets were sent successfully...
         # We may encounter 400 Bad Request if already commissioned but still we want to try commissioning every time
-        # try:
-        #     self.comps_experiment.commission()
-        # except RuntimeError:
-        #     pass
+        try:
+            self.comps_experiment.commission()
+        except RuntimeError:
+            pass
 
     def add_files_to_simulation(self, s, cb):
         files = cb.dump_files_to_string()
