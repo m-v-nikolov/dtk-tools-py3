@@ -93,6 +93,7 @@ class SiteDataPlotter(BasePlotter):
                 fig.set_tight_layout(True)
 
                 plt.savefig(fname + '.png', format='PNG')
+                plt.savefig(fname + '.pdf', format='PDF')
                 plt.close(fig)
 
     def plot_all(self, site_name, analyzer_name, samples, clim):
@@ -114,6 +115,7 @@ class SiteDataPlotter(BasePlotter):
 
         fig.set_tight_layout(True)
         plt.savefig(fname + '.png', format='PNG')
+        plt.savefig(fname + '.pdf', format='PDF')
         plt.close(fig)
 
     def cleanup(self):

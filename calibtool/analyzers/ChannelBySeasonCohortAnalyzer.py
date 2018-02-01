@@ -29,6 +29,22 @@ class ChannelBySeasonCohortAnalyzer(BaseCalibrationAnalyzer):
         super(ChannelBySeasonCohortAnalyzer, self).__init__(site, weight, compare_fn)
         self.reference = site.get_reference_data(self.site_ref_type)
 
+        # ref_channels = self.reference.columns.tolist()
+        # if len(ref_channels) != 2:
+        #     raise Exception('Expecting two channels from reference data: %s' % ref_channels)
+        # try:
+        #     ref_channels.pop(ref_channels.index(self.population_channel))
+        #     self.channel = ref_channels[0]
+        # except ValueError:
+        #     raise Exception('Population channel (%s) missing from reference data: %s' %
+        #                     (self.population_channel, ref_channels))
+        #
+        # # Convert reference columns to those needed for likelihood comparison
+        # # Trials = Person Years; Observations = Incidents
+        # self.reference = pd.DataFrame({'Trials': self.reference[self.population_channel],
+        #                                'Observations': (self.reference[self.population_channel]
+        #                                                 * self.reference[self.channel])})
+
     def apply(self, parser):
         """
         Extract data from output data and accumulate in same bins as reference.
@@ -37,7 +53,7 @@ class ChannelBySeasonCohortAnalyzer(BaseCalibrationAnalyzer):
         # Load data from simulation
         data = parser.raw_data[self.filenames[0]]
 
-        data = data[2*365:]
+        data = data[365:]
         data['Day'] = data['Time'].apply(lambda x: (x + 1) % 365)
         data = data[['Day', 'Species', 'Population', 'VectorPopulation']]
         data['Vector_per_Human'] = data['VectorPopulation'] / data['Population']

@@ -159,7 +159,14 @@ def euclidean_distance(raw_data, sim_data):
 
 def euclidean_distance_pandas(df):
 
-    return math.sqrt(np.sum((np.array(df.ref) - np.array(df.sim)) ** 2)) * -1
+    # Get the number of total observations aggregated over the last level in MultiIndex
+    # e.g. if levels are ['Channel', 'Season', 'Age Bin', 'PfPR Bin']
+    #      keep first three in index, while summing over the last level.
+
+    sum_levels = df.index.names[:-1]
+    n_obs = df.sum(level=sum_levels)
+
+    return math.sqrt(np.sum((np.array(n_obs.ref) - np.array(n_obs.sim)) ** 2)) * -1
 
 
 def weighted_squares(raw_data, sim_data):

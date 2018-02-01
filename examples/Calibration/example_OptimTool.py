@@ -23,7 +23,7 @@ except ImportError as e:
     raise ImportError(message)
 
 # Which simtools.ini block to use for this calibration
-SetupParser.default_block = 'HPC'
+SetupParser.default_block = 'LOCAL'
 
 # Start from a base MALARIA_SIM config builder
 # This config builder will be modify by the different sites defined below
@@ -161,13 +161,13 @@ optimtool = OptimTool(params,
     samples_per_iteration = 4  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
-calib_manager = CalibManager(name='ExampleOptimization',    # <-- Please customize this name
+calib_manager = CalibManager(name='MalariaPackageTest',    # <-- Please customize this name
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,
                              next_point=optimtool,
                              sim_runs_per_param_set=3,  # <-- Replicates
-                             max_iterations=3,          # <-- Iterations
+                             max_iterations=1,          # <-- Iterations
                              plotters=plotters)
 
 

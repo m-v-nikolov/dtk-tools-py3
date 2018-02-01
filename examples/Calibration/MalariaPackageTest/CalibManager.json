@@ -1,0 +1,26 @@
+{
+    "name": "MalariaPackageTest",
+    "location": "LOCAL",
+    "suites": [
+        {
+            "id": "MalariaPackageTest_2018_01_30_16_16_05_822227",
+            "type": "LOCAL"
+        }
+    ],
+    "iteration": 0,
+    "param_names": [
+        "Clinical Fever Threshold High",
+        "MSP1 Merozoite Kill Fraction",
+        "Falciparum PfEMP1 Variants",
+        "Min Days Between Clinical Incidents"
+    ],
+    "sites": {
+        "Dielmo": [
+            "IncidenceByAgeCohortAnalyzer"
+        ]
+    },
+    "results": [],
+    "setup_overlay_file": null,
+    "selected_block": "LOCAL",
+    "calibration_start": "2018-01-30 16:16:05"
+}

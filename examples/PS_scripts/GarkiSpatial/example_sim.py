@@ -6,8 +6,9 @@ from simtools.SetupParser import SetupParser
 # This block will be used unless overridden on the command-line
 SetupParser.default_block = 'HPC'
 
-cb = DTKConfigBuilder.from_defaults('VECTOR_SIM', Simulation_Duration=365)
+cb = DTKConfigBuilder.from_defaults('VECTOR_SIM', Simulation_Duration=3650)
 configure_site(cb, 'Namawala')
+
 
 # run_sim_args is what the `dtk run` command will look for
 run_sim_args = {
@@ -23,3 +24,4 @@ if __name__ == "__main__":
     # Wait for the simulations to be done
     exp_manager.wait_for_finished(verbose=True)
     assert (exp_manager.succeeded())
+

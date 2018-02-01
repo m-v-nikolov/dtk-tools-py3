@@ -1,3 +1,5 @@
+import itertools
+from datetime import date, datetime
 import calendar
 import itertools
 import logging

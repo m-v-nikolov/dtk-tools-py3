@@ -1,0 +1,315 @@
+{
+    "status": "analyze",
+    "samples_for_this_iteration": [
+        {
+            "Clinical Fever Threshold High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0
+        },
+        {
+            "Clinical Fever Threshold High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0
+        },
+        {
+            "Clinical Fever Threshold High": 1.9494715901918727,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1729.991548824318,
+            "Min Days Between Clinical Incidents": 25.0
+        },
+        {
+            "Clinical Fever Threshold High": 1.529167472844055,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1667.9545160909997,
+            "Min Days Between Clinical Incidents": 25.0
+        }
+    ],
+    "analyzers": {},
+    "iteration": 0,
+    "iteration_start": "2018-01-30 16:16:05",
+    "results": {},
+    "calibration_name": "MalariaPackageTest",
+    "experiment_id": "2018_01_30_16_16_06_732696",
+    "simulations": {
+        "Simulation_VJ9TF": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.529167472844055,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1667.9545160909997,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 3
+        },
+        "Simulation_RSC91": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.9494715901918727,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1729.991548824318,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 2
+        },
+        "Simulation_FRAMW": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 1
+        },
+        "Simulation_OJQ90": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 0
+        },
+        "Simulation_8B3XW": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.529167472844055,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1667.9545160909997,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 3
+        },
+        "Simulation_GX7I9": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.9494715901918727,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1729.991548824318,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 2
+        },
+        "Simulation_KWIIM": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 1
+        },
+        "Simulation_DUSCQ": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 0
+        },
+        "Simulation_HONK5": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.529167472844055,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1667.9545160909997,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 3
+        },
+        "Simulation_W4NB7": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.9494715901918727,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1729.991548824318,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 2
+        },
+        "Simulation_5OVDS": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 1
+        },
+        "Simulation_TE3VK": {
+            "__site__": "Dielmo",
+            "Run_Number": 0,
+            "Clinical_Fever_Threshold_High": 1.75,
+            "MSP1 Merozoite Kill Fraction": 0.65,
+            "Falciparum PfEMP1 Variants": 1500.0,
+            "Min Days Between Clinical Incidents": 25.0,
+            "Simulation_Duration": 366,
+            "__sample_index__": 0
+        }
+    },
+    "next_point": {
+        "mu_r": 0.126156626101008,
+        "sigma_r": 0.0126156626101008,
+        "center_repeats": 2,
+        "rsquared_thresh": 0.5,
+        "n_dimensions": 4,
+        "params": [
+            {
+                "Name": "Clinical Fever Threshold High",
+                "Dynamic": true,
+                "Guess": 1.75,
+                "Min": 0.5,
+                "Max": 2.5
+            },
+            {
+                "Name": "MSP1 Merozoite Kill Fraction",
+                "Dynamic": false,
+                "MapTo": "MSP1_Merozoite_Kill_Fraction",
+                "Guess": 0.65,
+                "Min": 0.4,
+                "Max": 0.7
+            },
+            {
+                "Name": "Falciparum PfEMP1 Variants",
+                "Dynamic": true,
+                "MapTo": "Falciparum_PfEMP1_Variants",
+                "Guess": 1500,
+                "Min": 1,
+                "Max": 5000
+            },
+            {
+                "Name": "Min Days Between Clinical Incidents",
+                "Dynamic": false,
+                "MapTo": "Min_Days_Between_Clinical_Incidents",
+                "Guess": 25,
+                "Min": 1,
+                "Max": 50
+            }
+        ],
+        "samples_per_iteration": 4,
+        "data": {
+            "Clinical Fever Threshold High": [
+                1.75,
+                1.75,
+                1.9494715901918727,
+                1.529167472844055
+            ],
+            "Falciparum PfEMP1 Variants": [
+                1500.0,
+                1500.0,
+                1729.991548824318,
+                1667.9545160909997
+            ],
+            "Fitted": [
+                null,
+                null,
+                null,
+                null
+            ],
+            "Iteration": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "MSP1 Merozoite Kill Fraction": [
+                0.65,
+                0.65,
+                0.65,
+                0.65
+            ],
+            "Min Days Between Clinical Incidents": [
+                25.0,
+                25.0,
+                25.0,
+                25.0
+            ],
+            "Results": [
+                null,
+                null,
+                null,
+                null
+            ],
+            "__sample_index__": [
+                0,
+                1,
+                2,
+                3
+            ]
+        },
+        "data_dtypes": {
+            "Clinical Fever Threshold High": "float64",
+            "Falciparum PfEMP1 Variants": "float64",
+            "Fitted": "object",
+            "Iteration": "int64",
+            "MSP1 Merozoite Kill Fraction": "float64",
+            "Min Days Between Clinical Incidents": "float64",
+            "Results": "object",
+            "__sample_index__": "int32"
+        },
+        "regression": {
+            "Iteration": [],
+            "Parameter": [],
+            "Value": []
+        },
+        "regression_dtypes": {
+            "Iteration": "int32",
+            "Parameter": "object",
+            "Value": "object"
+        },
+        "state": {
+            "Iteration": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "Parameter": [
+                "Clinical Fever Threshold High",
+                "MSP1 Merozoite Kill Fraction",
+                "Falciparum PfEMP1 Variants",
+                "Min Days Between Clinical Incidents"
+            ],
+            "Center": [
+                1.75,
+                0.65,
+                1500.0,
+                25.0
+            ],
+            "Min": [
+                0.5,
+                0.4,
+                1.0,
+                1.0
+            ],
+            "Max": [
+                2.5,
+                0.7,
+                5000.0,
+                50.0
+            ],
+            "Dynamic": [
+                true,
+                false,
+                true,
+                false
+            ]
+        },
+        "state_dtypes": {
+            "Iteration": "int64",
+            "Parameter": "object",
+            "Center": "float64",
+            "Min": "float64",
+            "Max": "float64",
+            "Dynamic": "object"
+        }
+    },
+    "suite_id": "MalariaPackageTest_2018_01_30_16_16_05_822227"
+}
