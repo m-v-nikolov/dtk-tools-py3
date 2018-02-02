@@ -11,6 +11,7 @@ from itertools import cycle
 logging_initialized = False
 
 animation = cycle(("\u25f0", "\u25f1", "\u25f2", "\u25f3",))
+animation = cycle(("|", "\\", "-", "|", "/","-"))
 
 
 def init_logging(name):
