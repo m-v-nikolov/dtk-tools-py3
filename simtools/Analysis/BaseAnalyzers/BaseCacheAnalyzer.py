@@ -1,5 +1,3 @@
-from diskcache import Cache
-
 from simtools.Analysis.BaseAnalyzers.BaseAnalyzer import BaseAnalyzer
 
 
@@ -12,6 +10,7 @@ class BaseCacheAnalyzer(BaseAnalyzer):
         self.force = force
 
     def initialize(self):
+        from diskcache import Cache
         self.cache = Cache(self.cache_location or self.uid + "_cache")
 
     def filter(self, simulation):
