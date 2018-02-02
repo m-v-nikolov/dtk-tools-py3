@@ -57,5 +57,5 @@ class SimulationOutputParser:
     @classmethod
     def load_bin_file(cls, filename, content):
         from dtk.tools.output.SpatialOutput import SpatialOutput
-        so = SpatialOutput.from_bytes(content, 'Filtered' in filename)
+        so = SpatialOutput.from_bytes(content.read(), 'Filtered' in filename)
         return so.to_dict()
