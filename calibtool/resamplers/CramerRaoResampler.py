@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from calibtool.resamplers.BaseResampler import BaseResampler
+from calibtool.resamplers.CalibrationPoint import CalibrationPoint
 from calibtool.algorithms.FisherInfMatrix import FisherInfMatrix, plot_cov_ellipse, trunc_gauss
 
 
@@ -36,7 +37,8 @@ class CramerRaoResampler(BaseResampler):
         # convert input points to DataFrames
         calibrated_points_df = []
         for i in range(len(calibrated_points)):
-            calibrated_points_df.append(calibrated_points[i].to_value_dict())
+            new_item = calibrated_points[i].to_value_dict(parameter_type=CalibrationPoint.DYNAMIC)
+            calibrated_points_df.append(new_item)
         calibrated_points_df = pd.DataFrame(calibrated_points_df)
         original_column_names = calibrated_points_df.columns
         calibrated_points_df = selection_values.join(calibrated_points_df)
@@ -55,20 +57,18 @@ class CramerRaoResampler(BaseResampler):
         likelihood_df = calibrated_points_df.join(likelihood_df)
 
         # ck4, debugging only, this block
-        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed.csv') # D
-        calibrated_points_df.to_csv(filename)
-        filename = os.path.join(self.output_location, 'cr-calibrated-points-renamed-ll.csv') # E
+        filename = os.path.join(self.output_location, 'cr-calibrated-points-ll.csv') # E
         likelihood_df.to_csv(filename)
 
         # Do the resampling
 
         # center_point is a list of param values at the center point, must be ordered exactly as calibrated_points_df column-wise
         # obtain min/max of parameter ranges to force results to be within them
-        minimums = center_point.get_attribute(key='Min')
-        maximums = center_point.get_attribute(key='Max')
-        names = center_point.get_attribute(key='Name')
+        minimums = center_point.get_attribute(key='Min', parameter_type=CalibrationPoint.DYNAMIC)
+        maximums = center_point.get_attribute(key='Max', parameter_type=CalibrationPoint.DYNAMIC)
+        names = center_point.get_attribute(key='Name', parameter_type=CalibrationPoint.DYNAMIC)
 
-        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict()]).as_matrix()[0])
+        center_point_as_list = list(pd.DataFrame([center_point.to_value_dict(parameter_type=CalibrationPoint.DYNAMIC)]).as_matrix()[0])
 
         fisher_inf_matrix = FisherInfMatrix(center_point_as_list, likelihood_df, names)
         covariance = np.linalg.inv(fisher_inf_matrix)
@@ -76,8 +76,15 @@ class CramerRaoResampler(BaseResampler):
         resampled_points_list = trunc_gauss(center_point_as_list, covariance, minimums, maximums,
                                             **self.resample_kwargs)
 
-        # convert resampled points to a list of CalibrationPoint objects
+        # convert resampled points to a list of CalibrationPoint objects (multiple steps here)
         resampled_points_df = pd.DataFrame(data=resampled_points_list, columns=original_column_names)
+
+        # attach static parameters
+        names = center_point.get_attribute('Name', parameter_type=CalibrationPoint.STATIC)
+        values = center_point.get_attribute('Value', parameter_type=CalibrationPoint.STATIC)
+        for i in range(len(names)):
+            resampled_points_df = resampled_points_df.assign(**{str(names[i]): values[i]})
+        resampled_points_df.sort_index(axis=1, inplace=True)
 
         # ck4, debugging only
         filename = os.path.join(self.output_location, 'cr-resampled-points.csv') # J

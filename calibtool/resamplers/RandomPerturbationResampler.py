@@ -62,20 +62,25 @@ class RandomPerturbationResampler(BaseResampler):
         """
         given center and generate perturbed points
         """
-
-        # retrieve settings
-        df = center_point.to_dataframe()
-        Names = df['Name'].tolist()
-        Center = df['Value'].values
-        Xmin = df['Min'].values
-        Xmax = df['Max'].values
+        as_type = CalibrationPoint.NUMPY
+        names = center_point.get_attribute('Name', parameter_type=CalibrationPoint.DYNAMIC)
+        center = center_point.get_attribute('Value', parameter_type=CalibrationPoint.DYNAMIC, as_type=as_type)
+        param_min = center_point.get_attribute('Min', parameter_type=CalibrationPoint.DYNAMIC, as_type=as_type)
+        param_max = center_point.get_attribute('Max', parameter_type=CalibrationPoint.DYNAMIC, as_type=as_type)
 
         # get perturbed points
-        df_perturbed_points = perturbed_points(Center, Xmin, Xmax, **self.resample_kwargs)
+        df_perturbed_points = perturbed_points(center, param_min, param_max, **self.resample_kwargs)
 
         # re-name columns
         self.selection_columns = ['i(1to4)','j(1toN)','k(1toM)','run_number'] # to be made available in the following resampling
-        df_perturbed_points.columns = self.selection_columns + Names
+        df_perturbed_points.columns = self.selection_columns + names
+
+        # attach static parameters
+        names = center_point.get_attribute('Name', parameter_type=CalibrationPoint.STATIC)
+        values = center_point.get_attribute('Value', parameter_type=CalibrationPoint.STATIC)
+        for i in range(len(names)):
+            df_perturbed_points = df_perturbed_points.assign(**{str(names[i]):values[i]})
+        df_perturbed_points.sort_index(axis=1, inplace=True)
 
         return df_perturbed_points
 

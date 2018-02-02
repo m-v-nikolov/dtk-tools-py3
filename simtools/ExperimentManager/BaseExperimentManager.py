@@ -237,7 +237,15 @@ class BaseExperimentManager(CacheEnabled):
         # While they are running, display the status
         while True:
             created_sims = len(self.cache)
-            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), created_sims, total_sims))
+            # print('A')
+            # print(created_sims)
+            # print('B')
+            # print(total_sims)
+            # print('C')
+            # print('\u2713')
+            # print(next(animation))
+            # print('D')
+            sys.stdout.write("\r {} Created simulations: {}/{}".format('*', created_sims, total_sims))
             sys.stdout.flush()
             if created_sims == total_sims or all(not c.is_alive() for c in creator_processes):
                 break
@@ -247,7 +255,7 @@ class BaseExperimentManager(CacheEnabled):
             c.join()
 
         # We exited make sure we had no issues
-        print("\r ✓ Created simulations: {}/{}".format(len(self.cache), total_sims))
+        print("\r Created simulations: {}/{}".format(len(self.cache), total_sims))
         sys.stdout.flush()
         if created_sims != total_sims:
             logger.error("Commission seems to have failed. Only {} simulations were created but {} were expected...\n"
