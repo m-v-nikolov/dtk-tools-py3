@@ -53,7 +53,7 @@ class ChannelBySeasonCohortAnalyzer(BaseCalibrationAnalyzer):
         # Load data from simulation
         data = parser.raw_data[self.filenames[0]]
 
-        data = data[365:]
+        data = data[2*365:]
         data['Day'] = data['Time'].apply(lambda x: (x + 1) % 365)
         data = data[['Day', 'Species', 'Population', 'VectorPopulation']]
         data['Vector_per_Human'] = data['VectorPopulation'] / data['Population']
