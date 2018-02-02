@@ -219,14 +219,28 @@ def sample_cov_ellipse(cov, pos, num_of_pts=10):
     """
     return np.random.multivariate_normal(pos, cov, num_of_pts)
 
-def trunc_gauss(mu, sigma, low_bound, top_bound, num_of_pts):
-    samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
-    count = 1
-    while ((np.logical_and(samples >= np.tile(low_bound, (num_of_pts, 1)), samples <= np.tile(top_bound, (num_of_pts, 1))))==False).any():
-        samples = np.random.multivariate_normal(mu, sigma, num_of_pts)
-        count += 1
-    print('trunc_gauss ran %d times' % count)
+
+def trunc_gauss(mu, sigma, low_bound, high_bound, num_of_pts, batch_size=100):
+    samples = []
+    while len(samples) < num_of_pts:
+        # generate a new batch of samples
+        new_samples = np.random.multivariate_normal(mu, sigma, batch_size)
+
+        # determine which new samples are in-bounds and keep them
+        for sample_index in range(len(new_samples)):
+            out_of_bounds = False
+            new_sample = new_samples[sample_index]
+            for param_index in range(len(new_sample)):
+                if (new_sample[param_index] < low_bound[param_index]) or (new_sample[param_index] > high_bound[param_index]):
+                    out_of_bounds = True
+                    break
+            if not out_of_bounds:
+                samples.append(new_sample)
+
+    # trim off any extra sample points and return as a numpy.ndarray
+    samples = np.array(samples)[0:num_of_pts]
     return samples
+
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
     """
