@@ -247,7 +247,7 @@ class BaseExperimentManager(CacheEnabled):
             c.join()
 
         # We exited make sure we had no issues
-        print("\r ✓ Created simulations: {}/{}".format(len(self.cache), total_sims))
+        print("\r | Created simulations: {}/{}".format(len(self.cache), total_sims))
         sys.stdout.flush()
         if created_sims != total_sims:
             logger.error("Commission seems to have failed. Only {} simulations were created but {} were expected...\n"
