@@ -122,7 +122,10 @@ class SimulationOutputParser(threading.Thread):
 
     def load_bin_file(self, filename, content):
         from dtk.tools.output.SpatialOutput import SpatialOutput
-        so = SpatialOutput.from_bytes(content, 'Filtered' in filename)
+        if isinstance(content, BytesIO):
+            so = SpatialOutput.from_bytes(content.read(), 'Filtered' in filename)
+        else:
+            so = SpatialOutput.from_bytes(content, 'Filtered' in filename)
         self.raw_data[filename] = so.to_dict()
 
     def get_sim_dir(self):
