@@ -237,15 +237,7 @@ class BaseExperimentManager(CacheEnabled):
         # While they are running, display the status
         while True:
             created_sims = len(self.cache)
-            # print('A')
-            # print(created_sims)
-            # print('B')
-            # print(total_sims)
-            # print('C')
-            # print('\u2713')
-            # print(next(animation))
-            # print('D')
-            sys.stdout.write("\r {} Created simulations: {}/{}".format('*', created_sims, total_sims))
+            sys.stdout.write("\r {} Created simulations: {}/{}".format(next(animation), created_sims, total_sims))
             sys.stdout.flush()
             if created_sims == total_sims or all(not c.is_alive() for c in creator_processes):
                 break
