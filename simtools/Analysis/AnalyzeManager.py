@@ -196,6 +196,6 @@ class AnalyzeManager(CacheEnabled):
 
         if self.verbose:
             total_time = time.time() - start_time
-            print("\r ✓ Analysis done. Took {} (~ {:.3f}s per simulation)"
+            print("\r | Analysis done. Took {} (~ {:.3f}s per simulation)"
                   .format(verbose_timedelta(total_time), total_time / scount if scount != 0 else 0))
 
