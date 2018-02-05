@@ -113,6 +113,8 @@ class CramerRaoResampler(BaseResampler):
 
     def post_analysis(self, resampled_points, analyzer_results):
         super().post_analysis(resampled_points, analyzer_results)
+        output_filename = os.path.join(self.output_location, 'cr-resampled-points-ll.csv')
+        pd.DataFrame([rp.to_value_dict(include_likelihood=True) for rp in resampled_points]).to_csv(output_filename)
 
         # # plotting
         # df_point = center_point.to_dataframe()

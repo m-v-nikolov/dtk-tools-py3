@@ -35,11 +35,14 @@ class CalibrationPoint:
         return filtered_parameters
 
 
-    def to_value_dict(self, parameter_type=None):
+    def to_value_dict(self, parameter_type=None, include_likelihood=False):
         """
         Return the dict of dict containing {parameter_name:value} for this CalibrationPoint
         """
-        return {param.name: param.value for param in self._filter_parameters(parameter_type)}
+        return_dict = {param.name: param.value for param in self._filter_parameters(parameter_type)}
+        if include_likelihood:
+            return_dict['likelihood'] = self.likelihood
+        return return_dict
 
 
     def get_attribute(self, key, parameter_type=None, as_type=None):
