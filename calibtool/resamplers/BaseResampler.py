@@ -104,28 +104,20 @@ class BaseResampler(metaclass=ABCMeta):
         self.resampled_points, self.analyzer_results = self._analyze(experiment=experiment_manager.experiment,
                                                                      analyzers=self.calib_manager.analyzer_list,
                                                                      points_ran=points_to_run)
-
         # 4. perform any post-analysis processing, if defined
         self.post_analysis(self.resampled_points, self.analyzer_results)
 
         return self.resampled_points, self.selection_values
 
     def _transform_df_points_to_calibrated_points(self, calibrated_point, df_points):
-        # get parameter names
-        df_point = calibrated_point.to_dataframe()
-        param_names = df_point['Name'].tolist()
-
-        # retrieve parameters settings
-        get_settings = calibrated_point.get_settings()
-
-        # build calibration points
+        # build calibration points from dataframe, preserving CalibrationParameter metadata from calibrated_point
         calibrated_points = []
         for index, row in df_points.iterrows():
             parameters = []
-            for name in param_names:
-                parameter = CalibrationParameter(name, get_settings[name]['min'], get_settings[name]['max'], row[name])
-                parameters.append(parameter)
-
+            for name in calibrated_point.parameter_names:
+                new_parameter = CalibrationParameter.from_calibration_parameter(calibrated_point.get_parameter(name),
+                                                                            value=row[name])
+                parameters.append(new_parameter)
             calibrated_points.append(CalibrationPoint(parameters))
 
         self.selection_values = df_points[self.selection_columns].copy()

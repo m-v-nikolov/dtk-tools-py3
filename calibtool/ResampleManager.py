@@ -51,6 +51,7 @@ class ResampleManager:
             parameters = list()
             for param_metadata in iteration_metadata:
                 param_metadata["Value"] = final_samples[param_metadata["Name"]][0]
+                param_metadata['MapTo'] = param_metadata.get('MapTo', None) # assign None if not present
                 parameters.append(CalibrationParameter.from_dict(param_metadata))
             points.append(CalibrationPoint(parameters))
 

@@ -35,9 +35,9 @@ def get_resamplers(args, unknownArgs, force_metadata=False):
     if not hasattr(mod, 'run_calib_args') or 'resamplers' not in mod.run_calib_args:
         warning_note = \
             """
-            /!\\ WARNING /!\\ Required to set resampler within run_calib_args like the following:
+            /!\\ WARNING /!\\ Required to set resamplers within run_calib_args like the following:
 
-                run_calib_args = {'resampler': xxx_resampler}
+                run_calib_args = {'resamplers': [xxx_resampler1, yyy_resampler2, ...]}
             """
         print(warning_note)
         exit()
