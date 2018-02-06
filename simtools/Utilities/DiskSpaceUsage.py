@@ -6,7 +6,6 @@ import sys
 import time
 from multiprocessing.pool import Pool
 
-import pandas as pd
 from COMPS.Data import Experiment, QueryCriteria
 from diskcache import FanoutCache
 
@@ -24,6 +23,16 @@ OWNERS = ["braybaud", "smoore62", "k.jamessoda"]
 FORCE_REFRESH = False
 
 
+class ExperimentInfo:
+    def __init__(self, id, name, owner, size, sims):
+        self.id = id
+        self.name = name
+        self.owner = owner
+        self.size = size
+        self.sims = sims
+        self.size_str = file_size(size)
+
+
 def get_experiment_info(experiment, cache):
     """
     Adds the experiment information for a given experiment to the cache:
@@ -34,35 +43,37 @@ def get_experiment_info(experiment, cache):
 
     :param experiment: The experiment to analyze
     """
-    if experiment in cache and not FORCE_REFRESH:
+    if experiment.id in cache and not FORCE_REFRESH:
         return
 
     # Login to COMPS
     COMPS_login("https://comps.idmod.org")
+
+    # Try to get the simulations
     try:
         simulations = experiment.get_simulations(
             query_criteria=QueryCriteria().select(['id']).select_children(['hpc_jobs']))
     except KeyError:
-        cache.set(experiment, None)
+        # No simulations found or error -> set None
+        cache.set(experiment.id, None)
         return
 
+    # Calculate the size
     size = sum(s.hpc_jobs[0].output_directory_size for s in simulations if s.hpc_jobs)
-    cache.set(experiment, {
-        "size": file_size(size),
-        "sims": len(simulations),
-        "raw_size": size
-    })
+
+    # Set the info for this particular experiment in the cache
+    cache.set(experiment.id, ExperimentInfo(experiment.id, experiment.name, experiment.owner, size, len(simulations)))
 
 
-def exp_str(experiment, info, display_owner=True):
+def exp_str(info, display_owner=True):
     """
     Format an experiment and its information to a string.
     """
-    string = "{} ({})".format(experiment.name, experiment.id)
+    string = "{} ({})".format(info.name, info.id)
     if display_owner:
-        string += " - {}".format(experiment.owner)
+        string += " - {}".format(info.owner)
 
-    string += " : {} in {} simulations".format(info['size'], info['sims'])
+    string += " : {} in {} simulations".format(info.size_str, info.sims)
     return string
 
 
@@ -72,9 +83,8 @@ def top_10_experiments(experiments_info):
     """
     print("Top {} Experiments".format(TOP_COUNT))
 
-    for order, exp in enumerate(sorted(experiments_info, key=lambda i: experiments_info[i]["raw_size"], reverse=True)[:TOP_COUNT]):
-        info = experiments_info[exp]
-        print("{}. {}".format(order+1, exp_str(exp, info)))
+    for order, info in enumerate(sorted(experiments_info, key=lambda i: i.size, reverse=True)[:TOP_COUNT]):
+        print("{}. {}".format(order+1, exp_str(info)))
 
 
 def total_size_per_user(experiments_info):
@@ -82,12 +92,10 @@ def total_size_per_user(experiments_info):
     Displays the total disk space occupied per user
     """
     print("Size per user")
-    size_per_users = {}
-    for experiment, info in experiments_info.items():
-        if experiment.owner not in size_per_users:
-            size_per_users[experiment.owner] = 0
-
-        size_per_users[experiment.owner] += info["raw_size"]
+    size_per_users = {
+        o:sum(i.size for i in experiments_info if i.owner == o)
+        for o in OWNERS
+    }
 
     for order, owner in enumerate(sorted(size_per_users, key=size_per_users.get, reverse=True)):
         print("{}. {} with a total of {}".format(order+1, owner, file_size(size_per_users[owner])))
@@ -99,16 +107,16 @@ def top_10_experiments_per_user(experiments_info):
     """
     experiments_per_owner = {}
 
-    for experiment, info in experiments_info.items():
-        if experiment.owner not in experiments_per_owner:
-            experiments_per_owner[experiment.owner] = {}
+    for info in experiments_info:
+        if info.owner not in experiments_per_owner:
+            experiments_per_owner[info.owner] = {}
 
-        experiments_per_owner[experiment.owner][experiment] = info
+        experiments_per_owner[info.owner][info.id] = info
 
     for owner, experiments in experiments_per_owner.items():
         print("Top {} experiments for {}".format(TOP_COUNT, owner))
-        for order, experiment in enumerate(sorted(experiments, key=lambda e: experiments[e]["raw_size"], reverse=True)[:TOP_COUNT]):
-            print("{}. {}".format(order+1, exp_str(experiment, experiments[experiment], False)))
+        for order, eid in enumerate(sorted(experiments, key=lambda e: experiments[e].size, reverse=True)[:TOP_COUNT]):
+            print("{}. {}".format(order+1, exp_str(experiments[eid], False)))
         print("")
 
 
@@ -145,8 +153,8 @@ if __name__ == "__main__":
 
     # While we are analyzing, display the status
     while not r.ready():
-        remaining = r._number_left * r._chunksize
-        remaining = remaining if remaining >= 0 else 0
+        # Estimate how many remaining we have. This is just an estimations and needs to be bounded
+        remaining = max(0, min(all_experiments_len, r._number_left * r._chunksize))
         sys.stdout.write("\r {} Experiment analyzed: {}/{}".format(next(animation), all_experiments_len-remaining, all_experiments_len))
         sys.stdout.flush()
 
@@ -156,7 +164,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
 
     # Get all the results
-    experiments_info = {e:cache[e] for e in all_experiments and cache[e]}
+    experiments_info = [cache.get(e.id) for e in all_experiments if cache.get(e.id)]
     cache.close()
 
     # Display
