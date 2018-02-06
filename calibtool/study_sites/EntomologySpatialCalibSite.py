@@ -5,10 +5,14 @@ from calibtool.CalibSite import CalibSite
 from calibtool.study_sites.site_setup_functions import \
     vector_stats_report_fn
 <<<<<<< HEAD
+<<<<<<< HEAD
 from calibtool.analyzers.ChannelBySeasonSpatialCohortAnalyzer import ChannelBySeasonSpatialCohortAnalyzer
 =======
 from calibtool.analyzers.ChannelBySeasonCohortAnalyzer import ChannelBySeasonCohortAnalyzer
 >>>>>>> Small changes to spatial manager files
+=======
+from calibtool.analyzers.ChannelBySeasonSpatialCohortAnalyzer import ChannelBySeasonSpatialCohortAnalyzer
+>>>>>>> Updated spatial analyzer and spatial entomology calib site
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +45,11 @@ class EntomologySpatialCalibSite(CalibSite):
 
     def get_analyzers(self):
 <<<<<<< HEAD
+<<<<<<< HEAD
         return [ChannelBySeasonSpatialCohortAnalyzer(site=self, seasons=self.metadata['months'])]
 =======
         return [ChannelBySeasonCohortAnalyzer(site=self, seasons=self.metadata['months'])]
 >>>>>>> Small changes to spatial manager files
+=======
+        return [ChannelBySeasonSpatialCohortAnalyzer(site=self, seasons=self.metadata['months'])]
+>>>>>>> Updated spatial analyzer and spatial entomology calib site

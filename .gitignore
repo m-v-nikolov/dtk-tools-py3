@@ -48,6 +48,7 @@ test/tmp/
 # User configuration
 simtools/simtools.ini
 examples/simtools.ini
+examples/PS_scripts/*
 db.sqlite
 logs.sqlite
 examples/*/simtools.ini
