@@ -54,6 +54,14 @@ class SimulationAssets(object):
 
     @property
     def exe_path(self):
+        # If we do have a EXE collection, the exe_path should come from there
+        if self.EXE in self.base_collections and self.base_collections[self.EXE]:
+            for f in self.base_collections[self.EXE].asset_files_to_use:
+                if f.file_name.endswith("exe"):
+                    return f.file_name
+            raise Exception("The asset collection ({}) used for executable does not contain any executable..."
+                            .format(str(self.base_collections[self.EXE].base_collection.id)))
+
         return self._get_path(self.EXE)
 
     @exe_path.setter
