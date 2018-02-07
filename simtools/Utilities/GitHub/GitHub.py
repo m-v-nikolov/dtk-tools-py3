@@ -236,7 +236,7 @@ class DTKGitHub(GitHub):
         :param dest: The directory to contain obtained inputs.
         :return: Nothing.
         """
-        if version == self.HEAD:
+        if str(version) == self.HEAD:
             release_tag = self.HEAD
         else:
             release_tag = self.construct_tag(version)
