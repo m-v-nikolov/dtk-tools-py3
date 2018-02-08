@@ -1,0 +1,50 @@
+(import (rnrs) (emodl cmslib))
+
+(start-model "garki-delay.emodl")
+
+(json defaults "garkiparams.json")
+
+(species X1 (defaults "populations.X1"))
+(species X3)
+(species Y1 (defaults "populations.Y1"))
+(species Y2)
+(species Y3)
+
+(func totalpop (sum X1 X3 Y1 Y2 Y3))
+
+(observe susceptible X1)
+(observe infected Y1)
+(observe recovering Y2)
+(observe immune (+ X3 Y3))
+(observe totalpopulation totalpop)
+
+(param a      (defaults "parameters.bitingrate"))
+(param alpha1 (defaults "parameters.infectivityloss"))
+(param alpha2 (defaults "parameters.transitiontofast"))
+(param delta  (defaults "parameters.birthrate"))
+(param g      (defaults "parameters.susceptibility"))
+(param r1     (defaults "parameters.slowrecovery"))
+(param r2     (defaults "parameters.fastrecovery"))
+
+(param N 15)           ; incubation in human
+(param n 10)           ; incubation in mosquito
+
+; seasonal parameter
+(func C (* 0.2 (+ 1.0 (sin (* (/ time 365) 2 pi)))))
+; infection rate
+(func h (+ (* g (- 1 (exp (/ (* (- C) Y1) totalpop)))) 0.0001))
+
+(reaction birth             ()   (X1) (* delta totalpop))
+(reaction deathX1           (X1) ()   (* X1 delta))
+(reaction deathX3           (X3) ()   (* X3 delta))
+(reaction deathY1           (Y1) ()   (* Y1 delta))
+(reaction deathY2           (Y2) ()   (* Y2 delta))
+(reaction deathY3           (Y3) ()   (* Y3 delta))
+(reaction infectX1          (X1) (Y1) (* X1 h) N)
+(reaction recoveryY2        (Y2) (X1) (/ (* Y2 h) (- (exp (/ h r1)) 1)))
+(reaction lossinfectY1      (Y1) (Y2) (* Y1 alpha1))
+(reaction acquireimmunityY2 (Y2) (Y3) (* Y2 alpha2))
+(reaction recoveryY3        (Y3) (X3) (/ (* Y3 h) (- (exp (/ h r2)) 1)))
+(reaction infectX3          (X3) (Y3) (* X3 h) N)
+
+(end-model)

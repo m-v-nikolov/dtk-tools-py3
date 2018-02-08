@@ -91,70 +91,70 @@ class EMODL:
             self.x = x
 
         def __repr__(self):
-            return "(- {}".format(self.x)
+            return "(- {})".format(self.x)
 
     class EXP:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(exp {}".format(self.x)
+            return "(exp {})".format(self.x)
 
     class LOG:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(ln {}".format(self.x)
+            return "(ln {})".format(self.x)
 
     class SIN:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(sin {}".format(self.x)
+            return "(sin {})".format(self.x)
 
     class COS:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(cos {}".format(self.x)
+            return "(cos {})".format(self.x)
 
     class ABS:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(abs {}".format(self.x)
+            return "(abs {})".format(self.x)
 
     class FLOOR:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(floor {}".format(self.x)
+            return "(floor {})".format(self.x)
 
     class CEIL:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(ceil {}".format(self.x)
+            return "(ceil {})".format(self.x)
 
     class SQRT:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(sqrt {}".format(self.x)
+            return "(sqrt {})".format(self.x)
 
     class STEP:
         def __init__(self, x):
             self.x = x
 
         def __repr__(self):
-            return "(step {}".format(self.x)
+            return "(step {})".format(self.x)
 
     class EMPIRICAL:
         def __init__(self, filename):
@@ -165,8 +165,9 @@ class EMODL:
 
 
 def test():
-    print(EMODL.ADD(EMODL.DIVIDE(3,4), EMODL.POWER(2, 5)))
-    print(EMODL.ADD_LIST([2, 3, 'S', 'R', 4]))
+    print(EMODL.ADD(EMODL.DIVIDE(3, 4), EMODL.POWER(2, 5)))
+    print(EMODL.ADD('S', 'R'))
+    print(EMODL.ADD(2, 3, 'S', 'R', 4))
 
 
 if __name__ == "__main__":

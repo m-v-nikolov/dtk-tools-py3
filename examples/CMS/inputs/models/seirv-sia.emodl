@@ -1,0 +1,34 @@
+; seirv-sia
+
+(import (rnrs) (emodl cmslib))
+
+(start-model "seirv-sia.emodl")
+
+(species S 990)
+(species E)
+(species I 10)
+(species R)
+(species V)
+
+(observe susceptible S)
+(observe exposed     E)
+(observe infectious  I)
+(observe recovered   R)
+(observe vaccinated  V)
+
+(param Ki 0.0005)
+(param Kl 0.2)
+(param Kr 0.143)
+(param Kw 0.0074)
+(param Kv 0)
+
+(reaction exposure    (S I) (E I) (* Ki S I))
+(reaction infection   (E)   (I)   (* Kl E))
+(reaction recovery    (I)   (R)   (* Kr I))
+(reaction waning      (R)   (S)   (* Kw R))
+(reaction vaccination (S)   (V)   (* Kv S))
+
+(time-event sia 50.0 ((Kv 0.02)))
+(time-event end 80.0 ((Kv 0)))
+
+(end-model)

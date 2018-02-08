@@ -1,13 +1,3 @@
-
-# [TODO]: may not need this class!
-class StartModel(object):
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return '(start-model "{}")'.format(self.name)
-
-
 class Species(object):
     def __init__(self, name, value=None):
         self.name = name
@@ -30,9 +20,9 @@ class Observe(object):
 
 
 class Param(object):
-    def __init__(self, name, value=None):
+    def __init__(self, name, value):
         self.name = name
-        self.value = str(value) if value else value
+        self.value = str(value)
 
     def __repr__(self):
         return "(param {} {})".format(self.name, self.value)
@@ -55,26 +45,29 @@ class Func(object):
     def __repr__(self):
         return "(func {} {})".format(self.name, self.func)
 
-    def to_model(self):
-        pass
-
 
 class StateEvent(object):
-    def __init__(self, name, *pair_list):
+    def __init__(self, name, predicate, *pair_list):
         self.name = name
+        self.predicate = predicate
         self.pair_list = (str(p) for p in pair_list)
 
     def __repr__(self):
-        return "(state-event {} predicate ({}))".format(self.name, ' '.join(self.pair_list))
+        return "(state-event {} {} ({}))".format(self.name, self.predicate, ' '.join(self.pair_list))
 
 
 class TimeEvent(object):
-    def __init__(self, name, *pair_list):
+    def __init__(self, name, time, iterations=None, *pair_list):
         self.name = name
+        self.time = time
+        self.iterations = iterations
         self.pair_list = (str(p) for p in pair_list)
 
     def __repr__(self):
-        return "(time-event {} time ({}))".format(self.name, ' '.join(self.pair_list))
+        if self.iterations:
+            return "(time-event {} {} {} ({}))".format(self.name, self.time, self.iterations, ' '.join(self.pair_list))
+        else:
+            return "(time-event {} {} ({}))".format(self.name, self.time, ' '.join(self.pair_list))
 
 
 class Reaction(object):
@@ -85,17 +78,32 @@ class Reaction(object):
         self.func = func
 
     def __repr__(self):
-        return "(reaction {} ({}) ({}) ({}))".format(self.name, self.input, self.output, self.func)
+        return "(reaction {} {} {} {})".format(self.name, self.input, self.output, self.func)
 
 
 class Pair(object):
-    def __init__(self, first, second):
+    def __init__(self, first=None, second=None):
         self.first = first
         self.second = second
 
+        if (first and second is None) or (second and first is None):
+            print('')
+
     def __repr__(self):
         second = str(self.second).strip()
-        if second.startswith('(') and second.endswith(')'):
-            return "({} {})".format(self.first, second)
+        if self.first and self.second is None:
+            return "({})".format(self.first)
+        elif self.second and self.first is None:
+            return "({})".format(self.second)
+        elif self.first is None and self.second is None:
+            return "()"
         else:
-            return "({} ({}))".format(self.first, second)
+            return "({} {})".format(self.first, second)
+
+
+class Locale(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return "(locale {})".format(self.name)

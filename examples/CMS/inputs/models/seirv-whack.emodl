@@ -1,0 +1,35 @@
+; seirv-whack
+
+(import (rnrs) (emodl cmslib))
+
+(start-model "seirv-whack.emodl")
+
+(species S 990)
+(species E)
+(species I 10)
+(species R)
+(species V)
+
+(observe susceptible S)
+(observe exposed     E)
+(observe infectious  I)
+(observe recovered   R)
+(observe vaccinated  V)
+
+(param Ki 0.0005)
+(param Kl 0.2)
+(param Kr 0.143)
+(param Kw 0.0074)
+(param Kv 0)
+
+(reaction exposure    (S I) (E I) (* Ki S I))
+(reaction infection   (E)   (I)   (* Kl E))
+(reaction recovery    (I)   (R)   (* Kr I))
+(reaction waning      (R)   (S)   (* Kw R))
+(reaction vaccination (S)   (V)   (* Kv S))
+
+(state-event whack-v (> I 25) ((Kv 0.02)))
+(param temp 0)
+(state-event whack-! (> I 50) ((Kv 0) (temp (* S 0.5)) (S (- S temp)) (V (+ V temp))))
+
+(end-model)

@@ -1,0 +1,75 @@
+(import (rnrs) (emodl cmslib))
+
+(start-model "tb-core-model")
+
+(species S 15000000) ; 15,000,000
+(species L)
+(species I 405000) ; 0.45 * 900,000 = 405,000
+(species N 495000) ; 0.55 * 900,000 = 495,000
+
+(species B) ; track births
+(species D) ; track natural deaths
+(species DD) ; track disease deaths
+
+(param alpha 0.115) ; proportion of infections developing primary TB [p.18]
+(param sigma 0.45) ; proportion of cases developing smear positive TB [p.19]
+(param v     0.00000274) ; rate at which latently infected individuals develop active TB (0.10%/year) [p.18]
+(param x     0.65) ; protection provided by prior infection [p.18-19]
+(param theta 0.000041) ; rate of conversion from smear negative to smear positive TB (1.5%/year) [p.20]
+
+(param gamma 0.0022) ; screening rate (80%/year)
+(param sei   0.9) ; sensitivity of screening, smear positive (0.44-1.0)
+(param sen   0.9) ; sensitivity of screening, smear negative (0.44-1.0)
+(param eta   0.8) ; proportion linked to care
+(param tau   0.9) ; treatment success
+(param r     0.000548) ; self cure rate (20%/year) [p.20-21]
+(param d     0.2) ; relative screening rate of smear-negative cases
+
+(param omega 0.00003425) ; birth rate
+(param mu    0.00003425) ; natural mortality rate
+(param mui   0.00003425) ; mortality rate, smear positive (1x natural rate, additive)
+(param mun   0.00003425) ; mortality rate, smear negative (1x natural rate, additive)
+
+(param beta 0.0603) ; effective contact rate (22/year) [p.23]
+(param c 22) ; relative infectiousness of smear-negative cases [p.19]
+
+(func pop (+ S L I N))
+
+(func lambda (/ (* beta (+ I (* c N))) pop))
+
+(reaction infection-latent   (S) (L) (* lambda (- 1 alpha) S))
+(reaction infection-positive (S) (I) (* lambda alpha sigma S))
+(reaction infection-negative (S) (N) (* lambda alpha (- 1 sigma) S))
+
+(reaction reactivation-positive (L) (I) (* v sigma L))
+(reaction reinfection-positive  (L) (I) (* lambda alpha (- 1 x) sigma L))
+(reaction reactivation-negative (L) (I) (* v (- 1 sigma) L))
+(reaction reinfection-negative  (L) (I) (* lambda alpha (- 1 x) (- 1 sigma) L))
+
+(reaction conversion (N) (I) (* theta N))
+
+(reaction treatment-positive (I) (L) (* gamma sei eta tau I))
+(reaction natural-positive   (I) (L) (* r I))
+(reaction treatment-negative (N) (L) (* gamma sen eta tau d N))
+(reaction natural-negative   (N) (L) (* r N))
+
+(reaction birth () (S B) (* omega pop))
+(reaction death-s (S) (D) (* mu S))
+(reaction death-l (L) (D) (* mu L))
+(reaction death-i (I) (D) (* mu I))
+(reaction disease-death-i (I) (DD) (* mui I))
+(reaction death-n (N) (D) (* mu N))
+(reaction disease-death-n (N) (DD) (* mun N))
+
+(observe population pop)
+
+(observe susceptible S)
+(observe latent L)
+(observe smear-positive I)
+(observe smear-negative N)
+
+(observe births B)
+(observe deaths D)
+(observe tb-deaths DD)
+
+(end-model)
