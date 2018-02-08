@@ -18,7 +18,7 @@
     "wheel": "pyCOMPS-2.1-py2.py3-none-any.whl"
   },
   "matplotlib": {
-    "version": "2.1.1",
+    "version": "2.1.2",
     "test": ">="
   },
   "scipy": {
@@ -34,7 +34,7 @@
     "test": ">="
   },
   "lz4": {
-    "version": "0.18.1",
+    "version": "0.21.6",
     "test": ">="
   },
   "python-snappy": {
@@ -42,9 +42,9 @@
       "win",
       "lin"
     ],
-    "version": "0.5.1",
+    "version": "0.5.2",
     "test": "==",
-    "wheel": "python_snappy-0.5.1-cp36-cp36m-win_amd64.whl"
+    "wheel": "python_snappy-0.5.2-cp36-cp36m-win_amd64.whl"
   },
   "seaborn": {
     "version": "0.8.1",
@@ -56,7 +56,7 @@
     "wheel": "statsmodels-0.8.0-cp36-cp36m-win_amd64.whl"
   },
   "SQLAlchemy": {
-    "version": "1.2.1",
+    "version": "1.2.2",
     "test": "=="
   },
   "fasteners": {
