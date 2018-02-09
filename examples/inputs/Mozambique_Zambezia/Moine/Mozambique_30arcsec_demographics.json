@@ -1,0 +1,398 @@
+{
+  "Nodes": [
+    {
+      "NodeID": 1,
+      "NodeAttributes": {
+        "Latitude": -24.7806698276,
+        "Longitude": 32.4753430556,
+        "InitialPopulation": 26,
+        "FacilityName": "0",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 2,
+      "NodeAttributes": {
+        "Latitude": -24.8228853448,
+        "Longitude": 32.5012013889,
+        "InitialPopulation": 26,
+        "FacilityName": "1",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 3,
+      "NodeAttributes": {
+        "Latitude": -24.9073163793,
+        "Longitude": 32.5098208333,
+        "InitialPopulation": 53,
+        "FacilityName": "2",
+        "BirthRate": 0.0065343699999999994
+      }
+    },
+    {
+      "NodeID": 4,
+      "NodeAttributes": {
+        "Latitude": -24.8228853448,
+        "Longitude": 32.5098208333,
+        "InitialPopulation": 30,
+        "FacilityName": "3",
+        "BirthRate": 0.0036986999999999996
+      }
+    },
+    {
+      "NodeID": 5,
+      "NodeAttributes": {
+        "Latitude": -24.8144422414,
+        "Longitude": 32.5098208333,
+        "InitialPopulation": 35,
+        "FacilityName": "4",
+        "BirthRate": 0.00431515
+      }
+    },
+    {
+      "NodeID": 6,
+      "NodeAttributes": {
+        "Latitude": -24.7722267241,
+        "Longitude": 32.5098208333,
+        "InitialPopulation": 35,
+        "FacilityName": "5",
+        "BirthRate": 0.00431515
+      }
+    },
+    {
+      "NodeID": 7,
+      "NodeAttributes": {
+        "Latitude": -24.881987069,
+        "Longitude": 32.5184402778,
+        "InitialPopulation": 30,
+        "FacilityName": "6",
+        "BirthRate": 0.0036986999999999996
+      }
+    },
+    {
+      "NodeID": 8,
+      "NodeAttributes": {
+        "Latitude": -24.8313284483,
+        "Longitude": 32.5184402778,
+        "InitialPopulation": 44,
+        "FacilityName": "7",
+        "BirthRate": 0.00542476
+      }
+    },
+    {
+      "NodeID": 9,
+      "NodeAttributes": {
+        "Latitude": -24.8228853448,
+        "Longitude": 32.5184402778,
+        "InitialPopulation": 44,
+        "FacilityName": "8",
+        "BirthRate": 0.00542476
+      }
+    },
+    {
+      "NodeID": 10,
+      "NodeAttributes": {
+        "Latitude": -24.713125,
+        "Longitude": 32.5184402778,
+        "InitialPopulation": 22,
+        "FacilityName": "9",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 11,
+      "NodeAttributes": {
+        "Latitude": -24.9410887931,
+        "Longitude": 32.5270597222,
+        "InitialPopulation": 22,
+        "FacilityName": "10",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 12,
+      "NodeAttributes": {
+        "Latitude": -24.8904301724,
+        "Longitude": 32.5270597222,
+        "InitialPopulation": 83,
+        "FacilityName": "11",
+        "BirthRate": 0.01023307
+      }
+    },
+    {
+      "NodeID": 13,
+      "NodeAttributes": {
+        "Latitude": -24.881987069,
+        "Longitude": 32.5270597222,
+        "InitialPopulation": 150,
+        "FacilityName": "12",
+        "BirthRate": 0.0184935
+      }
+    },
+    {
+      "NodeID": 14,
+      "NodeAttributes": {
+        "Latitude": -24.8735439655,
+        "Longitude": 32.5270597222,
+        "InitialPopulation": 26,
+        "FacilityName": "13",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 15,
+      "NodeAttributes": {
+        "Latitude": -24.9410887931,
+        "Longitude": 32.5356791667,
+        "InitialPopulation": 26,
+        "FacilityName": "14",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 16,
+      "NodeAttributes": {
+        "Latitude": -24.9157594828,
+        "Longitude": 32.5356791667,
+        "InitialPopulation": 22,
+        "FacilityName": "15",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 17,
+      "NodeAttributes": {
+        "Latitude": -24.8988732759,
+        "Longitude": 32.5356791667,
+        "InitialPopulation": 22,
+        "FacilityName": "16",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 18,
+      "NodeAttributes": {
+        "Latitude": -24.8904301724,
+        "Longitude": 32.5356791667,
+        "InitialPopulation": 39,
+        "FacilityName": "17",
+        "BirthRate": 0.00480831
+      }
+    },
+    {
+      "NodeID": 19,
+      "NodeAttributes": {
+        "Latitude": -24.8144422414,
+        "Longitude": 32.5356791667,
+        "InitialPopulation": 30,
+        "FacilityName": "18",
+        "BirthRate": 0.0036986999999999996
+      }
+    },
+    {
+      "NodeID": 20,
+      "NodeAttributes": {
+        "Latitude": -24.9326456897,
+        "Longitude": 32.5442986111,
+        "InitialPopulation": 44,
+        "FacilityName": "19",
+        "BirthRate": 0.00542476
+      }
+    },
+    {
+      "NodeID": 21,
+      "NodeAttributes": {
+        "Latitude": -24.9242025862,
+        "Longitude": 32.5442986111,
+        "InitialPopulation": 26,
+        "FacilityName": "20",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 22,
+      "NodeAttributes": {
+        "Latitude": -24.9073163793,
+        "Longitude": 32.5442986111,
+        "InitialPopulation": 26,
+        "FacilityName": "21",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 23,
+      "NodeAttributes": {
+        "Latitude": -24.8988732759,
+        "Longitude": 32.5442986111,
+        "InitialPopulation": 22,
+        "FacilityName": "22",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 24,
+      "NodeAttributes": {
+        "Latitude": -24.9495318966,
+        "Longitude": 32.5529180556,
+        "InitialPopulation": 26,
+        "FacilityName": "23",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 25,
+      "NodeAttributes": {
+        "Latitude": -24.9410887931,
+        "Longitude": 32.5529180556,
+        "InitialPopulation": 26,
+        "FacilityName": "24",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 26,
+      "NodeAttributes": {
+        "Latitude": -24.9326456897,
+        "Longitude": 32.5529180556,
+        "InitialPopulation": 35,
+        "FacilityName": "25",
+        "BirthRate": 0.00431515
+      }
+    },
+    {
+      "NodeID": 27,
+      "NodeAttributes": {
+        "Latitude": -24.9326456897,
+        "Longitude": 32.5615375,
+        "InitialPopulation": 26,
+        "FacilityName": "26",
+        "BirthRate": 0.0032055399999999998
+      }
+    },
+    {
+      "NodeID": 28,
+      "NodeAttributes": {
+        "Latitude": -24.9495318966,
+        "Longitude": 32.5701569444,
+        "InitialPopulation": 44,
+        "FacilityName": "27",
+        "BirthRate": 0.00542476
+      }
+    },
+    {
+      "NodeID": 29,
+      "NodeAttributes": {
+        "Latitude": -24.9664181034,
+        "Longitude": 32.5787763889,
+        "InitialPopulation": 22,
+        "FacilityName": "28",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 30,
+      "NodeAttributes": {
+        "Latitude": -24.957975,
+        "Longitude": 32.5787763889,
+        "InitialPopulation": 22,
+        "FacilityName": "29",
+        "BirthRate": 0.00271238
+      }
+    },
+    {
+      "NodeID": 31,
+      "NodeAttributes": {
+        "Latitude": -24.9495318966,
+        "Longitude": 32.5787763889,
+        "InitialPopulation": 30,
+        "FacilityName": "30",
+        "BirthRate": 0.0036986999999999996
+      }
+    },
+    {
+      "NodeID": 32,
+      "NodeAttributes": {
+        "Latitude": -24.7384543103,
+        "Longitude": 32.6391125,
+        "InitialPopulation": 22,
+        "FacilityName": "31",
+        "BirthRate": 0.00271238
+      }
+    }
+  ],
+  "Defaults": {
+    "IndividualAttributes": {
+      "MortalityDistribution": {
+        "NumDistributionAxes": 2,
+        "AxisNames": [
+          "gender",
+          "age"
+        ],
+        "AxisUnits": [
+          "male=0,female=1",
+          "years"
+        ],
+        "AxisScaleFactors": [
+          1,
+          365
+        ],
+        "NumPopulationGroups": [
+          2,
+          1
+        ],
+        "PopulationGroups": [
+          [
+            0,
+            1
+          ],
+          [
+            0
+          ]
+        ],
+        "ResultUnits": "annual deaths per 1000 individuals",
+        "ResultScaleFactor": 2.74E-06,
+        "ResultValues": [
+          [
+            23
+          ],
+          [
+            23
+          ]
+        ]
+      },
+      "AgeDistributionFlag": 3,
+      "AgeDistribution1": 0.0001068,
+      "RiskDistribution1": 1,
+      "PrevalenceDistributionFlag": 1,
+      "AgeDistribution2": 0,
+      "PrevalenceDistribution1": 0.13,
+      "PrevalenceDistribution2": 0.15,
+      "RiskDistributionFlag": 0,
+      "RiskDistribution2": 0,
+      "MigrationHeterogeneityDistribution1": 1,
+      "ImmunityDistributionFlag": 0,
+      "MigrationHeterogeneityDistributionFlag": 0,
+      "ImmunityDistribution1": 1,
+      "MigrationHeterogeneityDistribution2": 0,
+      "ImmunityDistribution2": 0
+    },
+    "NodeAttributes": {
+      "Urban": 0,
+      "AbovePoverty": 0.5,
+      "Region": 1,
+      "Seaport": 0,
+      "Airport": 0,
+      "Altitude": 0,
+      "InitialPopulation": 1000
+    }
+  },
+  "Metadata": {
+    "Author": "idm",
+    "Tool": "dtk-tools",
+    "IdReference": "Gridded world grump30arcsec",
+    "DateCreated": "2018-02-05 11:37:48.847425",
+    "NodeCount": 32,
+    "Resolution": 30
+  }
+}
