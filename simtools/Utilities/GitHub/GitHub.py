@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from urllib.request import Request, urlopen
 
@@ -37,7 +38,8 @@ class GitHub(object):
             self.login()
         if not self._repo:
             print("/!\\ WARNING /!\\ Authorization failure. You do not currently have permission to access disease packages. " \
-                  "Please contact %s for assistance." % self.support_email); sys.stdout.flush()
+                  "Please contact %s for assistance." % self.support_email)
+            sys.stdout.flush()
             raise self.AuthorizationError()
         return self._repo
 
@@ -80,6 +82,7 @@ class GitHub(object):
         except (github3.GitHubError, self.BadCredentials):
             print("/!\\ WARNING /!\\ Bad GitHub credentials.")
             print("Cannot access disease packages. Please contact %s for assistance.".format(self.SUPPORT_EMAIL))
+            sys.stdout.flush()
             raise self.AuthorizationError()
 
         # Write the info to disk
@@ -245,4 +248,4 @@ class DTKGitHub(GitHub):
 
 class DependencyGitHub(GitHub):
     DEFAULT_REPOSITORY_NAME = 'PythonDependencies'
-    AUTH_TOKEN = '09ef3bad6e6eef13ddca6848c75ad1cd83e71051' # set token here to the default RO user
+    AUTH_TOKEN = 'f93b1465c073a01e6de2f3ea9449fdfe92848db1' # set token here to the default RO user
