@@ -54,6 +54,11 @@ class SimulationAssets(object):
 
     @property
     def exe_path(self):
+        if self.master_collection:
+            for f in self.master_collection.asset_files_to_use:
+                if f.file_name.endswith("exe"):
+                    return f.file_name
+
         # If we do have a EXE collection, the exe_path should come from there
         if self.EXE in self.base_collections and self.base_collections[self.EXE]:
             for f in self.base_collections[self.EXE].asset_files_to_use:
