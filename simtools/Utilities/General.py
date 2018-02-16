@@ -395,7 +395,7 @@ def file_size(bytes, system=labels):
     for factor, suffix in system:
         if bytes >= factor:
             break
-    amount = int(bytes/factor)
+    amount = round(bytes/factor)
     if isinstance(suffix, tuple):
         singular, multiple = suffix
         if amount == 1:

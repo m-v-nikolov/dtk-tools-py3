@@ -21,6 +21,7 @@ from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManage
 from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import get_experiments_per_user_and_date, get_experiments_by_name, COMPS_login, \
     get_experiment_ids_for_user
+from simtools.Utilities.DiskSpaceUsage import DiskSpaceUsage
 from simtools.Utilities.Experiments import COMPS_experiment_to_local_db, retrieve_experiment
 from simtools.Utilities.General import nostdout, get_tools_revision, retrieve_item
 from COMPS.Data.Simulation import SimulationState
@@ -57,6 +58,21 @@ def test(args, unknownArgs):
 
     # Run
     subprocess.Popen(command, cwd=test_dir).wait()
+
+
+def diskspace(args, unknownArgs):
+    # Create a default HPC setup parser
+    with SetupParser.TemporarySetup(temporary_block='HPC') as sp:
+        endpoint = sp.get('server_endpoint')
+        COMPS_login(endpoint)
+
+        # default to the login user
+        user = sp.get('user')
+        if args.users is None or len(args.users) == 0:
+            args.users = [user]
+
+    # query and display the disk information
+    DiskSpaceUsage.display(args.users, args.top, args.save, args.refresh)
 
 
 def run(args, unknownArgs):
@@ -829,6 +845,9 @@ def main():
 
     # 'dtk get_package' options
     commands_args.populate_get_package_arguments(subparsers, get_package)
+
+    # 'dtk diskspace' options
+    commands_args.populate_diskspace_arguments(subparsers, diskspace)
 
     # # 'dtk catalyst' options
     # commands_args.populate_catalyst_arguments(subparsers, catalyst)

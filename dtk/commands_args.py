@@ -49,6 +49,15 @@ def populate_catalyst_arguments(subparsers, func):
     parser_catalyst.set_defaults(func=func)
 
 
+def populate_diskspace_arguments(subparsers, func):
+    parser_status = subparsers.add_parser('diskspace', help='Report diskspace of for users.')
+    parser_status.add_argument('-u', '--users', nargs='*', help='List of users.', dest='users')
+    parser_status.add_argument('-t', '--top', nargs='?', type=int, help='Get given number recent experiment list.', dest='top')
+    parser_status.add_argument('-s', '--save', action='store_true', help='Save results to a file.', dest='save')
+    parser_status.add_argument('-r', '--refresh', action='store_true', help='Refresh data from COMPS.', dest='refresh')
+    parser_status.set_defaults(func=func)
+
+
 # 'dtk status' options
 def populate_status_arguments(subparsers, func):
     parser_status = subparsers.add_parser('status', help='Report status of simulations in experiment specified by ID or name.')
