@@ -83,8 +83,7 @@ class AnalyzeManager(CacheEnabled):
                 COMPS_login(experiment.endpoint)
                 COMPSCache.load_experiment(experiment.exp_id)
 
-        self.filter_simulations(experiment.simulations)
-        self.experiments.add(experiment)
+            self.filter_simulations(experiment.simulations)
 
     def add_simulation(self, simulation):
         from simtools.DataAccess.Schema import Simulation
