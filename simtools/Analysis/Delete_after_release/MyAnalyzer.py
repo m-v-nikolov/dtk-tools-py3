@@ -12,6 +12,7 @@ class MyAnalyzer(BaseAnalyzer):
         # print(simulation.get_path())
         ichart = data[self.filenames[0]]
         pop = ichart['Channels']['Statistical Population']['Data']
+
         return {"population":pop}
 
     def finalize(self, all_data):
@@ -43,8 +44,10 @@ class MyDataAnalyzer(BaseCacheAnalyzer):
         self.to_cache(simulation.id, {"population": pop[0]})
 
     def finalize(self, all_data):
-        for sim in all_data:
-            # print(self.from_cache(sim.id))
+        for sim,data in all_data.items():
+            print(sim)
+            print(data)
 
-            pass
+        for sim in all_data:
+            print(self.from_cache(sim.id))
 

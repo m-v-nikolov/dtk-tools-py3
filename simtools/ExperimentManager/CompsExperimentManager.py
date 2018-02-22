@@ -26,10 +26,11 @@ class CompsExperimentManager(BaseExperimentManager):
         super().__init__(experiment, config_builder)
         temp_block = experiment.selected_block if experiment else SetupParser.selected_block
         temp_path = experiment.setup_overlay_file if experiment else None
+        self.endpoint = experiment.endpoint if experiment else None
 
         with SetupParser.TemporarySetup(temporary_block=temp_block, temporary_path=temp_path) as setup:
             self.comps_sims_to_batch = int(setup.get(parameter='sims_per_thread'))
-            self.endpoint = setup.get(parameter='server_endpoint')
+            self.endpoint = self.endpoint or setup.get(parameter='server_endpoint')
             COMPS_login(self.endpoint)
 
         self.asset_service = True

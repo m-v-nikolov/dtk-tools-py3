@@ -26,6 +26,12 @@ def batch(iterable, n=1):
         yield iterable[ndx:min(ndx + n, l)]
 
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 class DataStore(SimulationDataStore, ExperimentDataStore, SettingsDataStore, BatchDataStore):
     """
     Class holding static methods to abstract the access to the database.

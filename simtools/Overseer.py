@@ -1,10 +1,8 @@
-import os
 import multiprocessing
+import os
 import sys
 # Add the tools to the path
-from multiprocessing import Process, Manager
-
-from simtools.Utilities.COMPSCache import COMPSCache
+from multiprocessing import Manager
 
 sys.path.append(os.path.abspath('..'))
 import threading
@@ -16,12 +14,9 @@ from datetime import datetime
 from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
-from simtools.Utilities.Experiments import retrieve_experiment
 from simtools.Utilities.General import init_logging
-from simtools.Utilities.COMPSUtilities import is_comps_alive
 
 logger = init_logging('Overseer')
-
 
 
 def LogCleaner():

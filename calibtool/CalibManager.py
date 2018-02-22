@@ -15,7 +15,8 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.Encoding import NumpyEncoder
 from simtools.Utilities.Experiments import validate_exp_name, retrieve_experiment
-from simtools.Utilities.General import init_logging, verbose_timedelta
+from simtools.Utilities.General import init_logging
+from simtools.Utilities import verbose_timedelta
 
 logger = init_logging("Calibration")
 

@@ -1,3 +1,5 @@
+import math
+
 from simtools.Utilities.CacheEnabled import CacheEnabled
 from simtools.Utilities.Encoding import GeneralEncoder
 from simtools.Utilities.General import init_logging, get_tools_revision, animation
@@ -15,7 +17,7 @@ from collections import Counter
 
 import fasteners
 
-from simtools.DataAccess.DataStore import DataStore, batch
+from simtools.DataAccess.DataStore import DataStore, chunks
 from simtools.ModBuilder import SingleSimulationBuilder
 from simtools.Monitor import SimulationMonitor
 from simtools.SetupParser import SetupParser
@@ -206,19 +208,13 @@ class BaseExperimentManager(CacheEnabled):
 
         # Separate the experiment builder generator into batches
         sim_per_batch = int(SetupParser.get('sims_per_thread', default=50))
-        work_list = list(self.exp_builder.mod_generator)
-        total_sims = len(work_list)
-        max_creator_processes = min(max(int(SetupParser.get('max_threads')), multiprocessing.cpu_count()), total_sims)
-
-        # Batch the work to do differently depending on number of simulations
-        if total_sims > sim_per_batch * max_creator_processes:
-            nbatches = int(total_sims / max_creator_processes)
-        else:
-            nbatches = sim_per_batch
-        fn_batches = batch(work_list, n=nbatches)
+        max_creator_processes = multiprocessing.cpu_count() - 1
+        mods = list(self.exp_builder.mod_generator)
+        total_sims = len(mods)
 
         # Create the simulation processes
-        creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch) for fn_batch in fn_batches]
+        creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch)
+                             for fn_batch in chunks(mods, math.ceil(total_sims/max_creator_processes))]
 
         # Display some info
         if verbose:
@@ -226,7 +222,6 @@ class BaseExperimentManager(CacheEnabled):
             logger.info(" | Creator processes: %s (max: %s)" % (len(creator_processes), max_creator_processes))
             logger.info(" | Simulations per batch: %s" % sim_per_batch)
             logger.info(" | Simulations Count: %s" % total_sims)
-            logger.info(" | Max simulations per threads: %s" % nbatches)
             sys.stdout.write(" | Created simulations: 0/{}".format(total_sims))
             sys.stdout.flush()
 

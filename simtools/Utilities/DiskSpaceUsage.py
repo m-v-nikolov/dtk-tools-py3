@@ -17,6 +17,7 @@ from simtools.SetupParser import SetupParser
 from simtools.Utilities.COMPSUtilities import COMPS_login
 from simtools.Utilities.General import file_size, animation
 
+
 class ExperimentInfo:
     def __init__(self, id, name, owner, size, sims):
         self.id = id
@@ -137,9 +138,6 @@ class DiskSpaceUsage:
         cache_folder = os.path.join(current_folder, "cache")
         cache = FanoutCache(shards=6, directory=cache_folder)
 
-        # This will hold all experiments info
-        experiments_info = {}
-
         # All experiments
         all_experiments = list(
             itertools.chain(*(Experiment.get(query_criteria=QueryCriteria().where(["owner={}".format(owner)]))
@@ -208,10 +206,4 @@ class DiskEncoder(json.JSONEncoder):
         d = o.__dict__
 
         return d
-
-
-if __name__ == "__main__":
-    # Login to COMPS
-    SetupParser.init('HPC')
-    DiskSpaceUsage.display()
 

@@ -172,15 +172,16 @@ class CompsDTKOutputParser(SimulationOutputParser):
         if transient:
             try:
                 byte_arrays.update(dict(zip(transient, self.COMPS_simulation.retrieve_output_files(paths=transient))))
-            except RuntimeError:
+            except Exception as e:
                 print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
                       .format(self.sim_id, transient))
+                print(e)
                 exit()
 
         if assets:
             try:
                 byte_arrays.update(get_asset_files_for_simulation_id(self.sim_id, paths=assets, remove_prefix='Assets'))
-            except RuntimeError:
+            except Exception:
                 print("Could not retrieve requested file(s) for simulation {} - Requested files: {}. Parser exiting..."
                       .format(self.sim_id, assets))
                 exit()

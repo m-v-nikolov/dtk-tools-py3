@@ -9,7 +9,8 @@ from simtools.DataAccess.DataStore import DataStore
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.Utilities.Encoding import NumpyEncoder, json_numpy_obj_hook
 from simtools.Utilities.Experiments import retrieve_experiment
-from simtools.Utilities.General import init_logging, verbose_timedelta
+from simtools.Utilities.General import init_logging
+from simtools.Utilities import verbose_timedelta
 
 logger = init_logging("Calibration")
 

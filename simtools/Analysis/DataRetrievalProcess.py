@@ -7,6 +7,7 @@ from simtools.Analysis.OutputParser import SimulationOutputParser
 from simtools.Utilities.COMPSCache import COMPSCache
 from simtools.Utilities.COMPSUtilities import COMPS_login
 
+
 def retrieve_data(simulation, analyzers, cache):
     from simtools.Analysis.AnalyzeManager import EXCEPTION_KEY
 
