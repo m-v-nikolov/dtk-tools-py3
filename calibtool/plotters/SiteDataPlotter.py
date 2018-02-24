@@ -92,7 +92,7 @@ class SiteDataPlotter(BasePlotter):
 
                 fig.set_tight_layout(True)
 
-                plt.savefig(fname + '.pdf', format='PDF')
+                plt.savefig(fname + '.png', format='PNG')
                 plt.close(fig)
 
     def plot_all(self, site_name, analyzer_name, samples, clim):
@@ -113,7 +113,7 @@ class SiteDataPlotter(BasePlotter):
         analyzer.plot_comparison(fig, analyzer_data['ref'], fmt='-o', color='#8DC63F', alpha=1, linewidth=1, reference=True)
 
         fig.set_tight_layout(True)
-        plt.savefig(fname + '.pdf', format='PDF')
+        plt.savefig(fname + '.png', format='PNG')
         plt.close(fig)
 
     def cleanup(self):

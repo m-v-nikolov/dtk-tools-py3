@@ -157,6 +157,11 @@ def euclidean_distance(raw_data, sim_data):
     return math.sqrt(sum([(raw_data[x] - sim_data[x])**2 for x in range(num_obs)]))*-1
 
 
+def euclidean_distance_pandas(df):
+
+    return math.sqrt(np.sum((np.array(df.ref) - np.array(df.sim)) ** 2)) * -1
+
+
 def weighted_squares(raw_data, sim_data):
 
     num_obs = len(raw_data)

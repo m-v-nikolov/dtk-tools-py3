@@ -84,7 +84,7 @@ class SmallWorldGridGraphGenerator(object):
 		G.name={}
 		
 		# add nodes 
-		for node_id,properties in self.node_properties.iteritems():
+		for node_id,properties in self.node_properties.items():
 			G.add_node(node_id)
 			G.name[properties[3]] = node_id
 			G.population[node_id] = properties[2]
@@ -94,8 +94,8 @@ class SmallWorldGridGraphGenerator(object):
 		# add provided local links
 		nodes = G.nodes()
 		if self.adjacency_list:
-			for node_id, node_links in self.adjacency_list.iteritems():
-				for node_link_id, w in node_links.iteritems():
+			for node_id, node_links in self.adjacency_list.items():
+				for node_link_id, w in node_links.items():
 					if node_id in nodes and node_link_id in nodes: # only add an edge between existing nodes  
 						G.add_edge(int(node_id), int(node_link_id), weight = w)
 		else:
@@ -105,12 +105,12 @@ class SmallWorldGridGraphGenerator(object):
 		
 		# add long range links
 		#calculate shortest hops paths and create an edge between two nodes w/ probability proportional to the inverse square of the distance between the two nodes
-		shortest_path_lengths = nx.shortest_path_length(G, weight = 'weight').iteritems()
-		for src_id, dst_records in shortest_path_lengths:
-			for dst_id, dist in dst_records.iteritems():
-				if dist > 0:
-					if random.uniform(0,1) <= pow(dist, -2): # need to calculate normalization constant!
-						G.add_edge(src_id, dst_id) 
+		# shortest_path_lengths = nx.shortest_path_length(G, weight = 'weight').items()
+		# for src_id, dst_records in shortest_path_lengths:
+		# 	for dst_id, dist in dst_records.items():
+		# 		if dist > 0:
+		# 			if random.uniform(0,1) <= pow(dist, -2): # need to calculate normalization constant!
+		# 				G.add_edge(src_id, dst_id)
 		
 		# go over isolated nodes and add edges to a random node; can be more realistic and add edges based on distance; but for now that should suffice to get a connected network
 		# note that this does not create a fully connected network but a set of connected components with no isolated nodes 

@@ -57,9 +57,27 @@ def set_habitat_scale(cb, scale):
 
 
 # -------------------------------------------------------------------------------
+def configure_magude(cb):
+    set_larval_habitat(cb, {"gambiae": {'TEMPORARY_RAINFALL': 2.2e9, "LINEAR_SPLINE": {
+                          "Capacity_Distribution_Per_Year": {
+                              "Times": [0.0, 30.417, 60.833, 91.25, 121.667, 152.083,
+                                        182.5, 212.917, 243.333, 273.75, 304.167, 334.583],
+                              # "Values": [3, 0.8, 1.25, 0.1, 2.7, 10, 6, 35, 2.8, 1.5, 1.6, 2.1] # with 'x_Temporary_Larval_Habitat': 0.2 for EIR~10
+                              "Values": [3, 0.8,  1.25, 0.1,  2.7, 8, 4, 35, 6.8,  6.5, 2.6, 2.1]},
+                              "Max_Larval_Capacity": 1e8
+                                    }},
+
+                             "funestus": {'WATER_VEGETATION': 4e8, "LINEAR_SPLINE": {
+                          "Capacity_Distribution_Per_Year": {
+                              "Times": [0.0, 30.417, 60.833, 91.25, 121.667, 152.083,
+                                        182.5, 212.917, 243.333, 273.75, 304.167, 334.583],
+                              # "Values": [3, 0.8, 1.25, 0.1, 2.7, 10, 6, 35, 2.8, 1.5, 1.6, 2.1] # with 'x_Temporary_Larval_Habitat': 0.2 for EIR~10
+                              "Values": [3, 0.8,  1.25, 0.1,  2.7, 8, 4, 35, 6.8,  6.5, 2.6, 2.1]},
+                              "Max_Larval_Capacity": 1e8
+                                    }}
+                            })
 
 
-# Namawala, Tanzania: EIR = 400
 def configure_garki_gridded_net(cb):
     set_larval_habitat(cb, {"gambiae": {'TEMPORARY_RAINFALL': 2.2e9, "LINEAR_SPLINE": {
                           "Capacity_Distribution_Per_Year": {
@@ -71,6 +89,8 @@ def configure_garki_gridded_net(cb):
                             }
                             }})
 
+
+# Namawala, Tanzania: EIR = 400
 def configure_namawala(cb):
     set_larval_habitat(cb, {"arabiensis": {'TEMPORARY_RAINFALL': 7.5e9, 'CONSTANT': 1e7},
                             "funestus": {'WATER_VEGETATION': 4e8},

@@ -156,7 +156,7 @@ class MigrationGenerator(object):
                         src_node_id = self.node_label_2_id[src_node_label]
 
                         adj_list_dtk_node_ids[src_node_id] = {}
-                        for dst_node_label, w in dst_records.iteritems():
+                        for dst_node_label, w in dst_records.items():
                             if not dst_node_label in self.node_label_2_id:
                                 continue
                             dst_node_id = self.node_label_2_id[dst_node_label]

@@ -7,6 +7,7 @@ from dtk.interventions.irs import add_node_IRS
 from dtk.interventions.outbreakindividual import recurring_outbreak
 from dtk.interventions.migrate_to import add_migration_event
 from dtk.interventions.health_seeking import add_health_seeking
+from dtk.utils.reports.CustomReport import BaseReport, BaseVectorStatsReport
 
 import json
 import numpy as np
@@ -41,6 +42,15 @@ class summary_report_fn:
         from malaria.reports.MalariaReport import add_summary_report
         return add_summary_report(cb, start=self.start, interval=self.interval, nreports=self.nreports,
                                   description=self.description, age_bins=self.age_bins, nodes=self.nodes)
+
+
+class vector_stats_report_fn:
+    def __init__(self, start=1):
+        self.start = start
+
+    def __call__(self, cb):
+        return cb.add_reports(BaseVectorStatsReport(type="ReportVectorStats"))
+
 
 class survey_report_fn:
     def __init__(self, days, interval=10000, nreports=1, survey_days=None, reporting_interval=None):

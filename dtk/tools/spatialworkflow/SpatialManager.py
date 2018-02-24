@@ -290,6 +290,9 @@ class SpatialManager:
                 om("generating migration graph and link rates...", style='bold')
 
                 self.mg.generate_link_rates()
+                if not os.path.exists(self.log_path):
+                    os.mkdir(self.log_path)
+
                 self.mg.save_link_rates_to_txt(os.path.join(self.log_path, 'rates.txt'))
 
                 om("Link rates log saved to: " + os.path.join(self.log_path, 'rates.txt'))

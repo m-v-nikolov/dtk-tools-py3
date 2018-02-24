@@ -98,6 +98,16 @@ geographies = {
                      "Enable_Demographics_Other": 0  # no 'AbovePoverty' etc. in these files
                      },
 
+    "Magude": {"Geography": "Magude",
+                     "Air_Temperature_Filename": "Magude_temperature.bin",
+                     "Demographics_Filenames": ["Magude_demographics.json"],
+                     "Land_Temperature_Filename": "Magude_temperature.bin",
+                     "Rainfall_Filename": "Magude_rainfall.bin",
+                     "Relative_Humidity_Filename": "Magude_humidity.bin",
+                     "Enable_Climate_Stochasticity": 1,  # every two weeks in raw data series
+                     "Enable_Demographics_Other": 0  # no 'AbovePoverty' etc. in these files
+                     },
+
     "Garki_Single": {"Geography": "Garki_Single",
                      "Air_Temperature_Filename": "Garki_single_temperature.bin",
                      "Demographics_Filenames": ["Garki_single_demographics.compiled.json"],

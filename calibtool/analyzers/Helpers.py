@@ -1,8 +1,12 @@
 import itertools
-from datetime import date
+import random
+from datetime import date, datetime
 import calendar
 import logging
 from collections import OrderedDict
+from geopy.distance import vincenty
+import numpy.ma as ma
+import json
 
 import pandas as pd
 import numpy as np
@@ -329,6 +333,13 @@ def aggregate_on_index(df, index, keep=slice(None)):
     return df
 
 
+def aggregate_on_month(sim, ref):
+    months = list(ref['Month'].unique())
+    sim = sim[sim['Month'].isin(months)]
+
+    return sim
+
+
 def get_spatial_report_data_at_date(sp_data, date):
 
     return pd.DataFrame({'node': sp_data['nodeids'],
@@ -372,3 +383,171 @@ def get_risk_by_distance(df_sim, distances, ddf):
             rel_risk.append(0)
 
     return rel_risk
+
+
+def ento_data(csvfilename, metadata):
+
+    df = pd.read_csv(csvfilename)
+
+    df = df[['date', 'gambiae_count', 'funestus_count', 'adult_house']]
+    df['gambiae'] = df['gambiae_count'] / df['adult_house']
+    df['funestus'] = df['funestus_count'] / df['adult_house']
+    df = df.dropna()
+
+    df['date'] = pd.to_datetime(df['date'])
+    dateparser = lambda x: int(x.strftime('%m'))
+    df['Month'] = df['date'].apply(lambda x: int(dateparser(x)))
+    df2 = df.groupby('Month')['gambiae'].apply(np.mean).reset_index()
+    df2['funestus'] = list(df.groupby('Month')['funestus'].apply(np.mean))
+
+    # Keep only species requested
+    for spec in metadata['species']:
+        df1 = df2[['Month', spec]]
+        df1 = df1.rename(columns={spec: 'Counts'})
+        df1['Channel'] = [spec] * len(df1)
+        if 'dftemp' in locals():
+            dftemp = pd.concat([dftemp, df1])
+        else:
+            dftemp = df1.copy()
+
+    dftemp = dftemp.sort_values(['Channel', 'Month'])
+    dftemp = dftemp.set_index(['Channel', 'Month'])
+
+    return dftemp
+
+
+def garki_ento_data(csvfilename, metadata):
+
+    df = pd.read_csv(csvfilename)
+
+    df = df.loc[df['Village'] == metadata['village']]
+    df['Channel'] = df['Channel'].apply(lambda x: x.split('.')[1].lower())
+    df = df.loc[df['Channel'].isin(metadata['species'])]
+
+    del df['Village']
+    if 'Unnamed: 0' in df.columns:
+        del df['Unnamed: 0']
+
+    dftemp = df.sort_values(['Channel', 'Month'])
+    dftemp = dftemp.set_index(['Channel', 'Month'])
+
+    return dftemp
+
+
+def hhs_to_nodes(csvfilename, hhs_file, metadata):
+
+    hh_hf_records = pd.read_csv(csvfilename)
+    hh_hf_records = hh_hf_records[hh_hf_records['hf_name'] == metadata['hf']]
+    hh_hf_records = hh_hf_records.rename(index=str, columns={"House_ID": "ID", 'lat_r2': 'lat', 'lng_r2': 'lon'})
+    hhs_df = pd.read_csv(hhs_file)
+    # hhs_df = hhs_df[['ID', 'household_number_mda1', 'household_number_mda2', 'household_number_mda3']]
+    hhs_df = hhs_df[['ID', 'household_number_mda1']]
+    # pd.unique(hhs_df[['household_number_mda1', 'household_number_mda2', 'household_number_mda3']].values.ravel('K'))
+    hhs_df = hhs_df.rename(index=str, columns={"household_number_mda2": "house_ID"})
+
+    all_hh_records = hh_hf_records.merge(hhs_df, on=['ID'])
+    all_hh_records = all_hh_records.dropna()
+
+    y_min = all_hh_records['lat'].min()
+    y_max = all_hh_records['lat'].max()
+    x_min = all_hh_records['lon'].min()
+    x_max = all_hh_records['lon'].max()
+
+    # square grid cell/pixel side (in m)
+    cell_size = 1000
+
+    # demographic grid cell should contain more households than a threshold
+    cell_household_threshold = 1
+
+    # how far people would definitely go by foot in units of neighborhood hops (1 hop is the adjacent 8 cells on the grid; 2 hops is the adjacent 24 cells, etc.
+    # this prepares an approximation of a local topology
+    migration_radius = 2
+
+    hh_records = all_hh_records[
+        (all_hh_records.lon > x_min) & (all_hh_records.lon < x_max) & (all_hh_records.lat > y_min) & (
+        all_hh_records.lat < y_max)]
+
+    # get point locations of households
+    points = hh_records.as_matrix(["lon", "lat"])
+
+    # get number of grid cells along the x (grid width) and y axis (grid height) based on the bounding box dimensions and pixel/cell size
+    num_cells_x = int(1000 * vincenty((y_min, x_min), (y_min, x_max)).km / cell_size) + 1
+    num_cells_y = int(1000 * vincenty((y_min, x_min), (y_max, x_min)).km / cell_size) + 1
+
+    # bin households in the grid
+    H, xedges, yedges = np.histogram2d(points[:, 0], points[:, 1], bins=[num_cells_x, num_cells_y])
+
+    # get centroids of grid cells
+    x_mid = (xedges[1:] + xedges[:-1]) / 2
+    y_mid = (yedges[1:] + yedges[:-1]) / 2
+
+    # build a mesh of centroids
+    X_mid, Y_mid = np.meshgrid(x_mid[:], y_mid[:])
+
+    # filter pixels/cells by number of households greater than a threshold in each cell
+    cells_masking = ma.masked_less(H, cell_household_threshold)
+    cells_mask = cells_masking.mask
+
+    # mask returns False for valid entries;  True would be easier to work with
+    inverted_filtered_households_mask = np.in1d(cells_mask.ravel(), [False]).reshape(cells_mask.shape)
+    filtered_household_cells_idx = np.where(inverted_filtered_households_mask)
+
+    # map between node coordinates and node label; to avoid look-up logic
+    coor_idxs_2_node_label = {}
+
+    for i, idx_x in enumerate(filtered_household_cells_idx[0]):
+        idx_y = filtered_household_cells_idx[1][i]
+
+        node_label = str(i)  # unique node label
+
+        coor_idxs_2_node_label[str(idx_x) + "_" + str(idx_y)] = node_label
+
+    node_label = [0]*len(hh_records)
+    for i in range(len(points)):
+        X = X_mid * np.transpose(inverted_filtered_households_mask)
+        Y = Y_mid * np.transpose(inverted_filtered_households_mask)
+        X[X == 0] = 'nan'
+        Y[Y == 0] = 'nan'
+        x = X_mid - points[i][0]
+        y = Y_mid - points[i][1]
+        dist = x**2 + y**2
+        neigh_cand = np.argwhere(dist == np.min(dist))
+        node_label[i] = coor_idxs_2_node_label[str(neigh_cand[0][0]) + "_" + str(neigh_cand[0][1])]
+
+    hh_records['NodeID'] =node_label
+
+    return hh_records
+
+
+def ento_spatial_data(datafilename, hhs_hffilename, hhs_file, metadata):
+
+    # df2 = hhs_to_nodes(hhs_hffilename, hhs_file, metadata)
+
+    df = pd.read_csv(datafilename)
+
+    df = df[['date', 'gambiae_count', 'funestus_count', 'adult_house']]
+    df['gambiae'] = df['gambiae_count'] / df['adult_house']
+    df['funestus'] = df['funestus_count'] / df['adult_house']
+    df = df.dropna()
+    df['NodeID'] = [random.randint(0, 32) for i in range(len(df))]
+
+    df['date'] = pd.to_datetime(df['date'])
+    dateparser = lambda x: int(x.strftime('%m'))
+    df['Month'] = df['date'].apply(lambda x: int(dateparser(x)))
+    df2 = df.groupby(['Month', 'NodeID'])['gambiae'].apply(np.mean).reset_index()
+    df2['funestus'] = list(df.groupby(['Month', 'NodeID'])['funestus'].apply(np.mean))
+
+    # Keep only species requested
+    for spec in metadata['species']:
+        df1 = df2[['Month', 'NodeID',  spec]]
+        df1 = df1.rename(columns={spec: 'Counts'})
+        df1['Channel'] = [spec] * len(df1)
+        if 'dftemp' in locals():
+            dftemp = pd.concat([dftemp, df1])
+        else:
+            dftemp = df1.copy()
+
+    dftemp = dftemp.sort_values(['Channel', 'Month', 'NodeID'])
+    dftemp = dftemp.set_index(['Channel', 'Month', 'NodeID'])
+
+    return dftemp

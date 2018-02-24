@@ -12,7 +12,6 @@ class BaseReport(object):
 
     dlls = {'MalariaPatientJSONReport': 'libmalariapatientJSON_report_plugin.dll',
             'VectorHabitatReport': 'libvectorhabitat_report_plugin.dll',
-            'ReportVectorStats': 'libvectorstats.dll',
             'ReportVectorMigration': 'libvectormigration.dll',
             'ReportHumanMigrationTracking': 'libhumanmigrationtracking.dll',
             'ReportEventCounter': 'libreporteventcounter.dll',
@@ -36,6 +35,23 @@ class BaseReport(object):
             return 'reporter_plugins', dll
         else:
             raise Exception('No known DLL for report type %s' % self.type)
+
+
+class BaseVectorStatsReport(BaseReport):
+
+    dlls = {'ReportVectorStats': 'libvectorstats.dll'}
+
+    def __init__(self,
+                 stratify_by_species=1,
+                 type=""):
+
+        BaseReport.__init__(self, type)
+        self.stratify_by_species = stratify_by_species
+
+    def to_dict(self):
+        d = super(BaseVectorStatsReport, self).to_dict()
+        d.update({"Stratify_By_Species": self.stratify_by_species})
+        return d
 
 
 class BaseDemographicsReport(BaseReport):
