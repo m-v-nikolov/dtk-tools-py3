@@ -14,6 +14,13 @@ def populate_run_arguments(subparsers, func):
     parser_run.set_defaults(func=func)
 
 
+# 'dtk ini' options
+def populate_ini_arguments(subparsers, func):
+    parser_ini = subparsers.add_parser('ini', help='Check  simtools.ini file.')
+    parser_ini.add_argument('-o', '--open', action='store_true', help='Open and display file.')
+    parser_ini.set_defaults(func=func)
+
+
 # 'dtk run' options for catalyst, after all, it runs and then does a set-piece analysis
 def populate_catalyst_arguments(subparsers, func):
     parser_catalyst = subparsers.add_parser('catalyst', help='Run a timestep or population-scaling sweep to evaluate '

@@ -75,6 +75,33 @@ def diskspace(args, unknownArgs):
     DiskSpaceUsage.display(args.users, args.top, args.save, args.refresh)
 
 
+def check_ini(args, unknownArgs):
+    ini_filename = 'simtools.ini'
+
+    local_file = os.path.join(os.getcwd(), ini_filename)
+    local_file = local_file if os.path.exists(local_file) else None
+    default_file = SetupParser.default_file
+
+    file_to_open = local_file if local_file else default_file
+
+    if local_file:
+        print("Local {} exists!".format(ini_filename))
+    else:
+        print("Local {} DOESN'T exist!".format(ini_filename))
+        print("Default {}: {}".format(ini_filename, default_file))
+
+    if args.open:
+        print('=============================================\n')
+        if local_file:
+            print("Open Local {}: {}".format(ini_filename, local_file))
+        else:
+            print("Open Default {}: {}".format(ini_filename, default_file))
+        print('----------------------------------------------')
+        with open(file_to_open) as f:
+            read_data = f.read()
+            print(read_data)
+
+
 def run(args, unknownArgs):
     # get simulation-running instructions from script
     mod = args.loaded_module
@@ -773,6 +800,9 @@ def reload_experiments(args=None):
 def main():
     parser = argparse.ArgumentParser(prog='dtk')
     subparsers = parser.add_subparsers()
+
+    # 'dtk ini' options
+    commands_args.populate_ini_arguments(subparsers, check_ini)
 
     # 'dtk run' options
     commands_args.populate_run_arguments(subparsers, run)

@@ -48,6 +48,11 @@ cb.add_reaction('infection', '(E)', '(I)', '(* Kl E)')
 cb.add_reaction('recovery', '(I)', '(R)', '(* Kr I)')
 cb.add_reaction('waning', '(R)', '(S)', '(* Kw R)')
 
+
+########################
+# other configurations
+########################
+
 # If the base collection containing CMS exists, use it
 # If not, use the local
 if SetupParser.default_block == "HPC":
