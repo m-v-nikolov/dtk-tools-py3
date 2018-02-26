@@ -4,6 +4,7 @@ import os
 from simtools.SimConfigBuilder import SimConfigBuilder
 from simtools.Utilities.Encoding import NumpyEncoder
 from models.cms.core.CMS_Object import *
+from models.cms.core.CMS_Parser import CMSParser
 
 
 class CMSConfigBuilder(SimConfigBuilder):
@@ -61,9 +62,6 @@ class CMSConfigBuilder(SimConfigBuilder):
         model_file = os.path.abspath(os.path.normpath(model_file))
         config_file = os.path.abspath(os.path.normpath(config_file)) if config_file else config_file
 
-        # Read the model file
-        model = open(model_file, 'r').read()
-
         # Read the config
         if config_file:
             config = json.load(open(config_file, 'r'))
@@ -73,7 +71,12 @@ class CMSConfigBuilder(SimConfigBuilder):
         # Do the overrides
         config.update(**kwargs)
 
-        return cls(model, config)
+        # first, create CMSBuilder with empty model
+        cb = cls(None, config)
+
+        # then parse model file
+        CMSParser.parse_model_from_file(model_file, cb)
+        return cb
 
     @classmethod
     def from_defaults(cls):
@@ -136,8 +139,8 @@ class CMSConfigBuilder(SimConfigBuilder):
     def get_species(self, name):
         return self.species[name].value
 
-    def add_time_event(self, name, *pair_list):
-        self.time_event.append(TimeEvent(name, *pair_list))
+    def add_time_event(self, name, iteration=None, *pair_list):
+        self.time_event.append(TimeEvent(name, iteration, *pair_list))
 
     def add_state_event(self, name, *pair_list):
         self.state_event.append(StateEvent(name, *pair_list))

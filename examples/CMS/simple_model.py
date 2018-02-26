@@ -22,11 +22,13 @@ else:
     cb.set_experiment_executable('inputs/compartments/compartments.exe')
     cb.set_dll_root('inputs/compartments')
 
+run_sim_args = {"config_builder": cb, "exp_name": "First CMS run"}
+
 
 if __name__ == "__main__":
     SetupParser.init()
-    em = ExperimentManagerFactory.from_cb(cb)
-    em.run_simulations(exp_name="First CMS run")
+    em = ExperimentManagerFactory.from_cb(run_sim_args["config_builder"])
+    em.run_simulations(exp_name=run_sim_args["exp_name"])
 
     # Wait for the simulation to complete
     em.wait_for_finished(verbose=True)
