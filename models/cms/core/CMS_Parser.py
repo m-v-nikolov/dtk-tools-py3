@@ -17,17 +17,17 @@ class CMSParser(object):
     """
 
     re_map = {
-        'start-model': """\((?P<key>start-model)\s+(?P<quote>['"])(?P<name>\S+)(?P=quote)\s*\)""",
-        'param': r'\((?P<key>param)\s+(?P<name>\S+)\s+(?P<value>.*)\)',
-        'func': r'\((?P<key>func)\s+(?P<name>\S+)\s+(?P<func>.*)\)',
-        'bool': r'\((?P<key>bool)\s+(?P<name>\S+)\s+(?P<expr>.*)\)',
-        'observe': r'\((?P<key>observe)\s+(?P<label>\S+)\s+(?P<func>.*)\)',
-        'species': r'\((?P<key>species)\s+(?P<name>\w+)\s+(?P<value>\w+)\s*\)',
-        'species2': r'\((?P<key>species)\s+(?P<name>\w+)\s*\)',
-        'reaction': r'\((?P<key>reaction)\s+(?P<name>\S+)\s+(?P<input>\(.*?\))\s+(?P<output>\(.*?\))\s+(?P<func>.*)\)',
-        'time-event': r'\((?P<key>time-event)\s+(?P<name>\S+)\s+(?P<time>\S+)\s+(?P<iteration>\S+)\s+\((?P<pairs>\(.*\))\)',
-        'time-event2': r'\((?P<key>time-event)\s+(?P<name>\S+)\s+(?P<time>\S+)\s+\((?P<pairs>\(.*\))\)',
-        'state-event': r'\((?P<key>state-event)\s+(?P<name>\S+)\s+(?P<predicate>.*?)\s+\((?P<pairs>.*)\)\)'
+        'start-model': """\(\s*(?P<key>start-model)\s+(?P<quote>['"])(?P<name>\S+)(?P=quote)\s*\)""",
+        'param': r'\(\s*(?P<key>param)\s+(?P<name>\S+)\s+(?P<value>.*)\s*\)',
+        'func': r'\(\s*(?P<key>func)\s+(?P<name>\S+)\s+(?P<func>.*)\s*\)',
+        'bool': r'\(\s*(?P<key>bool)\s+(?P<name>\S+)\s+(?P<expr>.*)\s*\)',
+        'observe': r'\(\s*(?P<key>observe)\s+(?P<label>\S+)\s+(?P<func>.*)\s*\)',
+        'species': r'\(\s*(?P<key>species)\s+(?P<name>\S+)\s+(?P<value>[\w\-]+)\s*\)',
+        'species2': r'\(\s*(?P<key>species)\s+(?P<name>\S+)\s*\)',
+        'reaction': r'\(\s*(?P<key>reaction)\s+(?P<name>\S+)\s+(?P<input>\(.*?\))\s+(?P<output>\(.*?\))\s+(?P<func>.*)\s*\)',
+        'time-event': r'\(\s*(?P<key>time-event)\s+(?P<name>\S+)\s+(?P<time>\S+)\s+(?P<iteration>\S+)\s+\((?P<pairs>\(.*\))\s*\)',
+        'time-event2': r'\(\s*(?P<key>time-event)\s+(?P<name>\S+)\s+(?P<time>\S+)\s+\((?P<pairs>\(.*\))\s*\)',
+        'state-event': r'\(\s*(?P<key>state-event)\s+(?P<name>\S+)\s+(?P<predicate>.*?)\s+\((?P<pairs>.*)\)\s*\)'
     }
 
     reg_pair = r'(\(.*\))+'

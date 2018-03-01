@@ -1,5 +1,12 @@
+import inspect
+
 
 class EMODL:
+
+    @classmethod
+    def all_options(cls):
+        return (cls_attribute for cls_attribute in cls.__dict__.values()
+                if inspect.isclass(cls_attribute))
 
     class ADD:
         def __init__(self, *kwargs):
@@ -165,9 +172,17 @@ class EMODL:
 
 
 def test():
-    print(EMODL.ADD(EMODL.DIVIDE(3, 4), EMODL.POWER(2, 5)))
-    print(EMODL.ADD('S', 'R'))
-    print(EMODL.ADD(2, 3, 'S', 'R', 4))
+    # print(EMODL.ADD(EMODL.DIVIDE(3, 4), EMODL.POWER(2, 5)))
+    # print(EMODL.ADD('S', 'R'))
+    # print(EMODL.ADD(2, 3, 'S', 'R', 4))
+
+    a = EMODL.all_options()
+    print(type(a))
+    print(a)
+
+    print('-------------------------------------')
+    for r in a:
+        print(r)
 
 
 if __name__ == "__main__":

@@ -37,6 +37,31 @@ class Bool(object):
         return "(bool {} {})".format(self.name, self.expr)
 
 
+class Locale(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return "(locale {})".format(self.name)
+
+
+class SetLocale(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return "(set-locale {})".format(self.name)
+
+
+class Json(object):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return '(json {} "{}")'.format(self.name, self.value)
+
+
 class Func(object):
     def __init__(self, name, func):
         self.name = name

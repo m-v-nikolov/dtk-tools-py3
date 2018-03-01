@@ -130,7 +130,12 @@ class CMSConfigBuilder(SimConfigBuilder):
     def clean_in_out(value):
         return "({})".format(str(value).strip(')( '))
 
+    @staticmethod
+    def trim_value(value):
+        return value.strip() if value else value
+
     def add_species(self, name, value=None):
+        value = self.trim_value(value)
         self.species[name] = Species(name, value)
 
     def set_species(self, name, value=None):
@@ -148,9 +153,11 @@ class CMSConfigBuilder(SimConfigBuilder):
     def add_reaction(self, name, input, output, func):
         input = self.clean_in_out(input)
         output = self.clean_in_out(output)
+        func = self.trim_value(func)
         self.reaction.append(Reaction(name, input, output, func))
 
     def add_param(self, name, value):
+        value = self.trim_value(value)
         value = self.clean_value(value)
         self.param[name] = Param(name, value)
 
@@ -162,6 +169,7 @@ class CMSConfigBuilder(SimConfigBuilder):
         return self.param[name].value if name in self.param else default
 
     def add_func(self, name, func):
+        func = self.trim_value(func)
         self.func[name] = Func(name, func)
 
     def set_func(self, name, func):
@@ -171,9 +179,11 @@ class CMSConfigBuilder(SimConfigBuilder):
         return self.func[name].func
 
     def add_observe(self, label, func):
+        func = self.trim_value(func)
         self.observe.append(Observe(label, func))
 
     def add_bool(self, name, expr):
+        expr = self.trim_value(expr)
         self.bool[name] = Bool(name, expr)
 
     def set_bool(self, name, expr):
@@ -204,9 +214,9 @@ class CMSConfigBuilder(SimConfigBuilder):
 
         add_to_display(self.bool)
 
-        add_to_display(self.observe)
-
         add_to_display(self.reaction)
+
+        add_to_display(self.observe)
 
         add_to_display(self.state_event)
 
