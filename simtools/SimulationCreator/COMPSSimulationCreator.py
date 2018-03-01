@@ -26,15 +26,11 @@ class COMPSSimulationCreator(BaseSimulationCreator):
             Simulation.save_all(save_semaphore=self.save_semaphore)
 
     def post_creation(self):
-        # Commission all the simulations created
-        for sim in self.created_simulations:
-            sim.commission()
-
         # We may encounter 400 Bad Request if already commissioned but still we want to try commissioning every time
-        # try:
-        #     self.comps_experiment.commission()
-        # except RuntimeError:
-        #     pass
+        try:
+            self.comps_experiment.commission()
+        except RuntimeError:
+            pass
 
     def add_files_to_simulation(self, s, cb):
         files = cb.dump_files_to_string()

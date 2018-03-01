@@ -2,15 +2,11 @@
 # or via the calibtool.py script: 'calibtool run example_optimization.py'
 import copy
 
-import re
-
 import numpy as np
 
 from calibtool.CalibManager import CalibManager
 from calibtool.algorithms.OptimTool import OptimTool
-from calibtool.plotters.LikelihoodPlotter import LikelihoodPlotter
 from calibtool.plotters.OptimToolPlotter import OptimToolPlotter
-from calibtool.plotters.SiteDataPlotter import SiteDataPlotter
 from examples.CMS.CMSCalibration.CMSSIte import CMSSite
 from models.cms.core.CMSConfigBuilder import CMSConfigBuilder
 from simtools.AssetManager.SimulationAssets import SimulationAssets
@@ -21,8 +17,8 @@ SetupParser.default_block = 'HPC'
 
 # Start from a base MALARIA_SIM config builder
 # This config builder will be modify by the different sites defined below
-cb = CMSConfigBuilder.from_files(model_file='base/simplemodel.emodl',
-                                 config_file='base/simplemodel.cfg')
+cb = CMSConfigBuilder.from_files(model_file='base/core-model-with-age-groups.emodl',
+                                 config_file='base/with-age-groups.cfg')
 
 try:
     cb.set_collection_id('CMS 0.82 Pre-release')
@@ -38,17 +34,17 @@ plotters = [OptimToolPlotter()]
 
 params = [
     {
-        'Name': 'initial_S',
+        'Name': 'initial_S_A04',
         'Dynamic': True,
-        'Guess': 10,
-        'Min': 0,
-        'Max': 10000
+        'Guess': 4879554,
+        'Min': 4800000,
+        'Max': 4900000
     },
     {
-        'Name': 'initial_I',
+        'Name': 'initial_I_A04',
         'Dynamic': True,
-        'Guess': 10,
-        'Min': 0,
+        'Guess': 7608,
+        'Min': 2000,
         'Max': 10000
     }
 ]
@@ -69,17 +65,15 @@ def map_sample_to_model_input(cb, sample):
     for p in params:
         value = sample.pop(p['Name'])
         # Replace the (species S 100) with the correct number coming from our sample
-        if p["Name"] == "initial_S":
-            exp = re.compile(r'\(species S \d+\)', re.I)
-            cb.model = exp.sub('(species S {})'.format(int(value)), cb.model)
+        if p["Name"] == "initial_S_A04":
+            cb.set_species("S-A04", int(value))
 
         # Replaces the (species I 100) with the correct number coming from our sample
-        elif p["Name"] == "initial_I":
-            exp = re.compile(r'\(species I \d+\)', re.I)
-            cb.model = exp.sub('(species I {})'.format(int(value)), cb.model)
+        elif p["Name"] == "initial_I_A04":
+            cb.set_species("I-A04", int(value))
 
         # Add this change to our tags
-        tags.update(cb.set_param(p['Name'], value))
+        tags[p["Name"]] = value
 
     return tags
 

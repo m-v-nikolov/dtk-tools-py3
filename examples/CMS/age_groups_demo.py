@@ -1,66 +1,79 @@
-from enum import Enum, EnumMeta
-from typing import NamedTuple
+import collections
+import copy
+from enum import Enum
 
-import enum
-
-from models.cms.core.CMSConfigBuilder import CMSConfigBuilder
 from models.cms.core.CMS_Operator import EMODL
 
 
-class AgeGroup:
-    _group_id = 0
+class Group:
+    def __init__(self, species, parameters, name):
+        self.species = species
+        self.parameters = parameters
+        self.name = name
 
-    def __init__(self, **kwargs):
-        self.group_id = AgeGroup._group_id
-        self.species = kwargs
-
-        AgeGroup._group_id += 1
-
-    def __getattribute__(self, item):
-        try:
-            return super().__getattribute__(item)
-        except AttributeError:
-            if item in self.species:
-                return self.species[item]
-
-        raise AttributeError("{} does not exist in this AgeGroup. Available species: {}"
-                             .format(item, ",".join(self.species.keys())))
-
-    def create_species(self, cb):
-        for species, value in self.species.items():
-            cb.add_species("{}_{}".format(species, self.group_id), value)
-
-
-class AgeGroupCollection:
-    species = None
-
-    def __init__(self):
-        self.age_groups = []
+class GroupManager:
+    def __init__(self, groups):
+        self.groups = []
         self.available_species = set()
-        self.items = []
+        self.available_parameters = set()
+        self.species= None
+        self.parameters = None
 
-    def add_age_group(self, age_group):
-        self.available_species = self.available_species.union(age_group.species.keys())
-        self.age_groups.append(age_group)
-        AgeGroupCollection.species = Enum('Species', list(self.available_species))
+        for g in groups:
+            self.add_group(g)
 
+    def create_species(self):
+        for g in self.groups:
+            for species, value in g.species.items():
+                print("{}_{} = {}".format(species,g.name, value))
+
+    def add_group(self,group):
+        self.available_species = self.available_species.union(group.species.keys())
+        self.available_parameters = self.available_parameters.union(group.parameters.keys())
+        self.groups.append(group)
+        self.species = Enum('Species', list(self.available_species))
+        self.parameters = Enum('Parameters', list(self.available_parameters))
 
     def create_item(self, *attributes):
-        for a in self.age_groups:
-            b = []
-            for t in attributes:
-                if isinstance(t, AgeGroupCollection.species):
-                    b.append("{}_{}".format(t.name, a.group_id))
+        for group in self.groups:
+            g = []
+            for attr in attributes:
+                a = copy.deepcopy(attr)
+                g.append(self.transform_emodl(a, group.name))
+
+            print(g)
+
+    def transform_emodl(self, element, group_name):
+        if type(element) in EMODL.all_options():
+            for attr, value in element.__dict__.items():
+                if not isinstance(value, str) and isinstance(value, collections.Iterable):
+                    setattr(element, attr, list(map(lambda e: self.transform_emodl(e, group_name), value)))
                 else:
-                    b.append(str(t))
-            print(" ".join(b))
+                    setattr(element, attr, self.transform_emodl(value, group_name))
+            return element
+
+        if isinstance(element, self.species) or isinstance(element, self.parameters):
+            return "{}_{}".format(element.name, group_name)
+
+        return element
 
 
-cb = CMSConfigBuilder.from_defaults()
-a = AgeGroup(S=1000, I=2000, L=200)
-a.create_species(cb)
+g = Group(
+    species={"S":1000, "I":200, "R":300},
+    parameters={"alpha":10, "beta":20},
+    name="0_5"
+)
 
-b = AgeGroupCollection()
-b.add_age_group(a)
-#(reaction infection-latent   (S) (L) (* lambda (- 1 alpha) S))
-b.create_item("reaction","infection-latent",b.species.S,b.species.L, EMODL.MULTIPLY("lambda", EMODL.SUBTRACT(1, "alpha"), b.species.S))
+g1 = Group(
+    species={"S":200, "I":10, "R":5},
+    parameters={"alpha":3, "beta":4},
+    name="5_10"
+)
+
+
+a = GroupManager(
+    groups=(g, g1)
+)
+
+a.create_species()
+a.create_item("reaction","infection-latent",a.species.S,a.species.R, EMODL.MULTIPLY("lambda", EMODL.SUBTRACT(a.parameters.alpha, "3"), a.species.S))

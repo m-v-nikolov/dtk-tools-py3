@@ -25,8 +25,8 @@ class CMSAnalyzer(BaseComparisonAnalyzer):
         data = data.reindex(data.index.drop(0))
 
         # Calculate the ratios needed for comparison with the reference data
-        ratio_SI_10 = 0 if data["infectious{0}"][10] == 0 else data["susceptible{0}"][10]/data["infectious{0}"][10]
-        ratio_SI_100 = 0 if data["infectious{0}"][100] == 0 else data["susceptible{0}"][100]/data["infectious{0}"][100]
+        ratio_SI_10 = 0 if data["smear-positive{0}"][10] == 0 else data["susceptible{0}"][10]/data["smear-positive{0}"][10]
+        ratio_SI_100 = 0 if data["smear-positive{0}"][100] == 0 else data["susceptible{0}"][100]/data["smear-positive{0}"][100]
 
         # Returns the data needed for this simulation
         return {

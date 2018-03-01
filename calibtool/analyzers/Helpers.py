@@ -1,15 +1,14 @@
-import itertools
-import random
-from datetime import date, datetime
 import calendar
+import itertools
 import logging
+import random
 from collections import OrderedDict
-from geopy.distance import vincenty
-import numpy.ma as ma
-import json
+from datetime import date
 
-import pandas as pd
 import numpy as np
+import numpy.ma as ma
+import pandas as pd
+
 
 import dtk.utils.parsers.malaria_summary as malaria_summary
 
@@ -435,7 +434,7 @@ def garki_ento_data(csvfilename, metadata):
 
 
 def hhs_to_nodes(csvfilename, hhs_file, metadata):
-
+    from geopy.distance import vincenty
     hh_hf_records = pd.read_csv(csvfilename)
     hh_hf_records = hh_hf_records[hh_hf_records['hf_name'] == metadata['hf']]
     hh_hf_records = hh_hf_records.rename(index=str, columns={"House_ID": "ID", 'lat_r2': 'lat', 'lng_r2': 'lon'})

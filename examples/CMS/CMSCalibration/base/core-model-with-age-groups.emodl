@@ -1,0 +1,186 @@
+(import (rnrs) (emodl cmslib))
+
+(start-model "tb-core-model")
+
+; South Africa
+(species S-A04  4879554) ; 5,695,009 - (798,548 + 16907) = 4,879,554
+(species L-A04   798548)
+(species I-A04     7608) ; 0.45 * 16,907 = 7,608
+(species N-A04     9299) ; 0.55 * 16,907 = 9,299
+
+(species S-A59  4513924) ; 5,544,992 - (1,020,505 + 10,563) = 4,513,924
+(species L-A59  1020505)
+(species I-A59     4753) ; 0.45 * 10,563 = 4,753
+(species N-A59     5810) ; 0.55 * 10,563 = 5,810
+
+(species S-AAE  4153303) ; 5,277,531 - (1,112,514 + 11714) = 4,153,303
+(species L-AAE  1112514)
+(species I-AAE     5271) ; 0.45 * 11,714 = 5,271
+(species N-AAE     6443) ; 0.55 * 11,714 = 6,443
+
+(species S-AFP 21838075) ; 40,880,892 - (18,755,604 + 287,213) = 21,838,075
+(species L-AFP 18755604)
+(species I-AFP   129246) ; 0.45 * 287,213 = 129,246
+(species N-AFP   157967) ; 0.55 * 287,213 = 157,967
+
+(species B) ; track births
+(species D) ; track natural deaths
+(species DD) ; track disease deaths
+
+(param alpha 0.115) ; proportion of infections developing primary TB [11.5% - p.18]
+(param sigma 0.45) ; proportion of cases developing smear positive TB [45% - p.19]
+(param v     0.00000274) ; rate at which latently infected individuals develop active TB (0.10%/year) [p.18]
+(param x     0.65) ; protection provided by prior infection [65% - p.18-19]
+(param theta 0.000041) ; rate of conversion from smear negative to smear positive TB (1.5%/year) [p.20]
+
+(param gamma 0.0022) ; screening rate (80%/year - for testing purposes, not from data)
+(param sei   0.9) ; sensitivity of screening, smear positive (0.44-1.0)
+(param sen   0.9) ; sensitivity of screening, smear negative (0.44-1.0)
+(param eta   0.8) ; proportion linked to care (for testing purposes, not from data)
+(param tau   0.9) ; treatment success (for testing purposes, not from data)
+(param r     0.000548) ; self cure rate (20%/year) [p.20-21]
+(param d     0.2) ; relative screening rate of smear-negative cases (for testing purposes, not from data)
+
+(param omega 0.00003425) ; birth rate (for testing purposes, not from data)
+(param mu    0.00003425) ; natural mortality rate (for testing purposes, not from data)
+(param mui   0.00003425) ; mortality rate, smear positive (1x natural rate, additive) (for testing purposes, not from data)
+(param mun   0.00003425) ; mortality rate, smear negative (1x natural rate, additive) (for testing purposes, not from data)
+
+(param beta  0.0603) ; effective contact rate (22/year) [p.23]
+(param c     0.22) ; relative infectiousness of smear-negative cases [22% - p.19]
+
+;(func pop (+ S L I N))
+(func pop (+ S-A04 L-A04 I-A04 N-A04 S-A59 L-A59 I-A59 N-A59 S-AAE L-AAE I-AAE N-AAE S-AFP L-AFP I-AFP N-AFP))
+
+(func all-i (+ I-A04 I-A59 I-AAE I-AFP))
+(func all-n (+ N-A04 N-A59 N-AAE N-AFP))
+
+;(func lambda (/ (* beta (+ I (* c N))) pop))
+(func lambda (/ (* beta (+ all-i (* c all-n))) pop))
+
+(reaction birth () (S-A04 B) (* omega pop))
+
+(reaction infection-latent-04   (S-A04) (L-A04) (* lambda (- 1 alpha) S-A04))
+(reaction infection-positive-04 (S-A04) (I-A04) (* lambda alpha sigma S-A04))
+(reaction infection-negative-04 (S-A04) (N-A04) (* lambda alpha (- 1 sigma) S-A04))
+
+(reaction reactivation-positive-04 (L-A04) (I-A04) (* v sigma L-A04))
+(reaction reinfection-positive-04  (L-A04) (I-A04) (* lambda alpha (- 1 x) sigma L-A04))
+(reaction reactivation-negative-04 (L-A04) (I-A04) (* v (- 1 sigma) L-A04))
+(reaction reinfection-negative-04  (L-A04) (I-A04) (* lambda alpha (- 1 x) (- 1 sigma) L-A04))
+
+(reaction conversion-04 (N-A04) (I-A04) (* theta N-A04))
+
+(reaction treatment-positive-04 (I-A04) (L-A04) (* gamma sei eta tau I-A04))
+(reaction natural-positive-04   (I-A04) (L-A04) (* r I-A04))
+(reaction treatment-negative-04 (N-A04) (L-A04) (* gamma sen eta tau d N-A04))
+(reaction natural-negative-04   (N-A04) (L-A04) (* r N-A04))
+
+(reaction death-s-04 (S-A04) (D) (* mu S-A04))
+(reaction death-l-04 (L-A04) (D) (* mu L-A04))
+(reaction death-i-04 (I-A04) (D) (* mu I-A04))
+(reaction death-n-04 (N-A04) (D) (* mu N-A04))
+(reaction disease-death-i-04 (I-A04) (DD) (* mui I-A04))
+(reaction disease-death-n-04 (N-A04) (DD) (* mun N-A04))
+
+(reaction infection-latent-59   (S-A59) (L-A59) (* lambda (- 1 alpha) S-A59))
+(reaction infection-positive-59 (S-A59) (I-A59) (* lambda alpha sigma S-A59))
+(reaction infection-negative-59 (S-A59) (N-A59) (* lambda alpha (- 1 sigma) S-A59))
+
+(reaction reactivation-positive-59 (L-A59) (I-A59) (* v sigma L-A59))
+(reaction reinfection-positive-59  (L-A59) (I-A59) (* lambda alpha (- 1 x) sigma L-A59))
+(reaction reactivation-negative-59 (L-A59) (I-A59) (* v (- 1 sigma) L-A59))
+(reaction reinfection-negative-59  (L-A59) (I-A59) (* lambda alpha (- 1 x) (- 1 sigma) L-A59))
+
+(reaction conversion-59 (N-A59) (I-A59) (* theta N-A59))
+
+(reaction treatment-positive-59 (I-A59) (L-A59) (* gamma sei eta tau I-A59))
+(reaction natural-positive-59   (I-A59) (L-A59) (* r I-A59))
+(reaction treatment-negative-59 (N-A59) (L-A59) (* gamma sen eta tau d N-A59))
+(reaction natural-negative-59   (N-A59) (L-A59) (* r N-A59))
+
+(reaction death-s-59 (S-A59) (D) (* mu S-A59))
+(reaction death-l-59 (L-A59) (D) (* mu L-A59))
+(reaction death-i-59 (I-A59) (D) (* mu I-A59))
+(reaction death-n-59 (N-A59) (D) (* mu N-A59))
+(reaction disease-death-i-59 (I-A59) (DD) (* mui I-A59))
+(reaction disease-death-n-59 (N-A59) (DD) (* mun N-A59))
+
+(reaction infection-latent-AE   (S-AAE) (L-AAE) (* lambda (- 1 alpha) S-AAE))
+(reaction infection-positive-AE (S-AAE) (I-AAE) (* lambda alpha sigma S-AAE))
+(reaction infection-negative-AE (S-AAE) (N-AAE) (* lambda alpha (- 1 sigma) S-AAE))
+
+(reaction reactivation-positive-AE (L-AAE) (I-AAE) (* v sigma L-AAE))
+(reaction reinfection-positive-AE  (L-AAE) (I-AAE) (* lambda alpha (- 1 x) sigma L-AAE))
+(reaction reactivation-negative-AE (L-AAE) (I-AAE) (* v (- 1 sigma) L-AAE))
+(reaction reinfection-negative-AE  (L-AAE) (I-AAE) (* lambda alpha (- 1 x) (- 1 sigma) L-AAE))
+
+(reaction conversion-AE (N-AAE) (I-AAE) (* theta N-AAE))
+
+(reaction treatment-positive-AE (I-AAE) (L-AAE) (* gamma sei eta tau I-AAE))
+(reaction natural-positive-AE   (I-AAE) (L-AAE) (* r I-AAE))
+(reaction treatment-negative-AE (N-AAE) (L-AAE) (* gamma sen eta tau d N-AAE))
+(reaction natural-negative-AE   (N-AAE) (L-AAE) (* r N-AAE))
+
+(reaction death-s-AE (S-AAE) (D) (* mu S-AAE))
+(reaction death-l-AE (L-AAE) (D) (* mu L-AAE))
+(reaction death-i-AE (I-AAE) (D) (* mu I-AAE))
+(reaction death-n-AE (N-AAE) (D) (* mu N-AAE))
+(reaction disease-death-i-AE (I-AAE) (DD) (* mui I-AAE))
+(reaction disease-death-n-AE (N-AAE) (DD) (* mun N-AAE))
+
+(reaction infection-latent-FP   (S-AFP) (L-AFP) (* lambda (- 1 alpha) S-AFP))
+(reaction infection-positive-FP (S-AFP) (I-AFP) (* lambda alpha sigma S-AFP))
+(reaction infection-negative-FP (S-AFP) (N-AFP) (* lambda alpha (- 1 sigma) S-AFP))
+
+(reaction reactivation-positive-FP (L-AFP) (I-AFP) (* v sigma L-AFP))
+(reaction reinfection-positive-FP  (L-AFP) (I-AFP) (* lambda alpha (- 1 x) sigma L-AFP))
+(reaction reactivation-negative-FP (L-AFP) (I-AFP) (* v (- 1 sigma) L-AFP))
+(reaction reinfection-negative-FP  (L-AFP) (I-AFP) (* lambda alpha (- 1 x) (- 1 sigma) L-AFP))
+
+(reaction conversion-FP (N-AFP) (I-AFP) (* theta N-AFP))
+
+(reaction treatment-positive-FP (I-AFP) (L-AFP) (* gamma sei eta tau I-AFP))
+(reaction natural-positive-FP   (I-AFP) (L-AFP) (* r I-AFP))
+(reaction treatment-negative-FP (N-AFP) (L-AFP) (* gamma sen eta tau d N-AFP))
+(reaction natural-negative-FP   (N-AFP) (L-AFP) (* r N-AFP))
+
+(reaction death-s-FP (S-AFP) (D) (* mu S-AFP))
+(reaction death-l-FP (L-AFP) (D) (* mu L-AFP))
+(reaction death-i-FP (I-AFP) (D) (* mu I-AFP))
+(reaction death-n-FP (N-AFP) (D) (* mu N-AFP))
+(reaction disease-death-i-FP (I-AFP) (DD) (* mui I-AFP))
+(reaction disease-death-n-FP (N-AFP) (DD) (* mun N-AFP))
+
+(param aging 0.000548) ; (1 / 365) / 5
+
+(reaction aging-s04-s59 (S-A04) (S-A59) (* aging S-A04))
+(reaction aging-l04-l59 (L-A04) (L-A59) (* aging L-A04))
+(reaction aging-i04-i59 (I-A04) (I-A59) (* aging I-A04))
+(reaction aging-n04-n59 (N-A04) (N-A59) (* aging N-A04))
+
+(reaction aging-s59-sae (S-A59) (S-AAE) (* aging S-A59))
+(reaction aging-l59-lae (L-A59) (L-AAE) (* aging L-A59))
+(reaction aging-i59-iae (I-A59) (I-AAE) (* aging I-A59))
+(reaction aging-n59-nae (N-A59) (N-AAE) (* aging N-A59))
+
+(reaction aging-sae-sfp (S-AAE) (S-AFP) (* aging S-AAE))
+(reaction aging-lae-lfp (L-AAE) (L-AFP) (* aging L-AAE))
+(reaction aging-iae-ifp (I-AAE) (I-AFP) (* aging I-AAE))
+(reaction aging-nae-nfp (N-AAE) (N-AFP) (* aging N-AAE))
+
+(observe population pop)
+
+(func all-s (+ S-A04 S-A59 S-AAE S-AFP))
+(func all-l (+ L-A04 L-A59 L-AAE L-AFP))
+
+(observe susceptible    all-s)
+(observe latent         all-l)
+(observe smear-positive all-i)
+(observe smear-negative all-n)
+
+(observe births B)
+(observe deaths D)
+(observe tb-deaths DD)
+
+(end-model)

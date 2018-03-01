@@ -164,6 +164,7 @@ class CMSConfigBuilder(SimConfigBuilder):
     def set_param(self, name, value):
         value = self.clean_value(value)
         self.param[name] = Param(name, value)
+        return {name:value}
 
     def get_param(self, name, default=None):
         return self.param[name].value if name in self.param else default

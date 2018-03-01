@@ -171,21 +171,5 @@ class EMODL:
             return '(empirical "{}"'.format(self.filename)
 
 
-def test():
-    # print(EMODL.ADD(EMODL.DIVIDE(3, 4), EMODL.POWER(2, 5)))
-    # print(EMODL.ADD('S', 'R'))
-    # print(EMODL.ADD(2, 3, 'S', 'R', 4))
-
-    a = EMODL.all_options()
-    print(type(a))
-    print(a)
-
-    print('-------------------------------------')
-    for r in a:
-        print(r)
-
-
-if __name__ == "__main__":
-    test()
 
 
