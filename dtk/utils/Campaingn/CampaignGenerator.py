@@ -372,6 +372,21 @@ def test_explicit_arguments():
     c = CoverageByNodeEventCoordinator(Demographic_Coverage=5, Test=3)
     print(c.to_json())
 
+def list_all_attr(aClass):
+    an = aClass()
+    attrs = vars(an)
+    return attrs
+
+
+def build_argument(cls)  :
+    # print(list_all_attr(cls))
+    attr_dict = list_all_attr(cls)
+    attr_list = ['%s=%s' % (k, v) for k, v in attr_dict.items()]
+    prop_list = ['self.%s = %s\n' % (k, k) for k, v in attr_dict.items()]
+    print(', '.join(attr_list))
+    print()
+    print(''.join(prop_list))
+
 
 if __name__ == "__main__":
     # campaign_file = r'H:\temp\campaign.json'
@@ -399,9 +414,11 @@ if __name__ == "__main__":
     # create_SimpleBednet()
     # create_betnet()
 
-    test_add_ITN()
+    # test_add_ITN()
 
     # test_explicit_arguments()
+
+    build_argument(Campaign)
 
     pass
 
