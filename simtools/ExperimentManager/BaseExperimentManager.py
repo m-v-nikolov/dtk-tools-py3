@@ -214,7 +214,7 @@ class BaseExperimentManager(CacheEnabled):
 
         # Create the simulation processes
         creator_processes = [self.get_simulation_creator(function_set=fn_batch, max_sims_per_batch=sim_per_batch)
-                             for fn_batch in chunks(mods, math.ceil(total_sims/max_creator_processes))]
+                             for fn_batch in chunks(mods, max(sim_per_batch, math.ceil(total_sims/max_creator_processes)))]
 
         # Display some info
         if verbose:
