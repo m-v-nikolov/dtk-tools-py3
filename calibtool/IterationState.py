@@ -249,11 +249,11 @@ class IterationState:
         analyzerManager.analyze()
 
         # Ask the analyzers to cache themselves
-        cached_analyses = {a.uid(): a.cache() for a in analyzerManager.analyzers}
+        cached_analyses = {a.uid if not callable(a.uid) else a.uid(): a.cache() for a in analyzerManager.analyzers}
         logger.debug(cached_analyses)
 
         # Get the results from the analyzers and ask the next point how it wants to cache them
-        results = pd.DataFrame({a.uid(): a.result for a in analyzerManager.analyzers})
+        results = pd.DataFrame({a.uid if not callable(a.uid) else a.uid(): a.result for a in analyzerManager.analyzers})
         cached_results = self.next_point_algo.get_results_to_cache(results)
 
         # Store the analyzers and results in the iteration state
@@ -264,10 +264,8 @@ class IterationState:
         self.next_point_algo.set_results_for_iteration(self.iteration, results)
 
         # Update the summary table and all the results
-        all_results, summary_table = self.next_point_algo.update_summary_table(self, self.all_results)
-        self.all_results = all_results
-        self.summary_table = summary_table
-        logger.info(summary_table)
+        self.all_results, self.summary_table = self.next_point_algo.update_summary_table(self, self.all_results)
+        logger.info(self.summary_table)
 
     def wait_for_finished(self, verbose=True, init_sleep=1.0, sleep_time=10):
         while True:
@@ -307,11 +305,6 @@ class IterationState:
         iteration_time_elapsed = current_time - self.iteration_start
         logger.info("Iteration %s done (took %s)" % (self.iteration, verbose_timedelta(iteration_time_elapsed)))
 
-        # Refresh the experiment
-        self.exp_manager.refresh_experiment()
-
-        # Wait when we are all done to make sure all the output files have time to get written
-        time.sleep(0.5)
 
     def kill(self):
         """

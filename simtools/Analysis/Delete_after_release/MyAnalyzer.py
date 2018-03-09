@@ -5,7 +5,7 @@ from simtools.Analysis.BaseAnalyzers.BaseCacheAnalyzer import BaseCacheAnalyzer
 class MyAnalyzer(BaseAnalyzer):
     def __init__(self):
         super().__init__(need_dir_map=False)
-        self.filenames = ['output\\InsetChart.json']
+        self.filenames = ['output\\InsetChart.json', 'Assets\\Calibration\\birth_cohort_demographics.compiled.json']
 
     def select_simulation_data(self, data, simulation):
         # print(type(data[self.filenames[0]]))
@@ -13,11 +13,13 @@ class MyAnalyzer(BaseAnalyzer):
         ichart = data[self.filenames[0]]
         pop = ichart['Channels']['Statistical Population']['Data']
 
-        return {"population":pop}
+        demog = data[self.filenames[1]]
+
+        return {"population":pop[0], "test":demog["Metadata"]["Author"]}
 
     def finalize(self, all_data):
         for sim, data in all_data.items():
-            # print("{} = {}".format(sim,data))
+            print("{} = {}".format(sim,data))
 
             pass
 

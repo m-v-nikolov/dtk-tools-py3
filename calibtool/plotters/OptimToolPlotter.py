@@ -41,12 +41,10 @@ class OptimToolPlotter(BasePlotter):
 
     def visualize(self, iteration_state):
         self.iteration_state = iteration_state
-        self.site_analyzer_names = iteration_state.site_analyzer_names
         iteration_status = self.iteration_state.status
 
         self.directory = self.iteration_state.iteration_directory
         self.param_names = self.iteration_state.param_names
-        self.site_analyzer_names = self.iteration_state.site_analyzer_names
 
         self.npt = self.iteration_state.next_point_algo.get_state()
         self.data = pd.DataFrame.from_dict(self.npt['data'])

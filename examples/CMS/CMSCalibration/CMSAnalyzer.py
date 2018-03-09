@@ -1,26 +1,19 @@
-import json
+import io
 
 import pandas as pd
 
 from calibtool.LL_calculators import euclidean_distance
-from calibtool.analyzers.BaseComparisonAnalyzer import BaseComparisonAnalyzer
+from simtools.Analysis.BaseAnalyzers import BaseCalibrationAnalyzer
 
 
-class CMSAnalyzer(BaseComparisonAnalyzer):
-    filenames = ['trajectories.csv']
+class CMSAnalyzer(BaseCalibrationAnalyzer):
 
-    def __init__(self, site):
-        super().__init__(site)
-        self.parse = False
-        self.reference = self.site.get_reference_data()
+    def __init__(self, reference_data):
+        super().__init__(filenames = ['trajectories.csv'], reference_data=reference_data, parse=False)
 
-    def initialize(self):
-        self.result = None
-        self.data = []
-
-    def apply(self, parser):
+    def select_simulation_data(self, sim_data, simulation):
         # Transform the data into a normal data frame
-        data = pd.read_csv(parser.raw_data[self.filenames[0]], skiprows=1, header=None).transpose()
+        data = pd.read_csv(io.BytesIO(sim_data[self.filenames[0]]), skiprows=1, header=None).transpose()
         data.columns = data.iloc[0]
         data = data.reindex(data.index.drop(0))
 
@@ -30,31 +23,19 @@ class CMSAnalyzer(BaseComparisonAnalyzer):
 
         # Returns the data needed for this simulation
         return {
-            "sample_index": parser.sim_data.get('__sample_index__'),
-            "sim_id": parser.sim_id,
+            "sample_index": simulation.tags.get('__sample_index__'),
             "ratio_SI_10": ratio_SI_10,
             "ratio_SI_100": ratio_SI_100
         }
 
-    def combine(self, parsers):
-        # Collect all the data for all the simulations
-        for p in parsers.values():
-            self.data.append(p.selected_data[id(self)])
-
+    def finalize(self, all_data):
+        lls = []
         # Sort our data by sample_index
         # We need to preserve the order by sample_index
-        self.data = sorted(self.data, key=lambda k: k['sample_index'])
-
-    def finalize(self):
-        lls = []
-
         # Calculate the Log Likelihood by comparing the simulated data with the reference data and computing the
         # euclidean distance
-        for d in self.data:
-            lls.append(euclidean_distance(list(self.reference.values()), [d[k] for k in self.reference.keys()]))
+        for d in sorted(all_data.values(), key=lambda k: k['sample_index']):
+            lls.append(euclidean_distance(list(self.reference_data.values()), [d[k] for k in self.reference_data.keys()]))
 
-        # Result needs to be a series where the index is the sample_index and the value the likelihood for this sample
-        self.result = pd.Series(lls)
+        return pd.Series(lls)
 
-    def cache(self):
-        return json.dumps(self.data)

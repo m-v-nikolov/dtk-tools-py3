@@ -13,7 +13,7 @@ class CMSSite(CalibSite):
         }
 
     def get_analyzers(self):
-        return CMSAnalyzer(self),
+        return CMSAnalyzer(self.get_reference_data()),
 
     def get_setup_functions(self):
         return []

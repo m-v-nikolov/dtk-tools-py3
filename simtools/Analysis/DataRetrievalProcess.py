@@ -5,7 +5,7 @@ import traceback
 
 from simtools.Analysis.OutputParser import SimulationOutputParser
 from simtools.Utilities.COMPSCache import COMPSCache
-from simtools.Utilities.COMPSUtilities import COMPS_login
+from simtools.Utilities.COMPSUtilities import COMPS_login, get_asset_files_for_simulation_id
 
 
 def retrieve_data(simulation, analyzers, cache):
@@ -20,17 +20,26 @@ def retrieve_data(simulation, analyzers, cache):
         cache.set(simulation.id, None)
         return
 
+    # The byte_arrays will associate filename with content
+    byte_arrays = {}
+
     try:
         if simulation.experiment.location == "HPC":
             COMPS_login(simulation.experiment.endpoint)
             COMPS_simulation = COMPSCache.simulation(simulation.id)
-            byte_arrays = COMPS_simulation.retrieve_output_files(paths=filenames)
+            assets = [path for path in filenames if path.lower().startswith("assets")]
+            transient = [path for path in filenames if not path.lower().startswith("assets")]
+            if transient:
+                byte_arrays.update(dict(zip(transient, COMPS_simulation.retrieve_output_files(paths=transient))))
+            if assets:
+                byte_arrays.update(get_asset_files_for_simulation_id(simulation.id, paths=assets, remove_prefix='Assets'))
+
         else:
             byte_arrays = []
             for filename in filenames:
                 path = os.path.join(simulation.get_path(), filename)
                 with open(path, 'rb') as output_file:
-                    byte_arrays.append(output_file.read())
+                    byte_arrays[filename] = output_file.read()
     except:
         tb = traceback.format_exc()
         cache.set(EXCEPTION_KEY, "An exception has been raised during data retrieval.\n"
@@ -46,10 +55,10 @@ def retrieve_data(simulation, analyzers, cache):
         # If the analyzer needs the parsed data, parse
         if analyzer.parse:
             data = {filename:SimulationOutputParser.parse(filename, content)
-                    for filename, content in zip(filenames, byte_arrays)}
+                    for filename, content in byte_arrays.items()}
         else:
             # If the analyzer doesnt wish to parse, give the raw data
-            data = dict(zip(filenames, byte_arrays))
+            data = byte_arrays
 
         # Retrieve the selected data for the given analyzer
         try:

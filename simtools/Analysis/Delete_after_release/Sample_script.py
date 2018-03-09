@@ -3,7 +3,7 @@
 from dtk.utils.analyzers.TimeSeriesAnalyzer import TimeseriesAnalyzer as ts
 from dtk.utils.analyzers.VectorSpeciesAnalyzer import VectorSpeciesAnalyzer
 from simtools.Analysis.AnalyzeManager import AnalyzeManager as am
-from simtools.Analysis.Delete_after_release.MyAnalyzer import MyDataAnalyzer
+from simtools.Analysis.Delete_after_release.MyAnalyzer import MyDataAnalyzer, MyAnalyzer
 from simtools.SetupParser import SetupParser
 
 if __name__ == "__main__":
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     exp_ids = []
     # analyzers = [MyAnalyzer(), MyAnalyzer(), MyAnalyzer2(),MyDataAnalyzer()]
     analyzers = [ts(), VectorSpeciesAnalyzer()]
-    analyzers = [MyDataAnalyzer()]
+    analyzers = [MyAnalyzer()]
 
     a = am(exp_list=["e9396c96-e510-e811-9415-f0921c16b9e5"], analyzers=analyzers, verbose=True)
     # a = AnalyzeManager(exp_list=exp_ids, analyzers=analyzers)
