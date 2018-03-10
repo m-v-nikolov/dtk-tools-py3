@@ -3,12 +3,12 @@ from dtk.utils.analyzers import VectorSpeciesAnalyzer
 from dtk.utils.builders.sweep import GenericSweepBuilder
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from dtk.vector.study_sites import configure_site
-from simtools.AnalyzeManager.AnalyzeManager import AnalyzeManager
+from simtools.Analysis.AnalyzeManager import AnalyzeManager
 from simtools.ExperimentManager.ExperimentManagerFactory import ExperimentManagerFactory
 from simtools.SetupParser import SetupParser
 
 # This block will be used unless overridden on the command-line
-SetupParser.default_block = 'LOCAL'
+SetupParser.default_block = 'HPC'
 
 cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 configure_site(cb, 'Namawala')

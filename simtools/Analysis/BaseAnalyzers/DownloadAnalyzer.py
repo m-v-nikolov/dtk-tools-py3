@@ -59,8 +59,5 @@ class DownloadAnalyzer(BaseAnalyzer):
         # Create the requested files
         for filename in self.filenames:
             file_path = os.path.join(sim_folder, os.path.basename(filename))
-            with open(file_path, 'w') as outfile:
-                if isinstance(data[filename], BytesIO):
-                    outfile.write(data[filename].read())
-                else:
-                    json.dump(data[filename], outfile)
+            with open(file_path, 'wb') as outfile:
+                outfile.write(data[filename])
