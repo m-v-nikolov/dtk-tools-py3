@@ -74,8 +74,8 @@
   "networkx": null,
   "patsy": null,
   "catalyst": {
-    "version": "1.0",
+    "version": "1.0.1",
     "test": ">=",
-    "wheel": "catalyst_report-1.0-py3-none-any.whl"
+    "wheel": "catalyst_report-1.0.1-py3-none-any.whl"
   }
 }

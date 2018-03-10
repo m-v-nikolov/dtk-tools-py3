@@ -1,10 +1,9 @@
 from simtools.Analysis.BaseAnalyzers.BaseAnalyzer import BaseAnalyzer
 
-
 class BaseCacheAnalyzer(BaseAnalyzer):
 
     def __init__(self, cache_location=None, force=False):
-        super(BaseCacheAnalyzer, self).__init__()
+        super().__init__()
         self.cache_location = cache_location
         self.cache = None
         self.force = force
@@ -26,4 +25,9 @@ class BaseCacheAnalyzer(BaseAnalyzer):
         return key in self.cache
 
     def __del__(self):
-        self.cache.close()
+        if self.cache:
+            self.cache.close()
+
+    @property
+    def keys(self):
+        return list(self.cache.iterkeys()) if self.cache else None

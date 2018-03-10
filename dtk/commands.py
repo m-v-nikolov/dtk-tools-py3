@@ -652,6 +652,7 @@ def catalyst(args, unknownArgs):
     from catalyst_report.fidelity_report_analyzer import FidelityReportAnalyzer
     from catalyst_report.fidelity_report_experiment_definition import FidelityReportExperimentDefinition
     import catalyst_report.utils as catalyst_utils
+    from simtools.Analysis.AnalyzeManager import AnalyzeManager
 
     # we're going to do a dtk run, then a set-piece analysis. But first we need to do some overrides
     # to get the run part to do the desired parameter sweep.
@@ -741,6 +742,8 @@ def catalyst(args, unknownArgs):
                                       'config.json',
                                       mod.run_sim_args['config_builder'].get_param('Demographics_Filenames')[0],
                                       experiment_definition=defn,
+                                      experiment_id=experiment.exp_id,
+                                      experiment_name=experiment.exp_name,
                                       label=args.report_label,
                                       time_series_step_from=defn['step_from'],
                                       time_series_step_to=defn['step_to'],

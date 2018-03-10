@@ -192,10 +192,7 @@ def get_asset_files_for_simulation_id(sim_id, paths, output_directory=None, flat
         if output_directory:
             output_file = os.path.normpath(os.path.join(output_directory, os.path.split(path)[1]))
             dirname = os.path.dirname(output_file)
-            try:
-                os.makedirs(dirname)
-            except:
-                pass
+            os.makedirs(dirname, exist_ok=True)
             with open(output_file, 'wb') as f:
                 f.write(result)
 
