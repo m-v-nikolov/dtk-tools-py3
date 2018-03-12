@@ -73,8 +73,8 @@ class SiteDataPlotter(BasePlotter):
             except:
                 pass
 
-            self.plot_best(site_name, analyzer_name, samples.iloc[:self.num_to_plot])
-            self.plot_all(site_name, analyzer_name, samples, clim=(cmin, cmax))
+            #self.plot_best(site_name, analyzer_name, samples.iloc[:self.num_to_plot])
+            #self.plot_all(site_name, analyzer_name, samples, clim=(cmin, cmax))
 
     def plot_best(self, site_name, analyzer_name, samples):
 
