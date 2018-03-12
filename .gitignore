@@ -38,6 +38,8 @@ simIDs
 dtk/calibration/calib_example/*test*/
 examples/ExampleCalibration/
 examples/FullCalibrationExample/
+examples/PS_scripts/*.json
+examples/PS_scripts/*.csv
 test/tmp/
 
 # Helper
@@ -53,3 +55,9 @@ install/*.whl
 simtools/simtools.ini.bak
 .overseer_check_lock
 .setup_parser_init_lock
+!examples/example_iterative/simtools.ini
+
+# Figures
+*.pdf
+*.png
+#Adding figures to gitignore and including example to run entomology calibration

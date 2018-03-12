@@ -25,7 +25,7 @@ except ImportError as e:
     raise ImportError(message)
 
 # Which simtools.ini block to use for this calibration
-SetupParser.default_block = 'HPC'
+SetupParser.default_block = 'LOCAL'
 
 # Start from a base MALARIA_SIM config builder
 # This config builder will be modify by the different sites defined below
@@ -34,7 +34,7 @@ cb = DTKConfigBuilder.from_defaults('VECTOR_SIM')
 
 
 # List of sites we want to calibrate on
-specs = ['gambiae', 'funestus']
+specs = ['funestus']
 sites = [MagudeEntoCalibSite()]
 
 # The default plotters used in an Optimization with OptimTool
@@ -59,9 +59,9 @@ params2 = [
     {
         'Name': '%s_max' %(species),
         'Dynamic': True,
-        'Guess': 6,
-        'Min': 3,
-        'Max': 7,
+        'Guess': 5,
+        'Min': 2,
+        'Max': 6,
     }
     for species in specs
 ]
@@ -156,19 +156,19 @@ optimtool = OptimTool(params,
     mu_r = r,           # <-- radius for numerical derivatve.  CAREFUL not to go too small with integer parameters
     sigma_r = r/10.,    # <-- stdev of radius
     center_repeats=1, # <-- Number of times to replicate the center (current guess).  Nice to compare intrinsic to extrinsic noise
-    samples_per_iteration=32  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
+    samples_per_iteration=2  # 32 # <-- Samples per iteration, includes center repeats.  Actual number of sims run is this number times number of sites.
 )
 
 
 # cb.add_reports(BaseVectorStatsReport(type='ReportVectorStats', stratify_by_species=1))
 
-calib_manager = CalibManager(name='MozambiqueEntoCalibTest1',    # <-- Please customize this name
+calib_manager = CalibManager(name='TestPandas',    # <-- Please customize this name
                              config_builder=cb,
                              map_sample_to_model_input_fn=map_sample_to_model_input,
                              sites=sites,
                              next_point=optimtool,
                              sim_runs_per_param_set=1,  # <-- Replicates
-                             max_iterations=3,          # <-- Iterations
+                             max_iterations=2,          # <-- Iterations
                              plotters=plotters)
 
 
