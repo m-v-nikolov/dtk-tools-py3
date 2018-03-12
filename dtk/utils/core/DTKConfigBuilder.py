@@ -457,6 +457,8 @@ class DTKConfigBuilder(SimConfigBuilder):
             events_from_campaign.extend(json.loads(tlist))
 
         # Add them with the events already listed in the config file
+        if "Listed_Events" not in self.config["parameters"]:
+            self.config["parameters"]["Listed_Events"] = []
         event_set = set(events_from_campaign + self.config['parameters']['Listed_Events'])
 
         # Remove the built in events and return
